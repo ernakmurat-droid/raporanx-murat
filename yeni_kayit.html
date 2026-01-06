@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yeni Rapor Oluştur</title>
+<style>
+    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #ba68c8); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
+    .container { max-width: 600px; margin: 0 auto; text-align: center; }
+    h1 { font-size: 32px; margin-bottom: 30px; }
+    form { background: rgba(255,255,255,0.2); padding: 30px; border-radius: 15px; }
+    label { display: block; margin: 15px 0 5px; font-weight: bold; text-align: left; }
+    input { width: 100%; padding: 14px; border: none; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
+    button { background: #00c853; color: white; padding: 18px; border: none; border-radius: 12px; width: 100%; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    button:hover { background: #00b140; }
+    .geri-btn { background: #6c757d; margin-top: 15px; }
+    .geri-btn:hover { background: #5a6268; }
+    .referans-btn { background: #2196f3; margin-top: 15px; }
+    .referans-btn:hover { background: #1976d2; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>YENİ RAPOR OLUŞTUR</h1>
+    <form>
+        <label>Gayrimenkul Adı</label>
+        <input type="text" id="propertyName" placeholder="Örn: Deniz Apartmanı Daire 5">
+
+        <label>İl</label>
+        <input type="text" id="il" placeholder="Örn: İstanbul">
+
+        <label>İlçe</label>
+        <input type="text" id="ilce" placeholder="Örn: Kadıköy">
+
+        <label>Mahalle</label>
+        <input type="text" id="mahalle" placeholder="Örn: Osmanağa">
+
+        <label>Ada</label>
+        <input type="text" id="ada" placeholder="Örn: 123">
+
+        <label>Parsel</label>
+        <input type="text" id="parsel" placeholder="Örn: 45">
+
+        <button type="button" onclick="raporOlustur()">YENİ RAPOR OLUŞTUR</button>
+
+        <button type="button" class="referans-btn" onclick="referansAc()">REFERANS BİLGİLER (Posta Kodu, Maliyet vb.)</button>
+
+        <!-- KAYITSIZ GERİ DÖN BUTONU -->
+        <button type="button" class="geri-btn" onclick="anaSayfayaDon()">ANA SAYFAYA DÖN</button>
+    </form>
+</div>
+<script>
+    function raporOlustur() {
+        const report = {
+            propertyName: document.getElementById('propertyName').value.trim() || "İsimsiz Gayrimenkul",
+            il: document.getElementById('il').value.trim(),
+            ilce: document.getElementById('ilce').value.trim(),
+            mahalle: document.getElementById('mahalle').value.trim(),
+            ada: document.getElementById('ada').value.trim(),
+            parsel: document.getElementById('parsel').value.trim(),
+            createdAt: new Date().toLocaleString('tr-TR'),
+            bina: {},
+            bbDetay: {},
+            emsaller: [],
+            konumCevre: {},
+            tapu: {},
+            imar: {},
+            belgeler: {}
+        };
+        let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        reports.push(report);
+        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        const newId = reports.length - 1;
+        alert("Rapor oluşturuldu!");
+        window.location.href = "rapor-detay.html?id=" + newId;
+    }
+
+    function referansAc() {
+        window.open('referans-bilgiler.html', '_blank');
+    }
+
+    function anaSayfayaDon() {
+        window.location.href = 'index.html';
+    }
+</script>
+</body>
+</html>

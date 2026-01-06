@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="tr">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RaporAn X Taşınmaz Değerleme Sistemi</title>
+<style>
+    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
+    .container { max-width: 800px; margin: 0 auto; text-align: center; }
+    h1 { font-size: 42px; margin-bottom: 10px; font-weight: 900; letter-spacing: -1px; }
+    h1 span { color: #ff0000; }
+    .count { font-size: 26px; margin: 40px 0; }
+    .btn-new { display: block; width: 400px; max-width: 90%; margin: 50px auto; background: #00c853; color: white; padding: 25px; text-align: center; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
+    .btn-new:hover { background: #00b140; transform: translateY(-5px); }
+    .slogan { font-size: 22px; margin: 10px 0 40px 0; opacity: 0.95; font-style: italic; font-weight: 300; letter-spacing: 1px; }
+    .reports { display: grid; gap: 20px; margin-top: 40px; }
+    .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; position: relative; transition: 0.3s; cursor: pointer; text-align: left; }
+    .report-card:hover { background: rgba(255,255,255,0.35); transform: translateY(-8px); }
+    .report-title { font-size: 24px; font-weight: bold; }
+    .report-info { font-size: 18px; margin-top: 10px; opacity: 0.95; }
+    .no-reports { font-size: 22px; opacity: 0.8; margin-top: 60px; }
+    .delete-btn { position: absolute; top: 15px; right: 15px; background: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-size: 14px; }
+    .delete-btn:hover { background: #b71c1c; }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>RAPORAN <span>X</span></h1>
+        <p class="slogan">“Çok karakteristik, çok abuzittik!”</p>
+        <div class="count" id="reportCount">Toplam kayıt: 0</div>
+        <a href="yeni_kayit.html" class="btn-new">YENİ DEĞERLEME DOSYASI AÇ</a>
+        <div id="reportsList" class="reports">
+            <div class="no-reports">Henüz kayıt oluşturulmadı.</div>
+        </div>
+    </div>
+    <script>
+        function loadReports() {
+            let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+            const list = document.getElementById('reportsList');
+            const count = document.getElementById('reportCount');
+            count.textContent = `Toplam kayıt: ${reports.length}`;
+            if (reports.length === 0) {
+                list.innerHTML = '<div class="no-reports">Henüz kayıt oluşturulmadı.</div>';
+                return;
+            }
+            list.innerHTML = '';
+            reports.forEach((report, index) => {
+                const card = document.createElement('div');
+                card.className = 'report-card';
+                let title = report.propertyName && report.propertyName.trim() !== '' ? report.propertyName : 'İsimsiz Gayrimenkul';
+                card.innerHTML = `
+                    <button class="delete-btn" onclick="deleteReport(${index}, event)">Sil</button>
+                    <div class="report-title">${title}</div>
+                    <div class="report-info">
+                        ${report.il || ''} / ${report.ilce || ''} / ${report.mahalle || ''}<br>
+                        Ada: ${report.ada || ''} - Parsel: ${report.parsel || ''}<br>
+                        <small>Oluşturulma: ${report.createdAt || 'Tarih yok'}</small>
+                    </div>
+                `;
+                card.onclick = (e) => {
+                    if (!e.target.classList.contains('delete-btn')) {
+                        window.location.href = `rapor-detay.html?id=${index}`;
+                    }
+                };
+                list.appendChild(card);
+            });
+        }
+        function deleteReport(index, event) {
+            event.stopPropagation();
+            if (confirm('Bu raporu silmek istediğinize emin misiniz?')) {
+                let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+                reports.splice(index, 1);
+                localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+                loadReports();
+            }
+        }
+        loadReports();
+    </script>
+</body>
+</html>

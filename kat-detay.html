@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kat Detayları - Ekspertiz Sistemi</title>
+<style>
+    :root { --primary: #4a148c; --accent: #7c4dff; --success: #2e7d32; --bg: #f5f7fa; --danger: #c62828; --warning: #ff9800; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin:0; padding-bottom:140px; color: #333; }
+    .header { background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; font-size: 14px; cursor: pointer; border: none; }
+    .container { max-width:800px; margin:20px auto; padding:0 15px; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .reset-btn { background: var(--danger); color: white; border:none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    .preview-card { background:#e8f5e9; padding:20px; border-radius:12px; margin-bottom:20px; border:2px solid #4caf50; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+    #taslakMetin { font-size:15px; line-height:1.6; color: #1b5e20; font-weight: 500; transition: filter 0.3s ease; }
+    #taslakMetin:not(:hover) { filter: blur(2px); }
+    .onlu-grup { border-radius: 12px; margin-bottom: 15px; overflow: hidden; border: 1px solid #ddd; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .grup-header { padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; color: #fff; }
+    .grup-content { padding: 8px; }
+    .g-0 { background: #5c6bc0; } .g-1 { background: #26a69a; } .g-2 { background: #ef5350; } .g-3 { background: #ab47bc; } .g-4 { background: #ffa726; }
+    .kat-grup { background:white; margin-bottom:10px; border-radius:8px; border:1px solid #eee; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .kat-header { padding:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; background: #fff; }
+    .kat-header.completed { background:#f1f8e9; border-left: 5px solid var(--success); }
+    .kat-adi { font-weight:bold; color: #444; }
+    .kat-content { padding:15px; background:#fafafa; border-top: 1px solid #eee; }
+    .hidden { display:none !important; }
+    .entry-row { display:flex; gap:8px; align-items:center; background:white; padding:10px; border:1px solid #eee; margin-bottom:8px; border-radius:6px; flex-wrap: wrap; }
+    input[type="number"], input[type="text"], select { padding:8px; border:1px solid #ccc; border-radius:6px; font-size: 14px; }
+    .logic-box { background:#fff3e0; padding:12px; border-radius:8px; border:1px dashed var(--warning); margin-top:10px; font-size: 13px; }
+    .apply-btn { background: var(--primary); color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 8px; font-weight: bold; }
+    .add-btn { background: var(--accent); color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; width: 100%; margin-bottom: 10px; font-weight: bold; }
+    .btn-remove { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    .footer { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:800px; padding:20px; background: var(--bg); border-top: 1px solid #ddd; z-index: 1001; }
+    .save-btn { background: var(--success); color:white; padding:18px; width:100%; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 12px rgba(46,125,50,0.3); }
+</style>
+</head>
+<body oncontextmenu="return false;">
+
+<div class="header">
+    <button onclick="window.location.href='bina.html?id=' + reportId" class="back">← Bina Sayfasına Dön</button>
+    <h1>BİNA KAT DETAYLARI</h1>
+</div>
+
+<div class="container">
+    <div class="top-bar">
+        <span style="font-weight: bold; color: var(--primary);">Kat Bazlı Veri Girişi</span>
+        <button class="reset-btn" onclick="verileriSifirla()">❌ VERİLERİ SIFIRLA</button>
+    </div>
+
+    <div class="preview-card">
+        <h4>MİMARİ PROJE VE MEVCUT DURUM METNİ</h4>
+        <div id="taslakMetin">Veri girişi bekleniyor...</div>
+    </div>
+
+    <div id="katListesi"></div>
+
+    <div class="footer">
+        <button class="save-btn" onclick="tumunuKaydet()">TÜMÜNÜ SİSTEME İŞLE VE BİNA SAYFASINA DÖN</button>
+    </div>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const reportId = params.get('id');
+    const allReports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || {};
+    const currentReport = allReports[reportId] || { bina: {} };
+    const savedKatVerileri = currentReport.katSatirVerileri || {};
+
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) { e.preventDefault(); }
+    });
+
+    let globalKatlar = [];
+
+    function init() {
+        const listContainer = document.getElementById('katListesi');
+        const bodrumCount = parseInt(currentReport.bina?.bodrumKatSayisi) || 0;
+        const normalCount = parseInt(currentReport.bina?.normalKatSayisi) || 0;
+
+        for (let i = bodrumCount; i >= 1; i--) globalKatlar.push({ id: `b${i}`, ad: `${i}. Bodrum Kat` });
+        globalKatlar.push({ id: 'zemin', ad: 'Zemin Kat' });
+        for (let i = 1; i <= normalCount; i++) globalKatlar.push({ id: `n${i}`, ad: `${i}. Normal Kat` });
+
+        for (let g = 0; g < Math.ceil(globalKatlar.length / 10); g++) {
+            const grupDiv = document.createElement('div');
+            grupDiv.className = `onlu-grup`;
+            const bas = g * 10;
+            const son = Math.min((g + 1) * 10, globalKatlar.length);
+            const renkSinifi = g > 4 ? 'g-4' : `g-${g}`;
+
+            grupDiv.innerHTML = `
+                <div class="grup-header ${renkSinifi}" onclick="toggleGrup('grup-${g}')">
+                    <span>${globalKatlar[bas].ad} - ${globalKatlar[son-1].ad}</span>
+                    <span>⇅</span>
+                </div>
+                <div id="grup-${g}" class="grup-content hidden"></div>
+            `;
+            listContainer.appendChild(grupDiv);
+            const grupContent = document.getElementById(`grup-${g}`);
+
+            for (let i = bas; i < son; i++) {
+                const kat = globalKatlar[i];
+                const katDiv = document.createElement('div');
+                katDiv.className = 'kat-grup';
+                
+                let targetOptions = '<option value="">Hedef Kat Seçiniz...</option>';
+                for(let j = i + 1; j < globalKatlar.length; j++) { targetOptions += `<option value="${j}">${globalKatlar[j].ad}</option>`; }
+
+                katDiv.innerHTML = `
+                    <div class="kat-header" id="header-${kat.id}" onclick="toggleKat('${kat.id}')">
+                        <span class="kat-adi">${kat.ad}</span>
+                        <span class="status-text" id="status-${kat.id}"></span>
+                    </div>
+                    <div class="kat-content hidden" id="content-${kat.id}">
+                        <div id="rows-${kat.id}"></div>
+                        <button class="add-btn" onclick="satirEkle('${kat.id}')">+ Giriş Ekle</button>
+                        <div class="logic-box">
+                            <label><input type="checkbox" onchange="toggleLogicPanel('${kat.id}', this)"> Ardışık katlara kopyala</label>
+                            <div id="panel-${kat.id}" class="hidden" style="margin-top:10px;">
+                                <select id="target-${kat.id}" style="width:100%">${targetOptions}</select>
+                                <div style="margin-top:5px;">
+                                    <label><input type="checkbox" id="last-${kat.id}" onchange="document.getElementById('target-${kat.id}').disabled = this.checked"> Son kata kadar uygula</label>
+                                </div>
+                                <button class="apply-btn" onclick="mantikUygula('${kat.id}', ${i})">KOPYALAMAYI BAŞLAT</button>
+                            </div>
+                        </div>
+                        <button onclick="katOnayla('${kat.id}')" style="width:100%; background:#2e7d32; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; margin-top:10px; font-weight:bold;">KATI ONAYLA</button>
+                    </div>
+                `;
+                grupContent.appendChild(katDiv);
+
+                if (savedKatVerileri[kat.id]) {
+                    savedKatVerileri[kat.id].forEach(data => satirEkle(kat.id, data));
+                    document.getElementById(`header-${kat.id}`).classList.add('completed');
+                    document.getElementById(`status-${kat.id}`).innerText = "✔ Tamam";
+                }
+            }
+        }
+        renderPreview();
+    }
+
+    function toggleGrup(id) { document.getElementById(id).classList.toggle('hidden'); }
+    function toggleKat(id) { document.getElementById(`content-${id}`).classList.toggle('hidden'); }
+    function toggleLogicPanel(id, cb) { document.getElementById(`panel-${id}`).classList.toggle('hidden', !cb.checked); }
+
+    function satirEkle(katId, data = null) {
+        const container = document.getElementById(`rows-${katId}`);
+        const rowId = Math.random().toString(36).substr(2, 5);
+        const div = document.createElement('div');
+        div.className = 'entry-row';
+        div.innerHTML = `
+            <input type="radio" name="tip_${katId}_${rowId}" value="B.B." ${(!data || data.tip === 'B.B.') ? 'checked' : ''} onchange="renderPreview()"> B.B.
+            <input type="radio" name="tip_${katId}_${rowId}" value="Ortak" ${(data?.tip === 'Ortak') ? 'checked' : ''} onchange="renderPreview()"> Ortak
+            <input type="number" class="qty" value="${data?.qty || 1}" style="width:40px" oninput="renderPreview()">
+            <input type="text" class="desc" value="${data?.desc || ''}" placeholder="Cins" style="flex:1" oninput="renderPreview()">
+            <button class="btn-remove" onclick="this.parentElement.remove(); renderPreview();">X</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function mantikUygula(kaynakId, kaynakIndex) {
+        const rows = document.getElementById(`rows-${kaynakId}`).querySelectorAll('.entry-row');
+        if(rows.length === 0) { alert("Kopyalanacak veri bulunamadı!"); return; }
+        const kopyalanacaklar = Array.from(rows).map(r => ({ tip: r.querySelector('input:checked').value, qty: r.querySelector('.qty').value, desc: r.querySelector('.desc').value }));
+        const isLast = document.getElementById(`last-${kaynakId}`).checked;
+        const targetVal = document.getElementById(`target-${kaynakId}`).value;
+        const bitisIndex = isLast ? globalKatlar.length - 1 : parseInt(targetVal);
+        if(!isLast && targetVal === "") { alert("Lütfen hedef kat seçiniz!"); return; }
+        for (let i = kaynakIndex + 1; i <= bitisIndex; i++) {
+            const hKat = globalKatlar[i];
+            const rowContainer = document.getElementById(`rows-${hKat.id}`);
+            rowContainer.innerHTML = "";
+            kopyalanacaklar.forEach(d => satirEkle(hKat.id, d));
+            document.getElementById(`header-${hKat.id}`).classList.add('completed');
+            document.getElementById(`status-${hKat.id}`).innerText = "✔ Tamam";
+        }
+        alert("Kopyalama işlemi başarıyla tamamlandı.");
+        renderPreview();
+    }
+
+    function katOnayla(id) { toggleKat(id); document.getElementById(`header-${id}`).classList.add('completed'); document.getElementById(`status-${id}`).innerText = "✔ Tamam"; renderPreview(); }
+
+    function renderPreview() {
+        let gruplanmisKatlar = [];
+        let toplamBB = 0;
+        let tumSatirVerileri = {};
+        globalKatlar.forEach((kat) => {
+            const rows = document.getElementById(`rows-${kat.id}`)?.querySelectorAll('.entry-row') || [];
+            let icerikList = [];
+            let katSatirlari = [];
+            rows.forEach(r => {
+                const tip = r.querySelector('input:checked').value;
+                const qty = parseInt(r.querySelector('.qty').value) || 0;
+                const desc = r.querySelector('.desc').value || "";
+                katSatirlari.push({ tip, qty, desc });
+                if(desc || qty > 0) { icerikList.push(`${qty} ${desc}`); if (tip === "B.B.") toplamBB += qty; }
+            });
+            tumSatirVerileri[kat.id] = katSatirlari;
+            const icerik = icerikList.join(", ");
+            if (icerik) {
+                if (gruplanmisKatlar.length > 0 && gruplanmisKatlar[gruplanmisKatlar.length - 1].icerik === icerik) { gruplanmisKatlar[gruplanmisKatlar.length - 1].bitis = kat.ad; } 
+                else { gruplanmisKatlar.push({ baslangic: kat.ad, bitis: kat.ad, icerik: icerik }); }
+            }
+        });
+        let cumleParcalari = [];
+        gruplanmisKatlar.forEach((g) => {
+            let bAd = g.baslangic.replace(" Kat", "").replace(" kat", "");
+            let sAd = g.bitis.replace(" Kat", "").replace(" kat", "");
+            if (g.baslangic === g.bitis) cumleParcalari.push(`${bAd} katında ${g.icerik}`);
+            else cumleParcalari.push(`${bAd} ve ${sAd} katları arasında her birinde ${g.icerik}`);
+        });
+        const katDetayMetni = cumleParcalari.join(", ");
+        const tamMetin = "Mimari Projesinde ve mevcut durumda " + katDetayMetni + ` olmak üzere binada toplam ${toplamBB} adet bağımsız bölüm tescil edilmiştir.`;
+        document.getElementById('taslakMetin').innerText = tamMetin;
+        return { katDetayMetni, toplamBB, tumSatirVerileri };
+    }
+
+    function verileriSifirla() {
+        if(confirm("Tüm kat girişleri silinecektir. Emin misiniz?")) {
+            allReports[reportId].katSatirVerileri = {};
+            allReports[reportId].katDetayMetni = "";
+            localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
+            location.reload();
+        }
+    }
+
+    function tumunuKaydet() {
+        const data = renderPreview();
+        if (allReports[reportId]) {
+            if(!allReports[reportId].bina) allReports[reportId].bina = {};
+            allReports[reportId].katDetayMetni = data.katDetayMetni;
+            allReports[reportId].bina.toplamBagimsizBolum = data.toplamBB;
+            allReports[reportId].katSatirVerileri = data.tumSatirVerileri;
+            
+            // Kritik Zincir: Kat detayı girildiği an bina bilgilerindeki metin de güncellenmeli
+            // Ancak ana menü bayrağı bina.html'deki 'kaydet' butonuna bırakılmalı.
+            localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
+            window.location.href = `bina.html?id=${reportId}`;
+        }
+    }
+    window.onload = init;
+</script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>İMAR DURUMU</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f9; }
+    .container { max-width: 700px; margin: 20px auto; background: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 2px solid #3498db; margin-bottom: 20px; position: relative; }
+    header h1 { color: #3498db; margin: 0; font-size: 1.5em; }
+    .header-info { font-size: 0.9em; color: #555; text-align: right; }
+    .back-btn { position: absolute; left: 0; top: 0; background: #d32f2f; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; cursor: pointer; border: none; }
+    .form-section { margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    .form-section label { display: block; font-weight: bold; margin-top: 10px; margin-bottom: 5px; }
+    .radio-group { display: flex; flex-wrap: wrap; gap: 15px; }
+    .radio-group div { display: flex; align-items: center; }
+    
+    input[type="text"], input[type="number"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; }
+    #diğer-nizam-kutusu, #diğer-lejant-kutusu, #yola-tecavüz-alan-kutusu { margin-left: 10px; display: none; }
+    .hmax-bilgi { margin-left: 20px; font-size: 0.9em; color: #e74c3c; font-weight: bold; }
+    #otomatik-metin-alani { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; }
+    .mavi-kutu { background-color: #eaf6ff; border: 1px solid #3498db; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
+    .yesil-kutu { background-color: #ebf5eb; border: 1px solid #2ecc71; padding: 15px; border-radius: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 0.9em; }
+    table, th, td { border: 1px solid #3498db; }
+    th, td { padding: 8px; text-align: left; }
+    .action-button { padding: 15px 20px; font-size: 1.1em; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; display: block; width: 100%; transition: 0.3s; font-weight: bold; }
+    #kaydet-button { background-color: #2ecc71; color: white; }
+    .btn-menu { background-color: #9c27b0; color: white; }
+    .status-msg { display: none; text-align: center; font-weight: bold; margin-top: 10px; padding: 10px; border-radius: 8px; }
+</style>
+</head>
+<body oncontextmenu="return false;">
+    <div class="container">
+        <header>
+            <button onclick="anaMenuyeDon()" class="back-btn">← ANA MENÜ</button>
+            <h1>İMAR DURUMU</h1>
+            <div id="raporBilgi" class="header-info">Yükleniyor...</div>
+        </header>
+
+        <form id="imar-form">
+            <div class="form-section">
+                <label>İmar Planı İsmi</label>
+                <input type="text" id="imar-plani-ismi" placeholder="Örn: 1/1000 Ölçekli Uygulama İmar Planı" list="h_imar_ismi" onfocus="showList(this)" oninput="guncelle()">
+            </div>
+            
+            <div class="form-section">
+                <label>1. Yapı Nizamı:</label>
+                <div class="radio-group" id="yapi-nizam-group">
+                    <div><input type="radio" name="nizam" value="Ayrık" id="nizam-ayrik" onchange="guncelle()"><label for="nizam-ayrik">Ayrık</label></div>
+                    <div><input type="radio" name="nizam" value="Bitişik" id="nizam-bitisik" onchange="guncelle()"><label for="nizam-bitisik">Bitişik</label></div>
+                    <div><input type="radio" name="nizam" value="Blok" id="nizam-blok" onchange="guncelle()"><label for="nizam-blok">Blok</label></div>
+                    <div><input type="radio" name="nizam" value="Serbest" id="nizam-serbest" onchange="guncelle()"><label for="nizam-serbest">Serbest</label></div>
+                    <div><input type="radio" name="nizam" value="Diğer" id="nizam-diger" onchange="guncelle()"><label for="nizam-diger">Diğer</label></div>
+                    <input type="text" id="diğer-nizam-kutusu" placeholder="Belirtiniz" list="h_nizam_diger" onfocus="showList(this)" oninput="guncelle()">
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label for="kat-sayisi">2. Kat Sayısı:</label>
+                <input type="number" id="kat-sayisi" min="1" oninput="hmaxHesapla(); guncelle();">
+                <span id="hmax-output" class="hmax-bilgi"></span>
+            </div>
+
+            <div class="form-section">
+                <label for="taks">4. TAKS / 5. KAKS:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="taks" placeholder="TAKS (Örn: 0.40)" list="h_taks" onfocus="showList(this)" oninput="guncelle()">
+                    <input type="text" id="kaks" placeholder="KAKS (Örn: 1.60)" list="h_kaks" onfocus="showList(this)" oninput="guncelle()">
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label for="yola-terk">6. Yola Terk (m²):</label>
+                <input type="number" id="yola-terk" min="0" value="0" oninput="guncelle()">
+                <div id="tecavuz-sorusu" style="display: none; margin-top: 10px;">
+                    <label>Yola tecavüz var mı?</label>
+                    <div class="radio-group">
+                        <input type="radio" name="tecavuz" value="Hayır" id="tecavuz-hayir" checked onchange="guncelle()"> Hayır
+                        <input type="radio" name="tecavuz" value="Evet" id="tecavuz-evet" onchange="guncelle()"> Evet
+                        <input type="number" id="yola-tecavüz-alan-kutusu" placeholder="m²" oninput="guncelle()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label>7. Kentsel Dönüşüm Alanı mı?</label>
+                <div class="radio-group">
+                    <div><input type="radio" name="kentsel" value="Evet" id="kentsel-evet" onchange="guncelle()"><label for="kentsel-evet">Evet</label></div>
+                    <div><input type="radio" name="kentsel" value="Hayır" id="kentsel-hayir" checked onchange="guncelle()"><label for="kentsel-hayir">Hayır</label></div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <label>8. Riskli Yapı İlanı Var mı?</label>
+                <div class="radio-group">
+                    <div><input type="radio" name="riskli" value="Evet" id="riskli-evet" onchange="guncelle()"><label for="riskli-evet">Evet</label></div>
+                    <div><input type="radio" name="riskli" value="Hayır" id="riskli-hayir" checked onchange="guncelle()"><label for="riskli-hayir">Hayır</label></div>
+                </div>
+            </div>
+
+            <button type="button" id="kaydet-button" class="action-button" onclick="kaydet()">VERİLERİ KAYDET VE HAFIZAYA AL</button>
+            <div id="statusBox" class="status-msg"></div>
+            <button type="button" class="action-button btn-menu" onclick="anaMenuyeDon()">ANA MENÜYE DÖN</button>
+        </form>
+
+        <div id="otomatik-metin-alani">
+            <div class="mavi-kutu">
+                <h4>Özet Tablo (Banka İçin)</h4>
+                <table id="banka-tablo-output"></table>
+            </div>
+            <div class="yesil-kutu">
+                <h4>Tam Rapor Metni</h4>
+                <p id="rapor-metni-output"></p>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="h_imar_ismi"></datalist>
+    <datalist id="h_nizam_diger"></datalist>
+    <datalist id="h_taks"></datalist>
+    <datalist id="h_kaks"></datalist>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        let report = reports[id] || { imar: {} };
+
+        function showList(input) {
+            input.setAttribute('autocomplete', 'off');
+            const val = input.value;
+            input.value = '';
+            setTimeout(() => { input.value = val; }, 1);
+        }
+
+        function hafizaYukle() {
+            const listeler = ['imar_ismi', 'nizam_diger', 'taks', 'kaks'];
+            listeler.forEach(anahtar => {
+                let gecmis = JSON.parse(localStorage.getItem('h_imar_' + anahtar)) || [];
+                const dl = document.getElementById('h_' + anahtar);
+                if(dl) dl.innerHTML = gecmis.map(item => `<option value="${item}">`).join('');
+            });
+        }
+
+        function hmaxHesapla() {
+            const katVal = document.getElementById('kat-sayisi').value;
+            const kat = parseFloat(katVal);
+            if (!isNaN(kat) && kat > 0) {
+                const hmax = (kat * 3 + 0.5).toFixed(1);
+                document.getElementById('hmax-output').textContent = `(Hmax: ${hmax} m)`;
+            } else {
+                document.getElementById('hmax-output').textContent = "";
+            }
+        }
+
+        function guncelle() {
+            const planIsmi = document.getElementById('imar-plani-ismi').value || '...';
+            const nizamRadio = document.querySelector('input[name="nizam"]:checked');
+            const nizamVal = nizamRadio ? nizamRadio.value : "";
+            const nizam = nizamVal === 'Diğer' ? document.getElementById('diğer-nizam-kutusu').value : nizamVal;
+            
+            const kat = document.getElementById('kat-sayisi').value || "...";
+            const taks = document.getElementById('taks').value || "...";
+            const kaks = document.getElementById('kaks').value || "...";
+            const terk = parseFloat(document.getElementById('yola-terk').value) || 0;
+            const tecavuz = document.querySelector('input[name="tecavuz"]:checked').value;
+            const tecavuzM = tecavuz === 'Evet' ? (document.getElementById('yola-tecavüz-alan-kutusu').value || 0) : 0;
+            const kentsel = document.querySelector('input[name="kentsel"]:checked').value;
+            const riskli = document.querySelector('input[name="riskli"]:checked').value;
+
+            document.getElementById('tecavuz-sorusu').style.display = terk > 0 ? 'block' : 'none';
+            document.getElementById('diğer-nizam-kutusu').style.display = nizamVal === 'Diğer' ? 'inline' : 'none';
+            document.getElementById('yola-tecavüz-alan-kutusu').style.display = tecavuz === 'Evet' ? 'inline' : 'none';
+
+            // TABLO OLUŞTURMA (7 ve 8 Dahil)
+            let tabloHTML = `
+                <tr><td><b>İMAR PLANI İSMİ</b></td><td>${planIsmi}</td></tr>
+                <tr><td><b>YAPI NİZAMI</b></td><td>${nizam || '...'}</td></tr>
+                <tr><td><b>KAT ADEDİ</b></td><td>${kat} Kat</td></tr>
+                <tr><td><b>TAKS / KAKS</b></td><td>${taks} / ${kaks}</td></tr>
+                <tr><td><b>YOLA TERK</b></td><td>${terk} m²</td></tr>
+                <tr><td><b>TECAVÜZ</b></td><td>${tecavuz === 'Evet' ? tecavuzM + ' m²' : 'Yok'}</td></tr>
+                <tr><td><b>KENTSEL DÖNÜŞÜM</b></td><td>${kentsel.toUpperCase()}</td></tr>
+                <tr><td><b>RİSKLİ YAPI</b></td><td>${riskli.toUpperCase()}</td></tr>
+            `;
+            document.getElementById('banka-tablo-output').innerHTML = tabloHTML;
+
+            // METİN OLUŞTURMA (7 ve 8 Dahil)
+            let tecavuzMetni = terk > 0 ? 
+                (tecavuz === 'Evet' ? `Taşınmaz parselinin ${terk} m² yola terki bulunmakta olup, içindeki yapıların ${tecavuzM} m² tecavüzü söz konusudur.` : `Taşınmaz parselinin ${terk} m² yola terki bulunmakta olup, içindeki yapılarda yola tecavüz bulunmamaktadır.`) 
+                : `Taşınmaz parselinin yola terki bulunmamaktadır.`;
+
+            let raporMetni = `${report.ilce || 'İlgili'} Belediyesi ${planIsmi} uygulama imar planı içerisinde yer almakta olup, ${nizam} Nizam, ${kat} Kat, Taks: ${taks} - Kaks: ${kaks} yapılaşma şartlarındadır. ${tecavuzMetni} İmar Müdürlüğü'nden parselin kentsel dönüşüm alanında ${kentsel === 'Evet' ? 'olduğu' : 'olmadığı'} ve riskli yapı ilan ${riskli === 'Evet' ? 'edildiği' : 'edilmediği'} bilgisi alınmıştır.`;
+            
+            document.getElementById('rapor-metni-output').textContent = raporMetni;
+
+            return { metin: raporMetni, tablo: tabloHTML };
+        }
+
+        function kaydet() {
+            const data = guncelle();
+            const nizamRadio = document.querySelector('input[name="nizam"]:checked');
+            const katSayisi = document.getElementById('kat-sayisi').value;
+            
+            // --- EKSİK KONTROLÜ (Kat Adedi Dahil Edildi) ---
+            const eksikVar = (!document.getElementById('imar-plani-ismi').value || !nizamRadio || !katSayisi || !document.getElementById('taks').value || !document.getElementById('kaks').value);
+            
+            if (eksikVar) {
+                if (!confirm("⚠️ Kritik imar verileri (İsim, Nizam, Kat, Taks/Kaks) eksik. Yine de 'Eksik Veri' olarak kaydedilsin mi?")) return;
+            }
+
+            // --- HAFIZAYA EKLE ---
+            const hafizaAlanlari = [
+                { id: 'imar-plani-ismi', key: 'imar_ismi' },
+                { id: 'diğer-nizam-kutusu', key: 'nizam_diger' },
+                { id: 'taks', key: 'taks' },
+                { id: 'kaks', key: 'kaks' }
+            ];
+            hafizaAlanlari.forEach(f => {
+                const val = document.getElementById(f.id).value.trim();
+                if(val.length > 1) {
+                    let h = JSON.parse(localStorage.getItem('h_imar_' + f.key)) || [];
+                    if(!h.includes(val)) {
+                        h.unshift(val);
+                        localStorage.setItem('h_imar_' + f.key, JSON.stringify(h.slice(0,20)));
+                    }
+                }
+            });
+
+            // --- RAPORA MÜHÜRLEME ---
+            report.imar = {
+                imarPlaniIsmi: document.getElementById('imar-plani-ismi').value,
+                nizam: nizamRadio ? nizamRadio.value : "",
+                nizamDiger: document.getElementById('diğer-nizam-kutusu').value,
+                kat: katSayisi,
+                taks: document.getElementById('taks').value,
+                kaks: document.getElementById('kaks').value,
+                terk: document.getElementById('yola-terk').value,
+                tecavuz: document.querySelector('input[name="tecavuz"]:checked').value,
+                tecavuzMiktar: document.getElementById('yola-tecavüz-alan-kutusu').value,
+                kentsel: document.querySelector('input[name="kentsel"]:checked').value,
+                riskli: document.querySelector('input[name="riskli"]:checked').value
+            };
+            report.imarMetni = data.metin;
+            report.imarTablo = `<table>${data.tablo}</table>`;
+            report.imar_tamamlandi = !eksikVar;
+
+            reports[id] = report;
+            localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+
+            hafizaYukle();
+            const box = document.getElementById('statusBox');
+            box.style.display = 'block';
+            box.style.backgroundColor = eksikVar ? '#fff3cd' : '#d1e7dd';
+            box.style.color = eksikVar ? '#856404' : '#0f5132';
+            box.textContent = eksikVar ? "⚠️ EKSİK VERİYLE KAYDEDİLDİ" : "✅ İMAR DURUMU VE HAFIZA KAYDEDİLDİ";
+            setTimeout(() => box.style.display = 'none', 3000);
+        }
+
+        function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${id}`; }
+
+        window.onload = function() {
+            document.getElementById('raporBilgi').textContent = report.propertyName || "Rapor Bilgisi";
+            if(report.imar) {
+                const i = report.imar;
+                document.getElementById('imar-plani-ismi').value = i.imarPlaniIsmi || "";
+                document.getElementById('kat-sayisi').value = i.kat || "";
+                document.getElementById('taks').value = i.taks || "";
+                document.getElementById('kaks').value = i.kaks || "";
+                document.getElementById('yola-terk').value = i.terk || 0;
+                if(i.nizam) {
+                    const r = document.querySelector(`input[name="nizam"][value="${i.nizam}"]`);
+                    if(r) r.checked = true;
+                    if(i.nizam === 'Diğer') {
+                        document.getElementById('diğer-nizam-kutusu').style.display = 'inline';
+                        document.getElementById('diğer-nizam-kutusu').value = i.nizamDiger;
+                    }
+                }
+                if(i.tecavuz) document.querySelector(`input[name="tecavuz"][value="${i.tecavuz}"]`).checked = true;
+                if(i.tecavuz === 'Evet') {
+                    document.getElementById('yola-tecavüz-alan-kutusu').style.display = 'inline';
+                    document.getElementById('yola-tecavüz-alan-kutusu').value = i.tecavuzMiktar;
+                }
+                if(i.kentsel) document.querySelector(`input[name="kentsel"][value="${i.kentsel}"]`).checked = true;
+                if(i.riskli) document.querySelector(`input[name="riskli"][value="${i.riskli}"]`).checked = true;
+            }
+            hmaxHesapla();
+            hafizaYukle();
+            guncelle();
+        }
+    </script>
+</body>
+</html>

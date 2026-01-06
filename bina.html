@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bina Bilgileri</title>
+<style>
+    :root { --primary: #4a148c; --accent: #7c4dff; --success: #00c853; --warning: #ff9800; --bg: #f5f7fa; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin:0; padding-bottom:100px; color: #333; }
+    .header { background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding:25px; text-align:center; position:relative; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:30px; color:white; text-decoration:none; font-weight:bold; transition: 0.3s; cursor: pointer; border:none; }
+    .property-info { position:absolute; right:15px; top:12px; background:rgba(0,0,0,0.3); padding:8px 15px; border-radius:20px; font-size:13px; }
+    .container { max-width:900px; margin:20px auto; padding:0 15px; }
+    .form-group { margin-bottom: 20px; padding:20px; background:white; border-radius:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
+    .form-group strong { display: block; margin-bottom: 10px; color: var(--primary); font-size: 15px; }
+    .radio-group { display:flex; flex-wrap:wrap; gap:15px; }
+    .radio-group label { background: #eee; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+    input, select { padding:12px; width:100%; border:1px solid #ddd; border-radius:8px; font-size:16px; box-sizing:border-box; }
+    input:focus { border-color: var(--accent); outline: none; background: #fdfdfd; }
+    .btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+    .btn { color:white; padding:16px; border:none; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; text-align: center; text-decoration: none; transition: 0.3s; }
+    .btn-taslak { background: linear-gradient(to right, #2196f3, #00bcd4); grid-column: span 2; font-size: 18px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(33,150,243,0.3); }
+    .btn-kat { background: linear-gradient(to right, var(--warning), #f44336); }
+    .btn-save { background: var(--success); box-shadow: 0 4px 10px rgba(0,200,83,0.3); }
+    .btn-menu { background: #607d8b; grid-column: span 2; }
+    .taslak { background:#e8f5e9; padding:25px; border-radius:12px; margin-top:30px; border:2px solid #4caf50; font-size:17px; line-height:1.7; color: #1b5e20; white-space: pre-wrap; transition: filter 0.3s ease; }
+    .taslak:not(:hover) { filter: blur(2px); }
+    .status-msg { display: none; text-align: center; font-weight: bold; margin-top: 10px; padding: 10px; border-radius: 8px; }
+    .hidden { display:none !important; }
+</style>
+</head>
+<body oncontextmenu="return false;">
+<div class="header">
+    <button onclick="anaMenuyeDon()" class="back">← Rapor Detay</button>
+    <h1>BİNA BİLGİLERİ</h1>
+    <div class="property-info" id="propertyInfo">Yükleniyor...</div>
+</div>
+<div class="container">
+    <div class="form-group">
+        <strong>Bina Tipi</strong>
+        <div class="radio-group">
+            <label><input type="radio" name="binaTipi" value="tek" checked onchange="taslakOlustur()"> <span>Tek Bina</span></label>
+            <label><input type="radio" name="binaTipi" value="cok" onchange="taslakOlustur()"> <span>Birden Fazla Blok</span></label>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form-group"><strong>İl</strong><input type="text" id="il" readonly></div>
+        <div class="form-group"><strong>İlçe</strong><input type="text" id="ilce" readonly></div>
+    </div>
+    <div class="form-group"><strong>Mahalle</strong><input type="text" id="mahalle" readonly></div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form-group"><strong>Ada</strong><input type="text" id="ada" readonly></div>
+        <div class="form-group"><strong>Parsel</strong><input type="text" id="parsel" readonly></div>
+    </div>
+    <div class="form-group"><strong>Arsa Alanı (m²)</strong><input type="number" id="arsaAlani" oninput="taslakOlustur()"></div>
+    <div class="form-group"><strong>Yapı Nizamı</strong>
+        <select id="nizam" onchange="taslakOlustur()">
+            <option value="">Seçiniz</option>
+            <option value="Ayrık">Ayrık</option>
+            <option value="Bitişik">Bitişik</option>
+            <option value="Blok">Blok</option>
+            <option value="Serbest">Serbest</option>
+        </select>
+    </div>
+    <div id="blokAlanlari" class="hidden">
+        <div class="form-group"><strong>Toplam Blok Sayısı</strong><input type="number" id="blokSayisi" min="2" oninput="taslakOlustur()"></div>
+        <div class="form-group"><strong>Hangi Blokta?</strong><input type="text" id="hangiBlok" list="h_hangiBlok" onfocus="showList(this)" oninput="taslakOlustur()"></div>
+        <div class="form-group"><strong>Bloğun Parseldeki Konumu</strong><input type="text" id="blokKonum" list="h_blokKonum" onfocus="showList(this)" oninput="taslakOlustur()"></div>
+    </div>
+    <div class="form-group">
+        <strong>Yapı Sınıfı</strong>
+        <select id="yapiSinifi" onchange="taslakOlustur()">
+            <option value="">Seçiniz</option>
+            <option value="III.">III. Sınıf</option>
+            <option value="3A">3A</option>
+            <option value="3B">3B</option>
+            <option value="IV.">IV. Sınıf</option>
+            <option value="V.">V. Sınıf</option>
+            <option value="diger">Diğer (Belirtiniz)</option>
+        </select>
+        <input type="text" id="yapiSinifiDiger" class="hidden" style="margin-top:10px" placeholder="Sınıfı yazınız..." oninput="taslakOlustur()">
+    </div>
+    <div class="form-group" style="background: #f0f4ff; border: 1px solid #c5cae9;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div><strong>Bodrum Kat Sayısı</strong><input type="number" id="bodrumKatSayisi" value="0" oninput="taslakOlustur()"></div>
+            <div><strong>Normal Kat Sayısı</strong><input type="number" id="normalKatSayisi" value="0" oninput="taslakOlustur()"></div>
+        </div>
+    </div>
+    <div class="form-group"><strong>Giriş Kotu / Cephesi</strong>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input type="text" id="girisKotu" placeholder="Kot" list="h_girisKotu" onfocus="showList(this)" oninput="taslakOlustur()">
+            <input type="text" id="girisCephe" placeholder="Cephe" list="h_girisCephe" onfocus="showList(this)" oninput="taslakOlustur()">
+        </div>
+    </div>
+    <div class="form-group"><strong>Yapı Malzeme Detayları (Hafızalı)</strong>
+        <input type="text" id="girisKapi" placeholder="Giriş kapısı tipi" style="margin-bottom:10px" list="h_girisKapi" onfocus="showList(this)" oninput="taslakOlustur()">
+        <input type="text" id="merdivenZemin" placeholder="Merdiven kaplaması" style="margin-bottom:10px" list="h_merdivenZemin" onfocus="showList(this)" oninput="taslakOlustur()">
+        <input type="text" id="disCephe" placeholder="Dış cephe kaplaması" list="h_disCephe" onfocus="showList(this)" oninput="taslakOlustur()">
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form-group"><strong>Asansör</strong>
+            <select id="asansor" onchange="taslakOlustur()"><option value="yoktur">Yok</option><option value="vardır">Var</option></select>
+        </div>
+        <div class="form-group"><strong>Isınma</strong><input type="text" id="isinma" placeholder="Isınma tipi" list="h_isinma" onfocus="showList(this)" oninput="taslakOlustur()"></div>
+    </div>
+    <button class="btn btn-taslak" onclick="taslakOlustur()">BİNA ANALİZ METNİNİ GÜNCELLE</button>
+    <div class="btn-container">
+        <button class="btn btn-save" onclick="kaydet()">BİLGİLERİ KAYDET (SAYFADA KAL)</button>
+        <button class="btn btn-kat" onclick="katDetayAc()">KAT DETAYLARINI GİR/DÜZELT</button>
+        <button class="btn btn-menu" onclick="anaMenuyeDon()">ANA MENÜYE DÖN</button>
+    </div>
+    <div id="statusBox" class="status-msg"></div>
+    <div id="taslak" class="taslak" oncopy="return false">Metin burada oluşacak...</div>
+</div>
+
+<datalist id="h_girisKotu"></datalist><datalist id="h_girisCephe"></datalist>
+<datalist id="h_girisKapi"></datalist><datalist id="h_merdivenZemin"></datalist>
+<datalist id="h_disCephe"></datalist><datalist id="h_isinma"></datalist>
+<datalist id="h_hangiBlok"></datalist><datalist id="h_blokKonum"></datalist>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    const hafizaInputlar = ['girisKotu', 'girisCephe', 'girisKapi', 'merdivenZemin', 'disCephe', 'isinma', 'hangiBlok', 'blokKonum'];
+
+    function getLatestData() {
+        const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        const report = reports[id] || { bina: {} };
+        return { reports, report };
+    }
+
+    function showList(input) {
+        input.setAttribute('autocomplete', 'off');
+        const val = input.value;
+        input.value = '';
+        setTimeout(() => { input.value = val; }, 1);
+    }
+
+    function hafizaYukle() {
+        hafizaInputlar.forEach(alanId => {
+            let gecmis = JSON.parse(localStorage.getItem('h_bina_' + alanId)) || [];
+            const dl = document.getElementById('h_' + alanId);
+            if(dl) dl.innerHTML = gecmis.map(item => `<option value="${item}">`).join('');
+        });
+    }
+
+    function toggleBlokFields() {
+        const isCok = document.querySelector('input[name="binaTipi"][value="cok"]').checked;
+        document.getElementById('blokAlanlari').classList.toggle('hidden', !isCok);
+    }
+
+    function taslakOlustur() {
+        const { report: r } = getLatestData();
+        const bT = document.querySelector('input[name="binaTipi"]:checked').value;
+        const aA = document.getElementById('arsaAlani').value || "...";
+        const nizam = document.getElementById('nizam').value || "...";
+        const yS = document.getElementById('yapiSinifi').value === "diger" ? document.getElementById('yapiSinifiDiger').value : document.getElementById('yapiSinifi').value;
+        const bodrum = document.getElementById('bodrumKatSayisi').value || "0";
+        const normal = document.getElementById('normalKatSayisi').value || "0";
+        const toplamKat = parseInt(bodrum) + 1 + parseInt(normal);
+        const asansor = document.getElementById('asansor').value;
+        const katMetni = r.katDetayMetni || "KAT DETAYI GİRİLMEDİ";
+        const bbSayisi = r.bina?.toplamBagimsizBolum || 0;
+        
+        let metin = "";
+        const ortak = `${r.il || '...'} İli, ${r.ilce || '...'} ilçesi, ${r.mahalle || '...'} Mahallesinde ${r.ada || '...'} Ada ${r.parsel || '...'} Nolu Parselde konumlu ${aA} m² arsa üzerinde ${nizam} nizamda `;
+
+        if (bT === "tek") {
+            metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${yS || '...'} yapı sınıfında inşa edilmiş yapıdır. Değerleme konusu taşınmaz ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Bina girişi ${document.getElementById('girisKotu').value || '...'} seviyesinden ${document.getElementById('girisCephe').value || '...'} cephesinden sağlanmaktadır. Bina giriş kapısı ${document.getElementById('girisKapi').value || '...'} kapıdır. Binanın giriş ve merdiven zeminleri ${document.getElementById('merdivenZemin').value || '...'} olup bina dış cephesi ${document.getElementById('disCephe').value || '...'}’dır. Binada asansör ${asansor}. Bina ısıtma sistemi ${document.getElementById('isinma').value || '...'}’dır.`;
+        } else {
+            const bS = document.getElementById('blokSayisi').value || "...";
+            metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${bS} blokta ${yS || '...'} yapı sınıfında inşa edilmiştir. Taşınmazın bulunduğu ${document.getElementById('hangiBlok').value || '...'} Blok parselin ${document.getElementById('blokKonum').value || '...'} bulunan yapıdır. ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Taşınmaz girişi ${document.getElementById('girisKotu').value || '...'} seviyesinden ${document.getElementById('girisCephe').value || '...'} cephesinden sağlanmaktadır. Giriş kapısı ${document.getElementById('girisKapi').value || '...'} kapıdır. Bina giriş ve merdiven zeminleri ${document.getElementById('merdivenZemin').value || '...'} olup dış cephesi ${document.getElementById('disCephe').value || '...'}’dır. Taşınmazda asansör ${asansor}. Isıtma sistemi ${document.getElementById('isinma').value || '...'}’dır.`;
+        }
+        document.getElementById('taslak').innerText = metin;
+        return metin;
+    }
+
+    function kaydet() {
+        const { reports: allReports, report: r } = getLatestData();
+        const metin = taslakOlustur();
+
+        // Hafıza İşleme
+        hafizaInputlar.forEach(alanId => {
+            const val = document.getElementById(alanId).value.trim();
+            if(val.length > 1) {
+                let h = JSON.parse(localStorage.getItem('h_bina_' + alanId)) || [];
+                if(!h.includes(val)) { h.unshift(val); localStorage.setItem('h_bina_' + alanId, JSON.stringify(h.slice(0, 20))); }
+            }
+        });
+
+        // Denetim (Sıfır Tolerans)
+        const arsa = document.getElementById('arsaAlani').value;
+        const nizam = document.getElementById('nizam').value;
+        const yapiS = document.getElementById('yapiSinifi').value;
+        const disCephe = document.getElementById('disCephe').value;
+        const bbSayisi = parseInt(r.bina?.toplamBagimsizBolum) || 0;
+        
+        const eksikVar = (!arsa || !nizam || !yapiS || !disCephe || bbSayisi === 0);
+
+        if (eksikVar) {
+            let hata = "⚠️ DİKKAT: Eksik veriler var!\n";
+            if(!disCephe) hata += "- Dış Cephe Kaplaması girilmemiş.\n";
+            if(bbSayisi === 0) hata += "- Kat Detayları (B.B. Sayısı) girilmemiş.\n";
+            if(!confirm(hata + "\nSARI BAYRAK ile kaydedilsin mi?")) return;
+        }
+
+        allReports[id].bina = {
+            binaTipi: document.querySelector('input[name="binaTipi"]:checked').value,
+            arsaAlani: arsa,
+            nizam: nizam,
+            blokSayisi: document.getElementById('blokSayisi').value,
+            yapiSinifi: yapiS,
+            yapiSinifiDiger: document.getElementById('yapiSinifiDiger').value,
+            hangiBlok: document.getElementById('hangiBlok').value,
+            blokKonum: document.getElementById('blokKonum').value,
+            bodrumKatSayisi: document.getElementById('bodrumKatSayisi').value,
+            normalKatSayisi: document.getElementById('normalKatSayisi').value,
+            girisKotu: document.getElementById('girisKotu').value,
+            girisCephe: document.getElementById('girisCephe').value,
+            girisKapi: document.getElementById('girisKapi').value,
+            merdivenZemin: document.getElementById('merdivenZemin').value,
+            disCephe: disCephe,
+            asansor: document.getElementById('asansor').value,
+            isinma: document.getElementById('isinma').value,
+            metin: metin,
+            toplamBagimsizBolum: bbSayisi
+        };
+
+        allReports[id].bina_tamamlandi = !eksikVar; 
+        localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
+        
+        const box = document.getElementById('statusBox');
+        box.style.display = 'block';
+        box.style.backgroundColor = eksikVar ? '#fff3cd' : '#d1e7dd';
+        box.textContent = eksikVar ? "⚠️ EKSİK VERİYLE KAYDEDİLDİ" : "✅ BİNA VERİLERİ MÜHÜRLENDİ";
+        setTimeout(() => box.style.display = 'none', 3000);
+        hafizaYukle();
+    }
+
+    function katDetayAc() { kaydet(); window.location.href = `kat-detay.html?id=${id}`; }
+    function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${id}`; }
+
+    window.onload = function() {
+        const { report } = getLatestData();
+        document.getElementById('propertyInfo').textContent = (report.propertyName || "Rapor Bilgisi");
+        document.getElementById('il').value = report.il || '';
+        document.getElementById('ilce').value = report.ilce || '';
+        document.getElementById('mahalle').value = report.mahalle || '';
+        document.getElementById('ada').value = report.ada || '';
+        document.getElementById('parsel').value = report.parsel || '';
+
+        if (report.bina) {
+            const b = report.bina;
+            const targetRadio = document.querySelector(`input[name="binaTipi"][value="${b.binaTipi || 'tek'}"]`);
+            if(targetRadio) targetRadio.checked = true;
+            document.getElementById('arsaAlani').value = b.arsaAlani || '';
+            document.getElementById('nizam').value = b.nizam || '';
+            document.getElementById('blokSayisi').value = b.blokSayisi || '';
+            document.getElementById('yapiSinifi').value = b.yapiSinifi || '';
+            document.getElementById('yapiSinifiDiger').value = b.yapiSinifiDiger || '';
+            document.getElementById('hangiBlok').value = b.hangiBlok || '';
+            document.getElementById('blokKonum').value = b.blokKonum || '';
+            document.getElementById('bodrumKatSayisi').value = b.bodrumKatSayisi || '0';
+            document.getElementById('normalKatSayisi').value = b.normalKatSayisi || '0';
+            document.getElementById('girisKotu').value = b.girisKotu || '';
+            document.getElementById('girisCephe').value = b.girisCephe || '';
+            document.getElementById('girisKapi').value = b.girisKapi || '';
+            document.getElementById('merdivenZemin').value = b.merdivenZemin || '';
+            document.getElementById('disCephe').value = b.disCephe || '';
+            document.getElementById('asansor').value = b.asansor || 'yoktur';
+            document.getElementById('isinma').value = b.isinma || '';
+            if(b.yapiSinifi === 'diger') document.getElementById('yapiSinifiDiger').classList.remove('hidden');
+        }
+        toggleBlokFields();
+        hafizaYukle();
+        taslakOlustur();
+        document.getElementById('yapiSinifi').addEventListener('change', function() {
+            document.getElementById('yapiSinifiDiger').classList.toggle('hidden', this.value !== "diger");
+        });
+        document.querySelectorAll('input[name="binaTipi"]').forEach(r => r.addEventListener('change', toggleBlokFields));
+    };
+</script>
+</body>
+</html>

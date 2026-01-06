@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Referans Bilgiler</title>
+<style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:#f4f7f9; margin:0; padding-bottom:100px; color:#333; }
+    .header { background: linear-gradient(135deg,#4a148c,#7c4dff); color:white; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:30px; color:white; text-decoration:none; font-weight:bold; cursor:pointer; border:none; }
+    .container { max-width:900px; margin:30px auto; padding:20px; background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .info { font-size:16px; color:#555; text-align:center; margin-bottom:30px; line-height:1.6; }
+    textarea { width:100%; height:600px; padding:20px; border:1px solid #ddd; border-radius:12px; font-size:16px; font-family:'Courier New', monospace; line-height:1.6; background:#f9f9f9; }
+    textarea:focus { border-color:#7c4dff; outline:none; background:#fff; }
+    .btn { padding:20px; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; margin-top:20px; width:100%; }
+    .btn-save { background:#00c853; color:white; }
+    .btn-back { background:#6c757d; color:white; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="header">
+    <button onclick="geriDon()" class="back">← Geri Dön</button>
+    <h1>REFERANS BİLGİLER</h1>
+</div>
+<div class="container">
+    <p class="info">
+        Bu sayfa sadece <strong>sizin</strong> kullanımınız için.<br>
+        Posta kodları, inşaat maliyetleri, banka için gerekli tablolar, birim fiyatlar vb. bilgileri buraya kaydedin.<br>
+        Rapor yazarken ihtiyacınız olduğunda açıp bakın, kopyalayın.<br>
+        <strong>Rapor Sihirbazı'nda görünmez</strong> – tamamen gizli ve bağımsızdır.
+    </p>
+    <textarea id="referansIcerik" placeholder="Buraya istediğiniz bilgileri yazın...&#10;&#10;Örnek kullanım:&#10;&#10;İSTANBUL POSTA KODLARI&#10;-------------------&#10;Kadıköy: 34710 - 34746&#10;Üsküdar: 34660 - 34699&#10;Beşiktaş: 34353 - 34357&#10;&#10;İNŞAAT BİRİM FİYATLARI (2025)&#10;-----------------------------&#10;Beton (C25): 1.800 TL/m³&#10;Demir (Q16): 12.500 TL/ton&#10;Seramik: 250 TL/m²"></textarea>
+    <button class="btn btn-save" onclick="kaydet()">KAYDET</button>
+    <button class="btn btn-back" onclick="geriDon()">GERİ DÖN (YENİ KAYIT SAYFASINA)</button>
+</div>
+<script>
+    function kaydet() {
+        let tumReferans = localStorage.getItem('tum_referans_bilgiler') || '';
+        const yeniIcerik = document.getElementById('referansIcerik').value.trim();
+        if (yeniIcerik && tumReferans.indexOf(yeniIcerik) === -1) {
+            tumReferans = yeniIcerik + '\n\n' + tumReferans; // En yeni en üstte
+        }
+        localStorage.setItem('tum_referans_bilgiler', tumReferans);
+        alert("Referans bilgiler kaydedildi! (Raporun içinde görünmez)");
+    }
+
+    function geriDon() {
+        window.location.href = 'yeni_kayit.html';
+    }
+
+    window.onload = () => {
+        const kaydedilen = localStorage.getItem('tum_referans_bilgiler') || '';
+        document.getElementById('referansIcerik').value = kaydedilen;
+    };
+</script>
+</body>
+</html>
