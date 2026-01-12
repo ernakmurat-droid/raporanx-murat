@@ -1,129 +1,165 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
-
-    <title>Tapu Kayıt ve Referanslar</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root { --primary: #0d6efd; --danger: #d32f2f; --success: #198754; --bg: #f0f2f5; }
-        body { background-color: var(--bg); padding: 15px; font-family: 'Segoe UI', sans-serif; }
-        .card { border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; background: #fff; }
-        .result-body { background: white; border: 1px solid #dee2e6; padding: 25px; border-radius: 0 0 10px 10px; white-space: pre-wrap; font-size: 14.5px; transition: filter 0.3s ease; }
-        .result-body:not(:hover) { filter: blur(2.5px); }
-        
-        /* REFERANS PANELİ STİLLERİ */
-        .ref-panel { position: fixed; right: -320px; top: 0; width: 300px; height: 100%; background: #2c3e50; color: white; box-shadow: -5px 0 15px rgba(0,0,0,0.3); transition: 0.4s; z-index: 2000; padding: 20px; }
-        .ref-panel.active { right: 0; }
-        .ref-toggle { position: fixed; right: 0; top: 50%; transform: translateY(-50%); background: #f39c12; color: white; padding: 15px 8px; cursor: pointer; border-radius: 10px 0 0 10px; writing-mode: vertical-rl; font-weight: bold; z-index: 2001; }
-        .ref-content textarea { width: 100%; height: 75vh; background: rgba(255,255,255,0.1); border: 1px solid #455a64; color: white; padding: 10px; font-size: 13px; border-radius: 5px; outline: none; }
-    </style>
-</head>
-<body oncontextmenu="return false;">
-
-<div class="ref-toggle" onclick="document.getElementById('refPanel').classList.toggle('active')">
-    📚 REFERANS NOTLARIM
-</div>
-
-<div class="ref-panel" id="refPanel">
-    <h5 class="mb-3 text-warning">Genel Referanslar</h5>
-    <p style="font-size: 11px; opacity: 0.7;">Buraya yazdığınız bilgiler tüm raporlarda ortak görünür ve buluta yedeklenir.</p>
-    <div class="ref-content">
-        <textarea id="genelReferansInput" placeholder="Birim maliyetler, katsayılar, telefonlar..."></textarea>
-        <button class="btn btn-warning btn-sm w-100 mt-2 fw-bold" onclick="referansKaydet()">NOTLARI BULUTA İŞLE</button>
-    </div>
-</div>
-
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-lg-7">
-            <div class="card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <button onclick="anaMenuyeDon()" class="btn btn-danger px-4 fw-bold">← MENÜYE DÖN</button>
-                    <h4 class="m-0 fw-bold text-primary">TAPU VE TAKYİDAT GİRİŞİ</h4>
-                    <button onclick="kaydet()" class="btn btn-success px-4 fw-bold">KAYDET</button>
-                </div>
-
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6"><label class="fw-bold mb-1">Tarih</label><input type="date" id="tarihInput" class="form-control"></div>
-                    <div class="col-md-6"><label class="fw-bold mb-1">Saat</label><input type="time" id="saatInput" class="form-control"></div>
-                </div>
-                <div id="malikAlani">
-                    <table class="table border"><tbody id="malikGövde"></tbody></table>
-                    <button class="btn btn-outline-primary w-100" onclick="malikEkle()">+ Malik Ekle</button>
-                </div>
-                <button class="btn btn-success w-100 mt-4 py-3 fw-bold" onclick="kaydet()">VERİLERİ BULUTA MÜHÜRLE</button>
-            </div>
-        </div>
-        <div class="col-lg-5">
-            <div class="bg-dark text-white p-2 rounded-top fw-bold">📄 ÖNİZLEME</div>
-            <div class="result-body" id="b1_sonuc"></div>
-        </div>
-    </div>
-</div>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
 <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-    let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    let report = reports[id];
+    // 1. ADIM: Proje Yapılandırması
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
 
+    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
     auth.onAuthStateChanged((user) => {
-        if (!user || !id || !report) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('id');
+
+        // Giriş yapılmamışsa index'e at
+        if (!user) {
+            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
             window.location.href = 'index.html';
-        } else {
-            baslat();
-            referansYukle(); // Referansları buluttan çek
+            return;
         }
+
+        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
+        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
+            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log("Yetki Onaylandı: " + user.email);
     });
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yeni Rapor Oluştur</title>
+<style>
+    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #ba68c8); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
+    .container { max-width: 600px; margin: 0 auto; text-align: center; }
+    h1 { font-size: 32px; margin-bottom: 30px; }
+    form { background: rgba(255,255,255,0.2); padding: 30px; border-radius: 15px; }
+    label { display: block; margin: 15px 0 5px; font-weight: bold; text-align: left; }
+    input { width: 100%; padding: 14px; border: none; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
+    button { background: #00c853; color: white; padding: 18px; border: none; border-radius: 12px; width: 100%; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    button:hover { background: #00b140; }
+    .geri-btn { background: #6c757d; margin-top: 15px; }
+    .geri-btn:hover { background: #5a6268; }
+    .referans-btn { background: #2196f3; margin-top: 15px; }
+    .referans-btn:hover { background: #1976d2; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>YENİ RAPOR OLUŞTUR</h1>
+    <form>
+        <label>Gayrimenkul Adı</label>
+        <input type="text" id="propertyName" placeholder="Örn: Deniz Apartmanı Daire 5">
 
-    // REFERANS SİSTEMİ FONKSİYONLARI
-    async function referansKaydet() {
-        const notlar = document.getElementById('genelReferansInput').value;
-        const user = auth.currentUser;
-        if (user) {
-            try {
-                await db.collection("users").doc(user.uid).set({ genel_referanslar: notlar }, { merge: true });
-                alert("✅ Referans notlarınız tüm raporlar için güncellendi!");
-            } catch (e) { alert("Hata: " + e.message); }
-        }
-    }
+        <label>İl</label>
+        <input type="text" id="il" placeholder="Örn: İstanbul">
 
-    function referansYukle() {
-        const user = auth.currentUser;
-        if (user) {
-            db.collection("users").doc(user.uid).get().then((doc) => {
-                if (doc.exists && doc.data().genel_referanslar) {
-                    document.getElementById('genelReferansInput').value = doc.data().genel_referanslar;
-                }
-            });
-        }
-    }
+        <label>İlçe</label>
+        <input type="text" id="ilce" placeholder="Örn: Kadıköy">
 
-    // TAPU KAYIT FONKSİYONLARI (Senin Orijinal Kodların)
-    function baslat() { /* Orijinal baslat kodun */ }
-    function guncelle() { /* Orijinal guncelle kodun */ }
-    function malikEkle() { /* Orijinal malikEkle kodun */ }
+        <label>Mahalle</label>
+        <input type="text" id="mahalle" placeholder="Örn: Osmanağa">
+
+        <label>Ada</label>
+        <input type="text" id="ada" placeholder="Örn: 123">
+
+        <label>Parsel</label>
+        <input type="text" id="parsel" placeholder="Örn: 45">
+
+        <button type="button" onclick="raporOlustur()">YENİ RAPOR OLUŞTUR</button>
+
+        <button type="button" class="referans-btn" onclick="referansAc()">REFERANS BİLGİLER (Posta Kodu, Maliyet vb.)</button>
+
+        <button type="button" class="geri-btn" onclick="anaSayfayaDon()">ANA SAYFAYA DÖN</button>
+    </form>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // 1. Senin Gerçek Firebase Anahtarların Mühürlendi
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
     
-    async function kaydet() {
-        // ... Orijinal kaydetme mantığın ...
-        reports[id] = report;
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // Buluta Yedekleme Fonksiyonu
+    async function bulutaGonder() {
         const user = auth.currentUser;
         if (user) {
-            await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
-            alert("✅ Rapor verileri kaydedildi.");
-            anaMenuyeDon();
+            const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+            await db.collection("users").doc(user.uid).set({
+                gayrimenkul_reports: reports,
+                lastUpdate: new Date().toISOString()
+            }, { merge: true });
+            console.log("Yeni rapor buluta işlendi ✅");
         }
     }
 
-    function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${id}`; }
+    async function raporOlustur() {
+        const report = {
+            propertyName: document.getElementById('propertyName').value.trim() || "İsimsiz Gayrimenkul",
+            il: document.getElementById('il').value.trim(),
+            ilce: document.getElementById('ilce').value.trim(),
+            mahalle: document.getElementById('mahalle').value.trim(),
+            ada: document.getElementById('ada').value.trim(),
+            parsel: document.getElementById('parsel').value.trim(),
+            createdAt: new Date().toLocaleString('tr-TR'),
+            bina: {},
+            bbDetay: {},
+            emsaller: [],
+            konumCevre: {},
+            tapu: {},
+            imar: {},
+            belgeler: {}
+        };
+
+        let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        reports.push(report);
+        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        
+        const newId = reports.length - 1;
+
+        // ÖNCE BULUTA GÖNDERELİM
+        await bulutaGonder();
+
+        alert("Rapor oluşturuldu ve buluta yedeklendi!");
+        window.location.href = "rapor-detay.html?id=" + newId;
+    }
+
+    function referansAc() { window.open('referans-bilgiler.html', '_blank'); }
+    function anaSayfayaDon() { window.location.href = 'index.html'; }
 </script>
 </body>
 </html>
