@@ -2,12 +2,12 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Konum ve Çevre Özellikleri - Raporan X</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
     <script src="firebase-config.js"></script>
 
     <style>
@@ -21,16 +21,22 @@
         .section-title { grid-column: span 2; border-left: 5px solid var(--primary); margin-top: 20px; padding-left: 10px; color: var(--primary); font-weight: bold; background: #f0f2ff; padding: 8px; border-radius: 0 8px 8px 0; }
         .input-item { display: flex; flex-direction: column; }
         .input-item label { font-weight: 600; font-size: 13px; color: #444; margin-bottom: 5px; }
-        input, textarea { padding:12px; border:1px solid #ccc; border-radius:10px; font-size:15px; width: 100%; box-sizing: border-box; }
-        .btn-save { background: var(--success); color: white; padding: 20px; border: none; border-radius: 15px; width: 100%; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 30px; }
-        .preview-box { background: #333; color: #00ff00; padding: 20px; border-radius: 15px; font-family: 'Courier New', monospace; white-space: pre-wrap; font-size: 13px; margin-top: 20px; border: 2px solid #555; }
+        input, textarea { padding:12px; border:1px solid #ccc; border-radius:10px; font-size:15px; background: #fff; transition: 0.3s; width: 100%; box-sizing: border-box; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(26,35,126,0.1); outline: none; }
+        .radio-group { display: flex; gap: 20px; padding: 10px 0; }
+        .radio-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .full-width { grid-column: span 2; }
+        .btn-save { background: var(--success); color: white; padding: 20px; border: none; border-radius: 15px; width: 100%; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 15px rgba(0,200,83,0.3); }
+        .preview-box { background: #333; color: #00ff00; padding: 20px; border-radius: 15px; font-family: 'Courier New', monospace; white-space: pre-wrap; font-size: 13px; margin-top: 20px; border: 2px solid #555; transition: filter 0.3s ease; }
+        .preview-box:not(:hover) { filter: blur(1.5px); }
+        .disabled-input { background: #eee; cursor: not-allowed; }
         .save-status { display: none; text-align: center; font-weight: bold; margin-top: 15px; padding: 10px; border-radius: 10px; }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
 <div class="header">
-    <button onclick="anaMenuyeDon()" class="back">← Geri</button>
+    <button onclick="anaMenuyeDon()" class="back">← Menüye Dön</button>
     <h1>KONUM VE ÇEVRESEL ÖZELLİKLER</h1>
     <div id="raporBilgi" style="font-size: 14px; opacity: 0.9; margin-top:5px; font-weight: bold;">Yükleniyor...</div>
 </div>
@@ -39,17 +45,44 @@
     <div class="form-container">
         <form id="mainForm" onsubmit="return false;">
             <div class="grid-form">
-                <div class="section-title">📊 TABLO VE METİN VERİLERİ</div>
+                <div class="section-title">📊 TABLO VERİLERİ (1-16)</div>
                 <div class="input-item"><label>(1) UAVT</label><input type="text" id="v1"></div>
+                <div class="input-item"><label>(2) Koordinat X</label><input type="text" id="v2"></div>
+                <div class="input-item"><label>(3) Koordinat Y</label><input type="text" id="v3"></div>
                 <div class="input-item"><label>(4) İli</label><input type="text" id="v4"></div>
                 <div class="input-item"><label>(5) İlçesi</label><input type="text" id="v5"></div>
                 <div class="input-item"><label>(6) Mahallesi</label><input type="text" id="v6"></div>
+                <div class="input-item"><label>(7) Cadde/Sokak</label><input type="text" id="v7"></div>
+                <div class="input-item"><label>(8) Dış Kapı No</label><input type="text" id="v8"></div>
+                <div class="input-item"><label>(9) Bulunduğu Kat</label><input type="text" id="v9"></div>
+                <div class="input-item"><label>(10) Daire No</label><input type="text" id="v10"></div>
+                <div class="input-item"><label>(11) Bölge Gelişimi</label><input type="text" id="v11"></div>
+                <div class="input-item"><label>(12) Bölge Yapılaşması</label><input type="text" id="v12"></div>
+                <div class="input-item"><label>(13) Yapı Tipleri</label><input type="text" id="v13"></div>
+                <div class="input-item"><label>(14) Gelir Düzeyi</label><input type="text" id="v14"></div>
+                <div class="input-item"><label>(15) Yakın Yapı 1</label><input type="text" id="v15"></div>
+                <div class="input-item"><label>(16) Yakın Yapı 2</label><input type="text" id="v16"></div>
+                
+                <div class="section-title">📝 KUTSAL METİN DEĞİŞKENLERİ</div>
                 <div class="input-item full-width"><label>Ulaşım Tarifi</label><textarea id="ulasimTarifi" rows="3"></textarea></div>
+                <div class="input-item full-width"><label>Ulaşım Olanakları</label><input type="text" id="ulasimOlanaklari"></div>
+                
+                <div class="input-item">
+                    <label>Altyapı Durumu</label>
+                    <div class="radio-group">
+                        <label class="radio-item"><input type="radio" name="altyapi" value="Evet" checked onclick="toggleAltyapi(true)"> Evet</label>
+                        <label class="radio-item"><input type="radio" name="altyapi" value="Hayır" onclick="toggleAltyapi(false)"> Hayır</label>
+                    </div>
+                </div>
+                <div class="input-item">
+                    <label>Altyapı Açıklaması</label>
+                    <input type="text" id="altyapiAciklama" class="disabled-input" disabled>
+                </div>
             </div>
         </form>
 
         <div class="section-title">👀 CANLI ÖNİZLEME</div>
-        <div id="livePreview" class="preview-box">Veri bekleniyor...</div>
+        <div class="preview-box" id="livePreview">Veri bekleniyor...</div>
         
         <button class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET VE BULUTA MÜHÜRLE</button>
         <div id="statusMsg" class="save-status"></div>
@@ -62,36 +95,59 @@
     
     let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
     let report = reports[id] || {};
-    const inputIds = ['v1','v4','v5','v6','ulasimTarifi'];
+    const inputIds = ['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'];
 
     window.onload = () => {
         if (!id) { window.location.href = 'index.html'; return; }
-        document.getElementById('raporBilgi').textContent = report.propertyName || "Rapor";
+        document.getElementById('raporBilgi').textContent = report.propertyName || "Yeni Rapor";
         
-        inputIds.forEach(fid => {
-            if(report.konumCevre && report.konumCevre[fid]) document.getElementById(fid).value = report.konumCevre[fid];
-        });
+        if(report.konumCevre) {
+            inputIds.forEach(fid => {
+                if(report.konumCevre[fid]) document.getElementById(fid).value = report.konumCevre[fid];
+            });
+            if(report.konumCevre.altyapiTik === "Hayır") toggleAltyapi(false);
+        }
         guncelleOnizleme();
     };
+
+    function toggleAltyapi(isEvet) {
+        const input = document.getElementById('altyapiAciklama');
+        input.disabled = isEvet;
+        input.classList.toggle('disabled-input', isEvet);
+        if(isEvet) input.value = "";
+        guncelleOnizleme();
+    }
 
     function guncelleOnizleme() {
         let v = {};
         inputIds.forEach(fid => { v[fid] = document.getElementById(fid).value || "..."; });
-        const tamMetin = `Taşınmaz ${v.v4} ili, ${v.v5} ilçesi, ${v.v6} mahallesinde yer almaktadır. Ulaşım: ${v.ulasimTarifi}`;
-        document.getElementById('livePreview').textContent = tamMetin;
-        return tamMetin;
+        
+        const altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
+        const altyapiMetni = altyapiTik === "Evet" ? "alt yapısı tamamlanmıştır" : (v.altyapiAciklama || "...");
+        
+        let tablo = "--- ÇEVRESEL ÖZELLİKLER TABLOSU ---\n";
+        const labels = ["UAVT","Koord X","Koord Y","İli","İlçesi","Mahallesi","Cadde","No","Kat","Daire","Gelişim","Yapılaşma","Tip","Gelir","Yakın 1","Yakın 2"];
+        for(let i=1; i<=16; i++) { tablo += `${labels[i-1].padEnd(15, ' ')} : ${v['v'+i]}\n`; }
+
+        const f1 = `Taşınmaz, ${v.v4} ili, ${v.v5} ilçesi, ${v.v6} mahallesinde yer almaktadır. Ulaşım: ${v.ulasimTarifi}. Çevresinde ${v.v12} katlı yapılar mevcuttur.`;
+        
+        const tamPaket = tablo + "\n" + f1;
+        document.getElementById('livePreview').textContent = tamPaket;
+        return tamPaket;
     }
 
     async function verileriKaydet() {
-        const tamMetin = guncelleOnizleme();
+        const paket = guncelleOnizleme();
         let v = {};
-        inputIds.forEach(fid => { v[fid] = document.getElementById(fid).value; });
+        inputIds.forEach(fid => { v[fid] = document.getElementById(fid).value.trim(); });
+        v.altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
 
-        report.konumCevre = { ...v, tamMetin: tamMetin };
+        report.konumCevre = { ...v, tamMetin: paket };
         report.konum_tamamlandi = true;
         reports[id] = report;
         localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-        
+
+        // BULUT SENKRONİZASYONU
         const user = auth.currentUser;
         if (user) {
             await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
@@ -100,14 +156,12 @@
         const statusMsg = document.getElementById('statusMsg');
         statusMsg.style.display = 'block';
         statusMsg.style.background = '#d1e7dd';
-        statusMsg.textContent = "✅ Buluta Mühürlendi!";
-        setTimeout(() => { statusMsg.style.display = 'none'; }, 2000);
+        statusMsg.style.color = '#0f5132';
+        statusMsg.textContent = "✅ Veriler Buluta Mühürlendi!";
+        setTimeout(() => { statusMsg.style.display = 'none'; }, 3000);
     }
 
-    // ANAYASA: 404 Hatasını çözen fonksiyon
-    function anaMenuyeDon() { 
-        window.location.href = `rapor-detay.html?id=${id}`; 
-    }
+    function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${id}`; }
 
     inputIds.forEach(fid => {
         document.getElementById(fid).addEventListener('input', guncelleOnizleme);
