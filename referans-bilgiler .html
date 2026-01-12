@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <title>Referans Bilgiler - Raporan X</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background:#f4f7f9; margin:0; padding-bottom:100px; color:#333; }
+        .header { background: linear-gradient(135deg,#4a148c,#7c4dff); color:white; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+        .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:30px; color:white; text-decoration:none; font-weight:bold; cursor:pointer; border:none; }
+        .container { max-width:900px; margin:30px auto; padding:20px; background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+        textarea { width:100%; height:600px; padding:20px; border:1px solid #ddd; border-radius:12px; font-size:16px; font-family:'Courier New', monospace; line-height:1.6; background:#f9f9f9; box-sizing: border-box; }
+        .btn { padding:20px; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; margin-top:20px; width:100%; }
+        .btn-save { background:#00c853; color:white; box-shadow: 0 4px 12px rgba(0,200,83,0.3); }
+        .btn-back { background:#6c757d; color:white; margin-top:10px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <button onclick="geriDon()" class="back">← Geri Dön</button>
+    <h1>DİJİTAL KÜTÜPHANEM</h1>
+</div>
+
+<div class="container">
+    <p style="text-align:center; color:#666; font-size:14px; margin-bottom:20px;">
+        ⚠️ Bu bilgiler <b>size özeldir</b> ve tüm cihazlarınızla senkronize edilir.
+    </p>
+    <textarea id="referansIcerik" placeholder="Birim maliyetler, katsayılar, teknik notlar..."></textarea>
+    <button class="btn btn-save" onclick="kaydet()">BULUTA MÜHÜRLE VE KAYDET</button>
+    <button class="btn btn-back" onclick="geriDon()">YENİ KAYIT SAYFASINA DÖN</button>
+</div>
+
+<script>
+    // 1. GÜVENLİK KONTROLÜ
+    auth.onAuthStateChanged((user) => {
+        if (!user) {
+            window.location.href = 'index.html';
+        } else {
+            referansYukle();
+        }
+    });
+
+    // 2. BULUTTAN VERİ ÇEKME
+    function referansYukle() {
+        const user = auth.currentUser;
+        if (user) {
+            db.collection("users").doc(user.uid).get().then((doc) => {
+                if (doc.exists && doc.data().genel_referanslar) {
+                    document.getElementById('referansIcerik').value = doc.data().genel_referanslar;
+                }
+            });
+        }
+    }
+
+    // 3. BULUTA KAYDETME
+    async function kaydet() {
+        const yeniIcerik = document.getElementById('referansIcerik').value;
+        const user = auth.currentUser;
+        
+        if (user) {
+            try {
+                await db.collection("users").doc(user.uid).set({
+                    genel_referanslar: yeniIcerik
+                }, { merge: true });
+                
+                // Yedek olarak yine localde de kalsın
+                localStorage.setItem('tum_referans_bilgiler', yeniIcerik);
+                
+                alert("✅ Referans bilgileriniz buluta başarıyla mühürlendi!");
+            } catch (error) {
+                console.error("Hata:", error);
+                alert("⚠️ Bir hata oluştu, bilgiler sadece tarayıcıya kaydedildi.");
+                localStorage.setItem('tum_referans_bilgiler', yeniIcerik);
+            }
+        }
+    }
+
+    function geriDon() {
+        window.location.href = 'yeni_kayit.html';
+    }
+</script>
+</body>
+</html>

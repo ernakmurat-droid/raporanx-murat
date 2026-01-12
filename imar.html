@@ -1,80 +1,47 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
 
-<script>
-    // 1. ADIM: Proje Yapılandırması
-    const firebaseConfig = {
-        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-        authDomain: "raporanx.firebaseapp.com",
-        projectId: "raporanx",
-        storageBucket: "raporanx.firebasestorage.app",
-        messagingSenderId: "715194328346",
-        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-        measurementId: "G-V749P1HB80"
-    };
-
-    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
-    auth.onAuthStateChanged((user) => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const reportId = urlParams.get('id');
-
-        // Giriş yapılmamışsa index'e at
-        if (!user) {
-            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
-            window.location.href = 'index.html';
-            return;
-        }
-
-        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
-        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
-            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
-            window.location.href = 'index.html';
-            return;
-        }
+    <title>İmar Durumu - Raporan X</title>
+    <style>
+        :root { --primary: #3498db; --secondary: #2980b9; --success: #2ecc71; --bg: #f4f7f9; --danger: #d32f2f; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: #333; }
+        .container { max-width: 700px; margin: 20px auto; background: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); border-radius: 8px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 2px solid var(--primary); margin-bottom: 20px; position: relative; }
+        header h1 { color: var(--primary); margin: 0; font-size: 1.5em; }
+        .header-info { font-size: 0.9em; color: #555; text-align: right; }
+        .back-btn { position: absolute; left: 0; top: 0; background: var(--danger); color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; cursor: pointer; border: none; }
         
-        console.log("Yetki Onaylandı: " + user.email);
-    });
-</script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>İMAR DURUMU</title>
-<style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f9; }
-    .container { max-width: 700px; margin: 20px auto; background: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 2px solid #3498db; margin-bottom: 20px; position: relative; }
-    header h1 { color: #3498db; margin: 0; font-size: 1.5em; }
-    .header-info { font-size: 0.9em; color: #555; text-align: right; }
-    .back-btn { position: absolute; left: 0; top: 0; background: #d32f2f; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; cursor: pointer; border: none; }
-    .form-section { margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-    .form-section label { display: block; font-weight: bold; margin-top: 10px; margin-bottom: 5px; }
-    .radio-group { display: flex; flex-wrap: wrap; gap: 15px; }
-    input[type="text"], input[type="number"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; }
-    #diğer-nizam-kutusu, #diğer-lejant-kutusu, #yola-tecavüz-alan-kutusu { margin-left: 10px; display: none; }
-    .hmax-bilgi { margin-left: 20px; font-size: 0.9em; color: #e74c3c; font-weight: bold; }
-    #otomatik-metin-alani { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; }
-    .mavi-kutu { background-color: #eaf6ff; border: 1px solid #3498db; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
-    .yesil-kutu { background-color: #ebf5eb; border: 1px solid #2ecc71; padding: 15px; border-radius: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 0.9em; }
-    table, th, td { border: 1px solid #3498db; }
-    th, td { padding: 8px; text-align: left; }
-    .action-button { padding: 15px 20px; font-size: 1.1em; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; display: block; width: 100%; transition: 0.3s; font-weight: bold; }
-    #kaydet-button { background-color: #2ecc71; color: white; }
-    .btn-menu { background-color: #9c27b0; color: white; }
-    .status-msg { display: none; text-align: center; font-weight: bold; margin-top: 10px; padding: 10px; border-radius: 8px; }
-</style>
+        .form-section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
+        .form-section label { display: block; font-weight: bold; margin-top: 10px; margin-bottom: 5px; color: #444; }
+        .radio-group { display: flex; flex-wrap: wrap; gap: 15px; }
+        
+        input[type="text"], input[type="number"] { padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%; box-sizing: border-box; font-size: 14px; }
+        #diğer-nizam-kutusu, #diğer-lejant-kutusu, #yola-tecavüz-alan-kutusu { margin-left: 10px; display: none; }
+        .hmax-bilgi { margin-left: 10px; font-size: 0.85em; color: #e74c3c; font-weight: bold; }
+
+        #otomatik-metin-alani { margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee; user-select: none; }
+        .mavi-kutu { background-color: #eaf6ff; border: 1px solid #3498db; padding: 15px; margin-bottom: 15px; border-radius: 8px; transition: filter 0.3s; }
+        .yesil-kutu { background-color: #ebf5eb; border: 1px solid #2ecc71; padding: 15px; border-radius: 8px; transition: filter 0.3s; }
+        .mavi-kutu:not(:hover), .yesil-kutu:not(:hover) { filter: blur(1.5px); }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 0.9em; background: white; }
+        table, th, td { border: 1px solid #3498db; }
+        th, td { padding: 10px; text-align: left; }
+        
+        .action-button { padding: 12px; font-size: 1em; border: none; border-radius: 8px; cursor: pointer; width: 100%; transition: 0.3s; font-weight: bold; }
+        #kaydet-button { background-color: var(--success); color: white; margin-top: 20px; }
+        .btn-menu { background-color: #9c27b0; color: white; margin-top: 10px; }
+    </style>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;"> 
     <div class="container">
         <header>
             <button onclick="anaMenuyeDon()" class="back-btn">← ANA MENÜ</button>
@@ -85,164 +52,170 @@
         <form id="imar-form">
             <div class="form-section">
                 <label>İmar Planı İsmi</label>
-                <input type="text" id="imar-plani-ismi" placeholder="Örn: 1/1000 Ölçekli Uygulama İmar Planı" oninput="guncelle()">
+                <input type="text" id="imar-plani-ismi" placeholder="Örn: 1/1000 Ölçekli Uygulama İmar Planı" list="h_imarPlaniIsmi">
             </div>
-            
+            <div class="form-section">
+                <label>İmar Planı Tarihi</label>
+                <input type="text" id="imar-plani-tarihi" placeholder="Örn: 15.05.2018" list="h_imarPlaniTarihi">
+            </div>
+
             <div class="form-section">
                 <label>1. Yapı Nizamı:</label>
                 <div class="radio-group" id="yapi-nizam-group">
-                    <div><input type="radio" name="nizam" value="Ayrık" id="nizam-ayrik" onchange="guncelle()"><label for="nizam-ayrik">Ayrık</label></div>
-                    <div><input type="radio" name="nizam" value="Bitişik" id="nizam-bitisik" onchange="guncelle()"><label for="nizam-bitisik">Bitişik</label></div>
-                    <div><input type="radio" name="nizam" value="Blok" id="nizam-blok" onchange="guncelle()"><label for="nizam-blok">Blok</label></div>
-                    <div><input type="radio" name="nizam" value="Serbest" id="nizam-serbest" onchange="guncelle()"><label for="nizam-serbest">Serbest</label></div>
-                    <div><input type="radio" name="nizam" value="Diğer" id="nizam-diger" onchange="guncelle()"><label for="nizam-diger">Diğer</label></div>
-                    <input type="text" id="diğer-nizam-kutusu" placeholder="Belirtiniz" oninput="guncelle()">
+                    <div><input type="radio" name="nizam" value="Ayrık" id="nizam-ayrik"><label for="nizam-ayrik">Ayrık</label></div>
+                    <div><input type="radio" name="nizam" value="Bitişik" id="nizam-bitisik"><label for="nizam-bitisik">Bitişik</label></div>
+                    <div><input type="radio" name="nizam" value="Blok" id="nizam-blok"><label for="nizam-blok">Blok</label></div>
+                    <div><input type="radio" name="nizam" value="Diğer" id="nizam-diger"><label for="nizam-diger">Diğer</label></div>
+                    <input type="text" id="diğer-nizam-kutusu" placeholder="Belirtiniz">
                 </div>
             </div>
 
             <div class="form-section">
                 <label for="kat-sayisi">2. Kat Sayısı:</label>
-                <input type="number" id="kat-sayisi" min="1" oninput="hmaxHesapla(); guncelle();">
+                <input type="number" id="kat-sayisi" value="5">
                 <span id="hmax-output" class="hmax-bilgi"></span>
             </div>
 
             <div class="form-section">
+                <label>3. Lejant:</label>
+                <div class="radio-group" id="lejant-group">
+                    <div><input type="radio" name="lejant" value="Konut Alanı" id="lejant-konut" checked><label for="lejant-konut">Konut Alanı</label></div>
+                    <div><input type="radio" name="lejant" value="Ticaret Alanı" id="lejant-ticaret"><label for="lejant-ticaret">Ticaret Alanı</label></div>
+                    <div><input type="radio" name="lejant" value="Diğer" id="lejant-diger"><label for="lejant-diger">Diğer</label></div>
+                    <input type="text" id="diğer-lejant-kutusu" placeholder="Belirtiniz">
+                </div>
+            </div>
+
+            <div class="form-section">
                 <label for="taks">4. TAKS / 5. KAKS:</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="taks" placeholder="TAKS (Örn: 0.40)" oninput="guncelle()">
-                    <input type="text" id="kaks" placeholder="KAKS (Örn: 1.60)" oninput="guncelle()">
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="taks" placeholder="TAKS (0.40)" list="h_taks">
+                    <input type="text" id="kaks" placeholder="KAKS (1.60)" list="h_kaks">
                 </div>
             </div>
 
             <div class="form-section">
                 <label for="yola-terk">6. Yola Terk (m²):</label>
-                <input type="number" id="yola-terk" min="0" value="0" oninput="guncelle()">
+                <input type="number" id="yola-terk" value="0">
+                <div id="tecavuz-sorusu" style="display: none; margin-top: 10px;">
+                    <label>Stratejik Kontrol: Yola Tecavüz Var mı?</label>
+                    <input type="radio" name="tecavuz" value="Evet"> Evet 
+                    <input type="radio" name="tecavuz" value="Hayır" checked> Hayır
+                    <input type="number" id="yola-tecavüz-alan-kutusu" placeholder="Tecavüz m²" style="margin-top:5px">
+                </div>
             </div>
 
-            <button type="button" id="kaydet-button" class="action-button" onclick="kaydet()">VERİLERİ KAYDET VE BULUTA YEDEKLE</button>
-            <div id="statusBox" class="status-msg"></div>
-            <button type="button" class="action-button btn-menu" onclick="anaMenuyeDon()">ANA MENÜYE DÖN</button>
+            <button type="button" id="kaydet-button" class="action-button">VERİLERİ KAYDET VE BULUTA MÜHÜRLE</button>
+            <button type="button" class="action-button btn-menu" onclick="anaMenuyeDon()">GERİ DÖN</button>
         </form>
 
-        <div id="otomatik-metin-alani">
+        <div id="otomatik-metin-alani" style="display: none;">
             <div class="mavi-kutu">
-                <h4>Özet Tablo (Banka İçin)</h4>
+                <h4>Banka Özet Tablosu</h4>
                 <table id="banka-tablo-output"></table>
             </div>
             <div class="yesil-kutu">
-                <h4>Tam Rapor Metni</h4>
+                <h4>Oluşturulan Taslak Metin</h4>
                 <p id="rapor-metni-output"></p>
             </div>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <datalist id="h_imarPlaniIsmi"></datalist>
+    <datalist id="h_imarPlaniTarihi"></datalist>
+    <datalist id="h_taks"></datalist>
+    <datalist id="h_kaks"></datalist>
 
     <script>
-        // 1. Senin Gerçek Firebase Anahtarların Mühürlendi
-        const firebaseConfig = {
-            apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-            authDomain: "raporanx.firebaseapp.com",
-            projectId: "raporanx",
-            storageBucket: "raporanx.firebasestorage.app",
-            messagingSenderId: "715194328346",
-            appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-            measurementId: "G-V749P1HB80"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-
+        // 2. ADIM: GÜVENLİK VE ID YÖNETİMİ
         const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
+        const raporId = urlParams.get('id');
         let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-        let report = reports[id] || { imar: {} };
+        let currentReport = reports[raporId];
 
-        async function bulutaSyncEt() {
-            const user = auth.currentUser;
-            if (user) {
-                const tumRaporlar = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-                await db.collection("users").doc(user.uid).set({
-                    gayrimenkul_reports: tumRaporlar,
-                    sonGuncelleme: new Date().toISOString()
-                }, { merge: true });
-                console.log("İmar verileri buluta mühürlendi ☁️✅");
+        auth.onAuthStateChanged((user) => {
+            if (!user || !raporId || !currentReport) {
+                window.location.href = 'index.html';
+            } else {
+                verileriYukle();
             }
-        }
+        });
 
+        // Sayfa Fonksiyonları
         function hmaxHesapla() {
             const kat = parseFloat(document.getElementById('kat-sayisi').value);
-            if (!isNaN(kat) && kat > 0) {
-                const hmax = (kat * 3 + 0.5).toFixed(1);
-                document.getElementById('hmax-output').textContent = `(Hmax: ${hmax} m)`;
-            }
+            if (!isNaN(kat)) document.getElementById('hmax-output').textContent = `(Hmax ≈ ${(kat * 3 + 0.5).toFixed(1)} m)`;
         }
 
-        function guncelle() {
-            const planIsmi = document.getElementById('imar-plani-ismi').value || '...';
-            const nizamRadio = document.querySelector('input[name="nizam"]:checked');
-            const nizam = nizamRadio ? nizamRadio.value : "...";
-            const kat = document.getElementById('kat-sayisi').value || "...";
-            const taks = document.getElementById('taks').value || "...";
-            const kaks = document.getElementById('kaks').value || "...";
-            const terk = document.getElementById('yola-terk').value || 0;
+        function tecavuzSorusuGoster() {
+            const terk = parseFloat(document.getElementById('yola-terk').value);
+            document.getElementById('tecavuz-sorusu').style.display = terk > 0 ? 'block' : 'none';
+        }
 
-            let tabloHTML = `
-                <tr><td><b>PLANA ESAS İSİM</b></td><td>${planIsmi}</td></tr>
-                <tr><td><b>YAPI NİZAMI</b></td><td>${nizam}</td></tr>
-                <tr><td><b>KAT ADEDİ</b></td><td>${kat} Kat</td></tr>
-                <tr><td><b>TAKS / KAKS</b></td><td>${taks} / ${kaks}</td></tr>
-                <tr><td><b>YOLA TERK</b></td><td>${terk} m²</td></tr>
-            `;
-            document.getElementById('banka-tablo-output').innerHTML = tabloHTML;
+        function otomatikMetinOlustur() {
+            const nizam = document.querySelector('input[name="nizam"]:checked')?.value || "...";
+            const kat = document.getElementById('kat-sayisi').value;
+            const lejant = document.querySelector('input[name="lejant"]:checked')?.value || "...";
+            const taks = document.getElementById('taks').value;
+            const kaks = document.getElementById('kaks').value;
 
-            let raporMetni = `${planIsmi} kapsamında, ${nizam} nizam, ${kat} kat yapılaşma koşullarına sahip olup TAKS: ${taks} ve KAKS: ${kaks} olarak belirlenmiştir.`;
+            const raporMetni = `${currentReport.ilce || 'İlgili'} Belediyesi imar planı sınırları içerisinde, ${nizam} nizam, ${kat} kat, ${lejant} lejantlı, Taks: ${taks} ve Kaks: ${kaks} yapılaşma şartlarına haizdir.`;
+            
             document.getElementById('rapor-metni-output').textContent = raporMetni;
+            document.getElementById('otomatik-metin-alani').style.display = 'block';
+            
+            // Tabloyu doldur
+            document.getElementById('banka-tablo-output').innerHTML = `<tr><td>Nizam/Kat</td><td>${nizam} / ${kat} Kat</td></tr><tr><td>Taks/Kaks</td><td>${taks} / ${kaks}</td></tr>`;
+            
+            return raporMetni;
+        }
 
-            return { metin: raporMetni, tablo: tabloHTML };
+        function verileriYukle() {
+            document.getElementById('raporBilgi').textContent = (currentReport.propertyName || "Rapor") + " • İmar Analizi";
+            const i = currentReport.imar;
+            if (i) {
+                document.getElementById('imar-plani-ismi').value = i.imarPlaniIsmi || "";
+                document.getElementById('kat-sayisi').value = i.kat || "5";
+                document.getElementById('taks').value = i.taks || "";
+                document.getElementById('kaks').value = i.kaks || "";
+                document.getElementById('yola-terk').value = i.terk || "0";
+                hmaxHesapla();
+                tecavuzSorusuGoster();
+                otomatikMetinOlustur();
+            }
         }
 
         async function kaydet() {
-            const data = guncelle();
-            report.imar = {
-                planIsmi: document.getElementById('imar-plani-ismi').value,
-                nizam: document.querySelector('input[name="nizam"]:checked')?.value,
+            const metin = otomatikMetinOlustur();
+            currentReport.imar = {
+                imarPlaniIsmi: document.getElementById('imar-plani-ismi').value,
                 kat: document.getElementById('kat-sayisi').value,
                 taks: document.getElementById('taks').value,
                 kaks: document.getElementById('kaks').value,
-                terk: document.getElementById('yola-terk').value
+                terk: document.getElementById('yola-terk').value,
+                nizam: document.querySelector('input[name="nizam"]:checked')?.value
             };
-            report.imarMetni = data.metin;
-            report.imarTablo = `<table>${data.tablo}</table>`;
-            report.imar_tamamlandi = true;
-
-            reports[id] = report;
+            currentReport.imarMetni = metin;
+            reports[raporId] = currentReport;
             localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-            await bulutaSyncEt();
 
-            const box = document.getElementById('statusBox');
-            box.style.display = 'block';
-            box.style.backgroundColor = '#d1e7dd';
-            box.textContent = "✅ İMAR BİLGİLERİ BULUTA YEDEKLENDİ";
-            setTimeout(() => box.style.display = 'none', 3000);
-        }
-
-        function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${id}`; }
-
-        window.onload = function() {
-            document.getElementById('raporBilgi').textContent = report.propertyName || "Rapor Detayı";
-            if(report.imar) {
-                const i = report.imar;
-                document.getElementById('imar-plani-ismi').value = i.planIsmi || "";
-                document.getElementById('kat-sayisi').value = i.kat || "";
-                document.getElementById('taks').value = i.taks || "";
-                document.getElementById('kaks').value = i.kaks || "";
-                document.getElementById('yola-terk').value = i.terk || 0;
+            // 3. ADIM: BULUT SENKRONİZASYONU
+            const user = auth.currentUser;
+            if (user) {
+                try {
+                    await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
+                    alert("✅ İmar verileri hem cihaza hem buluta mühürlendi!");
+                } catch (e) {
+                    alert("⚠️ Yerel kaydedildi ancak bulut hatası oluştu.");
+                }
             }
-            guncelle();
         }
+
+        function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${raporId}`; }
+
+        document.getElementById('kat-sayisi').addEventListener('input', hmaxHesapla);
+        document.getElementById('yola-terk').addEventListener('input', tecavuzSorusuGoster);
+        document.getElementById('kaydet-button').addEventListener('click', kaydet);
     </script>
 </body>
 </html>

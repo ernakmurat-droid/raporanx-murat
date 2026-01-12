@@ -1,305 +1,112 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
 
-<script>
-    // 1. ADIM: Proje Yapılandırması
-    const firebaseConfig = {
-        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-        authDomain: "raporanx.firebaseapp.com",
-        projectId: "raporanx",
-        storageBucket: "raporanx.firebasestorage.app",
-        messagingSenderId: "715194328346",
-        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-        measurementId: "G-V749P1HB80"
-    };
+    <title>Final Raporu Oluşturucu - Raporan X</title>
+    <style>
+        :root { --primary: #1a237e; --secondary: #3949ab; --accent: #ffd600; --bg: #f4f7f9; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; color: #2c3e50; scroll-behavior: smooth; }
+        .header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 30px 20px; text-align: center; position: relative; z-index: 10; }
+        .back { position: absolute; left: 20px; top: 25px; background: rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 30px; color: white; text-decoration: none; font-weight: bold; cursor: pointer; border: none; font-size: 13px; }
+        .main-wrapper { max-width: 1300px; margin: 20px auto; display: grid; grid-template-columns: 280px 1fr; gap: 30px; padding: 0 20px; }
+        .toc-container { position: sticky; top: 20px; height: fit-content; }
+        .toc { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid var(--primary); }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 0 40px rgba(0,0,0,0.05); }
+        .section { margin-bottom: 50px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; }
+        .text-block { font-size: 14.5px; line-height: 1.7; white-space: pre-wrap; color: #34495e; text-align: justify; }
+        .print-btn { background: #27ae60; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 50px; cursor: pointer; margin: 40px auto; display: block; font-weight: bold; }
 
-    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
-    auth.onAuthStateChanged((user) => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const reportId = urlParams.get('id');
-
-        // Giriş yapılmamışsa index'e at
-        if (!user) {
-            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
-            window.location.href = 'index.html';
-            return;
+        @media print {
+            .header, .back, .print-btn, .toc-container { display: none !important; }
+            .main-wrapper { display: block; }
+            .container { box-shadow: none; padding: 0; }
         }
-
-        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
-        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
-            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        console.log("Yetki Onaylandı: " + user.email);
-    });
-</script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rapor Oluştur - Ekspertiz Sistemi</title>
-<style>
-    :root { --primary: #4a148c; --accent: #7c4dff; --success: #2ecc71; --bg: #f4f7f9; }
-    
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin:0; color:#333; scroll-behavior: smooth; display: flex; flex-direction: column; min-height: 100vh; }
-    
-    .header { background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding:25px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.15); position: relative; }
-    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:30px; color:white; text-decoration:none; font-weight:bold; cursor:pointer; border:none; }
-
-    .main-wrapper { 
-        display: flex; 
-        max-width: 1200px; 
-        margin: 20px auto; 
-        width: 100%;
-        gap: 20px;
-        padding: 0 20px;
-    }
-
-    .sidebar { 
-        width: 250px; 
-        position: -webkit-sticky; 
-        position: sticky; 
-        top: 20px; 
-        height: fit-content; 
-        background: white; 
-        padding: 20px; 
-        border-radius: 16px; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border-right: 4px solid var(--primary);
-        z-index: 100;
-    }
-
-    .sidebar b { display: block; margin-bottom: 15px; color: var(--primary); font-size: 16px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-    
-    .sidebar a { 
-        display: block; 
-        padding: 10px 12px; 
-        color: #555; 
-        text-decoration: none; 
-        font-size: 13px; 
-        border-radius: 8px;
-        transition: 0.3s; 
-        margin-bottom: 5px;
-    }
-
-    .sidebar a.active { 
-        background: var(--primary); 
-        color: white !important; 
-        font-weight: bold;
-        transform: scale(1.05);
-    }
-
-    .sidebar a:hover:not(.active) { background: #f0ebff; color: var(--accent); }
-
-    .container { 
-        flex: 1; 
-        background: white; 
-        padding: 40px; 
-        border-radius: 16px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
-    }
-
-    .section { margin-bottom:50px; padding:25px; background:#fdfdfd; border-radius:12px; border-left:5px solid var(--primary); }
-    .section-title { font-size:1.5em; font-weight:bold; color:var(--primary); margin-bottom:20px; border-bottom:2px solid #eee; padding-bottom:10px; }
-    
-    .info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:15px; margin-bottom:20px; }
-    .info-item { background:#f0f4ff; padding:12px; border-radius:8px; }
-    .info-item strong { display:block; color:var(--primary); font-size:0.9em; }
-    
-    table { width:100%; border-collapse:collapse; margin:20px 0; }
-    table th, table td { border:1px solid var(--primary); padding:10px; text-align:left; }
-    table th { background:#eaf6ff; color:var(--primary); font-weight:bold; }
-    
-    .text-block { font-size:16px; line-height:1.8; white-space:pre-wrap; color:#444; }
-    .empty { color:#999; font-style:italic; }
-
-    .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 30px; }
-    .print-btn { background: var(--success); color:white; padding:15px 30px; font-size:18px; border:none; border-radius:10px; cursor:pointer; box-shadow:0 4px 15px rgba(46,204,113,0.3); }
-    .arsiv-btn { background:#2196f3; color:white; padding:15px 30px; font-size:18px; border:none; border-radius:10px; cursor:pointer; box-shadow:0 4px 15px rgba(33,150,243,0.3); }
-
-    @media print { 
-        .header, .back, .print-btn, .arsiv-btn, .sidebar, .btn-group { display:none !important; } 
-        .main-wrapper { display: block; margin: 0; padding: 0; }
-        .container { margin: 0 auto !important; width: 100% !important; box-shadow: none; border: none; padding: 0; }
-        .section { border-left: none; padding: 10px 0; page-break-inside: avoid; }
-    }
-    
-    @media (max-width: 900px) {
-        .main-wrapper { flex-direction: column; }
-        .sidebar { width: 100%; position: relative; top: 0; margin-bottom: 20px; }
-    }
-</style>
+    </style>
 </head>
 <body>
 
 <div class="header">
-    <button class="back" onclick="window.location.href='rapor-detay.html?id=' + id">← Geri</button>
-    <h1>RAPOR OLUŞTUR</h1>
-    <div id="raporTarih" style="font-size:12px; margin-top:5px; opacity:0.9;">Yükleniyor...</div>
+    <button onclick="window.location.href='rapor-detay.html?id='+id" class="back">← Yönetim Paneline Dön</button>
+    <h1 style="margin:0; font-size: 1.8em; letter-spacing: 1px;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
+    <div id="raporTarih" style="margin-top: 8px; opacity: 0.8; font-size: 13px;"></div>
 </div>
 
 <div class="main-wrapper">
-    <nav class="sidebar">
-        <b>📑 RAPOR AKIŞI</b>
-        <a href="#genel" class="nav-link">1. Genel Bilgiler</a>
-        <a href="#imar" class="nav-link">2. İmar Durumu</a>
-        <a href="#belgeler" class="nav-link">3. İncelenen Belgeler</a>
-        <a href="#bina" class="nav-link">4. Bina Bilgileri</a>
-        <a href="#bb" class="nav-link">5. Bağımsız Bölüm</a>
-        <a href="#konum" class="nav-link">6. Konum ve Çevre</a>
-        <a href="#tapu" class="nav-link">7. Tapu Kayıtları</a>
-        <a href="#emsal" class="nav-link">8. Emsal Analizi</a>
-    </nav>
+    <aside class="toc-container">
+        <div class="toc">
+            <div style="font-weight: bold; color: var(--primary); margin-bottom: 15px;">RAPOR BÖLÜMLERİ</div>
+            <ul style="list-style: none; padding: 0; font-size: 14px;">
+                <li><a href="#genel" style="text-decoration: none; color: #555;">1. Genel Bilgiler</a></li>
+                <li><a href="#imar" style="text-decoration: none; color: #555;">2. İmar Durumu</a></li>
+                <li><a href="#bina" style="text-decoration: none; color: #555;">3. Bina Bilgileri</a></li>
+                <li><a href="#emsal" style="text-decoration: none; color: #555;">4. Değerleme Sonucu</a></li>
+            </ul>
+        </div>
+    </aside>
 
-    <div class="container">
+    <main class="container">
         <div class="section" id="genel">
-            <div class="section-title">1. Gayrimenkul Genel Bilgileri</div>
-            <div class="info-grid" id="genelBilgi"></div>
+            <div style="font-size: 1.4em; font-weight: bold; color: var(--primary);">1. Genel Bilgiler</div>
+            <div id="genelBilgi" style="margin-top: 15px;"></div>
         </div>
 
         <div class="section" id="imar">
-            <div class="section-title">2. İmar Durumu</div>
-            <div id="imarTablo"></div>
+            <div style="font-size: 1.4em; font-weight: bold; color: var(--primary);">2. İmar Durumu</div>
+            <div id="imarTablo" style="margin-top: 15px;"></div>
             <div class="text-block" id="imarMetin"></div>
         </div>
 
-        <div class="section" id="belgeler">
-            <div class="section-title">3. İncelenen Belgeler</div>
-            <div class="text-block" id="belgelerMetin"></div>
-        </div>
-
         <div class="section" id="bina">
-            <div class="section-title">4. Bina Bilgileri</div>
+            <div style="font-size: 1.4em; font-weight: bold; color: var(--primary);">3. Ana Bina Bilgileri</div>
             <div class="text-block" id="binaMetin"></div>
         </div>
 
-        <div class="section" id="bb">
-            <div class="section-title">5. Bağımsız Bölüm Detayları</div>
-            <div class="text-block" id="bbMetin"></div>
-        </div>
-
-        <div class="section" id="konum">
-            <div class="section-title">6. Konum ve Çevre Özellikleri</div>
-            <div class="text-block" id="konumMetin"></div>
-        </div>
-
-        <div class="section" id="tapu">
-            <div class="section-title">7. Tapu Kayıt Bilgileri</div>
-            <div class="text-block" id="tapuMetinB1"></div>
-            <div class="text-block" id="tapuMetinB2"></div>
-        </div>
-
         <div class="section" id="emsal">
-            <div class="section-title">8. Emsal Analizi ve Değerleme</div>
+            <div style="font-size: 1.4em; font-weight: bold; color: var(--primary);">4. Değerleme ve Analiz</div>
             <div class="text-block" id="emsalMetin"></div>
         </div>
 
-        <div class="btn-group">
-            <button class="print-btn" onclick="window.print()">🖨️ YAZDIR / PDF KAYDET</button>
-            <button class="arsiv-btn" onclick="arsiveEkle()">☁️ BULUTA YEDEKLE</button>
-        </div>
-    </div>
+        <button class="print-btn" onclick="window.print()">📑 RAPORU PDF OLARAK KAYDET</button>
+    </main>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
 <script>
-    // 1. Senin Gerçek Firebase Anahtarların Mühürlendi
-    const firebaseConfig = {
-        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-        authDomain: "raporanx.firebaseapp.com",
-        projectId: "raporanx",
-        storageBucket: "raporanx.firebasestorage.app",
-        messagingSenderId: "715194328346",
-        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-        measurementId: "G-V749P1HB80"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
+    // 2. ADIM: GÜVENLİK VE VERİ ÇEKME
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
     let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    let report = reports[id] || {};
-    const today = new Date().toLocaleDateString('tr-TR');
-    document.getElementById('raporTarih').textContent = `Rapor Tarihi: ${today}`;
+    let report = reports[id];
 
-    function raporOlustur() {
-        if (!report) return;
-
-        const genel = document.getElementById('genelBilgi');
-        genel.innerHTML = `
-            <div class="info-item"><strong>Gayrimenkul Adı</strong>${report.propertyName || "Belirtilmemiş"}</div>
-            <div class="info-item"><strong>Adres</strong>${report.il || ''} / ${report.ilce || ''} / ${report.mahalle || ''}</div>
-            <div class="info-item"><strong>Ada / Parsel</strong>${report.ada || '...'} / ${report.parsel || '...'}</div>
-            <div class="info-item"><strong>Arsa Alanı</strong>${report.bina?.arsaAlani || '...'} m²</div>
-        `;
-
-        document.getElementById('imarTablo').innerHTML = report.imarTablo || '<p class="empty">İmar tablosu oluşturulmamış.</p>';
-        document.getElementById('imarMetin').textContent = report.imarMetni || 'İmar metni oluşturulmamış.';
-        document.getElementById('belgelerMetin').textContent = report.belgelerMetni || 'Belgeler metni oluşturulmamış.';
-        document.getElementById('binaMetin').textContent = report.bina?.metin || 'Bina metni oluşturulmamış.';
-        document.getElementById('bbMetin').textContent = report.bbDetay?.tamMetin || 'Bağımsız bölüm metni oluşturulmamış.';
-        document.getElementById('konumMetin').textContent = report.konumCevre?.tamMetin || report.konumCevre?.format1 || 'Konum ve çevre metni oluşturulmamış.';
-        document.getElementById('tapuMetinB1').textContent = report.tapuMetniB1 || 'Tapu B1 metni oluşturulmamış.';
-        document.getElementById('tapuMetinB2').textContent = report.tapuMetniB2 || 'Tapu B2 metni oluşturulmamış.';
-        document.getElementById('emsalMetin').textContent = report.degerlemeOzet?.emsalFinalMetni || report.emsalFinalMetni || 'Emsal analizi yapılmamış.';
-    }
-
-    async function arsiveEkle() {
-        const user = auth.currentUser;
-        if (user) {
-            try {
-                const allData = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-                await db.collection("users").doc(user.uid).set({
-                    gayrimenkul_reports: allData,
-                    sonSync: new Date().toISOString()
-                }, { merge: true });
-                alert("✅ Rapor verileri buluta mühürlendi!");
-            } catch (e) {
-                alert("⚠️ Bulut yedekleme başarısız!");
-            }
+    auth.onAuthStateChanged((user) => {
+        if (!user || !id || !report) {
+            window.location.href = 'index.html';
         } else {
-            alert("⚠️ Lütfen giriş yapın!");
+            raporOlustur();
         }
-    }
-
-    // SCROLL-SPY (Haraketli Menü Takibi)
-    window.addEventListener('scroll', () => {
-        let current = '';
-        const sections = document.querySelectorAll('.section');
-        const navLinks = document.querySelectorAll('.nav-link');
-
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            if (pageYOffset >= (sectionTop - 150)) {
-                current = section.getAttribute('id');
-            }
-        });
-
-        navLinks.forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href').includes(current)) {
-                link.classList.add('active');
-            }
-        });
     });
 
-    window.onload = raporOlustur;
+    function raporOlustur() {
+        const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
+        document.getElementById('raporTarih').textContent = `Rapor Tarihi: ${today}`;
+
+        // Verileri ekrana basma (Senin orijinal mantığın)
+        document.getElementById('genelBilgi').innerHTML = `
+            <p><b>Gayrimenkul:</b> ${report.propertyName || "..."}</p>
+            <p><b>Konum:</b> ${report.il || '-'} / ${report.ilce || '-'}</p>
+        `;
+
+        document.getElementById('imarTablo').innerHTML = report.imarTablo || '';
+        document.getElementById('imarMetin').textContent = report.imarMetni || '';
+        document.getElementById('binaMetin').textContent = report.bina?.metin || '';
+        document.getElementById('emsalMetin').textContent = report.degerlemeOzet?.emsalFinalMetni || '';
+    }
 </script>
 </body>
 </html>
