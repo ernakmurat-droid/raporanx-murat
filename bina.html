@@ -1,6 +1,51 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // 1. ADIM: Proje Yapılandırması
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+
+    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
+    auth.onAuthStateChanged((user) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('id');
+
+        // Giriş yapılmamışsa index'e at
+        if (!user) {
+            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
+        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
+            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log("Yetki Onaylandı: " + user.email);
+    });
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bina Bilgileri</title>
@@ -105,7 +150,7 @@
     </div>
     <button class="btn btn-taslak" onclick="taslakOlustur()">BİNA ANALİZ METNİNİ GÜNCELLE</button>
     <div class="btn-container">
-        <button class="btn btn-save" onclick="kaydet()">BİLGİLERİ KAYDET (SAYFADA KAL)</button>
+        <button class="btn btn-save" onclick="kaydet()">BİLGİLERİ KAYDET VE BULUTA YEDEKLE</button>
         <button class="btn btn-kat" onclick="katDetayAc()">KAT DETAYLARINI GİR/DÜZELT</button>
         <button class="btn btn-menu" onclick="anaMenuyeDon()">ANA MENÜYE DÖN</button>
     </div>
@@ -118,10 +163,39 @@
 <datalist id="h_disCephe"></datalist><datalist id="h_isinma"></datalist>
 <datalist id="h_hangiBlok"></datalist><datalist id="h_blokKonum"></datalist>
 
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
 <script>
+    // 1. Senin Gerçek Firebase Anahtarların Mühürlendi
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
     const hafizaInputlar = ['girisKotu', 'girisCephe', 'girisKapi', 'merdivenZemin', 'disCephe', 'isinma', 'hangiBlok', 'blokKonum'];
+
+    async function bulutaSyncEt() {
+        const user = auth.currentUser;
+        if (user) {
+            const tumRaporlar = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+            await db.collection("users").doc(user.uid).set({
+                gayrimenkul_reports: tumRaporlar,
+                sonGuncelleme: new Date().toISOString()
+            }, { merge: true });
+        }
+    }
 
     function getLatestData() {
         const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
@@ -175,11 +249,10 @@
         return metin;
     }
 
-    function kaydet() {
+    async function kaydet() {
         const { reports: allReports, report: r } = getLatestData();
         const metin = taslakOlustur();
 
-        // Hafıza İşleme
         hafizaInputlar.forEach(alanId => {
             const val = document.getElementById(alanId).value.trim();
             if(val.length > 1) {
@@ -188,7 +261,6 @@
             }
         });
 
-        // Denetim (Sıfır Tolerans)
         const arsa = document.getElementById('arsaAlani').value;
         const nizam = document.getElementById('nizam').value;
         const yapiS = document.getElementById('yapiSinifi').value;
@@ -228,11 +300,13 @@
 
         allReports[id].bina_tamamlandi = !eksikVar; 
         localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
-        
+        await bulutaSyncEt();
+
         const box = document.getElementById('statusBox');
         box.style.display = 'block';
         box.style.backgroundColor = eksikVar ? '#fff3cd' : '#d1e7dd';
-        box.textContent = eksikVar ? "⚠️ EKSİK VERİYLE KAYDEDİLDİ" : "✅ BİNA VERİLERİ MÜHÜRLENDİ";
+        box.style.color = eksikVar ? '#856404' : '#0f5132';
+        box.textContent = eksikVar ? "⚠️ EKSİK VERİYLE BULUTA YEDEKLENDİ" : "✅ BİNA VERİLERİ BULUTA YEDEKLENDİ";
         setTimeout(() => box.style.display = 'none', 3000);
         hafizaYukle();
     }

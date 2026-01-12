@@ -4,6 +4,51 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <head>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // 1. ADIM: Proje Yapılandırması
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+
+    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
+    auth.onAuthStateChanged((user) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('id');
+
+        // Giriş yapılmamışsa index'e at
+        if (!user) {
+            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
+        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
+            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log("Yetki Onaylandı: " + user.email);
+    });
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RaporAn X Taşınmaz Değerleme Sistemi</title>
@@ -13,8 +58,10 @@
     h1 { font-size: 42px; margin-bottom: 10px; font-weight: 900; letter-spacing: -1px; }
     h1 span { color: #ff0000; }
     .count { font-size: 26px; margin: 40px 0; }
-    .btn-new { display: block; width: 400px; max-width: 90%; margin: 50px auto; background: #00c853; color: white; padding: 25px; text-align: center; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
+    .btn-new { display: block; width: 400px; max-width: 90%; margin: 20px auto; background: #00c853; color: white; padding: 25px; text-align: center; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
     .btn-new:hover { background: #00b140; transform: translateY(-5px); }
+    .btn-google { display: block; width: 400px; max-width: 90%; margin: 10px auto; background: white; color: #444; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.3s; border: none; cursor: pointer; }
+    .btn-logout { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 15px; border-radius: 10px; cursor: pointer; margin-top: 10px; }
     .slogan { font-size: 22px; margin: 10px 0 40px 0; opacity: 0.95; font-style: italic; font-weight: 300; letter-spacing: 1px; }
     .reports { display: grid; gap: 20px; margin-top: 40px; }
     .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; position: relative; transition: 0.3s; cursor: pointer; text-align: left; }
@@ -24,60 +71,144 @@
     .no-reports { font-size: 22px; opacity: 0.8; margin-top: 60px; }
     .delete-btn { position: absolute; top: 15px; right: 15px; background: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-size: 14px; }
     .delete-btn:hover { background: #b71c1c; }
+    .user-info { margin-bottom: 20px; font-size: 14px; opacity: 0.8; }
+    .auth-section { background: rgba(0,0,0,0.2); padding: 30px; border-radius: 25px; margin-bottom: 30px; }
 </style>
 </head>
 <body>
-    <div class="container">
-        <h1>RAPORAN <span>X</span></h1>
-        <p class="slogan">“Çok karakteristik, çok abuzittik!”</p>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(async (user) => {
+        const loginBtn = document.getElementById('loginBtn');
+        const userInfo = document.getElementById('userInfo');
+        const mainContent = document.getElementById('mainContent');
+        
+        if (user) {
+            loginBtn.style.display = 'none';
+            mainContent.style.display = 'block';
+            userInfo.innerHTML = `Bağlı Hesap: ${user.email} <br> <button class="btn-logout" onclick="logout()">Çıkış Yap (Sistemi Kilitle)</button>`;
+            
+            const doc = await db.collection("users").doc(user.uid).get();
+            if (doc.exists) {
+                const cloudData = doc.data().gayrimenkul_reports;
+                if (cloudData) {
+                    localStorage.setItem('gayrimenkul_reports', JSON.stringify(cloudData));
+                    loadReports(); 
+                }
+            } else {
+                loadReports();
+            }
+        } else {
+            loginBtn.style.display = 'block';
+            mainContent.style.display = 'none';
+            userInfo.textContent = "DİKKAT: Sistem kilitli. Modüllere erişmek için giriş yapmalısınız.";
+            localStorage.removeItem('gayrimenkul_reports');
+        }
+    });
+
+    function loginWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(error => alert("Hata: " + error.message));
+    }
+
+    function logout() {
+        auth.signOut().then(() => {
+            localStorage.removeItem('gayrimenkul_reports');
+            location.reload();
+        });
+    }
+
+    async function syncToCloud() {
+        const user = auth.currentUser;
+        if (user) {
+            const localData = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+            await db.collection("users").doc(user.uid).set({
+                gayrimenkul_reports: localData,
+                lastUpdate: new Date().toISOString()
+            }, { merge: true });
+        }
+    }
+</script>
+
+<div class="container">
+    <h1>RAPORAN <span>X</span></h1>
+    <p class="slogan">“Çok karakteristik, çok abuzittik!”</p>
+    
+    <div class="auth-section">
+        <div id="userInfo" class="user-info">Sistem kontrol ediliyor...</div>
+        <button id="loginBtn" class="btn-google" onclick="loginWithGoogle()" style="display:none;">Google ile Giriş Yap</button>
+    </div>
+
+    <div id="mainContent" style="display:none;">
         <div class="count" id="reportCount">Toplam kayıt: 0</div>
         <a href="yeni_kayit.html" class="btn-new">YENİ DEĞERLEME DOSYASI AÇ</a>
         <div id="reportsList" class="reports">
             <div class="no-reports">Henüz kayıt oluşturulmadı.</div>
         </div>
     </div>
-    <script>
-        function loadReports() {
+</div>
+
+<script>
+    function loadReports() {
+        let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        const list = document.getElementById('reportsList');
+        const count = document.getElementById('reportCount');
+        count.textContent = `Toplam kayıt: ${reports.length}`;
+        
+        if (reports.length === 0) {
+            list.innerHTML = '<div class="no-reports">Henüz kayıt oluşturulmadı.</div>';
+            return;
+        }
+        list.innerHTML = '';
+        reports.forEach((report, index) => {
+            const card = document.createElement('div');
+            card.className = 'report-card';
+            let title = report.propertyName && report.propertyName.trim() !== '' ? report.propertyName : 'İsimsiz Gayrimenkul';
+            card.innerHTML = `
+                <button class="delete-btn" onclick="deleteReport(${index}, event)">Sil</button>
+                <div class="report-title">${title}</div>
+                <div class="report-info">
+                    ${report.il || ''} / ${report.ilce || ''} / ${report.mahalle || ''}<br>
+                    Ada: ${report.ada || ''} - Parsel: ${report.parsel || ''}<br>
+                    <small>Oluşturulma: ${report.createdAt || 'Tarih yok'}</small>
+                </div>
+            `;
+            card.onclick = (e) => {
+                if (!e.target.classList.contains('delete-btn')) {
+                    window.location.href = `rapor-detay.html?id=${index}`;
+                }
+            };
+            list.appendChild(card);
+        });
+    }
+
+    async function deleteReport(index, event) {
+        event.stopPropagation();
+        if (confirm('Bu raporu silmek istediğinize emin misiniz?')) {
             let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-            const list = document.getElementById('reportsList');
-            const count = document.getElementById('reportCount');
-            count.textContent = `Toplam kayıt: ${reports.length}`;
-            if (reports.length === 0) {
-                list.innerHTML = '<div class="no-reports">Henüz kayıt oluşturulmadı.</div>';
-                return;
-            }
-            list.innerHTML = '';
-            reports.forEach((report, index) => {
-                const card = document.createElement('div');
-                card.className = 'report-card';
-                let title = report.propertyName && report.propertyName.trim() !== '' ? report.propertyName : 'İsimsiz Gayrimenkul';
-                card.innerHTML = `
-                    <button class="delete-btn" onclick="deleteReport(${index}, event)">Sil</button>
-                    <div class="report-title">${title}</div>
-                    <div class="report-info">
-                        ${report.il || ''} / ${report.ilce || ''} / ${report.mahalle || ''}<br>
-                        Ada: ${report.ada || ''} - Parsel: ${report.parsel || ''}<br>
-                        <small>Oluşturulma: ${report.createdAt || 'Tarih yok'}</small>
-                    </div>
-                `;
-                card.onclick = (e) => {
-                    if (!e.target.classList.contains('delete-btn')) {
-                        window.location.href = `rapor-detay.html?id=${index}`;
-                    }
-                };
-                list.appendChild(card);
-            });
+            reports.splice(index, 1);
+            localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+            await syncToCloud();
+            loadReports();
         }
-        function deleteReport(index, event) {
-            event.stopPropagation();
-            if (confirm('Bu raporu silmek istediğinize emin misiniz?')) {
-                let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-                reports.splice(index, 1);
-                localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-                loadReports();
-            }
-        }
-        loadReports();
-    </script>
+    }
+</script>
 </body>
 </html>

@@ -1,6 +1,51 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // 1. ADIM: Proje Yapılandırması
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+
+    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
+    auth.onAuthStateChanged((user) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('id');
+
+        // Giriş yapılmamışsa index'e at
+        if (!user) {
+            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
+        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
+            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log("Yetki Onaylandı: " + user.email);
+    });
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İncelenen Belgeler</title>
@@ -133,7 +178,7 @@
         <textarea id="yikimAciklamaInput" rows="2" placeholder="Olumsuz karar ve tespit tutanağı detayları..." style="margin-top:10px; display:none;" list="h_belgeler_yikimAciklama" onfocus="showList(this)"></textarea>
     </div>
 
-    <button class="btn-kaydet" onclick="kaydetVeIsle()">KAYDET VE METİN ÜRET</button>
+    <button class="btn-kaydet" onclick="kaydetVeIsle()">KAYDET VE BULUTA MÜHÜRLE</button>
     <button class="btn-geri" onclick="anaMenuyeDon()">GERİ DÖN (ÇIK)</button>
     
     <div id="taslak" class="taslak" style="display:none;" oncopy="return false"></div>
@@ -146,10 +191,27 @@
     <datalist id="h_belgeler_uyumAciklama"></datalist><datalist id="h_belgeler_arsivAda"></datalist><datalist id="h_belgeler_arsivParsel"></datalist>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
 <script>
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
-    // ANAYASA: YANLIŞ YAZIMLARI TEMİZLE VE STANDART ANAHTARI KULLAN
     let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
     let report = reports[id] || {};
     document.getElementById('propertyName').textContent = report.propertyName || "İsimsiz";
@@ -157,10 +219,19 @@
     const fieldsToRemember = ['belediye', 'il', 'ilce', 'projeTarihiText', 'denetimFirma', 'yikimAciklamaInput', 'uyumAciklama', 'arsivAda', 'arsivParsel'];
 
     document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) {
-            e.preventDefault();
-        }
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) { e.preventDefault(); }
     });
+
+    async function bulutaSyncEt() {
+        const user = auth.currentUser;
+        if (user) {
+            const dataToSync = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+            await db.collection("users").doc(user.uid).set({
+                gayrimenkul_reports: dataToSync,
+                sonGuncelleme: new Date().toISOString()
+            }, { merge: true });
+        }
+    }
 
     function checkBila() {
         const textVal = document.getElementById('projeTarihiText').value.toLowerCase();
@@ -266,7 +337,7 @@
         });
     }
 
-    function kaydetVeIsle() {
+    async function kaydetVeIsle() {
         const bRaw = document.getElementById('belediye').value;
         const belediye = formatBelediye(bRaw);
         const il = document.getElementById('il').value || "...";
@@ -315,9 +386,7 @@
         ruhsatlar.forEach(r => belgeCumleleri.push(`${r.tarih} tarih ${r.no} sayılı ${r.kapsam} düzenlenmiş ${r.amac} yapı ruhsatı`));
         if(iskanVar) iskanlar.forEach(i => belgeCumleleri.push(`${i.tarih} tarih ${i.no} sayılı ${i.kapsam} düzenlenmiş ${i.amac}`));
 
-        if(belgeCumleleri.length > 0) {
-            anaMetin += "Yapı için; " + belgeCumleleri.join(", ") + " " + teyit + ". ";
-        }
+        if(belgeCumleleri.length > 0) { anaMetin += "Yapı için; " + belgeCumleleri.join(", ") + " " + teyit + ". "; }
         
         if(!iskanVar) {
             anaMetin += "Taşınmazın Yapı Kullanma İzin Belgesi (İskân) bulunmamaktadır. ";
@@ -332,20 +401,10 @@
         const yikimVar = document.querySelector('input[name="yikim"]:checked').value === 'evet';
         anaMetin += yikimVar ? `Belediyesinde ${document.getElementById('yikimAciklamaInput').value} olumsuz karar ve tespit tutanağı olduğu görülmüştür.` : "Belediye arşivinde herhangi bir olumsuz karar ve tespit tutanağına rastlanmamıştır.";
 
-        if(farkliParsel && aAda && aParsel) {
-            anaMetin += ` Taşınmaz belgeleri ${aAda} ada ${aParsel} parsel için düzenlenmiştir.`;
-        }
-
-        let altListe = "\n\nBELGE ÖZETLERİ:\n";
-        if(belgeCumleleri.length > 0) {
-            altListe += belgeCumleleri.map(c => "- " + c.charAt(0).toUpperCase() + c.slice(1)).join(".\n") + ".";
-        }
-
-        const finalMetin = anaMetin + altListe;
+        const finalMetin = anaMetin;
         document.getElementById('taslak').innerText = finalMetin;
         document.getElementById('taslak').style.display = 'block';
 
-        // KAYIT (ESER MİKTARI GÜVENLİK VE EŞLEŞME)
         report.belgeler = {
             belediye: document.getElementById('belediye').value,
             il: document.getElementById('il').value,
@@ -366,9 +425,8 @@
             teyit: teyit,
             yikim: yikimVar ? 'evet' : 'hayir',
             yikimAciklama: document.getElementById('yikimAciklamaInput').value,
-            belgelerMetni: finalMetin // Rapor sayfasının okuduğu anahtar
+            belgelerMetni: finalMetin
         };
-        // Eski anahtarı da destekle (Geriye dönük uyumluluk)
         report.belgelerMetni = finalMetin;
 
         fieldsToRemember.forEach(fid => {
@@ -384,7 +442,8 @@
 
         reports[id] = report;
         localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-        alert("✅ Veriler başarıyla kaydedildi!");
+        await bulutaSyncEt();
+        alert("✅ Belgeler başarıyla buluta mühürlendi!");
         initAutocomplete();
     }
 
@@ -397,46 +456,17 @@
             document.getElementById('belediye').value = b.belediye || "";
             document.getElementById('il').value = b.il || "";
             document.getElementById('ilce').value = b.ilce || "";
-            if(b.farkliParsel === 'evet') {
-                document.querySelector('input[name="farkliParsel"][value="evet"]').checked = true;
-                toggleFarkliParsel();
-                document.getElementById('arsivAda').value = b.arsivAda || "";
-                document.getElementById('arsivParsel').value = b.arsivParsel || "";
-            }
+            if(b.farkliParsel === 'evet') { document.querySelector('input[name="farkliParsel"][value="evet"]').checked = true; toggleFarkliParsel(); document.getElementById('arsivAda').value = b.arsivAda || ""; document.getElementById('arsivParsel').value = b.arsivParsel || ""; }
             document.getElementById('projeTarihi').value = b.projeTarihi || "";
             document.getElementById('projeTarihiText').value = b.projeTarihiText || "";
             checkBila();
-            if(b.uyum) {
-                document.querySelector(`input[name="uyum"][value="${b.uyum}"]`).checked = true;
-                if(b.uyum !== 'evet') {
-                    document.getElementById('uyumAciklama').style.display = 'block';
-                    document.getElementById('uyumAciklama').value = b.uyumAciklama || "";
-                }
-            }
+            if(b.uyum) { document.querySelector(`input[name="uyum"][value="${b.uyum}"]`).checked = true; if(b.uyum !== 'evet') { document.getElementById('uyumAciklama').style.display = 'block'; document.getElementById('uyumAciklama').value = b.uyumAciklama || ""; } }
             if(b.ruhsatlar && b.ruhsatlar.length > 0) b.ruhsatlar.forEach(r => addRuhsat(r)); else addRuhsat();
-            if(b.iskanVar) {
-                document.querySelector('input[name="iskanVar"][value="evet"]').checked = true;
-                document.getElementById('iskanSection').style.display = 'block';
-                document.getElementById('yapiDenetimSection').style.display = 'none';
-                if(b.iskanlar && b.iskanlar.length > 0) b.iskanlar.forEach(i => addIskan(i));
-            }
-            if(b.denetimDevam) {
-                document.querySelector(`input[name="denetimDevam"][value="${b.denetimDevam}"]`).checked = true;
-                if(b.denetimDevam === 'evet') {
-                    document.getElementById('denetimEvet').style.display = 'block';
-                    document.getElementById('denetimFirma').value = b.denetimFirma || "";
-                    document.getElementById('bitmislikOrani').value = b.bitmislikOrani || "";
-                }
-            }
+            if(b.iskanVar) { document.querySelector('input[name="iskanVar"][value="evet"]').checked = true; document.getElementById('iskanSection').style.display = 'block'; document.getElementById('yapiDenetimSection').style.display = 'none'; if(b.iskanlar && b.iskanlar.length > 0) b.iskanlar.forEach(i => addIskan(i)); }
+            if(b.denetimDevam) { document.querySelector(`input[name="denetimDevam"][value="${b.denetimDevam}"]`).checked = true; if(b.denetimDevam === 'evet') { document.getElementById('denetimEvet').style.display = 'block'; document.getElementById('denetimFirma').value = b.denetimFirma || ""; document.getElementById('bitmislikOrani').value = b.bitmislikOrani || ""; } }
             if(b.teyit) document.querySelector(`input[name="belgeGoruldumu"][value="${b.teyit}"]`).checked = true;
-            if(b.yikim === 'evet') {
-                document.querySelector('input[name="yikim"][value="evet"]').checked = true;
-                document.getElementById('yikimAciklamaInput').style.display = 'block';
-                document.getElementById('yikimAciklamaInput').value = b.yikimAciklama || "";
-            }
-        } else {
-            addRuhsat();
-        }
+            if(b.yikim === 'evet') { document.querySelector('input[name="yikim"][value="evet"]').checked = true; document.getElementById('yikimAciklamaInput').style.display = 'block'; document.getElementById('yikimAciklamaInput').value = b.yikimAciklama || ""; }
+        } else { addRuhsat(); }
     };
 </script>
 </body>

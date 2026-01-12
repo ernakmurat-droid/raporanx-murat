@@ -1,6 +1,51 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // 1. ADIM: Proje Yapılandırması
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+
+    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
+    auth.onAuthStateChanged((user) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('id');
+
+        // Giriş yapılmamışsa index'e at
+        if (!user) {
+            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
+        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
+            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log("Yetki Onaylandı: " + user.email);
+    });
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yeni Rapor Oluştur</title>
@@ -45,12 +90,44 @@
 
         <button type="button" class="referans-btn" onclick="referansAc()">REFERANS BİLGİLER (Posta Kodu, Maliyet vb.)</button>
 
-        <!-- KAYITSIZ GERİ DÖN BUTONU -->
         <button type="button" class="geri-btn" onclick="anaSayfayaDon()">ANA SAYFAYA DÖN</button>
     </form>
 </div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
 <script>
-    function raporOlustur() {
+    // 1. Senin Gerçek Firebase Anahtarların Mühürlendi
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // Buluta Yedekleme Fonksiyonu
+    async function bulutaGonder() {
+        const user = auth.currentUser;
+        if (user) {
+            const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+            await db.collection("users").doc(user.uid).set({
+                gayrimenkul_reports: reports,
+                lastUpdate: new Date().toISOString()
+            }, { merge: true });
+            console.log("Yeni rapor buluta işlendi ✅");
+        }
+    }
+
+    async function raporOlustur() {
         const report = {
             propertyName: document.getElementById('propertyName').value.trim() || "İsimsiz Gayrimenkul",
             il: document.getElementById('il').value.trim(),
@@ -67,21 +144,22 @@
             imar: {},
             belgeler: {}
         };
+
         let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
         reports.push(report);
         localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        
         const newId = reports.length - 1;
-        alert("Rapor oluşturuldu!");
+
+        // ÖNCE BULUTA GÖNDERELİM
+        await bulutaGonder();
+
+        alert("Rapor oluşturuldu ve buluta yedeklendi!");
         window.location.href = "rapor-detay.html?id=" + newId;
     }
 
-    function referansAc() {
-        window.open('referans-bilgiler.html', '_blank');
-    }
-
-    function anaSayfayaDon() {
-        window.location.href = 'index.html';
-    }
+    function referansAc() { window.open('referans-bilgiler.html', '_blank'); }
+    function anaSayfayaDon() { window.location.href = 'index.html'; }
 </script>
 </body>
 </html>

@@ -1,6 +1,51 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // 1. ADIM: Proje Yapılandırması
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+
+    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
+    auth.onAuthStateChanged((user) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('id');
+
+        // Giriş yapılmamışsa index'e at
+        if (!user) {
+            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
+        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
+            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log("Yetki Onaylandı: " + user.email);
+    });
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kat Detayları - Ekspertiz Sistemi</title>
@@ -12,7 +57,7 @@
     .container { max-width:800px; margin:20px auto; padding:0 15px; }
     .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .reset-btn { background: var(--danger); color: white; border:none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; }
-    .preview-card { background:#e8f5e9; padding:20px; border-radius:12px; margin-bottom:20px; border:2px solid #4caf50; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+    .preview-card { background:#e8f5e9; padding:20px; border-radius:12px; margin-bottom:20px; border:2px solid #4caf50; user-select: none; }
     #taslakMetin { font-size:15px; line-height:1.6; color: #1b5e20; font-weight: 500; transition: filter 0.3s ease; }
     #taslakMetin:not(:hover) { filter: blur(2px); }
     .onlu-grup { border-radius: 12px; margin-bottom: 15px; overflow: hidden; border: 1px solid #ddd; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -26,7 +71,7 @@
     .kat-content { padding:15px; background:#fafafa; border-top: 1px solid #eee; }
     .hidden { display:none !important; }
     .entry-row { display:flex; gap:8px; align-items:center; background:white; padding:10px; border:1px solid #eee; margin-bottom:8px; border-radius:6px; flex-wrap: wrap; }
-    input[type="number"], input[type="text"], select { padding:8px; border:1px solid #ccc; border-radius:6px; font-size: 14px; }
+    input[type="number"], input[type="text"] { padding:8px; border:1px solid #ccc; border-radius:6px; font-size: 14px; }
     .logic-box { background:#fff3e0; padding:12px; border-radius:8px; border:1px dashed var(--warning); margin-top:10px; font-size: 13px; }
     .apply-btn { background: var(--primary); color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 8px; font-weight: bold; }
     .add-btn { background: var(--accent); color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; width: 100%; margin-bottom: 10px; font-weight: bold; }
@@ -56,20 +101,46 @@
     <div id="katListesi"></div>
 
     <div class="footer">
-        <button class="save-btn" onclick="tumunuKaydet()">TÜMÜNÜ SİSTEME İŞLE VE BİNA SAYFASINA DÖN</button>
+        <button class="save-btn" onclick="tumunuKaydet()">TÜMÜNÜ SİSTEME İŞLE VE BULUTA YEDEKLE</button>
     </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
 <script>
+    // 1. Senin Gerçek Firebase Anahtarların Mühürlendi
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
     const params = new URLSearchParams(window.location.search);
     const reportId = params.get('id');
     const allReports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || {};
     const currentReport = allReports[reportId] || { bina: {} };
     const savedKatVerileri = currentReport.katSatirVerileri || {};
 
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) { e.preventDefault(); }
-    });
+    async function bulutaSyncEt() {
+        const user = auth.currentUser;
+        if (user) {
+            const dataToSync = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+            await db.collection("users").doc(user.uid).set({
+                gayrimenkul_reports: dataToSync,
+                sonGuncelleme: new Date().toISOString()
+            }, { merge: true });
+            console.log("Kat detayları buluta uçtu ☁️✅");
+        }
+    }
 
     let globalKatlar = [];
 
@@ -153,7 +224,7 @@
             <input type="radio" name="tip_${katId}_${rowId}" value="B.B." ${(!data || data.tip === 'B.B.') ? 'checked' : ''} onchange="renderPreview()"> B.B.
             <input type="radio" name="tip_${katId}_${rowId}" value="Ortak" ${(data?.tip === 'Ortak') ? 'checked' : ''} onchange="renderPreview()"> Ortak
             <input type="number" class="qty" value="${data?.qty || 1}" style="width:40px" oninput="renderPreview()">
-            <input type="text" class="desc" value="${data?.desc || ''}" placeholder="Cins" style="flex:1" oninput="renderPreview()">
+            <input type="text" class="desc" value="${data?.desc || ''}" placeholder="Cins (Daire, Dükkan vb.)" style="flex:1" oninput="renderPreview()">
             <button class="btn-remove" onclick="this.parentElement.remove(); renderPreview();">X</button>
         `;
         container.appendChild(div);
@@ -166,7 +237,7 @@
         const isLast = document.getElementById(`last-${kaynakId}`).checked;
         const targetVal = document.getElementById(`target-${kaynakId}`).value;
         const bitisIndex = isLast ? globalKatlar.length - 1 : parseInt(targetVal);
-        if(!isLast && targetVal === "") { alert("Lütfen hedef kat seçiniz!"); return; }
+        
         for (let i = kaynakIndex + 1; i <= bitisIndex; i++) {
             const hKat = globalKatlar[i];
             const rowContainer = document.getElementById(`rows-${hKat.id}`);
@@ -175,7 +246,6 @@
             document.getElementById(`header-${hKat.id}`).classList.add('completed');
             document.getElementById(`status-${hKat.id}`).innerText = "✔ Tamam";
         }
-        alert("Kopyalama işlemi başarıyla tamamlandı.");
         renderPreview();
     }
 
@@ -211,34 +281,23 @@
             else cumleParcalari.push(`${bAd} ve ${sAd} katları arasında her birinde ${g.icerik}`);
         });
         const katDetayMetni = cumleParcalari.join(", ");
-        const tamMetin = "Mimari Projesinde ve mevcut durumda " + katDetayMetni + ` olmak üzere binada toplam ${toplamBB} adet bağımsız bölüm tescil edilmiştir.`;
+        const tamMetin = "Mimari projesinde ve mevcut durumda " + katDetayMetni + ` olmak üzere binada toplam ${toplamBB} adet bağımsız bölüm tescil edilmiştir.`;
         document.getElementById('taslakMetin').innerText = tamMetin;
         return { katDetayMetni, toplamBB, tumSatirVerileri };
     }
 
-    function verileriSifirla() {
-        if(confirm("Tüm kat girişleri silinecektir. Emin misiniz?")) {
-            allReports[reportId].katSatirVerileri = {};
-            allReports[reportId].katDetayMetni = "";
-            localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
-            location.reload();
-        }
+    async function tumunuKaydet() {
+        const data = renderPreview();
+        allReports[reportId].katDetayMetni = data.katDetayMetni;
+        if(!allReports[reportId].bina) allReports[reportId].bina = {};
+        allReports[reportId].bina.toplamBagimsizBolum = data.toplamBB;
+        allReports[reportId].katSatirVerileri = data.tumSatirVerileri;
+        localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
+        await bulutaSyncEt();
+        window.location.href = `bina.html?id=${reportId}`;
     }
 
-    function tumunuKaydet() {
-        const data = renderPreview();
-        if (allReports[reportId]) {
-            if(!allReports[reportId].bina) allReports[reportId].bina = {};
-            allReports[reportId].katDetayMetni = data.katDetayMetni;
-            allReports[reportId].bina.toplamBagimsizBolum = data.toplamBB;
-            allReports[reportId].katSatirVerileri = data.tumSatirVerileri;
-            
-            // Kritik Zincir: Kat detayı girildiği an bina bilgilerindeki metin de güncellenmeli
-            // Ancak ana menü bayrağı bina.html'deki 'kaydet' butonuna bırakılmalı.
-            localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
-            window.location.href = `bina.html?id=${reportId}`;
-        }
-    }
+    function verileriSifirla() { if(confirm("Emin misiniz?")) { localStorage.removeItem('katDetay_temp'); location.reload(); } }
     window.onload = init;
 </script>
 </body>

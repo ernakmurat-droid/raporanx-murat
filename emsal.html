@@ -1,6 +1,51 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // 1. ADIM: Proje Yapılandırması
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+
+    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
+    auth.onAuthStateChanged((user) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('id');
+
+        // Giriş yapılmamışsa index'e at
+        if (!user) {
+            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
+        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
+            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log("Yetki Onaylandı: " + user.email);
+    });
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profesyonel Emsal Analiz Sistemi</title>
@@ -91,18 +136,47 @@
     <div class="section-title">3. Rapor Analiz Metni</div>
     <div id="yorumMetni" class="final-box" oncopy="return false"></div>
     
-    <button class="btn btn-save-final" onclick="tumRaporuKaydet()">ANALİZİ KAYDET VE KİLİTLE</button>
+    <button class="btn btn-save-final" onclick="tumRaporuKaydet()">ANALİZİ KAYDET VE BULUTA YEDEKLE</button>
 </div>
 
 <datalist id="h_f1"></datalist><datalist id="h_f3"></datalist><datalist id="h_f5"></datalist><datalist id="h_f6"></datalist><datalist id="h_f9"></datalist>
 
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
 <script>
+    // 1. Senin Gerçek Firebase Anahtarların Mühürlendi
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+        authDomain: "raporanx.firebaseapp.com",
+        projectId: "raporanx",
+        storageBucket: "raporanx.firebasestorage.app",
+        messagingSenderId: "715194328346",
+        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+        measurementId: "G-V749P1HB80"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id') || 0;
     let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
     let report = reports[id] || {};
     if (!report.emsaller) report.emsaller = [];
     const tasinmazBrut = Number(report.bbDetay?.alanBrut || 0);
+
+    async function bulutaSyncEt() {
+        const user = auth.currentUser;
+        if (user) {
+            const dataToSync = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+            await db.collection("users").doc(user.uid).set({
+                gayrimenkul_reports: dataToSync,
+                sonGuncelleme: new Date().toISOString()
+            }, { merge: true });
+        }
+    }
 
     function yukleHatirlatmaListeleri() {
         const fields = ['f1', 'f3', 'f5', 'f6', 'f9'];
@@ -138,7 +212,8 @@
     function formatMoneyInput(input) {
         let val = input.value.replace(/\D/g, "");
         input.value = val ? new Intl.NumberFormat('tr-TR').format(val) : "";
-        document.getElementById(input.id.replace("_mask", "")).value = val;
+        const targetId = input.id.replace("_mask", "");
+        if(document.getElementById(targetId)) document.getElementById(targetId).value = val;
     }
 
     function formatPhone(input) {
@@ -187,6 +262,7 @@
         if(index > -1) report.emsaller[index] = e; else report.emsaller.push(e);
         reports[id] = report;
         localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        
         document.getElementById('emsalFormContainer').style.display = 'none';
         listele(); veriKontrol(); yukleHatirlatmaListeleri();
     }
@@ -204,12 +280,13 @@
         finalHesapla();
     }
 
-    function emsalSil(index) { 
+    async function emsalSil(index) { 
         if(confirm("Silinsin mi?")) { 
             report.emsaller.splice(index, 1); 
             reports[id] = report;
             localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
             listele(); veriKontrol(); 
+            await bulutaSyncEt();
         } 
     }
 
@@ -238,10 +315,10 @@
         veriKontrol();
     }
 
-    function tumRaporuKaydet() {
+    async function tumRaporuKaydet() {
         const emsalSayisi = report.emsaller.length;
-        let uyari = "✅ Analiz mühürlenecektir. Onaylıyor musunuz?";
-        if(emsalSayisi < 4) uyari = `⚠️ BANKA KRİTERİ UYARISI:\nBankalar en az dört (4) emsal istemektedir (Sizde: ${emsalSayisi}). Yine de kaydetmek istiyor musunuz?`;
+        let uyari = "✅ Analiz buluta yedeklenecektir. Onaylıyor musunuz?";
+        if(emsalSayisi < 4) uyari = `⚠️ BANKA KRİTERİ UYARISI:\nBankalar en az dört (4) emsal istemektedir (Sizde: ${emsalSayisi}). Yine de buluta yedeklensin mi?`;
         
         if(confirm(uyari)) {
             report.degerlemeOzet = {
@@ -254,7 +331,8 @@
             };
             reports[id] = report;
             localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-            alert("✅ ANALİZ KAYDEDİLDİ");
+            await bulutaSyncEt();
+            alert("✅ ANALİZ KAYDEDİLDİ VE BULUTA YEDEKLENDİ");
         }
     }
 
