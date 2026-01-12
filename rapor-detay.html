@@ -1,77 +1,32 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
-<script>
-    // 1. ADIM: Proje Yapılandırması
-    const firebaseConfig = {
-        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-        authDomain: "raporanx.firebaseapp.com",
-        projectId: "raporanx",
-        storageBucket: "raporanx.firebasestorage.app",
-        messagingSenderId: "715194328346",
-        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-        measurementId: "G-V749P1HB80"
-    };
-
-    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
-    auth.onAuthStateChanged((user) => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const reportId = urlParams.get('id');
-
-        // Giriş yapılmamışsa index'e at
-        if (!user) {
-            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
-            window.location.href = 'index.html';
-            return;
-        }
-
-        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
-        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
-            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        console.log("Yetki Onaylandı: " + user.email);
-    });
-</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapor Ana Menü - Yönetim Paneli</title>
+    <title>Rapor Ana Menü - Raporan X</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <script src="firebase-config.js"></script>
+
     <style>
         :root { --primary: #4a148c; --accent: #7c4dff; --success: #00c853; --warning: #ffeb3b; --error: #ff5252; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, var(--primary), var(--accent)); margin:0; color:white; min-height:100vh; display:flex; flex-direction:column; }
         .header { padding:20px; text-align:center; position: relative; }
         .back { position:absolute; left:15px; top:20px; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:30px; text-decoration:none; color:white; font-weight:bold; font-size: 14px; }
-        .wallet-status { position: absolute; right: 15px; top: 15px; background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 15px; cursor: pointer; font-size: 12px; border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
-        .wallet-status:hover { background: rgba(0,0,0,0.5); }
+        .wallet-status { position: absolute; right: 15px; top: 15px; background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 15px; cursor: pointer; font-size: 12px; border: 1px solid rgba(255,255,255,0.2); }
         .menu { flex:1; display:flex; flex-wrap:wrap; gap:15px; padding:20px; justify-content:center; align-content:flex-start; }
         .btn { flex: 1 1 320px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 25px; font-size: 20px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; color: white; cursor: pointer; transition: 0.3s; position: relative; text-align: left; }
         .btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); transform: translateY(-3px); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .status-dot { position: absolute; top: 12px; right: 15px; font-size: 12px; padding: 4px 10px; border-radius: 10px; font-weight: bold; }
         .status-missing { background: var(--error); color: white; }
-        .status-incomplete { background: var(--warning); color: #333; }
         .status-ok { background: var(--success); color: white; }
-        .footer-btn { background:#ff5722; padding:20px; font-size:22px; width:90%; max-width:500px; margin:15px auto; border-radius:15px; border:none; color:white; font-weight:bold; cursor: pointer; display: block; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .footer-btn { background:#ff5722; padding:20px; font-size:22px; width:90%; max-width:500px; margin:15px auto; border-radius:15px; border:none; color:white; font-weight:bold; cursor: pointer; display: block; }
         .footer-btn.locked { background: #2196F3; }
-        #kilitMesaji { display: none; background: rgba(255,112,67,0.2); border: 1px solid #ff7043; padding: 10px; margin: 10px auto; width: 80%; text-align: center; border-radius: 10px; color: #ffd600; font-weight: bold; }
-        @media (max-width: 600px) {
-            .header { font-size: 20px; padding-top: 60px; }
-            .btn { flex: 1 1 100%; padding: 20px; font-size: 18px; }
-            .wallet-status { top: 10px; right: 10px; }
-        }
+        #kilitMesaji { display: none; background: rgba(0,0,0,0.3); padding: 10px; margin: 10px auto; width: 80%; text-align: center; border-radius: 10px; color: #ffd600; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -80,7 +35,7 @@
         <div id="walletBox" class="wallet-status" onclick="toggleWalletPrivacy()">
             💳 <span id="walletText">Cüzdan: ****</span>
         </div>
-        <div id="baslik" style="margin-top:20px;">Gayrimenkul Raporu</div>
+        <div id="baslik" style="margin-top:20px; font-size: 24px; font-weight: bold;">Gayrimenkul Raporu</div>
         <div id="kilitMesaji">🔒 RAPOR MÜHÜRLENDİ - YALNIZCA GÖRÜNTÜLEME</div>
     </div>
     
@@ -90,29 +45,12 @@
         <button class="btn modül-btn" onclick="go('imar.html')">İMAR DURUMU <span id="stat_imar" class="status-dot"></span></button>
         <button class="btn modül-btn" onclick="go('belgeler.html')">İNCELENEN BELGELER <span id="stat_belgeler" class="status-dot"></span></button>
         <button class="btn modül-btn" onclick="go('bina.html')">BİNA BİLGİLERİ <span id="stat_bina" class="status-dot"></span></button>
-        <button class="btn modül-btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM <span id="stat_bb" class="status-dot"></span></button>
         <button class="btn modül-btn" onclick="go('emsal.html')">EMSAL ANALİZİ <span id="stat_emsal" class="status-dot"></span></button>
     </div>
    
     <button id="mainBtn" class="footer-btn" onclick="raporKontrolVeKilitle()">RAPORU TAMAMLA VE KİLİTLE</button>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-        authDomain: "raporanx.firebaseapp.com",
-        projectId: "raporanx",
-        storageBucket: "raporanx.firebasestorage.app",
-        messagingSenderId: "715194328346",
-        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
 
@@ -144,32 +82,26 @@
 
     function go(page) { window.location.href = page + '?id=' + id; }
 
-    function isValueEmpty(val) {
-        if (!val) return true;
-        if (typeof val === 'string' && (val.trim().length < 5 || val.includes("Metin burada oluşacak"))) return true;
-        return false;
-    }
-
     function durumuGuncelle() {
         const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
         const r = reports[id];
         if (!r) return;
+        
+        // Modül durumlarını kontrol et (Basitleştirilmiş)
         const kontroller = {
-            stat_konum: { veri: r.konumCevre?.tamMetin, tamam: r.konum_tamamlandi },
-            stat_tapu: { veri: r.tapuMetniB1, tamam: r.tapu_tamamlandi },
-            stat_imar: { veri: r.imarMetni, tamam: r.imar_tamamlandi },
-            stat_belgeler: { veri: r.belgelerMetni, tamam: r.belgeler_tamamlandi },
-            stat_bina: { veri: r.bina?.metin || r.binaMetni, tamam: r.bina_tamamlandi },
-            stat_bb: { veri: r.bbDetay?.tamMetin || r.katDetayMetni, tamam: r.bb_tamamlandi },
-            stat_emsal: { veri: r.degerlemeOzet?.emsalFinalMetni, tamam: (r.emsaller && r.emsaller.length >= 4) }
+            stat_konum: r.konum_tamamlandi,
+            stat_tapu: r.tapu_tamamlandi,
+            stat_imar: r.imar_tamamlandi,
+            stat_belgeler: r.belgeler_tamamlandi,
+            stat_bina: r.bina_tamamlandi,
+            stat_emsal: (r.emsaller && r.emsaller.length >= 4)
         };
+
         for (let dotId in kontroller) {
             const el = document.getElementById(dotId);
-            const d = kontroller[dotId];
             if (el) {
-                if (isValueEmpty(d.veri)) { el.textContent = "Eksik"; el.className = "status-dot status-missing"; }
-                else if (d.tamam === false) { el.textContent = "⚠️ Eksik"; el.className = "status-dot status-incomplete"; }
-                else { el.textContent = "Tamam"; el.className = "status-dot status-ok"; }
+                if (kontroller[dotId]) { el.textContent = "Tamam"; el.className = "status-dot status-ok"; }
+                else { el.textContent = "Eksik"; el.className = "status-dot status-missing"; }
             }
         }
     }
@@ -177,22 +109,10 @@
     async function raporKontrolVeKilitle() {
         const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
         const r = reports[id];
-        if (r.isLocked) { go('rapor-olustur.html'); return; }
+        if (r.isLocked) { window.location.href = 'rapor-olustur.html?id=' + id; return; }
 
-        let tutar = cuzdan.ucretsizHak > 0 ? 0 : cuzdan.birimFiyat;
-        const hatirlatmaMetni = "Veri girişlerindeki hatırlatmalar veri girişi gibi görünmektedir. Rapor oluşturduktan sonra veri girişi yapamazsınız. Zaman ve maddi kaybetmemek için veri girişlerin tamamını yaptığınızdan emin olun.";
-        let mesaj = cuzdan.ucretsizHak > 0 ? `🎁 Ücretsiz rapor hakkınız kullanılacaktır. (Kalan: ${cuzdan.ucretsizHak})` : `💰 Mevcut Bakiyeniz: ${cuzdan.bakiye} TL\n📉 Düşecek Tutar: ${tutar} TL\n✅ Kalan: ${cuzdan.bakiye - tutar} TL`;
-
-        if (cuzdan.ucretsizHak <= 0 && cuzdan.bakiye < tutar) {
-            alert("⚠️ Yetersiz Bakiye! Lütfen yükleme yapın.");
-            return;
-        }
-
-        if (confirm(`${hatirlatmaMetni}\n\n${mesaj}\n\nRapor kilitlenip oluşturulsun mu?`)) {
-            if (cuzdan.ucretsizHak > 0) cuzdan.ucretsizHak--;
-            else cuzdan.bakiye -= tutar;
+        if (confirm("Rapor mühürlenecek. Onaylıyor musunuz?")) {
             r.isLocked = true;
-            localStorage.setItem('user_wallet', JSON.stringify(cuzdan));
             reports[id] = r;
             localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
             await bulutaSyncEt();
@@ -201,6 +121,8 @@
     }
 
     window.onload = function() {
+        if (!id) { window.location.href = 'index.html'; return; }
+        
         const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
         const r = reports[id];
         if (r) {
@@ -211,7 +133,7 @@
                 document.querySelectorAll('.modül-btn').forEach(btn => btn.disabled = true);
                 document.getElementById('kilitMesaji').style.display = 'block';
                 const mainBtn = document.getElementById('mainBtn');
-                mainBtn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
+                mainBtn.textContent = "RAPORU GÖRÜNTÜLE";
                 mainBtn.className = "footer-btn locked";
             }
         }
