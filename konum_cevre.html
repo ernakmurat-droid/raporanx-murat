@@ -129,7 +129,8 @@
     input.setAttribute('autocomplete', 'off');
     const val = input.value;
     input.value = '';
-    setTimeout(() => { input.value = val; }, 1);
+   setTimeout(() => { statusMsg.style.display = 'none'; }, 4000);
+ , 1;)
   }
 
   function toggleAltyapi(isEvet) {
@@ -328,3 +329,4 @@ Değerleme konusu taşınmaz, ${v.v4} İli, ${v.v5} İlçesi, ${v.v6} Mahallesi,
 </script>
 </body>
 </html>
+
