@@ -1,302 +1,478 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tapu Kayıt Otomasyonu - Takyidat Detaylı</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Firebase (kullanıyorsan) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 
-<script>
-    // 1. ADIM: Proje Yapılandırması
-    const firebaseConfig = {
-        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-        authDomain: "raporanx.firebaseapp.com",
-        projectId: "raporanx",
-        storageBucket: "raporanx.firebasestorage.app",
-        messagingSenderId: "715194328346",
-        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-        measurementId: "G-V749P1HB80"
-    };
-
-    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
-    auth.onAuthStateChanged((user) => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const reportId = urlParams.get('id');
-
-        // Giriş yapılmamışsa index'e at
-        if (!user) {
-            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
-            window.location.href = 'index.html';
-            return;
-        }
-
-        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
-        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
-            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        console.log("Yetki Onaylandı: " + user.email);
-    });
-</script>
-<meta charset="UTF-8">
-<title>Tapu Kayıt Otomasyonu - Takyidat Detaylı</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-    body { background-color: #f8f9fa; padding: 25px; font-family: 'Segoe UI', sans-serif; }
-    .card { border-radius: 15px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 30px; }
-    .result-body { background: white; border: 2px solid #dee2e6; padding: 20px; border-radius: 10px; white-space: pre-wrap; font-size: 13px; margin-bottom: 25px; filter: blur(2.5px); transition: 0.3s; cursor: text; line-height: 1.6; }
-    .result-body:hover { filter: blur(0); }
-    .engel-evet { background-color: #fff0f0 !important; }
-    .btn-geri { background: #d32f2f; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
-    .btn-save-final { background: #198754; color: white; padding: 20px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; transition: 0.3s; box-shadow: 0 4px 15px rgba(25, 135, 84, 0.3); border: none; width: 100%; margin-top: 30px; }
-    .save-status { display: none; color: #198754; font-weight: bold; margin-top: 10px; text-align: center; border: 1px solid #198754; padding: 10px; border-radius: 8px; background: #e8f5e9; }
-    .format-label { font-weight: bold; color: #4a148c; margin-bottom: 5px; display: block; text-decoration: underline; }
+  :root { --cardRadius:16px; }
+  body { background-color:#f8f9fa; padding:14px; font-family:'Segoe UI', sans-serif; }
+  .card { border-radius: var(--cardRadius); border:none; box-shadow:0 5px 20px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .result-body {
+    background:white; border:2px solid #dee2e6; padding:14px; border-radius:12px;
+    white-space:pre-wrap; font-size:13px; margin-bottom:16px;
+    filter: blur(2.5px); transition:0.25s; cursor:text; line-height:1.65;
+  }
+  .result-body:hover { filter: blur(0); }
+  .engel-evet { background-color:#fff0f0 !important; }
+
+  .btn-geri { background:#d32f2f; color:white; border:none; padding:10px 14px; border-radius:12px; font-weight:700; }
+  .btn-save-final {
+    background:#198754; color:white; padding:16px; font-size:1.05rem; font-weight:800;
+    border-radius:14px; transition:0.25s; box-shadow:0 4px 15px rgba(25,135,84,0.25);
+    border:none; width:100%;
+  }
+  .save-status {
+    display:none; color:#0f5132; font-weight:800; margin-top:10px; text-align:center;
+    border:1px solid #0f5132; padding:10px; border-radius:10px; background:#d1e7dd;
+  }
+  .format-label { font-weight:800; color:#4a148c; margin:8px 0 6px; display:block; text-decoration:underline; }
+
+  /* Mobil UX */
+  .sticky-actions {
+    position: sticky; bottom: 10px; z-index: 20;
+    background: linear-gradient(transparent, rgba(248,249,250,0.95) 25%, rgba(248,249,250,1));
+    padding-top: 10px;
+  }
+  .small-help { font-size:12px; color:#6c757d; }
+
+  /* Tablo -> kart görünüm (mobilde) */
+  @media (max-width: 768px) {
+    body { padding:10px; }
+    .result-body { font-size:12.5px; }
+    table { font-size: 13px; }
+    thead { display:none; }
+    tbody tr {
+      display:block; border:1px solid #dee2e6; border-radius:14px;
+      padding:10px; margin-bottom:10px; background:#fff;
+    }
+    tbody td { display:block; border:none !important; padding:6px 0 !important; }
+    tbody td::before {
+      content: attr(data-label);
+      display:block; font-weight:800; color:#495057; margin-bottom:4px;
+    }
+    .table-responsive { overflow: visible; }
+  }
 </style>
 </head>
+
 <body oncontextmenu="return false;">
-<div class="container-fluid">
-    <div class="card p-4">
-        <div class="mb-3">
-            <button onclick="anaMenuyeDon()" class="btn-geri">← ANA MENÜYE DÖN</button>
-        </div>
-        <h4 class="text-primary mb-4 border-bottom pb-2 text-center">Tapu Kayıt Giriş Ekranı</h4>
-        
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <label class="form-label fw-bold">Takbis Tarihi</label>
-                <input type="date" id="tarihInput" class="form-control border-primary" oninput="guncelle()">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold">İnceleme Saati</label>
-                <input type="time" id="saatInput" class="form-control border-primary" oninput="guncelle()">
-            </div>
-        </div>
+<div class="container-fluid p-0">
 
-        <h5 class="mt-4">Takyidatlar</h5>
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Takyidat Türü</th>
-                        <th>Açıklama</th>
-                        <th>Tarih</th>
-                        <th>Sayı</th>
-                        <th>Engel mi?</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody id="tabloGövde"></tbody>
-            </table>
-            <button class="btn btn-dark btn-sm" onclick="takyidatEkle()">+ Yeni Takyidat Ekle</button>
-        </div>
-
-        <h5 class="mt-4">Malikler</h5>
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-                <thead class="table-primary">
-                    <tr>
-                        <th>Ad Soyad</th>
-                        <th>Pay / Payda</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody id="malikGövde"></tbody>
-            </table>
-            <button class="btn btn-primary btn-sm" onclick="malikEkle()">+ Yeni Malik Ekle</button>
-        </div>
-
-        <button class="btn btn-save-final" onclick="kaydet()">TAPU VERİLERİNİ VE METİNLERİ KAYDET</button>
-        <div id="saveStatus" class="save-status">✅ Kaydedildi ve Buluta Senkronize Edildi!</div>
+  <div class="card p-3 p-md-4">
+    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+      <button onclick="anaMenuyeDon()" class="btn-geri">← ANA MENÜYE DÖN</button>
+      <div class="small-help">
+        ✅ Metinler otomatik oluşur • 💾 Kaydet = Local + (varsa) Firebase
+      </div>
     </div>
 
-    <span class="format-label">📄 BANKA FORMATI B1</span>
-    <div class="result-body" id="b1_sonuc"></div>
+    <h4 class="text-primary mb-3 border-bottom pb-2 text-center">Tapu Kayıt Giriş Ekranı</h4>
 
-    <span class="format-label">📄 BANKA FORMATI B2</span>
-    <div class="result-body" id="b2_sonuc"></div>
+    <div class="row g-2 g-md-3 mb-3">
+      <div class="col-12 col-md-3">
+        <label class="form-label fw-bold">Takbis Tarihi</label>
+        <input type="date" id="tarihInput" class="form-control border-primary" oninput="guncelleVeAutoSave()">
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label fw-bold">İnceleme Saati</label>
+        <input type="time" id="saatInput" class="form-control border-primary" oninput="guncelleVeAutoSave()">
+      </div>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <h5 class="m-0">Takyidatlar</h5>
+      <button class="btn btn-dark btn-sm" onclick="takyidatEkle(); guncelleVeAutoSave();">+ Yeni Takyidat Ekle</button>
+    </div>
+
+    <div class="table-responsive mt-2">
+      <table class="table table-bordered align-middle mb-3">
+        <thead class="table-dark">
+          <tr>
+            <th>Takyidat Türü</th>
+            <th>Açıklama</th>
+            <th>Tarih</th>
+            <th>Sayı</th>
+            <th>Engel mi?</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="tabloGövde"></tbody>
+      </table>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2">
+      <h5 class="m-0">Malikler</h5>
+      <button class="btn btn-primary btn-sm" onclick="malikEkle(); guncelleVeAutoSave();">+ Yeni Malik Ekle</button>
+    </div>
+
+    <div class="table-responsive mt-2">
+      <table class="table table-bordered align-middle mb-2">
+        <thead class="table-primary">
+          <tr>
+            <th>Ad Soyad</th>
+            <th>Pay / Payda</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="malikGövde"></tbody>
+      </table>
+    </div>
+
+    <div class="sticky-actions">
+      <button class="btn btn-save-final" onclick="kaydet()">TAPU VERİLERİNİ VE METİNLERİ KAYDET</button>
+      <div id="saveStatus" class="save-status">✅ Kaydedildi! (Local + Firebase varsa senkron)</div>
+    </div>
+  </div>
+
+  <span class="format-label">📄 BANKA FORMATI B1</span>
+  <div class="result-body" id="b1_sonuc"></div>
+
+  <span class="format-label">📄 BANKA FORMATI B2</span>
+  <div class="result-body" id="b2_sonuc"></div>
+
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
 <script>
-    // 1. Senin Gerçek Firebase Anahtarların Mühürlendi
-    const firebaseConfig = {
-        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-        authDomain: "raporanx.firebaseapp.com",
-        projectId: "raporanx",
-        storageBucket: "raporanx.firebasestorage.app",
-        messagingSenderId: "715194328346",
-        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-        measurementId: "G-V749P1HB80"
+  // -------------------------
+  // ID & Local Storage temel
+  // -------------------------
+  const urlParams = new URLSearchParams(window.location.search);
+  const id = urlParams.get('id');
+
+  const LS_KEY = 'gayrimenkul_reports';
+  let reports = JSON.parse(localStorage.getItem(LS_KEY)) || [];
+  let report = reports[id] || {};
+
+  // -------------------------
+  // Firebase (opsiyonel)
+  // firebase-config.js yüklüyse çalışır
+  // -------------------------
+  let auth = null, db = null;
+  try {
+    auth = firebase.auth();
+    db = firebase.firestore();
+  } catch (e) {
+    // Firebase yoksa sessizce local devam
+  }
+
+  function isFirebaseReady() {
+    return !!(auth && db && auth.currentUser);
+  }
+
+  function reportDocRef() {
+    // users/{uid}/reports/{id}
+    return db.collection('users').doc(auth.currentUser.uid).collection('reports').doc(String(id));
+  }
+
+  async function firestoreMergeSave(payload) {
+    if (!isFirebaseReady()) return;
+    // merge: true -> hiçbir alanı ezmez, sadece gönderdiğini günceller
+    await reportDocRef().set(payload, { merge: true });
+  }
+
+  async function firestoreLoad() {
+    if (!isFirebaseReady()) return null;
+    const snap = await reportDocRef().get();
+    return snap.exists ? snap.data() : null;
+  }
+
+  // -------------------------
+  // UI Builder
+  // -------------------------
+  function takyidatEkle(v1='', v2='', v3='', v4='', v5='hayir') {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td data-label="Takyidat Türü">
+        <input type="text" class="form-control t-tur" value="${escapeHtml(v1)}" oninput="guncelleVeAutoSave()">
+      </td>
+      <td data-label="Açıklama">
+        <input type="text" class="form-control t-acik" value="${escapeHtml(v2)}" oninput="guncelleVeAutoSave()">
+      </td>
+      <td data-label="Tarih">
+        <input type="text" class="form-control t-tar" value="${escapeHtml(v3)}" placeholder="GG.AA.YYYY" oninput="guncelleVeAutoSave()">
+      </td>
+      <td data-label="Sayı">
+        <input type="text" class="form-control t-say" value="${escapeHtml(v4)}" oninput="guncelleVeAutoSave()">
+      </td>
+      <td data-label="Engel mi?">
+        <select class="form-select t-engel" onchange="renkGuncelle(this); guncelleVeAutoSave();">
+          <option value="hayir" ${v5=='hayir'?'selected':''}>Hayır</option>
+          <option value="evet" ${v5=='evet'?'selected':''}>Evet</option>
+        </select>
+      </td>
+      <td data-label="İşlem">
+        <button class="btn btn-outline-danger btn-sm w-100" onclick="this.closest('tr').remove(); guncelleVeAutoSave()">Sil</button>
+      </td>
+    `;
+    document.getElementById('tabloGövde').appendChild(tr);
+    renkGuncelle(tr.querySelector('select'));
+  }
+
+  function malikEkle(ad='', pay='') {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td data-label="Ad Soyad">
+        <input type="text" class="form-control m-ad" value="${escapeHtml(ad)}" placeholder="Ad Soyad" oninput="guncelleVeAutoSave()">
+      </td>
+      <td data-label="Pay / Payda">
+        <input type="text" class="form-control m-pay" value="${escapeHtml(pay)}" readonly>
+      </td>
+      <td data-label="İşlem">
+        <button class="btn btn-outline-danger btn-sm w-100" onclick="this.closest('tr').remove(); payHesapla(); guncelleVeAutoSave()">Sil</button>
+      </td>
+    `;
+    document.getElementById('malikGövde').appendChild(tr);
+    payHesapla();
+  }
+
+  function payHesapla() {
+    const rows = document.querySelectorAll('#malikGövde tr');
+    rows.forEach(row => {
+      row.querySelector('.m-pay').value = rows.length ? `1/${rows.length}` : '';
+    });
+  }
+
+  function renkGuncelle(s) {
+    if (!s) return;
+    s.closest('tr').classList.toggle('engel-evet', s.value === 'evet');
+  }
+
+  // -------------------------
+  // Metin üretimi (B1/B2)
+  // -------------------------
+  function guncelle() {
+    const tVal = document.getElementById('tarihInput').value;
+    const tarihTakbis = tVal ? tVal.split('-').reverse().join('.') : "....";
+    const saatTakbis = document.getElementById('saatInput').value || "....";
+
+    let hayirlar = [];
+    let evetler = [];
+
+    document.querySelectorAll('#tabloGövde tr').forEach(row => {
+      const tur = row.querySelector('.t-tur').value.trim();
+      const acik = row.querySelector('.t-acik').value.trim();
+      const tar = row.querySelector('.t-tar').value.trim();
+      const say = row.querySelector('.t-say').value.trim();
+      const engelMi = row.querySelector('.t-engel').value;
+
+      if (tur || acik || tar || say) {
+        let detay = `${tur} ${acik}`.trim();
+        if (tar) detay += ` Tarih: ${tar}`;
+        if (say) detay += ` Sayı: ${say}`;
+
+        if (engelMi === 'evet') evetler.push(detay);
+        else hayirlar.push(detay);
+      }
+    });
+
+    let malikMetni = "";
+    document.querySelectorAll('#malikGövde tr').forEach(row => {
+      const ad = row.querySelector('.m-ad').value.trim();
+      if (ad) malikMetni += `- ${ad} (Hisse: ${row.querySelector('.m-pay').value})\n`;
+    });
+
+    let b1 = `YASAL KISITLAMALAR (Şerh, Rehin, Beyan, İpotek, Haciz ve Diğer Haklar)\n\n` +
+      `TKGM Portal Takbis Sisteminden Takbis Tarihi: ${tarihTakbis} tarihinde İnceleme Saati: ${saatTakbis} itibariyle yapılan incelemede konu taşınmazın tapu kaydı üzerinde aşağıdaki bilgilere ulaşılmıştır:\n\n`;
+
+    b1 += (hayirlar.length > 0 ? hayirlar.join(", ") : "Herhangi bir takyidat bulunmamaktadır.") + ".\n\n";
+    b1 += "Taşınmaz üzerinde yer alan kayıtların taşınmazın satışına engel teşkil etmediği bilgisi alınmıştır.";
+
+    if (evetler.length > 0) b1 += `\n\nSATIŞA ENGEL TEŞKİL EDEN DURUMLAR: ${evetler.join(", ")}`;
+
+    b1 += `\n\nMALİK BİLGİLERİ:\n${malikMetni || "Girilmedi."}`;
+
+    let b2 = `TAPU KAYIT VE TAKYİDAT ANALİZİ\n\nTakbis Tarihi: ${tarihTakbis} / İnceleme Saati: ${saatTakbis}\n\n`;
+    b2 += `MEVCUT TAKYİDATLAR:\n${hayirlar.map(h => "• " + h).join("\n") || "- Kayıt Yok"}\n\n`;
+    if (evetler.length > 0) b2 += `ENGEL TEŞKİL EDEN KAYITLAR:\n${evetler.map(e => "• " + e).join("\n")}\n\n`;
+    b2 += `MÜLKİYET YAPISI:\n${malikMetni || "- Bilgi Yok"}`;
+
+    document.getElementById('b1_sonuc').innerText = b1;
+    document.getElementById('b2_sonuc').innerText = b2;
+
+    return { b1, b2 };
+  }
+
+  // -------------------------
+  // Auto-save (debounce)
+  // -------------------------
+  let autosaveTimer = null;
+  function guncelleVeAutoSave() {
+    guncelle();
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      kaydet(true); // silent
+    }, 500);
+  }
+
+  // -------------------------
+  // Veri paketleme
+  // -------------------------
+  function collectFormData() {
+    const metinler = guncelle();
+
+    let takyidatData = [];
+    let takyidatVar = false;
+    document.querySelectorAll('#tabloGövde tr').forEach(row => {
+      const tur = row.querySelector('.t-tur').value.trim();
+      if (tur.length > 1) takyidatVar = true;
+      takyidatData.push({
+        tur,
+        acik: row.querySelector('.t-acik').value || '',
+        tar: row.querySelector('.t-tar').value || '',
+        say: row.querySelector('.t-say').value || '',
+        engel: row.querySelector('.t-engel').value || 'hayir'
+      });
+    });
+
+    let malikData = [];
+    let malikVar = false;
+    document.querySelectorAll('#malikGövde tr').forEach(row => {
+      const ad = row.querySelector('.m-ad').value.trim();
+      if (ad.length > 1) malikVar = true;
+      malikData.push({ ad, pay: row.querySelector('.m-pay').value || '' });
+    });
+
+    const tarih = document.getElementById('tarihInput').value || '';
+    const saat = document.getElementById('saatInput').value || '';
+    const eksik = (!tarih || !saat || !takyidatVar || !malikVar);
+
+    return {
+      tarih, saat, eksik,
+      takyidatData, malikData,
+      metinler
+    };
+  }
+
+  // -------------------------
+  // Kaydet (Local + Firebase Merge)
+  // silent = true ise confirm/popup yok
+  // -------------------------
+  async function kaydet(silent = false) {
+    const data = collectFormData();
+
+    if (!silent && data.eksik) {
+      if (!confirm("⚠️ Bazı teknik alanlar boş! Yine de 'Eksik Kayıt' olarak mühürlensin mi?")) return;
+    }
+
+    // Local rapor güncelle
+    reports[id] = {
+      ...reports[id],
+      tapuTarih: data.tarih,
+      tapuSaat: data.saat,
+      tapuTakyidatDizi: data.takyidatData,
+      tapuMalikDizi: data.malikData,
+      tapuMetniB1: data.metinler.b1,
+      tapuMetniB2: data.metinler.b2,
+      tapu_tamamlandi: !data.eksik,
+      tapu_updatedAt: Date.now()
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+    localStorage.setItem(LS_KEY, JSON.stringify(reports));
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-    let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    let report = reports[id] || {};
+    // Firebase senkron (varsa)
+    // DİKKAT: merge ile sadece bu modül alanları yazılır, başka modüller ezilmez.
+    try {
+      await firestoreMergeSave({
+        modules: {
+          tapu: {
+            tapuTarih: data.tarih,
+            tapuSaat: data.saat,
+            tapuTakyidatDizi: data.takyidatData,
+            tapuMalikDizi: data.malikData,
+            tapuMetniB1: data.metinler.b1,
+            tapuMetniB2: data.metinler.b2,
+            tapu_tamamlandi: !data.eksik,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }
+        },
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (e) {
+      // Firebase yoksa / user login değilse localde kalır
+    }
 
-    async function bulutaGonder() {
-        const user = auth.currentUser;
-        if (user) {
-            const tumRaporlar = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-            await db.collection("users").doc(user.uid).set({
-                gayrimenkul_reports: tumRaporlar,
-                sonGuncelleme: new Date().toISOString()
-            }, { merge: true });
-            console.log("Tapu verileri buluta mühürlendi ☁️✅");
+    if (!silent) showSaved();
+  }
+
+  function showSaved() {
+    const status = document.getElementById('saveStatus');
+    status.style.display = 'block';
+    setTimeout(() => { status.style.display = 'none'; }, 2500);
+  }
+
+  function anaMenuyeDon() {
+    window.location.href = `rapor-detay.html?id=${id}`;
+  }
+
+  // -------------------------
+  // Load: Önce Firebase (varsa), yoksa local
+  // -------------------------
+  async function loadIntoUI(sourceReport) {
+    if (!sourceReport) sourceReport = {};
+
+    const tapu = sourceReport.modules?.tapu || sourceReport;
+
+    if (tapu.tapuTarih) document.getElementById('tarihInput').value = tapu.tapuTarih;
+    if (tapu.tapuSaat) document.getElementById('saatInput').value = tapu.tapuSaat;
+
+    document.getElementById('tabloGövde').innerHTML = '';
+    document.getElementById('malikGövde').innerHTML = '';
+
+    if (tapu.tapuTakyidatDizi && tapu.tapuTakyidatDizi.length > 0) {
+      tapu.tapuTakyidatDizi.forEach(d => takyidatEkle(d.tur, d.acik, d.tar, d.say, d.engel));
+    } else {
+      takyidatEkle();
+    }
+
+    if (tapu.tapuMalikDizi && tapu.tapuMalikDizi.length > 0) {
+      tapu.tapuMalikDizi.forEach(m => malikEkle(m.ad, m.pay));
+    } else {
+      malikEkle();
+    }
+
+    guncelle();
+  }
+
+  window.onload = async function() {
+    // İlk: local yükle (ekran hemen dolsun)
+    report = reports[id] || {};
+    await loadIntoUI(report);
+
+    // Firebase varsa: auth durumuna göre çek ve uygula (localden daha güncelse)
+    if (auth && db) {
+      auth.onAuthStateChanged(async (user) => {
+        if (!user) return; // login değilse local devam
+        const cloud = await firestoreLoad();
+        if (cloud) {
+          // Basit “hangisi güncel” kıyası (localde tapu_updatedAt var, cloudda serverTimestamp olabilir)
+          // Eğer cloud varsa direkt uygula (istersen burada tarih kıyasını daha da sertleştiririz)
+          await loadIntoUI(cloud);
         }
+      });
     }
+  };
 
-    function takyidatEkle(v1='', v2='', v3='', v4='', v5='hayir') {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" class="form-control t-tur" value="${v1}" oninput="guncelle()"></td>
-            <td><input type="text" class="form-control t-acik" value="${v2}" oninput="guncelle()"></td>
-            <td><input type="text" class="form-control t-tar" value="${v3}" placeholder="GG.AA.YYYY" oninput="guncelle()"></td>
-            <td><input type="text" class="form-control t-say" value="${v4}" oninput="guncelle()"></td>
-            <td>
-                <select class="form-select t-engel" onchange="renkGuncelle(this); guncelle();">
-                    <option value="hayir" ${v5=='hayir'?'selected':''}>Hayır</option>
-                    <option value="evet" ${v5=='evet'?'selected':''}>Evet</option>
-                </select>
-            </td>
-            <td><button class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); guncelle()">X</button></td>
-        `;
-        document.getElementById('tabloGövde').appendChild(tr);
-        renkGuncelle(tr.querySelector('select'));
-    }
-
-    function malikEkle(ad='', pay='') {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" class="form-control m-ad" value="${ad}" placeholder="Ad Soyad" oninput="guncelle()"></td>
-            <td><input type="text" class="form-control m-pay" value="${pay}" readonly></td>
-            <td><button class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); payHesapla(); guncelle()">X</button></td>
-        `;
-        document.getElementById('malikGövde').appendChild(tr);
-        payHesapla();
-    }
-
-    function payHesapla() {
-        const rows = document.querySelectorAll('#malikGövde tr');
-        rows.forEach(row => { row.querySelector('.m-pay').value = `1/${rows.length}`; });
-    }
-
-    function renkGuncelle(s) { if(s) s.closest('tr').classList.toggle('engel-evet', s.value === 'evet'); }
-
-    function guncelle() {
-        const tVal = document.getElementById('tarihInput').value;
-        const tarihTakbis = tVal ? tVal.split('-').reverse().join('.') : "....";
-        const saatTakbis = document.getElementById('saatInput').value || "....";
-        
-        let hayirlar = [];
-        let evetler = [];
-        document.querySelectorAll('#tabloGövde tr').forEach(row => {
-            const tur = row.querySelector('.t-tur').value.trim();
-            const acik = row.querySelector('.t-acik').value.trim();
-            const tar = row.querySelector('.t-tar').value.trim();
-            const say = row.querySelector('.t-say').value.trim();
-            const engelMi = row.querySelector('.t-engel').value;
-
-            if(tur || acik) {
-                let detay = `${tur} ${acik}`;
-                if(tar) detay += ` Tarih: ${tar}`;
-                if(say) detay += ` Sayı: ${say}`;
-                if(engelMi === 'evet') evetler.push(detay); else hayirlar.push(detay);
-            }
-        });
-
-        let malikMetni = "";
-        document.querySelectorAll('#malikGövde tr').forEach(row => {
-            const ad = row.querySelector('.m-ad').value.trim();
-            if(ad) malikMetni += `- ${ad} (Hisse: ${row.querySelector('.m-pay').value})\n`;
-        });
-
-        let b1 = `YASAL KISITLAMALAR (Şerh, Rehin, Beyan, İpotek, Haciz ve Diğer Haklar)\n\nTKGM Portal Takbis Sisteminden Takbis Tarihi: ${tarihTakbis} tarihinde İnceleme Saati: ${saatTakbis} itibariyle yapılan incelemede konu taşınmazın tapu kaydı üzerinde aşağıdaki bilgilere ulaşılmıştır:\n\n`;
-        b1 += (hayirlar.length > 0 ? hayirlar.join(", ") : "Herhangi bir takyidat bulunmamaktadır.") + ".\n\nTaşınmaz üzerinde yer alan kayıtların taşınmazın satışına engel teşkil etmediği bilgisi alınmıştır.";
-        if(evetler.length > 0) b1 += `\n\nSATIŞA ENGEL TEŞKİL EDEN DURUMLAR: ${evetler.join(", ")}`;
-        b1 += `\n\nMALİK BİLGİLERİ:\n${malikMetni || "Girilmedi."}`;
-        document.getElementById('b1_sonuc').innerText = b1;
-
-        let b2 = `TAPU KAYIT VE TAKYİDAT ANALİZİ\n\nTakbis Tarihi: ${tarihTakbis} / İnceleme Saati: ${saatTakbis}\n\n`;
-        b2 += `MEVCUT TAKYİDATLAR:\n${hayirlar.map(h => "• " + h).join("\n") || "- Kayıt Yok"}\n\n`;
-        if(evetler.length > 0) b2 += `ENGEL TEŞKİL EDEN KAYITLAR:\n${evetler.map(e => "• " + e).join("\n")}\n\n`;
-        b2 += `MÜLKİYET YAPISI:\n${malikMetni || "- Bilgi Yok"}`;
-        document.getElementById('b2_sonuc').innerText = b2;
-
-        return { b1, b2 };
-    }
-
-    async function kaydet() {
-        const metinler = guncelle();
-        let takyidatData = [];
-        let takyidatVar = false;
-        document.querySelectorAll('#tabloGövde tr').forEach(row => {
-            const tur = row.querySelector('.t-tur').value.trim();
-            if(tur.length > 1) takyidatVar = true;
-            takyidatData.push({ tur: tur, acik: row.querySelector('.t-acik').value, tar: row.querySelector('.t-tar').value, say: row.querySelector('.t-say').value, engel: row.querySelector('.t-engel').value });
-        });
-
-        let malikData = [];
-        let malikVar = false;
-        document.querySelectorAll('#malikGövde tr').forEach(row => {
-            const ad = row.querySelector('.m-ad').value.trim();
-            if(ad.length > 1) malikVar = true;
-            malikData.push({ ad: ad, pay: row.querySelector('.m-pay').value });
-        });
-
-        const tarih = document.getElementById('tarihInput').value;
-        const saat = document.getElementById('saatInput').value;
-        const eksik = (!tarih || !saat || !takyidatVar || !malikVar);
-
-        if (eksik) { if (!confirm("⚠️ Bazı teknik alanlar boş! Yine de 'Eksik Kayıt' olarak mühürlensin mi?")) return; }
-
-        reports[id] = {
-            ...reports[id],
-            tapuTarih: tarih,
-            tapuSaat: saat,
-            tapuTakyidatDizi: takyidatData,
-            tapuMalikDizi: malikData,
-            tapuMetniB1: metinler.b1,
-            tapuMetniB2: metinler.b2,
-            tapu_tamamlandi: !eksik
-        };
-
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-        await bulutaGonder();
-
-        const status = document.getElementById('saveStatus');
-        status.style.display = 'block';
-        setTimeout(() => { status.style.display = 'none'; }, 3000);
-    }
-
-    function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${id}`; }
-
-    window.onload = function() {
-        if(report.tapuTarih) document.getElementById('tarihInput').value = report.tapuTarih;
-        if(report.tapuSaat) document.getElementById('saatInput').value = report.tapuSaat;
-        if(report.tapuTakyidatDizi && report.tapuTakyidatDizi.length > 0) {
-            report.tapuTakyidatDizi.forEach(d => takyidatEkle(d.tur, d.acik, d.tar, d.say, d.engel));
-        } else { takyidatEkle(); }
-        if(report.tapuMalikDizi && report.tapuMalikDizi.length > 0) {
-            report.tapuMalikDizi.forEach(m => malikEkle(m.ad, m.pay));
-        } else { malikEkle(); }
-        guncelle();
-    }
+  // -------------------------
+  // Güvenlik: input value escape
+  // -------------------------
+  function escapeHtml(str) {
+    return String(str || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
 </script>
 </body>
 </html>
