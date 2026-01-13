@@ -98,18 +98,21 @@
 <div id="datalists"></div>
 
 <script>
-  // ✅ datalist üretimi aynı
+  // ✅ datalist üretimi
   (function(){
     const ids = ['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'];
     const wrap = document.getElementById("datalists");
     wrap.innerHTML = ids.map(id => `<datalist id="h_${id}"></datalist>`).join("");
   })();
 
-  const db = window.db;
-  const auth = window.auth;
+  // ✅ firebase-config.js bazen window.db/auth verir; garantiye al
+  const db = window.db || firebase.firestore();
+  const auth = window.auth || firebase.auth();
+
+  const statusMsg = document.getElementById("statusMsg"); // ✅ global erişim
 
   const urlParams = new URLSearchParams(window.location.search);
-  const reportId = urlParams.get("id"); // ✅ artık docId
+  const reportId = urlParams.get("id"); // cloud docId
 
   const inputIds = ['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'];
 
@@ -125,12 +128,12 @@
   document.getElementById("btnBack").addEventListener("click", anaMenuyeDon);
   document.getElementById("menuBtn").addEventListener("click", anaMenuyeDon);
 
+  // ✅ BOZULAN showList DÜZELTİLDİ
   function showList(input) {
     input.setAttribute('autocomplete', 'off');
     const val = input.value;
     input.value = '';
-   setTimeout(() => { statusMsg.style.display = 'none'; }, 4000);
- , 1;)
+    setTimeout(() => { input.value = val; }, 1);
   }
 
   function toggleAltyapi(isEvet) {
@@ -145,7 +148,7 @@
     guncelleOnizleme();
   }
 
-  // radio değişimini dinle (onclick yerine sağlam yöntem)
+  // radio değişimini dinle
   document.querySelectorAll('input[name="altyapi"]').forEach(r => {
     r.addEventListener("change", () => {
       toggleAltyapi(document.querySelector('input[name="altyapi"]:checked').value === "Evet");
@@ -169,7 +172,7 @@
     }
   }
 
-  // ✅ FULL METİN motorun: tablo + f1 + f2 + f3 (dokunmadım)
+  // ✅ FULL METİN motoru
   function guncelleOnizleme() {
     let v = {};
     inputIds.forEach(id => { v[id] = document.getElementById(id).value || "..."; });
@@ -230,7 +233,7 @@ Değerleme konusu taşınmaz, ${v.v4} İli, ${v.v5} İlçesi, ${v.v6} Mahallesi,
     reportData = snap.data();
     document.getElementById("raporBilgi").textContent = reportData.propertyName || "Yeni Rapor";
 
-    // datalist geçmişi (opsiyonel, sende vardı)
+    // datalist geçmişi (opsiyonel)
     inputIds.forEach(id => {
       let h = JSON.parse(localStorage.getItem('h_' + id)) || [];
       const dl = document.getElementById('h_' + id);
@@ -284,28 +287,17 @@ Değerleme konusu taşınmaz, ${v.v4} İli, ${v.v5} İlçesi, ${v.v6} Mahallesi,
 
       const konumCevreObj = { ...v, tamMetin: paket };
 
-      // ✅ sadece bu raporu buluta yaz
       await reportRef.set({
         konumCevre: konumCevreObj,
         konum_tamamlandi: !eksikVar,
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
-      // ekranda mesaj
-      const statusMsg = document.getElementById('statusMsg');
       statusMsg.style.display = 'block';
       statusMsg.style.background = eksikVar ? '#fff3cd' : '#d1e7dd';
       statusMsg.style.color = eksikVar ? '#856404' : '#0f5132';
       statusMsg.textContent = eksikVar ? "⚠️ Veriler eksik mühürlendi (Bulut Güncellendi)!" : "✅ Tablo ve Tüm Formatlar Buluta Mühürlendi!";
-      setTimeout(() => { statusMsg.style.display = 'none'; },s, 4000);
-
-      // local cache (opsiyonel)
-      try{
-        const cacheKey = "cloud_reports_cache_" + currentUser.uid;
-        const cache = JSON.parse(localStorage.getItem(cacheKey) || "{}");
-        cache[reportId] = { ...(cache[reportId]||{}), konumCevre: konumCevreObj, konum_tamamlandi: !eksikVar };
-        localStorage.setItem(cacheKey, JSON.stringify(cache));
-      } catch(e){}
+      setTimeout(() => { statusMsg.style.display = 'none'; }, 4000);
 
       reportData.konumCevre = konumCevreObj;
       reportData.konum_tamamlandi = !eksikVar;
@@ -320,7 +312,6 @@ Değerleme konusu taşınmaz, ${v.v4} İli, ${v.v5} İlçesi, ${v.v6} Mahallesi,
 
   document.getElementById("saveBtn").addEventListener("click", verileriKaydet);
 
-  // giriş kontrol + yükle
   auth.onAuthStateChanged(async (user) => {
     if(!user){ location.href="index.html"; return; }
     currentUser = user;
@@ -329,4 +320,3 @@ Değerleme konusu taşınmaz, ${v.v4} İli, ${v.v5} İlçesi, ${v.v6} Mahallesi,
 </script>
 </body>
 </html>
-
