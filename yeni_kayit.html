@@ -1,31 +1,30 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yeni Rapor Oluştur</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yeni Rapor Oluştur</title>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-  <style>
-    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #ba68c8); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
-    .container { max-width: 600px; margin: 0 auto; text-align: center; }
-    h1 { font-size: 32px; margin-bottom: 30px; }
-    form { background: rgba(255,255,255,0.2); padding: 30px; border-radius: 15px; }
-    label { display: block; margin: 15px 0 5px; font-weight: bold; text-align: left; }
-    input { width: 100%; padding: 14px; border: none; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
-    button { background: #00c853; color: white; padding: 18px; border: none; border-radius: 12px; width: 100%; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-    button:hover { background: #00b140; }
-    .geri-btn { background: #6c757d; margin-top: 15px; }
-    .geri-btn:hover { background: #5a6268; }
-    .referans-btn { background: #2196f3; margin-top: 15px; }
-    .referans-btn:hover { background: #1976d2; }
-    .muted { opacity: 0.85; margin-top: 10px; font-size: 13px; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-  </style>
+<style>
+  body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #ba68c8); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
+  .container { max-width: 600px; margin: 0 auto; text-align: center; }
+  h1 { font-size: 32px; margin-bottom: 30px; }
+  form { background: rgba(255,255,255,0.2); padding: 30px; border-radius: 15px; }
+  label { display: block; margin: 15px 0 5px; font-weight: bold; text-align: left; }
+  input { width: 100%; padding: 14px; border: none; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
+  button { background: #00c853; color: white; padding: 18px; border: none; border-radius: 12px; width: 100%; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 12px; }
+  button:hover { background: #00b140; }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .geri-btn { background: #6c757d; }
+  .geri-btn:hover { background: #5a6268; }
+  .referans-btn { background: #2196f3; }
+  .referans-btn:hover { background: #1976d2; }
+  .muted { opacity: 0.9; margin-top: 10px; font-size: 13px; }
+</style>
 </head>
 
 <body>
@@ -51,8 +50,8 @@
     <label>Parsel</label>
     <input type="text" id="parsel" placeholder="Örn: 45">
 
-    <button id="createBtn" type="button" onclick="raporOlustur()">YENİ RAPOR OLUŞTUR</button>
-    <div id="status" class="muted"></div>
+    <button id="createBtn" type="button" onclick="raporOlustur()" disabled>YENİ RAPOR OLUŞTUR</button>
+    <div id="status" class="muted">⏳ Kullanıcı kontrol ediliyor...</div>
 
     <button type="button" class="referans-btn" onclick="referansAc()">REFERANS BİLGİLER (Posta Kodu, Maliyet vb.)</button>
     <button type="button" class="geri-btn" onclick="anaSayfayaDon()">ANA SAYFAYA DÖN</button>
@@ -60,31 +59,70 @@
 </div>
 
 <script>
-  const auth = window.auth;
-  const db = window.db;
+  // ✅ Firebase init (index ile aynı)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+    authDomain: "raporanx.firebaseapp.com",
+    projectId: "raporanx",
+    storageBucket: "raporanx.firebasestorage.app",
+    messagingSenderId: "715194328346",
+    appId: "1:715194328346:web:46f0bb98941e01ead6f8a3"
+  };
 
-  // Sayfa koruması: giriş yoksa index
-  auth.onAuthStateChanged((user) => {
-    if (!user) {
-      alert("⚠️ Yetki yok! Lütfen giriş yapın.");
-      window.location.href = "index.html";
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  const createBtn = document.getElementById("createBtn");
+  const statusEl = document.getElementById("status");
+
+  // ✅ Her yeni kullanıcıya 5 kredi (sadece ilk girişte)
+  async function ensureUserDoc(user){
+    const userRef = db.collection("users").doc(user.uid);
+    const snap = await userRef.get();
+
+    if(!snap.exists){
+      await userRef.set({
+        kredi: 5,
+        kayitTarihi: new Date().toISOString(),
+        email: user.email
+      });
+      return 5;
     }
-  });
+    return snap.data().kredi ?? 0;
+  }
 
-  async function raporOlustur() {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("⚠️ Giriş yapmalısın.");
+  // ✅ Sayfa açılınca kullanıcı kontrolü (burada beklemeyince “oluşturamıyordun”)
+  auth.onAuthStateChanged(async (user) => {
+    if(!user){
+      alert("⚠️ Yetki yok! Lütfen giriş yapın.");
       window.location.href = "index.html";
       return;
     }
 
-    const btn = document.getElementById("createBtn");
-    const status = document.getElementById("status");
-    btn.disabled = true;
-    status.textContent = "☁️ Bulutta rapor oluşturuluyor...";
+    try{
+      const kredi = await ensureUserDoc(user);
+      statusEl.textContent = `✅ Giriş tamam. Mevcut kredi: ${kredi}`;
+      createBtn.disabled = false;
+    }catch(e){
+      statusEl.textContent = "❌ Kullanıcı bilgisi okunamadı: " + (e?.message || e);
+      createBtn.disabled = true;
+    }
+  });
 
-    // Form verileri
+  async function raporOlustur(){
+    const user = auth.currentUser;
+    if(!user){
+      alert("⚠️ Giriş bulunamadı. Ana sayfaya dön.");
+      window.location.href = "index.html";
+      return;
+    }
+
+    createBtn.disabled = true;
+    statusEl.textContent = "☁️ Bulutta rapor oluşturuluyor...";
+
+    const now = new Date().toISOString();
+
     const report = {
       propertyName: (document.getElementById('propertyName').value || "").trim() || "İsimsiz Gayrimenkul",
       il: (document.getElementById('il').value || "").trim(),
@@ -93,13 +131,10 @@
       ada: (document.getElementById('ada').value || "").trim(),
       parsel: (document.getElementById('parsel').value || "").trim(),
 
-      // Sistem alanları
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
       isLocked: false,
-      archived: false,
 
-      // Modül verileri (boş başlat)
       bina: {},
       bbDetay: {},
       emsaller: [],
@@ -109,26 +144,22 @@
       belgeler: {}
     };
 
-    try {
-      // ✅ Tek rapor dokümanı oluştur
-      const docRef = await db.collection("users")
-        .doc(user.uid)
+    try{
+      const docRef = await db.collection("users").doc(user.uid)
         .collection("reports")
         .add(report);
 
-      status.textContent = "✅ Oluşturuldu. Yönlendiriliyor...";
+      statusEl.textContent = "✅ Rapor oluşturuldu, yönlendiriliyor...";
       window.location.href = "rapor-detay.html?id=" + encodeURIComponent(docRef.id);
-
-    } catch (e) {
-      console.error(e);
+    }catch(e){
       alert("❌ Rapor oluşturma hatası: " + (e?.message || e));
-      status.textContent = "❌ Hata oluştu.";
-      btn.disabled = false;
+      statusEl.textContent = "❌ Hata oluştu.";
+      createBtn.disabled = false;
     }
   }
 
-  function referansAc() { window.open('referans-bilgiler.html', '_blank'); }
-  function anaSayfayaDon() { window.location.href = 'index.html'; }
+  function referansAc(){ window.open('referans-bilgiler.html', '_blank'); }
+  function anaSayfayaDon(){ window.location.href = "index.html"; }
 </script>
 </body>
 </html>
