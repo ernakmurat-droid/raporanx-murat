@@ -4,74 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>İMAR DURUMU</title>
-
-<!-- Firebase (opsiyonel) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-
 <style>
   body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f9; }
-  .container { max-width: 700px; margin: 20px auto; background: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-  header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 2px solid #3498db; margin-bottom: 20px; position: relative; gap: 10px; }
-  header h1 { color: #3498db; margin: 0; font-size: 1.5em; }
-  .header-info { font-size: 0.9em; color: #555; text-align: right; }
-  .back-btn { position: absolute; left: 0; top: 0; background: #d32f2f; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; cursor: pointer; border: none; }
+  .container { max-width: 700px; margin: 20px auto; background: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,.1); }
+  header { display:flex; justify-content:space-between; align-items:center; padding-bottom:10px; border-bottom:2px solid #3498db; margin-bottom:20px; position:relative; gap:10px; }
+  header h1 { color:#3498db; margin:0; font-size:1.5em; }
+  .header-info { font-size:.9em; color:#555; text-align:right; }
+  .back-btn { position:absolute; left:0; top:0; background:#d32f2f; color:#fff; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; border:none; }
+  .form-section { margin-bottom:20px; padding:10px; border:1px solid #ddd; border-radius:5px; }
+  .form-section label { display:block; font-weight:bold; margin-top:10px; margin-bottom:5px; }
+  .radio-group { display:flex; flex-wrap:wrap; gap:15px; }
+  .radio-group div { display:flex; align-items:center; gap:6px; }
+  input[type="text"], input[type="number"] { padding:8px; border:1px solid #ccc; border-radius:4px; width:100%; box-sizing:border-box; }
+  #diğer-nizam-kutusu, #yola-tecavüz-alan-kutusu { margin-left:10px; display:none; }
+  .hmax-bilgi { margin-left:20px; font-size:.9em; color:#e74c3c; font-weight:bold; }
+  #otomatik-metin-alani { margin-top:30px; padding-top:20px; border-top:1px solid #ccc; }
+  .mavi-kutu { background:#eaf6ff; border:1px solid #3498db; padding:15px; margin-bottom:15px; border-radius:5px; }
+  .yesil-kutu { background:#ebf5eb; border:1px solid #2ecc71; padding:15px; border-radius:5px; }
+  table { width:100%; border-collapse:collapse; margin-bottom:10px; font-size:.9em; }
+  table, th, td { border:1px solid #3498db; }
+  th, td { padding:8px; text-align:left; }
+  .action-button { padding:15px 20px; font-size:1.1em; border:none; border-radius:5px; cursor:pointer; margin-top:15px; display:block; width:100%; transition:.3s; font-weight:bold; }
+  #kaydet-button { background:#2ecc71; color:#fff; }
+  .btn-menu { background:#9c27b0; color:#fff; }
+  .status-msg { display:none; text-align:center; font-weight:bold; margin-top:10px; padding:10px; border-radius:8px; }
 
-  .form-section { margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-  .form-section label { display: block; font-weight: bold; margin-top: 10px; margin-bottom: 5px; }
-  .radio-group { display: flex; flex-wrap: wrap; gap: 15px; }
-  .radio-group div { display: flex; align-items: center; gap: 6px; }
+  .module-badge { display:inline-flex; align-items:center; border:1px solid #ddd; border-radius:999px; padding:6px 10px; font-weight:800; font-size:12px; background:#fff; }
+  .badge-empty { color:#6c757d; }
+  .badge-draft { color:#856404; background:#fff3cd; border-color:#ffeeba; }
+  .badge-done { color:#0f5132; background:#d1e7dd; border-color:#badbcc; }
 
-  input[type="text"], input[type="number"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; }
-  #diğer-nizam-kutusu, #yola-tecavüz-alan-kutusu { margin-left: 10px; display: none; }
+  .suggest-wrap { position:relative; }
+  .suggest-box { position:absolute; left:0; right:0; top:calc(100% + 6px); background:#fff; border:1px solid #ddd; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); overflow:hidden; z-index:9999; display:none; }
+  .suggest-item { padding:10px 12px; cursor:pointer; border-bottom:1px solid #f1f1f1; font-weight:700; font-size:13px; }
+  .suggest-item:last-child { border-bottom:none; }
+  .suggest-item:hover { background:#f5f7fa; }
+  .suggest-foot { padding:8px 12px; font-size:12px; color:#6c757d; background:#fafafa; border-top:1px solid #f1f1f1; }
 
-  .hmax-bilgi { margin-left: 20px; font-size: 0.9em; color: #e74c3c; font-weight: bold; }
-
-  #otomatik-metin-alani { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; }
-  .mavi-kutu { background-color: #eaf6ff; border: 1px solid #3498db; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
-  .yesil-kutu { background-color: #ebf5eb; border: 1px solid #2ecc71; padding: 15px; border-radius: 5px; }
-
-  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 0.9em; }
-  table, th, td { border: 1px solid #3498db; }
-  th, td { padding: 8px; text-align: left; }
-
-  .action-button { padding: 15px 20px; font-size: 1.1em; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; display: block; width: 100%; transition: 0.3s; font-weight: bold; }
-  #kaydet-button { background-color: #2ecc71; color: white; }
-  .btn-menu { background-color: #9c27b0; color: white; }
-
-  .status-msg { display: none; text-align: center; font-weight: bold; margin-top: 10px; padding: 10px; border-radius: 8px; }
-
-  /* Modül Durum Rozeti */
-  .module-badge {
-    display: inline-flex; align-items: center;
-    border: 1px solid #ddd; border-radius: 999px;
-    padding: 6px 10px; font-weight: 800; font-size: 12px;
-    background: #fff;
-  }
-  .badge-empty { color: #6c757d; }
-  .badge-draft { color: #856404; background: #fff3cd; border-color: #ffeeba; }
-  .badge-done  { color: #0f5132; background: #d1e7dd; border-color: #badbcc; }
-
-  /* 5'li öneri kutusu */
-  .suggest-wrap { position: relative; }
-  .suggest-box {
-    position: absolute; left: 0; right: 0; top: calc(100% + 6px);
-    background: #fff; border: 1px solid #ddd; border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    overflow: hidden; z-index: 9999; display: none;
-  }
-  .suggest-item { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f1f1f1; font-weight: 700; font-size: 13px; }
-  .suggest-item:last-child { border-bottom: none; }
-  .suggest-item:hover { background: #f5f7fa; }
-  .suggest-foot { padding: 8px 12px; font-size: 12px; color: #6c757d; background: #fafafa; border-top: 1px solid #f1f1f1; }
-
-  @media (max-width: 768px) {
-    .container { margin: 10px; padding: 14px; }
-    header { padding-top: 46px; }
-    .back-btn { top: 10px; left: 10px; }
-  }
+  @media (max-width:768px){ .container{margin:10px;padding:14px;} header{padding-top:46px;} .back-btn{top:10px;left:10px;} }
 </style>
 </head>
 
@@ -112,7 +82,7 @@
 
     <div class="form-section">
       <label for="taks">4. TAKS / 5. KAKS:</label>
-      <div style="display: flex; gap: 10px;">
+      <div style="display:flex; gap:10px;">
         <input type="text" id="taks" placeholder="TAKS (Örn: 0.40)">
         <input type="text" id="kaks" placeholder="KAKS (Örn: 1.60)">
       </div>
@@ -121,7 +91,7 @@
     <div class="form-section">
       <label for="yola-terk">6. Yola Terk (m²):</label>
       <input type="number" id="yola-terk" min="0" value="0">
-      <div id="tecavuz-sorusu" style="display: none; margin-top: 10px;">
+      <div id="tecavuz-sorusu" style="display:none; margin-top:10px;">
         <label>Yola tecavüz var mı?</label>
         <div class="radio-group">
           <div><input type="radio" name="tecavuz" value="Hayır" id="tecavuz-hayir" checked><label for="tecavuz-hayir">Hayır</label></div>
@@ -164,77 +134,22 @@
   </div>
 </div>
 
+<!-- ✅ TEK STORAGE KATMANI -->
+<script src="storage.js"></script>
+
 <script>
-/* =========================
-   0) ID + Local rapor
-   ✅ reports artık OBJECT (id string olsa bile kaydolur)
-========================= */
 const urlParams = new URLSearchParams(window.location.search);
 const id = urlParams.get('id');
-
-const LS_REPORTS = 'gayrimenkul_reports';
-const LS_SUGG_GLOBAL = 'gayrimenkul_suggestions_v1';
-
-let reports = JSON.parse(localStorage.getItem(LS_REPORTS)) || {};
-if (Array.isArray(reports)) {
-  // eski sistemden gelen array varsa object'e çevir
-  const obj = {};
-  reports.forEach((r, idx) => { if (r) obj[String(idx)] = r; });
-  reports = obj;
-  localStorage.setItem(LS_REPORTS, JSON.stringify(reports));
-}
-
-let report = reports[id] || { imar: {}, modules: {} };
-reports[id] = report;
-persistLocalReports();
+if(!id){ alert("Bu sayfa ?id=... olmadan açılmış."); }
 
 const MODULE_KEY = 'imar';
+const LS_SUGG_GLOBAL = 'gayrimenkul_suggestions_v1';
 
-/* =========================
-   1) Firebase (opsiyonel)
-========================= */
-let auth=null, db=null;
-try { auth=firebase.auth(); db=firebase.firestore(); } catch(e){}
+let report = RaporStorage.get(id) || { imar:{}, modules:{} };
+report.modules = report.modules || {};
+RaporStorage.set(id, report);
 
-function isFirebaseReady(){ return !!(auth && db && auth.currentUser); }
-
-function reportDocRef(){
-  return db.collection('users').doc(auth.currentUser.uid)
-           .collection('reports').doc(String(id));
-}
-
-function suggDocRef(){
-  return db.collection('users').doc(auth.currentUser.uid)
-           .collection('suggestions').doc('main');
-}
-
-async function firestoreMergeSave(payload){
-  if(!isFirebaseReady()) return;
-  await reportDocRef().set(payload,{merge:true});
-}
-
-async function firestoreLoadReport(){
-  if(!isFirebaseReady()) return null;
-  const snap=await reportDocRef().get();
-  return snap.exists ? snap.data() : null;
-}
-
-async function firestoreLoadSuggestions(){
-  if(!isFirebaseReady()) return null;
-  const snap=await suggDocRef().get();
-  return snap.exists ? snap.data() : null;
-}
-
-async function firestoreSaveSuggestions(fields){
-  if(!isFirebaseReady()) return;
-  await suggDocRef().set({ fields, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },{merge:true});
-}
-
-/* =========================
-   2) Modül state (Boş/Taslak/Tamam)
-========================= */
 function ensureModuleState(){
-  report.modules = report.modules || {};
   report.modules[MODULE_KEY] = report.modules[MODULE_KEY] || {};
   return report.modules[MODULE_KEY];
 }
@@ -256,25 +171,27 @@ function setBadge(status){
   el.textContent='✅ Tamam'; el.classList.add('badge-done');
 }
 
-function persistLocalReports(){
-  reports[id] = report;
-  localStorage.setItem(LS_REPORTS, JSON.stringify(reports));
+function persist(){
+  RaporStorage.set(id, report);
+  setBadge(computeStatus(ensureModuleState()));
 }
 
-/* =========================
-   3) 5 öneri sistemi
-========================= */
-let suggestionStore = loadSuggestionStoreLocal(); // {fields:{}}
+function onUserRealInput(){
+  const mod=ensureModuleState();
+  if(!mod.started){
+    mod.started=true;
+    mod.startedAt=mod.startedAt || Date.now();
+    persist();
+  }
+}
 
-function loadSuggestionStoreLocal(){
+/* --- 5 öneri (basit) --- */
+let suggestionStore = (function(){
   try { return JSON.parse(localStorage.getItem(LS_SUGG_GLOBAL)) || {fields:{}}; }
   catch { return {fields:{}}; }
-}
-function saveSuggestionStoreLocal(){
-  localStorage.setItem(LS_SUGG_GLOBAL, JSON.stringify(suggestionStore));
-}
+})();
+function saveSuggestionStore(){ localStorage.setItem(LS_SUGG_GLOBAL, JSON.stringify(suggestionStore)); }
 function norm(v){ return String(v||'').trim().replace(/\s+/g,' '); }
-
 function addSuggestion(fieldKey,value){
   const v=norm(value);
   if(!v || v.length<2) return;
@@ -282,26 +199,18 @@ function addSuggestion(fieldKey,value){
   suggestionStore.fields[fieldKey]=suggestionStore.fields[fieldKey].filter(x=>norm(x).toLowerCase()!==v.toLowerCase());
   suggestionStore.fields[fieldKey].unshift(v);
   suggestionStore.fields[fieldKey]=suggestionStore.fields[fieldKey].slice(0,50);
-  saveSuggestionStoreLocal();
+  saveSuggestionStore();
 }
-
-function top5(fieldKey){
-  return (suggestionStore.fields[fieldKey]||[]).slice(0,5);
-}
-
+function top5(fieldKey){ return (suggestionStore.fields[fieldKey]||[]).slice(0,5); }
 function escapeHtml(str){
-  return String(str||'')
-    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
-    .replaceAll('"','&quot;').replaceAll("'","&#39;");
+  return String(str||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;");
 }
-
-function attachSuggest(inputEl, fieldKey, onRealInput){
+function attachSuggest(inputEl, fieldKey){
   if(!inputEl.closest('.suggest-wrap')){
     const wrap=document.createElement('div');
     wrap.className='suggest-wrap';
     inputEl.parentNode.insertBefore(wrap,inputEl);
     wrap.appendChild(inputEl);
-
     const box=document.createElement('div');
     box.className='suggest-box';
     wrap.appendChild(box);
@@ -319,51 +228,25 @@ function attachSuggest(inputEl, fieldKey, onRealInput){
     box.querySelectorAll('.suggest-item').forEach(it=>{
       it.addEventListener('mousedown',(e)=>{
         e.preventDefault();
-        const val=it.getAttribute('data-val')||'';
-        inputEl.value=val;
-        if(typeof onRealInput==='function') onRealInput();
+        inputEl.value = it.getAttribute('data-val')||'';
+        onUserRealInput();
         guncelleVeAutoSave();
         box.style.display='none';
       });
     });
   }
-
   function hide(delay=120){ setTimeout(()=>box.style.display='none',delay); }
 
-  inputEl.addEventListener('focus',()=>{ render(); }); // sadece göster
-  inputEl.addEventListener('blur',()=>hide());
-  inputEl.addEventListener('input',()=>{ if(typeof onRealInput==='function') onRealInput(); render(); });
+  inputEl.addEventListener('focus', ()=>render()); // sadece göster
+  inputEl.addEventListener('blur', ()=>hide());
+  inputEl.addEventListener('input', ()=>{ onUserRealInput(); render(); });
 
-  document.addEventListener('click',(e)=>{
-    if(!wrap.contains(e.target)) box.style.display='none';
-  });
+  document.addEventListener('click',(e)=>{ if(!wrap.contains(e.target)) box.style.display='none'; });
 }
 
-/* =========================
-   4) started = gerçek giriş
-========================= */
-function onUserRealInput(){
-  const mod=ensureModuleState();
-  if(!mod.started){
-    mod.started=true;
-    mod.startedAt=mod.startedAt || Date.now();
-    persistLocalReports();
-    setBadge(computeStatus(mod));
-  }
-}
-
-/* =========================
-   5) Hmax + metin üretimi
-========================= */
 function hmaxHesapla(){
-  const katVal=document.getElementById('kat-sayisi').value;
-  const kat=parseFloat(katVal);
-  if(!isNaN(kat) && kat>0){
-    const hmax=(kat*3+0.5).toFixed(1);
-    document.getElementById('hmax-output').textContent=`(Hmax: ${hmax} m)`;
-  }else{
-    document.getElementById('hmax-output').textContent="";
-  }
+  const kat=parseFloat(document.getElementById('kat-sayisi').value);
+  document.getElementById('hmax-output').textContent = (!isNaN(kat) && kat>0) ? `(Hmax: ${(kat*3+0.5).toFixed(1)} m)` : "";
 }
 
 function guncelle(){
@@ -387,29 +270,28 @@ function guncelle(){
   document.getElementById('diğer-nizam-kutusu').style.display = nizamVal === 'Diğer' ? 'inline' : 'none';
   document.getElementById('yola-tecavüz-alan-kutusu').style.display = tecavuz === 'Evet' ? 'inline' : 'none';
 
-  let tabloHTML = `
+  document.getElementById('banka-tablo-output').innerHTML = `
     <tr><td><b>İMAR PLANI İSMİ</b></td><td>${escapeHtml(planIsmi)}</td></tr>
     <tr><td><b>YAPI NİZAMI</b></td><td>${escapeHtml(nizam)}</td></tr>
     <tr><td><b>KAT ADEDİ</b></td><td>${escapeHtml(kat)} Kat</td></tr>
     <tr><td><b>TAKS / KAKS</b></td><td>${escapeHtml(taks)} / ${escapeHtml(kaks)}</td></tr>
     <tr><td><b>YOLA TERK</b></td><td>${escapeHtml(String(terk))} m²</td></tr>
-    <tr><td><b>TECAVÜZ</b></td><td>${tecavuz === 'Evet' ? escapeHtml(String(tecavuzM)) + ' m²' : 'Yok'}</td></tr>
+    <tr><td><b>TECAVÜZ</b></td><td>${tecavuz === 'Evet' ? escapeHtml(String(tecavuzM))+' m²' : 'Yok'}</td></tr>
     <tr><td><b>KENTSEL DÖNÜŞÜM</b></td><td>${escapeHtml(kentsel.toUpperCase())}</td></tr>
     <tr><td><b>RİSKLİ YAPI</b></td><td>${escapeHtml(riskli.toUpperCase())}</td></tr>
   `;
-  document.getElementById('banka-tablo-output').innerHTML = tabloHTML;
 
-  let tecavuzMetni = terk > 0
+  const tecavuzMetni = terk > 0
     ? (tecavuz === 'Evet'
-        ? `Taşınmaz parselinin ${terk} m² yola terki bulunmakta olup, içindeki yapıların ${tecavuzM} m² tecavüzü söz konusudur.`
-        : `Taşınmaz parselinin ${terk} m² yola terki bulunmakta olup, içindeki yapılarda yola tecavüz bulunmamaktadır.`)
+      ? `Taşınmaz parselinin ${terk} m² yola terki bulunmakta olup, içindeki yapıların ${tecavuzM} m² tecavüzü söz konusudur.`
+      : `Taşınmaz parselinin ${terk} m² yola terki bulunmakta olup, içindeki yapılarda yola tecavüz bulunmamaktadır.`)
     : `Taşınmaz parselinin yola terki bulunmamaktadır.`;
 
   const belediye = (report.ilce || 'İlgili') + " Belediyesi";
-  let raporMetni = `${belediye} ${planIsmi} uygulama imar planı içerisinde yer almakta olup, ${nizam} Nizam, ${kat} Kat, Taks: ${taks} - Kaks: ${kaks} yapılaşma şartlarındadır. ${tecavuzMetni} İmar Müdürlüğü'nden parselin kentsel dönüşüm alanında ${kentsel === 'Evet' ? 'olduğu' : 'olmadığı'} ve riskli yapı ilan ${riskli === 'Evet' ? 'edildiği' : 'edilmediği'} bilgisi alınmıştır.`;
+  const raporMetni = `${belediye} ${planIsmi} uygulama imar planı içerisinde yer almakta olup, ${nizam} Nizam, ${kat} Kat, Taks: ${taks} - Kaks: ${kaks} yapılaşma şartlarındadır. ${tecavuzMetni} İmar Müdürlüğü'nden parselin kentsel dönüşüm alanında ${kentsel === 'Evet' ? 'olduğu' : 'olmadığı'} ve riskli yapı ilan ${riskli === 'Evet' ? 'edildiği' : 'edilmediği'} bilgisi alınmıştır.`;
 
   document.getElementById('rapor-metni-output').textContent = raporMetni;
-  return { metin: raporMetni, tablo: tabloHTML };
+  return { metin: raporMetni, tablo: document.getElementById('banka-tablo-output').innerHTML };
 }
 
 function computeComplete(){
@@ -421,9 +303,6 @@ function computeComplete(){
   return !!(plan && nizamRadio && kat && taks && kaks);
 }
 
-/* =========================
-   6) Autosave (Taslak)
-========================= */
 let autosaveTimer=null;
 function guncelleVeAutoSave(){
   guncelle();
@@ -431,22 +310,11 @@ function guncelleVeAutoSave(){
   autosaveTimer=setTimeout(()=>kaydet(true), 500);
 }
 
-async function kaydet(silent=true){
-  const data = guncelle();
-  const mod = ensureModuleState();
-
-  // started yakala
-  const anyContent =
-    norm(document.getElementById('imar-plani-ismi').value) ||
-    norm(document.getElementById('kat-sayisi').value) ||
-    norm(document.getElementById('taks').value) ||
-    norm(document.getElementById('kaks').value) ||
-    (document.querySelector('input[name="nizam"]:checked') ? true : false);
-
-  if(anyContent) onUserRealInput();
+function kaydet(silent=true){
+  const data=guncelle();
+  const mod=ensureModuleState();
 
   const eksikVar = !computeComplete();
-
   if(!silent && eksikVar){
     if(!confirm("⚠️ Kritik imar verileri (İsim, Nizam, Kat, Taks/Kaks) eksik. Yine de 'Eksik Veri' olarak kaydedilsin mi?")) return;
   }
@@ -472,43 +340,19 @@ async function kaydet(silent=true){
 
   mod.complete = !eksikVar;
   if(!silent) mod.savedAt = Date.now();
-
   report.imar_tamamlandi = !!(mod.savedAt && mod.complete);
 
-  report.modules = report.modules || {};
-  report.modules[MODULE_KEY] = {
-    ...mod,
-    ...report.imar,
-    imarMetni: report.imarMetni,
-    imarTablo: report.imarTablo
-  };
-
+  report.modules[MODULE_KEY] = { ...mod, ...report.imar, imarMetni: report.imarMetni, imarTablo: report.imarTablo };
   report.updatedAt = Date.now();
-  persistLocalReports();
 
-  // önerileri sadece manuel kaydet’te ekle
   if(!silent){
     addSuggestion(`${MODULE_KEY}.imar_ismi`, report.imar.imarPlaniIsmi);
     addSuggestion(`${MODULE_KEY}.nizam_diger`, report.imar.nizamDiger);
     addSuggestion(`${MODULE_KEY}.taks`, report.imar.taks);
     addSuggestion(`${MODULE_KEY}.kaks`, report.imar.kaks);
-
-    try { await firestoreSaveSuggestions(suggestionStore.fields); } catch(e){}
   }
 
-  try {
-    await firestoreMergeSave({
-      modules: {
-        [MODULE_KEY]: {
-          ...report.modules[MODULE_KEY],
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }
-      },
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch(e){}
-
-  setBadge(computeStatus(mod));
+  persist();
 
   if(!silent){
     const box=document.getElementById('statusBox');
@@ -516,34 +360,31 @@ async function kaydet(silent=true){
     box.style.backgroundColor = eksikVar ? '#fff3cd' : '#d1e7dd';
     box.style.color = eksikVar ? '#856404' : '#0f5132';
     box.textContent = eksikVar ? "⚠️ EKSİK VERİYLE KAYDEDİLDİ (Taslak)" : "✅ İMAR DURUMU KAYDEDİLDİ (Tamam)";
-    setTimeout(()=> box.style.display='none', 3000);
+    setTimeout(()=>box.style.display='none', 2500);
   }
 }
 
-/* =========================
-   7) Navigation + init
-========================= */
 function anaMenuyeDon(){ window.location.href = `rapor-detay.html?id=${id}`; }
 
 function bindEvents(){
-  const imarIsmi = document.getElementById('imar-plani-ismi');
-  const nizamDiger = document.getElementById('diğer-nizam-kutusu');
-  const taks = document.getElementById('taks');
-  const kaks = document.getElementById('kaks');
+  const imarIsmi=document.getElementById('imar-plani-ismi');
+  const nizamDiger=document.getElementById('diğer-nizam-kutusu');
+  const taks=document.getElementById('taks');
+  const kaks=document.getElementById('kaks');
 
-  attachSuggest(imarIsmi, `${MODULE_KEY}.imar_ismi`, onUserRealInput);
-  attachSuggest(nizamDiger, `${MODULE_KEY}.nizam_diger`, onUserRealInput);
-  attachSuggest(taks, `${MODULE_KEY}.taks`, onUserRealInput);
-  attachSuggest(kaks, `${MODULE_KEY}.kaks`, onUserRealInput);
+  attachSuggest(imarIsmi, `${MODULE_KEY}.imar_ismi`);
+  attachSuggest(nizamDiger, `${MODULE_KEY}.nizam_diger`);
+  attachSuggest(taks, `${MODULE_KEY}.taks`);
+  attachSuggest(kaks, `${MODULE_KEY}.kaks`);
+
+  imarIsmi.addEventListener('input', ()=>{ onUserRealInput(); guncelleVeAutoSave(); });
+  nizamDiger.addEventListener('input', ()=>{ onUserRealInput(); guncelleVeAutoSave(); });
+  taks.addEventListener('input', ()=>{ onUserRealInput(); guncelleVeAutoSave(); });
+  kaks.addEventListener('input', ()=>{ onUserRealInput(); guncelleVeAutoSave(); });
 
   document.getElementById('kat-sayisi').addEventListener('input', ()=>{ onUserRealInput(); hmaxHesapla(); guncelleVeAutoSave(); });
   document.getElementById('yola-terk').addEventListener('input', ()=>{ onUserRealInput(); guncelleVeAutoSave(); });
   document.getElementById('yola-tecavüz-alan-kutusu').addEventListener('input', ()=>{ onUserRealInput(); guncelleVeAutoSave(); });
-
-  imarIsmi.addEventListener('input', guncelleVeAutoSave);
-  nizamDiger.addEventListener('input', guncelleVeAutoSave);
-  taks.addEventListener('input', guncelleVeAutoSave);
-  kaks.addEventListener('input', guncelleVeAutoSave);
 
   document.querySelectorAll('input[name="nizam"]').forEach(r=>r.addEventListener('change', ()=>{ onUserRealInput(); guncelleVeAutoSave(); }));
   document.querySelectorAll('input[name="tecavuz"]').forEach(r=>r.addEventListener('change', ()=>{ onUserRealInput(); guncelleVeAutoSave(); }));
@@ -553,8 +394,8 @@ function bindEvents(){
 
 function loadFromReport(){
   document.getElementById('raporBilgi').textContent = report.propertyName || "Rapor Bilgisi";
+  const i=report.imar || {};
 
-  const i = report.imar || {};
   document.getElementById('imar-plani-ismi').value = i.imarPlaniIsmi || "";
   document.getElementById('kat-sayisi').value = i.kat || "";
   document.getElementById('taks').value = i.taks || "";
@@ -562,70 +403,40 @@ function loadFromReport(){
   document.getElementById('yola-terk').value = i.terk || 0;
 
   if(i.nizam){
-    const rN = document.querySelector(`input[name="nizam"][value="${i.nizam}"]`);
-    if(rN) rN.checked = true;
-    if(i.nizam === 'Diğer'){
-      document.getElementById('diğer-nizam-kutusu').style.display = 'inline';
+    const rN=document.querySelector(`input[name="nizam"][value="${i.nizam}"]`);
+    if(rN) rN.checked=true;
+    if(i.nizam==='Diğer'){
+      document.getElementById('diğer-nizam-kutusu').style.display='inline';
       document.getElementById('diğer-nizam-kutusu').value = i.nizamDiger || '';
     }
   }
+
   if(i.tecavuz){
-    const rT = document.querySelector(`input[name="tecavuz"][value="${i.tecavuz}"]`);
-    if(rT) rT.checked = true;
-    if(i.tecavuz === 'Evet'){
-      document.getElementById('yola-tecavüz-alan-kutusu').style.display = 'inline';
+    const rT=document.querySelector(`input[name="tecavuz"][value="${i.tecavuz}"]`);
+    if(rT) rT.checked=true;
+    if(i.tecavuz==='Evet'){
+      document.getElementById('yola-tecavüz-alan-kutusu').style.display='inline';
       document.getElementById('yola-tecavüz-alan-kutusu').value = i.tecavuzMiktar || '';
     }
   }
+
   if(i.kentsel){
-    const rK = document.querySelector(`input[name="kentsel"][value="${i.kentsel}"]`);
-    if(rK) rK.checked = true;
+    const rK=document.querySelector(`input[name="kentsel"][value="${i.kentsel}"]`);
+    if(rK) rK.checked=true;
   }
   if(i.riskli){
-    const rR = document.querySelector(`input[name="riskli"][value="${i.riskli}"]`);
-    if(rR) rR.checked = true;
+    const rR=document.querySelector(`input[name="riskli"][value="${i.riskli}"]`);
+    if(rR) rR.checked=true;
   }
-
-  const mod = ensureModuleState();
-  setBadge(computeStatus(mod));
 
   hmaxHesapla();
   guncelle();
+  setBadge(computeStatus(ensureModuleState()));
 }
 
-window.onload = async function(){
-  if(!id){
-    alert("Bu sayfa ?id=... parametresi olmadan açılmış. Ana menüden gelmelisin.");
-    return;
-  }
-
+window.onload = function(){
   bindEvents();
   loadFromReport();
-
-  if(auth && db){
-    auth.onAuthStateChanged(async (user)=>{
-      if(!user) return;
-
-      try{
-        const s = await firestoreLoadSuggestions();
-        if(s?.fields){
-          suggestionStore.fields = { ...suggestionStore.fields, ...s.fields };
-          saveSuggestionStoreLocal();
-        }
-      }catch(e){}
-
-      try{
-        const cloud = await firestoreLoadReport();
-        if(cloud){
-          // cloud'u local ile birleştir
-          report = { ...report, ...cloud, modules: { ...(report.modules||{}), ...(cloud.modules||{}) } };
-          reports[id] = report;
-          persistLocalReports();
-          loadFromReport();
-        }
-      }catch(e){}
-    });
-  }
 };
 </script>
 </body>
