@@ -1,194 +1,195 @@
 <!DOCTYPE html>
 <html lang="tr">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RaporAn X Taşınmaz Değerleme Sistemi</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaporAn X Taşınmaz Değerleme Sistemi</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 
-<style>
-  body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
-  .container { max-width: 800px; margin: 0 auto; text-align: center; }
-  h1 { font-size: 42px; margin-bottom: 10px; font-weight: 900; letter-spacing: -1px; }
-  h1 span { color: #ff0000; }
-  .count { font-size: 26px; margin: 40px 0; }
-  .btn-new { display: block; width: 400px; max-width: 90%; margin: 20px auto; background: #00c853; color: white; padding: 25px; text-align: center; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
-  .btn-new:hover { background: #00b140; transform: translateY(-5px); }
-  .btn-google { display: block; width: 400px; max-width: 90%; margin: 10px auto; background: white; color: #444; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.3s; border: none; cursor: pointer; }
-  .btn-logout { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 15px; border-radius: 10px; cursor: pointer; margin-top: 10px; }
-  .slogan { font-size: 22px; margin: 10px 0 40px 0; opacity: 0.95; font-style: italic; font-weight: 300; letter-spacing: 1px; }
-  .reports { display: grid; gap: 20px; margin-top: 40px; }
-  .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; position: relative; transition: 0.3s; cursor: pointer; text-align: left; }
-  .report-card:hover { background: rgba(255,255,255,0.35); transform: translateY(-8px); }
-  .report-title { font-size: 24px; font-weight: bold; }
-  .report-info { font-size: 18px; margin-top: 10px; opacity: 0.95; }
-  .no-reports { font-size: 22px; opacity: 0.8; margin-top: 60px; }
-  .delete-btn { position: absolute; top: 15px; right: 15px; background: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-size: 14px; }
-  .delete-btn:hover { background: #b71c1c; }
-  .user-info { margin-bottom: 20px; font-size: 14px; opacity: 0.9; }
-</style>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
+        .container { max-width: 800px; margin: 0 auto; text-align: center; }
+        h1 { font-size: 48px; margin-bottom: 5px; font-weight: 900; letter-spacing: -2px; }
+        h1 span { color: #ff5252; }
+        .slogan { font-size: 20px; margin-bottom: 40px; opacity: 0.9; font-style: italic; font-weight: 300; }
+        
+        .user-info-box { background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 15px; margin-bottom: 30px; display: inline-block; min-width: 300px; }
+        .count { font-size: 24px; margin: 20px 0; font-weight: bold; }
+        
+        .btn-new { display: block; width: 400px; max-width: 90%; margin: 20px auto; background: #00c853; color: white; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; text-decoration: none; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: 0.3s; border: none; }
+        .btn-new:hover { background: #00e676; transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.4); }
+        
+        .btn-google { display: block; width: 350px; max-width: 90%; margin: 20px auto; background: white; color: #444; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 50px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: 0.3s; }
+        .btn-google:hover { background: #f4f4f4; transform: scale(1.02); }
+        
+        .btn-logout { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 15px; border-radius: 8px; cursor: pointer; margin-top: 15px; font-size: 13px; }
+        .btn-logout:hover { background: rgba(255,0,0,0.3); }
+
+        .reports { display: grid; gap: 15px; margin-top: 30px; text-align: left; }
+        .report-card { background: rgba(255,255,255,0.15); padding: 20px; border-radius: 15px; position: relative; transition: 0.3s; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .report-card:hover { background: rgba(255,255,255,0.25); transform: translateX(5px); }
+        .report-title { font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .report-info { font-size: 16px; opacity: 0.9; line-height: 1.4; }
+        .report-date { font-size: 12px; margin-top: 10px; opacity: 0.6; }
+
+        .delete-btn { position: absolute; top: 15px; right: 15px; background: #ff5252; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .delete-btn:hover { background: #ff1744; transform: scale(1.1); }
+        
+        .no-reports { font-size: 18px; opacity: 0.7; margin-top: 50px; font-style: italic; }
+        
+        /* Loading Spinner */
+        .loader { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #fff; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 
 <body>
-<!-- Firebase -->
+
+<div class="container">
+    <h1>RAPORAN <span>X</span></h1>
+    <p class="slogan">“Çok karakteristik, çok abuzittik!”</p>
+
+    <div id="authSection">
+        <div id="userInfo" class="user-info-box">Oturum açılıyor, lütfen bekleyin...</div>
+        <button id="loginBtn" class="btn-google" style="display:none;" onclick="loginWithGoogle()">Google ile Giriş Yap</button>
+    </div>
+
+    <div id="mainContent" style="display:none;">
+        <a href="yeni_kayit.html" class="btn-new">➕ YENİ DEĞERLEME DOSYASI</a>
+        <div class="count" id="reportCount">Kayıtlar yükleniyor...</div>
+        <div id="reportsList" class="reports"></div>
+    </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 
-<div class="container">
-  <h1>RAPORAN <span>X</span></h1>
-  <p class="slogan">“Çok karakteristik, çok abuzittik!”</p>
-
-  <!-- JS çalışmasa bile mesaj görünsün -->
-  <div id="userInfo" class="user-info">Devam etmek için Google ile giriş yapın.</div>
-
-  <!-- JS çalışmasa bile buton görünsün -->
-  <button id="loginBtn" class="btn-google" onclick="loginWithGoogle()">Google ile Giriş Yap</button>
-
-  <!-- Giriş yoksa bu bölüm gizli -->
-  <div id="mainContent" style="display:none;">
-    <div class="count" id="reportCount">Toplam kayıt: 0</div>
-    <a href="yeni_kayit.html" class="btn-new">YENİ DEĞERLEME DOSYASI AÇ</a>
-
-    <div id="reportsList" class="reports">
-      <div class="no-reports">Henüz kayıt oluşturulmadı.</div>
-    </div>
-  </div>
-</div>
-
 <script>
-  const auth = window.auth;
-  const db = window.db;
+    const auth = window.auth;
+    const db = window.db;
 
-  // ✅ REDIRECT dönüş hatası varsa göster (sebebi burada yakalarız)
-  auth.getRedirectResult().catch((error) => {
-    if (error && error.message) {
-      alert("Giriş Hatası: " + error.message);
-    }
-  });
-
-  // ✅ Redirect ile login (Vercel'de popup'tan daha sağlam)
-  function loginWithGoogle() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithRedirect(provider).catch(error => alert("Giriş Hatası: " + error.message));
-  }
-
-  function fmtDate(iso){
-    if(!iso) return "Tarih yok";
-    try { return new Date(iso).toLocaleString("tr-TR"); } catch(e){ return iso; }
-  }
-
-  async function ensureUserDoc(user){
-    const userRef = db.collection("users").doc(user.uid);
-    const snap = await userRef.get();
-
-    if(!snap.exists){
-      await userRef.set({
-        kredi: 5,
-        kayitTarihi: new Date().toISOString(),
-        email: user.email
-      });
-      alert("Hoş geldin! 5 ücretsiz kredi tanımlandı.");
-      return 5;
-    }
-    return snap.data().kredi || 0;
-  }
-
-  async function loadReportsFromCloud(user){
-    const list = document.getElementById('reportsList');
-    const count = document.getElementById('reportCount');
-
-    list.innerHTML = '<div class="no-reports">☁️ Raporlar yükleniyor...</div>';
-
-    const snap = await db.collection("users").doc(user.uid)
-      .collection("reports")
-      .orderBy("updatedAt", "desc")
-      .get();
-
-    const reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    count.textContent = `Toplam kayıt: ${reports.length}`;
-
-    if(reports.length === 0){
-      list.innerHTML = '<div class="no-reports">Henüz kayıt oluşturulmadı.</div>';
-      return;
-    }
-
-    list.innerHTML = '';
-    reports.forEach((r) => {
-      const card = document.createElement('div');
-      card.className = 'report-card';
-
-      const title = (r.propertyName && r.propertyName.trim() !== '') ? r.propertyName : 'İsimsiz Gayrimenkul';
-
-      card.innerHTML = `
-        <button class="delete-btn">Sil</button>
-        <div class="report-title">${title}</div>
-        <div class="report-info">
-          ${r.il || ''} / ${r.ilce || ''} / ${r.mahalle || ''}<br>
-          Ada: ${r.ada || ''} - Parsel: ${r.parsel || ''}<br>
-          <small>Oluşturulma: ${fmtDate(r.createdAt)}</small>
-        </div>
-      `;
-
-      // Aç
-      card.onclick = (e) => {
-        if (!e.target.classList.contains('delete-btn')) {
-          window.location.href = `rapor-detay.html?id=${encodeURIComponent(r.id)}`;
+    // Hata Yönetimi
+    auth.getRedirectResult().catch((error) => {
+        if (error.code !== 'auth/redirect-cancelled-by-user') {
+            alert("Giriş sırasında bir sorun oluştu: " + error.message);
         }
-      };
-
-      // Sil
-      const delBtn = card.querySelector('.delete-btn');
-      delBtn.onclick = async (event) => {
-        event.stopPropagation();
-        if (!confirm('Bu raporu silmek istediğinize emin misiniz?')) return;
-
-        delBtn.disabled = true;
-        try{
-          await db.collection("users").doc(user.uid)
-            .collection("reports").doc(r.id)
-            .delete();
-          await loadReportsFromCloud(user);
-        } catch(err){
-          alert("Silme hatası: " + err.message);
-          delBtn.disabled = false;
-        }
-      };
-
-      list.appendChild(card);
     });
-  }
 
-  auth.onAuthStateChanged(async (user) => {
-    const loginBtn = document.getElementById('loginBtn');
-    const userInfo = document.getElementById('userInfo');
-    const mainContent = document.getElementById('mainContent');
-
-    if(user){
-      loginBtn.style.display = 'none';
-      mainContent.style.display = 'block';
-
-      let kredi = 0;
-      try{ kredi = await ensureUserDoc(user); }catch(e){}
-
-      userInfo.innerHTML = `
-        Bağlı Hesap: ${user.email}<br>
-        <b>Kredi: ${kredi}</b><br>
-        <button class="btn-logout" onclick="auth.signOut().then(()=>location.reload())">Çıkış Yap</button>
-      `;
-
-      await loadReportsFromCloud(user);
-    } else {
-      // giriş yoksa
-      loginBtn.style.display = 'block';
-      mainContent.style.display = 'none';
-      userInfo.textContent = "Devam etmek için Google ile giriş yapın.";
+    function loginWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithRedirect(provider);
     }
-  });
+
+    function fmtDate(iso) {
+        if (!iso) return "Tarih belirsiz";
+        const d = new Date(iso);
+        return d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    async function ensureUserDoc(user) {
+        const userRef = db.collection("users").doc(user.uid);
+        const snap = await userRef.get();
+        if (!snap.exists) {
+            const initialKredi = 5;
+            await userRef.set({
+                kredi: initialKredi,
+                email: user.email,
+                kayitTarihi: new Date().toISOString()
+            });
+            alert("Sistemimize hoş geldiniz! 5 deneme kredisi hesabınıza tanımlandı.");
+            return initialKredi;
+        }
+        return snap.data().kredi || 0;
+    }
+
+    async function loadReports(user) {
+        const listDiv = document.getElementById('reportsList');
+        const countDiv = document.getElementById('reportCount');
+        listDiv.innerHTML = '<div class="loader"></div>';
+
+        try {
+            const snap = await db.collection("users").doc(user.uid)
+                           .collection("reports")
+                           .orderBy("updatedAt", "desc")
+                           .get();
+
+            countDiv.textContent = `Toplam Kayıt: ${snap.size}`;
+            
+            if (snap.empty) {
+                listDiv.innerHTML = '<div class="no-reports">Henüz kayıtlı raporunuz bulunmuyor.</div>';
+                return;
+            }
+
+            listDiv.innerHTML = '';
+            snap.forEach(doc => {
+                const r = doc.data();
+                const card = document.createElement('div');
+                card.className = 'report-card';
+                
+                const title = r.propertyName || "İsimsiz Taşınmaz";
+                const subtitle = `${r.il || '-'} / ${r.ilce || '-'} / ${r.mahalle || '-'}`;
+
+                card.innerHTML = `
+                    <button class="delete-btn" data-id="${doc.id}">Sil</button>
+                    <div class="report-title">${title}</div>
+                    <div class="report-info">
+                        ${subtitle}<br>
+                        Ada: ${r.ada || '?'} - Parsel: ${r.parsel || '?'}
+                    </div>
+                    <div class="report-date">Son Güncelleme: ${fmtDate(r.updatedAt || r.createdAt)}</div>
+                `;
+
+                // Kart Tıklama (Düzenleme)
+                card.onclick = (e) => {
+                    if (!e.target.classList.contains('delete-btn')) {
+                        window.location.href = `yeni_kayit.html?id=${doc.id}`;
+                    }
+                };
+
+                // Silme Butonu İşlemi
+                card.querySelector('.delete-btn').onclick = async (e) => {
+                    e.stopPropagation();
+                    if (confirm('Bu kaydı kalıcı olarak silmek istediğinize emin misiniz?')) {
+                        await db.collection("users").doc(user.uid).collection("reports").doc(doc.id).delete();
+                        loadReports(user); // Listeyi yenile
+                    }
+                };
+
+                listDiv.appendChild(card);
+            });
+        } catch (err) {
+            listDiv.innerHTML = "Veriler yüklenirken hata: " + err.message;
+        }
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+        const loginBtn = document.getElementById('loginBtn');
+        const userInfo = document.getElementById('userInfo');
+        const mainContent = document.getElementById('mainContent');
+
+        if (user) {
+            loginBtn.style.display = 'none';
+            mainContent.style.display = 'block';
+            userInfo.innerHTML = "Kullanıcı doğrulanıyor...";
+            
+            const kredi = await ensureUserDoc(user);
+            userInfo.innerHTML = `
+                <div><strong>${user.email}</strong></div>
+                <div style="color:#00c853; font-weight:bold; margin-top:5px;">Kredi: ${kredi}</div>
+                <button class="btn-logout" onclick="auth.signOut().then(()=>location.reload())">Çıkış Yap</button>
+            `;
+            loadReports(user);
+        } else {
+            loginBtn.style.display = 'block';
+            mainContent.style.display = 'none';
+            userInfo.innerHTML = "Lütfen devam etmek için Google hesabınızla giriş yapın.";
+        }
+    });
 </script>
 </body>
 </html>
