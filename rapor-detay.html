@@ -54,7 +54,7 @@
   <button id="mainBtn" class="footer-btn" type="button" onclick="raporKontrolVeKilitle()">RAPORU TAMAMLA VE KİLİTLE</button>
 
 <script>
-  // ✅ Tek dosya Firebase init (firebase-config.js'e bağlı değil)
+  // ✅ Tek dosya Firebase init
   const firebaseConfig = {
     apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
     authDomain: "raporanx.firebaseapp.com",
@@ -77,7 +77,72 @@
 
   const loadingBar = document.getElementById("loadingBar");
 
-  // ✅ BUTONLARIN TIKLAMASI KESİN ÇALIŞSIN
+  /* =========================================================
+     ✅ SAĞLAM LOCAL STORAGE (KAYIP BİTER)
+     - gayrimenkul_reports her zaman OBJECT tutulur
+     - eski array varsa otomatik migrate eder
+  ========================================================= */
+  const LS_KEY = "gayrimenkul_reports";
+
+  function loadReportsSafe() {
+    let data;
+    try { data = JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { data = {}; }
+    if (Array.isArray(data)) {
+      const obj = {};
+      data.forEach((r, idx) => { if (r) obj[String(idx)] = r; });
+      data = obj;
+      localStorage.setItem(LS_KEY, JSON.stringify(data));
+    }
+    if (!data || typeof data !== "object") data = {};
+    return data;
+  }
+
+  function saveReportsSafe(obj) {
+    if (Array.isArray(obj)) {
+      const o = {};
+      obj.forEach((r, idx) => { if (r) o[String(idx)] = r; });
+      obj = o;
+    }
+    localStorage.setItem(LS_KEY, JSON.stringify(obj));
+  }
+
+  function getLocalReport(id) {
+    const all = loadReportsSafe();
+    return all[String(id)] || null;
+  }
+
+  function setLocalReport(id, rep) {
+    const all = loadReportsSafe();
+    all[String(id)] = rep;
+    saveReportsSafe(all);
+  }
+
+  function parseUpdatedAt(v) {
+    if (!v) return 0;
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const t = Date.parse(v);
+      return isNaN(t) ? 0 : t;
+    }
+    return 0;
+  }
+
+  function deepMerge(target, source) {
+    if (!source || typeof source !== "object") return target;
+    if (!target || typeof target !== "object") target = {};
+    for (const k of Object.keys(source)) {
+      if (source[k] && typeof source[k] === "object" && !Array.isArray(source[k])) {
+        target[k] = deepMerge(target[k], source[k]);
+      } else {
+        target[k] = source[k];
+      }
+    }
+    return target;
+  }
+
+  /* =========================================================
+     ✅ BUTONLARIN TIKLAMASI
+  ========================================================= */
   function goto(page){
     if(!reportId){
       alert("Rapor ID yok! Ana sayfaya dön.");
@@ -109,15 +174,49 @@
     if(mode === "ok"){ el.textContent = "Tamam"; el.className = "status-dot status-ok"; }
   }
 
+  // ✅ Hem eski alanlardan hem modules.* alanlarından okuyan sağlam kontrol
+  function pick(r, path, fallback=null){
+    try{
+      const parts = path.split('.');
+      let cur = r;
+      for(const p of parts){
+        if(cur == null) return fallback;
+        cur = cur[p];
+      }
+      return (cur === undefined) ? fallback : cur;
+    }catch(e){ return fallback; }
+  }
+
   function durumuGuncelle(r) {
     const kontroller = {
-      stat_konum: { veri: r.konumCevre?.tamMetin, tamam: r.konum_tamamlandi },
-      stat_tapu: { veri: r.tapuMetniB1, tamam: r.tapu_tamamlandi },
-      stat_imar: { veri: r.imarMetni, tamam: r.imar_tamamlandi },
-      stat_belgeler: { veri: r.belgelerMetni, tamam: r.belgeler_tamamlandi },
-      stat_bina: { veri: r.bina?.metin || r.binaMetni, tamam: r.bina_tamamlandi },
-      stat_bb: { veri: r.bbDetay?.tamMetin || r.katDetayMetni, tamam: r.bb_tamamlandi },
-      stat_emsal: { veri: r.degerlemeOzet?.emsalFinalMetni, tamam: (r.emsaller && r.emsaller.length >= 4) }
+      stat_konum: {
+        veri: pick(r, "konumCevre.tamMetin", pick(r, "modules.konum.tamMetin", "")),
+        tamam: pick(r, "konum_tamamlandi", pick(r, "modules.konum.complete", null))
+      },
+      stat_tapu: {
+        veri: pick(r, "tapuMetniB1", pick(r, "modules.tapu.tapuMetniB1", "")),
+        tamam: pick(r, "tapu_tamamlandi", pick(r, "modules.tapu.complete", null))
+      },
+      stat_imar: {
+        veri: pick(r, "imarMetni", pick(r, "modules.imar.imarMetni", "")),
+        tamam: pick(r, "imar_tamamlandi", pick(r, "modules.imar.complete", null))
+      },
+      stat_belgeler: {
+        veri: pick(r, "belgelerMetni", pick(r, "modules.belgeler.belgelerMetni", "")),
+        tamam: pick(r, "belgeler_tamamlandi", pick(r, "modules.belgeler.complete", null))
+      },
+      stat_bina: {
+        veri: pick(r, "bina.metin", pick(r, "binaMetni", pick(r, "modules.bina.metin", ""))),
+        tamam: pick(r, "bina_tamamlandi", pick(r, "modules.bina.complete", null))
+      },
+      stat_bb: {
+        veri: pick(r, "bbDetay.tamMetin", pick(r, "katDetayMetni", pick(r, "modules.bb.tamMetin", ""))),
+        tamam: pick(r, "bb_tamamlandi", pick(r, "modules.bb.complete", null))
+      },
+      stat_emsal: {
+        veri: pick(r, "degerlemeOzet.emsalFinalMetni", pick(r, "modules.emsal.emsalFinalMetni", "")),
+        tamam: (Array.isArray(r.emsaller) && r.emsaller.length >= 4) ? true : pick(r, "modules.emsal.complete", null)
+      }
     };
 
     for (let dotId in kontroller) {
@@ -138,6 +237,13 @@
     }
   }
 
+  function applyReportToUI(r){
+    if(!r) return;
+    document.getElementById('baslik').textContent = r.propertyName || "Gayrimenkul Raporu";
+    durumuGuncelle(r);
+    applyLockUI(!!r.isLocked);
+  }
+
   async function refreshWallet(){
     const userDoc = await db.collection("users").doc(currentUser.uid).get();
     const kredi = userDoc.data()?.kredi ?? 0;
@@ -145,7 +251,18 @@
     return kredi;
   }
 
-  async function loadReport(){
+  // ✅ 1) Önce local'den yükle (offline bile çalışsın)
+  function loadLocalFirst(){
+    if(!reportId) return;
+    const local = getLocalReport(reportId);
+    if(local){
+      reportData = local;
+      applyReportToUI(reportData);
+    }
+  }
+
+  // ✅ 2) Buluttan yükle ve updatedAt'e göre merge et
+  async function loadReportCloudAndMerge(){
     if(!currentUser) return;
     if(!reportId){ alert("Rapor ID yok!"); location.href="index.html"; return; }
 
@@ -156,16 +273,43 @@
 
     if(!snap.exists){
       loadingBar.style.display = "none";
-      alert("Rapor bulunamadı (bu kullanıcıya ait değil veya silinmiş).");
-      location.href = "index.html";
+      // bulutta yoksa, local varsa onunla devam; yoksa hata ver
+      if(!reportData){
+        alert("Rapor bulunamadı (bu kullanıcıya ait değil veya silinmiş).");
+        location.href = "index.html";
+      }
       return;
     }
 
-    reportData = snap.data();
+    const cloud = snap.data() || {};
+    const local = getLocalReport(reportId) || reportData || {};
 
-    document.getElementById('baslik').textContent = reportData.propertyName || "Gayrimenkul Raporu";
-    durumuGuncelle(reportData);
-    applyLockUI(!!reportData.isLocked);
+    const tLocal = parseUpdatedAt(local.updatedAt);
+    const tCloud = parseUpdatedAt(cloud.updatedAt);
+
+    if(tCloud > tLocal){
+      // cloud daha yeni -> local'e merge
+      const merged = deepMerge(local, cloud);
+      reportData = merged;
+      setLocalReport(reportId, merged);
+      applyReportToUI(merged);
+    } else if(tLocal > tCloud){
+      // local daha yeni -> cloud'a push (sessiz merge)
+      try{
+        await reportRef.set({
+          ...local,
+          updatedAt: local.updatedAt || Date.now()
+        }, { merge: true });
+      }catch(e){}
+      reportData = local;
+      applyReportToUI(local);
+    } else {
+      // aynıysa cloud'u temel al
+      const merged = deepMerge(local, cloud);
+      reportData = merged;
+      setLocalReport(reportId, merged);
+      applyReportToUI(merged);
+    }
 
     loadingBar.style.display = "none";
   }
@@ -192,12 +336,20 @@
       kredi: firebase.firestore.FieldValue.increment(-1)
     });
 
+    const nowMs = Date.now();
+
     await reportRef.set({
       isLocked: true,
-      updatedAt: new Date().toISOString()
+      updatedAt: nowMs,                 // ✅ sayı olarak (senin modüllerle uyumlu)
+      updatedAtISO: new Date(nowMs).toISOString()
     }, { merge: true });
 
+    // ✅ local’i de güncelle
     reportData.isLocked = true;
+    reportData.updatedAt = nowMs;
+    reportData.updatedAtISO = new Date(nowMs).toISOString();
+    setLocalReport(reportId, reportData);
+
     await refreshWallet();
     applyLockUI(true);
     alert("✅ Rapor mühürlendi!");
@@ -207,9 +359,18 @@
     if (!user) { window.location.href = 'index.html'; return; }
     currentUser = user;
 
+    // ✅ önce local göster
+    loadLocalFirst();
+
     await refreshWallet();
-    await loadReport();
+    await loadReportCloudAndMerge();
   });
+
+  // reportId yoksa direkt kaç
+  if(!reportId){
+    alert("Rapor ID yok! Ana sayfaya dön.");
+    location.href = "index.html";
+  }
 </script>
 
 </body>
