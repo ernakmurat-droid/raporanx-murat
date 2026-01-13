@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rapor Ana Menü - Yönetim Paneli</title>
-    
+
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
     <script src="firebase-config.js"></script>
 
     <style>
@@ -28,8 +27,8 @@
         .status-ok { background: var(--success); color: white; }
         .footer-btn { background:#ff5722; padding:20px; font-size:22px; width:90%; max-width:500px; margin:15px auto; border-radius:15px; border:none; color:white; font-weight:bold; cursor: pointer; display: block; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .footer-btn.locked { background: #2196F3; }
-        .footer-btn:disabled { opacity: 0.7; cursor: not-allowed; }
         #kilitMesaji { display: none; background: rgba(255,112,67,0.2); border: 1px solid #ff7043; padding: 10px; margin: 10px auto; width: 80%; text-align: center; border-radius: 10px; color: #ffd600; font-weight: bold; }
+        #loadingBar { display:none; width:80%; margin: 10px auto; background: rgba(0,0,0,0.25); padding:10px; border-radius:12px; font-size:13px; }
         @media (max-width: 600px) {
             .header { font-size: 20px; padding-top: 60px; }
             .btn { flex: 1 1 100%; padding: 20px; font-size: 18px; }
@@ -40,14 +39,15 @@
 <body>
 
     <div class="header">
-        <a href="index.html" class="back">Ana Sayfa</a>
+        <button class="back" onclick="location.href='index.html'">Ana Sayfa</button>
         <div id="walletBox" class="wallet-status">
             💳 <span id="walletText">Kredi: Yükleniyor...</span>
         </div>
         <div id="baslik" style="margin-top:20px;">Gayrimenkul Raporu</div>
+        <div id="loadingBar">⏳ Rapor yükleniyor...</div>
         <div id="kilitMesaji">🔒 RAPOR MÜHÜRLENDİ - YALNIZCA GÖRÜNTÜLEME</div>
     </div>
-    
+
     <div class="menu">
         <button class="btn modül-btn" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE <span id="stat_konum" class="status-dot"></span></button>
         <button class="btn modül-btn" onclick="go('tapu_kayit.html')">TAPU KAYITLARI <span id="stat_tapu" class="status-dot"></span></button>
@@ -57,164 +57,156 @@
         <button class="btn modül-btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM <span id="stat_bb" class="status-dot"></span></button>
         <button class="btn modül-btn" onclick="go('emsal.html')">EMSAL ANALİZİ <span id="stat_emsal" class="status-dot"></span></button>
     </div>
-   
+
     <button id="mainBtn" class="footer-btn" onclick="raporKontrolVeKilitle()">RAPORU TAMAMLA VE KİLİTLE</button>
 
-    <script>
-        // firebase-config.js bazen db/auth oluşturuyor, bazen oluşturmuyor.
-        // Garanti altına alalım:
-        const db = (window.db) ? window.db : firebase.firestore();
-        const auth = (window.auth) ? window.auth : firebase.auth();
+<script>
+    const auth = window.auth;
+    const db = window.db;
 
-        // URL'den Rapor ID'sini Al
-        const urlParams = new URLSearchParams(window.location.search);
-        const idParam = urlParams.get('id');
+    const urlParams = new URLSearchParams(window.location.search);
+    const reportId = urlParams.get('id'); // ✅ Artık cloud docId
 
-        // Eski sistem: id = index (0,1,2...) idi. Şimdilik onu destekliyoruz.
-        const reportIndex = (idParam !== null && idParam !== "" && !isNaN(Number(idParam))) ? Number(idParam) : null;
+    let currentUser = null;
+    let reportRef = null;
+    let reportData = null;
 
-        // Sayfa Değiştirme Fonksiyonu (Parametre Koruyucu)
-        function go(page) {
-            if (idParam == null) return alert("Rapor ID bulunamadı.");
-            window.location.href = page + '?id=' + encodeURIComponent(idParam);
+    const loadingBar = document.getElementById("loadingBar");
+
+    function go(page) {
+        // ✅ docId aynen taşınır
+        window.location.href = page + '?id=' + encodeURIComponent(reportId);
+    }
+
+    function isValueEmpty(val) {
+        if (!val) return true;
+        if (typeof val === 'string' && (val.trim().length < 5 || val.includes("Metin burada oluşacak"))) return true;
+        return false;
+    }
+
+    function setDot(dotId, mode){
+        const el = document.getElementById(dotId);
+        if(!el) return;
+        if(mode === "missing"){ el.textContent = "Eksik"; el.className = "status-dot status-missing"; }
+        if(mode === "incomplete"){ el.textContent = "⚠️ Eksik"; el.className = "status-dot status-incomplete"; }
+        if(mode === "ok"){ el.textContent = "Tamam"; el.className = "status-dot status-ok"; }
+    }
+
+    function durumuGuncelle(r) {
+        const kontroller = {
+            stat_konum: { veri: r.konumCevre?.tamMetin, tamam: r.konum_tamamlandi },
+            stat_tapu: { veri: r.tapuMetniB1, tamam: r.tapu_tamamlandi },
+            stat_imar: { veri: r.imarMetni, tamam: r.imar_tamamlandi },
+            stat_belgeler: { veri: r.belgelerMetni, tamam: r.belgeler_tamamlandi },
+            stat_bina: { veri: r.bina?.metin || r.binaMetni, tamam: r.bina_tamamlandi },
+            stat_bb: { veri: r.bbDetay?.tamMetin || r.katDetayMetni, tamam: r.bb_tamamlandi },
+            stat_emsal: { veri: r.degerlemeOzet?.emsalFinalMetni, tamam: (r.emsaller && r.emsaller.length >= 4) }
+        };
+
+        for (let dotId in kontroller) {
+            const d = kontroller[dotId];
+            if (isValueEmpty(d.veri)) setDot(dotId, "missing");
+            else if (d.tamam === false) setDot(dotId, "incomplete");
+            else setDot(dotId, "ok");
         }
+    }
 
-        function isValueEmpty(val) {
-            if (!val) return true;
-            if (typeof val === 'string' && (val.trim().length < 5 || val.includes("Metin burada oluşacak"))) return true;
-            return false;
-        }
-
-        function getCurrentReport() {
-            const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-            if (reportIndex === null) return { reports, r: null };
-            return { reports, r: reports[reportIndex] };
-        }
-
-        async function durumuGuncelle() {
-            const { r } = getCurrentReport();
-            if (!r) return;
-
-            const kontroller = {
-                stat_konum: { veri: r.konumCevre?.tamMetin, tamam: r.konum_tamamlandi },
-                stat_tapu: { veri: r.tapuMetniB1, tamam: r.tapu_tamamlandi },
-                stat_imar: { veri: r.imarMetni, tamam: r.imar_tamamlandi },
-                stat_belgeler: { veri: r.belgelerMetni, tamam: r.belgeler_tamamlandi },
-                stat_bina: { veri: r.bina?.metin || r.binaMetni, tamam: r.bina_tamamlandi },
-                stat_bb: { veri: r.bbDetay?.tamMetin || r.katDetayMetni, tamam: r.bb_tamamlandi },
-                stat_emsal: { veri: r.degerlemeOzet?.emsalFinalMetni, tamam: (r.emsaller && r.emsaller.length >= 4) }
-            };
-
-            for (let dotId in kontroller) {
-                const el = document.getElementById(dotId);
-                const d = kontroller[dotId];
-                if (!el) continue;
-
-                if (isValueEmpty(d.veri)) {
-                    el.textContent = "Eksik";
-                    el.className = "status-dot status-missing";
-                } else if (d.tamam === false) {
-                    el.textContent = "⚠️ Eksik";
-                    el.className = "status-dot status-incomplete";
-                } else {
-                    el.textContent = "Tamam";
-                    el.className = "status-dot status-ok";
-                }
-            }
-        }
-
-        async function raporKontrolVeKilitle() {
-            const user = auth.currentUser;
-            if (!user) return alert("Lütfen giriş yapın!");
-
-            const { reports, r } = getCurrentReport();
-            if (!r) return alert("Rapor bulunamadı. Ana sayfaya dönüp tekrar deneyin.");
-
-            // Zaten kilitliyse rapor oluştur ekranına git
-            if (r.isLocked) {
-                window.location.href = 'rapor-olustur.html?id=' + encodeURIComponent(idParam);
-                return;
-            }
-
+    function applyLockUI(isLocked){
+        if(isLocked){
+            document.querySelectorAll('.modül-btn').forEach(btn => btn.disabled = true);
+            document.getElementById('kilitMesaji').style.display = 'block';
             const mainBtn = document.getElementById('mainBtn');
-            mainBtn.disabled = true;
+            mainBtn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
+            mainBtn.className = "footer-btn locked";
+        }
+    }
 
-            try {
-                const userRef = db.collection("users").doc(user.uid);
+    async function refreshWallet(){
+        const userDoc = await db.collection("users").doc(currentUser.uid).get();
+        const kredi = userDoc.data()?.kredi ?? 0;
+        document.getElementById('walletText').textContent = `Kredi: ${kredi}`;
+        return kredi;
+    }
 
-                const hatirlatmaMetni = "Veri girişlerinin tamamını yaptığınızdan emin olun. Rapor mühürlendikten sonra değişiklik yapılamaz.";
+    async function loadReport(){
+        if(!currentUser) return;
+        if(!reportId){ alert("Rapor ID yok!"); location.href="index.html"; return; }
 
-                // Kredi düşümü: transaction (daha sağlam)
-                const confirmed = confirm(`${hatirlatmaMetni}\n\nRapor mühürlensin mi?`);
-                if (!confirmed) {
-                    mainBtn.disabled = false;
-                    return;
-                }
+        reportRef = db.collection("users").doc(currentUser.uid).collection("reports").doc(reportId);
 
-                await db.runTransaction(async (tx) => {
-                    const snap = await tx.get(userRef);
-                    const mevcutKredi = (snap.exists && snap.data().kredi) ? snap.data().kredi : 0;
+        loadingBar.style.display = "block";
+        loadingBar.textContent = "⏳ Rapor yükleniyor...";
 
-                    if (mevcutKredi <= 0) {
-                        throw new Error("⚠️ Krediniz yetersiz! Lütfen yükleme yapın.");
-                    }
-
-                    tx.update(userRef, { kredi: firebase.firestore.FieldValue.increment(-1) });
-                });
-
-                // Lokal kilitle
-                r.isLocked = true;
-                if (reportIndex !== null) reports[reportIndex] = r;
-                localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-                // 🔥 ÖNEMLİ: Burada artık bütün rapor listesini Firestore’a BASMIYORUZ.
-                // Çünkü bu 1MB limite çarpıp veri kaybı yaratıyordu.
-                // await userRef.set({ gayrimenkul_reports: reports }, { merge: true });
-
-                alert("✅ Rapor mühürlendi. Kredi düşüldü.");
-                location.reload();
-
-            } catch (e) {
-                console.error(e);
-                alert(e?.message || "Bir hata oluştu.");
-                mainBtn.disabled = false;
-            }
+        const snap = await reportRef.get();
+        if(!snap.exists){
+            loadingBar.textContent = "❌ Rapor bulunamadı (bu kullanıcıya ait değil veya silinmiş).";
+            alert("Rapor bulunamadı. Ana sayfaya dön.");
+            location.href="index.html";
+            return;
         }
 
-        // Kimlik ve Kredi Kontrolü
-        auth.onAuthStateChanged(async (user) => {
-            if (!user) {
-                window.location.href = 'index.html';
-                return;
-            }
+        reportData = snap.data();
 
-            const { r } = getCurrentReport();
-            if (!r) {
-                alert("Rapor bulunamadı. Ana sayfaya yönlendiriliyorsunuz.");
-                window.location.href = "index.html";
-                return;
-            }
+        // ✅ Hangi işte olduğumuz görünür
+        document.getElementById('baslik').textContent = reportData.propertyName || "Gayrimenkul Raporu";
 
-            document.getElementById('baslik').textContent = r.propertyName || "Gayrimenkul Raporu";
-            await durumuGuncelle();
+        // ✅ Durum noktaları
+        durumuGuncelle(reportData);
 
-            try {
-                const userDoc = await db.collection("users").doc(user.uid).get();
-                const kredi = userDoc.exists ? (userDoc.data().kredi || 0) : 0;
-                document.getElementById('walletText').textContent = `Kredi: ${kredi}`;
-            } catch (e) {
-                console.error(e);
-                document.getElementById('walletText').textContent = `Kredi: ?`;
-            }
+        // ✅ Kilit durumu
+        applyLockUI(!!reportData.isLocked);
 
-            if (r.isLocked) {
-                document.querySelectorAll('.modül-btn').forEach(btn => btn.disabled = true);
-                document.getElementById('kilitMesaji').style.display = 'block';
-                const mainBtn = document.getElementById('mainBtn');
-                mainBtn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
-                mainBtn.className = "footer-btn locked";
-            }
+        loadingBar.style.display = "none";
+    }
+
+    async function raporKontrolVeKilitle() {
+        if(!currentUser) return alert("Lütfen giriş yapın!");
+        if(!reportRef || !reportData) return alert("Rapor yüklenmedi!");
+
+        // Kilitliyse rapor oluştur ekranına git
+        if (reportData.isLocked) {
+            window.location.href = 'rapor-olustur.html?id=' + encodeURIComponent(reportId);
+            return;
+        }
+
+        // Kredi kontrol
+        const mevcutKredi = await refreshWallet();
+        if (mevcutKredi <= 0) {
+            alert("⚠️ Krediniz yetersiz! Lütfen yükleme yapın.");
+            return;
+        }
+
+        const hatirlatmaMetni = "Veri girişlerinin tamamını yaptığınızdan emin olun. Rapor mühürlendikten sonra değişiklik yapılamaz.";
+
+        if (!confirm(`${hatirlatmaMetni}\n\nMevcut Krediniz: ${mevcutKredi}\nİşlem Sonrası: ${mevcutKredi - 1}\n\nRapor mühürlensin mi?`)) return;
+
+        // 1) kredi düş
+        await db.collection("users").doc(currentUser.uid).update({
+            kredi: firebase.firestore.FieldValue.increment(-1)
         });
-    </script>
+
+        // 2) raporu kilitle
+        reportData.isLocked = true;
+        reportData.updatedAt = new Date().toISOString();
+
+        await reportRef.set(reportData, { merge: true });
+
+        // UI yenile
+        await refreshWallet();
+        applyLockUI(true);
+        alert("✅ Rapor mühürlendi!");
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) { window.location.href = 'index.html'; return; }
+        currentUser = user;
+
+        // kredi göster
+        await refreshWallet();
+
+        // rapor yükle
+        await loadReport();
+    });
+</script>
 </body>
 </html>
