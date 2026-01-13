@@ -27,6 +27,7 @@
         .radio-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
         .full-width { grid-column: span 2; }
         .btn-save { background: var(--success); color: white; padding: 20px; border: none; border-radius: 15px; width: 100%; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 15px rgba(0,200,83,0.3); }
+        .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-back { background: #6c757d; color: white; padding: 20px; border: none; border-radius: 15px; width: 100%; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 10px; }
         
         .preview-box { 
@@ -38,10 +39,14 @@
         }
         .preview-box:not(:hover) { filter: blur(1.5px); }
 
-        @media print {
-            body * { visibility: hidden; }
-            .preview-box { visibility: hidden; }
-            .preview-box::after { content: "METİN KORUMALIDIR!"; visibility: visible; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 30px; color: red; }
+        .locked-banner{
+            display:none;
+            margin-top:10px;
+            background:#ffe082;
+            color:#333;
+            padding:10px;
+            border-radius:12px;
+            font-weight:bold;
         }
 
         .disabled-input { background: #eee; cursor: not-allowed; }
@@ -53,6 +58,7 @@
     <button onclick="anaMenuyeDon()" class="back">← Menüye Dön</button>
     <h1>KONUM VE ÇEVRESEL ÖZELLİKLER</h1>
     <div id="raporBilgi" style="font-size: 14px; opacity: 0.9; margin-top:5px; font-weight: bold;">Yükleniyor...</div>
+    <div id="lockedBanner" class="locked-banner">🔒 Bu rapor mühürlü. Değişiklik yapamazsın.</div>
 </div>
 
 <div class="main-wrapper">
@@ -94,9 +100,11 @@
                 </div>
             </div>
         </form>
+
         <div class="section-title">👀 CANLI ÖNİZLEME</div>
         <div class="preview-box" id="livePreview" oncopy="return false">Veri bekleniyor</div>
-        <button class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET VE BULUTA MÜHÜRLE</button>
+
+        <button id="saveBtn" class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET VE BULUTA MÜHÜRLE</button>
         <button class="btn-back" onclick="anaMenuyeDon()">MENÜYE DÖN</button>
     </div>
 </div>
@@ -112,12 +120,20 @@
 </div>
 
 <script>
+    // firebase-config.js bazen db/auth oluşturuyor, bazen oluşturmuyor → garantiye alalım
+    const db = (window.db) ? window.db : firebase.firestore();
+    const auth = (window.auth) ? window.auth : firebase.auth();
+
     const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
+    const idParam = urlParams.get('id');
+    const reportIndex = (idParam !== null && idParam !== "" && !isNaN(Number(idParam))) ? Number(idParam) : null;
+
     let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    let report = reports[id] || {};
+    let report = (reportIndex !== null && reports[reportIndex]) ? reports[reportIndex] : {};
+
     const inputIds = ['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'];
 
+    // Kopyalamayı zorlaştırma (tam garanti değil)
     document.addEventListener('keydown', function(e) {
         if (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) { e.preventDefault(); }
     });
@@ -140,55 +156,135 @@
     function guncelleOnizleme() {
         let v = {};
         inputIds.forEach(fid => { v[fid] = document.getElementById(fid).value || "..."; });
-        
-        let yapiTipi = v.v13.trim();
-        let yapiTipiMetni = (yapiTipi !== "..." && !yapiTipi.toLowerCase().includes("tip") && !yapiTipi.toLowerCase().includes("yapı")) ? yapiTipi + " tipi yapılar" : yapiTipi;
 
         const altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
         const altyapiMetni = altyapiTik === "Evet" ? "alt yapısı tamamlanmıştır" : (v.altyapiAciklama || "...");
-        
+
         let tablo = "--- ÇEVRESEL ÖZELLİKLER TABLOSU ---\n";
         const labels = ["UAVT","Koord X","Koord Y","İli","İlçesi","Mahallesi","Cadde","No","Kat","Daire","Gelişim","Yapılaşma","Tip","Gelir","Yakın 1","Yakın 2"];
         for(let i=1; i<=16; i++) { tablo += `${labels[i-1].padEnd(15, ' ')} : ${v['v'+i]}\n`; }
 
         const f1 = `Değerlemeye konu taşınmaz, ${v.v4} ili, ${v.v5} İlçesi, ${v.v6} Mahallesi ${v.v7}, No: ${v.v8}/${v.v10} posta adresinde yer almaktadır. Taşınmaza ulaşım; ${v.ulasimTarifi}. Yakın çevresinde ${v.v15} ve ${v.v16} yer almaktadır. Altyapısı ${altyapiMetni}.`;
-        
+
         const tamPaket = tablo + "\n" + f1;
         document.getElementById('livePreview').textContent = tamPaket;
-        return tamMetin = tamPaket;
+        return tamPaket;
+    }
+
+    function setLockedUI(isLocked){
+        const banner = document.getElementById('lockedBanner');
+        const saveBtn = document.getElementById('saveBtn');
+
+        if(isLocked){
+            banner.style.display = 'block';
+            saveBtn.disabled = true;
+            // tüm inputları kapat
+            inputIds.forEach(fid => {
+                const el = document.getElementById(fid);
+                if(el){ el.disabled = true; el.classList.add('disabled-input'); }
+            });
+            document.querySelectorAll('input[name="altyapi"]').forEach(r => r.disabled = true);
+        } else {
+            banner.style.display = 'none';
+            saveBtn.disabled = false;
+        }
+    }
+
+    // 🔥 ASIL FİX: Buluta “tüm reports” değil, “tek rapor” kaydet
+    async function saveReportToCloudSingle(user, reportObj){
+        // rapor doküman id'si: raporun içinde yoksa üret
+        if(!reportObj.cloudId){
+            // mümkünse kalıcı id
+            try { reportObj.cloudId = crypto.randomUUID(); }
+            catch(e){ reportObj.cloudId = "r_" + Date.now() + "_" + Math.floor(Math.random()*100000); }
+        }
+
+        const ref = db.collection("users").doc(user.uid).collection("reports").doc(reportObj.cloudId);
+        await ref.set({
+            // raporun ihtiyacın olan alanları
+            propertyName: reportObj.propertyName || "",
+            createdAt: reportObj.createdAt || new Date().toISOString(),
+            isLocked: !!reportObj.isLocked,
+
+            // modül verisi
+            konumCevre: reportObj.konumCevre || null,
+            konum_tamamlandi: !!reportObj.konum_tamamlandi,
+
+            // (istersen burada diğer modüller de zamanla eklenecek)
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        return reportObj;
     }
 
     async function verileriKaydet() {
-        const paket = guncelleOnizleme();
-        let v = {};
-        inputIds.forEach(fid => { v[fid] = document.getElementById(fid).value; });
-        v.altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
-
-        report.konumCevre = { ...v, tamMetin: paket };
-        report.konum_tamamlandi = true;
-        reports[id] = report;
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-        // BULUT SENKRONİZASYONU
-        const user = auth.currentUser;
-        if (user) {
-            await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
+        if(report.isLocked){
+            alert("🔒 Rapor mühürlü. Kaydedemezsin.");
+            return;
         }
-        alert("✅ Veriler Buluta Mühürlendi!");
+
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.disabled = true;
+
+        try{
+            const paket = guncelleOnizleme();
+            let v = {};
+            inputIds.forEach(fid => { v[fid] = document.getElementById(fid).value; });
+            v.altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
+
+            report.konumCevre = { ...v, tamMetin: paket };
+            report.konum_tamamlandi = true;
+
+            // local kaydet (mevcut sistem bozulmasın)
+            if(reportIndex !== null){
+                reports[reportIndex] = report;
+                localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+            }
+
+            // buluta tek rapor yaz
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Giriş yok. Ana sayfaya yönlendiriliyorsun.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            report = await saveReportToCloudSingle(user, report);
+
+            // cloudId üretildiyse local'a da yazalım ki kaybolmasın
+            if(reportIndex !== null){
+                reports[reportIndex] = report;
+                localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+            }
+
+            alert("✅ Kaydedildi (tek rapor buluta yazıldı).");
+        } catch(e){
+            console.error(e);
+            alert("❌ Buluta kayıt hatası: " + (e?.message || e));
+        } finally {
+            saveBtn.disabled = false;
+        }
     }
 
-    function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${id}`; }
+    function anaMenuyeDon() {
+        window.location.href = `rapor-detay.html?id=${encodeURIComponent(idParam)}`;
+    }
 
     window.onload = () => {
-        if (!id) { window.location.href = 'index.html'; return; }
+        if (reportIndex === null) { window.location.href = 'index.html'; return; }
+
         document.getElementById('raporBilgi').textContent = report.propertyName || "Yeni Rapor";
-        
+
         if(report.konumCevre) {
             inputIds.forEach(fid => {
                 if(report.konumCevre[fid]) document.getElementById(fid).value = report.konumCevre[fid];
             });
             if(report.konumCevre.altyapiTik === "Hayır") toggleAltyapi(false);
         }
+
+        // kilitliyse UI kapat
+        setLockedUI(!!report.isLocked);
+
         guncelleOnizleme();
     };
 
