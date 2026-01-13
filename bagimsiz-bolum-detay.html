@@ -1,205 +1,381 @@
-
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bağımsız Bölüm Detay</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bağımsız Bölüm Detay</title>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <!-- Firebase (TEK SEFER) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-    <script>
-        // 1. ADIM: Firebase Yapılandırması
-        const firebaseConfig = {
-            apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-            authDomain: "raporanx.firebaseapp.com",
-            projectId: "raporanx",
-            storageBucket: "raporanx.firebasestorage.app",
-            messagingSenderId: "715194328346",
-            appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-            measurementId: "G-V749P1HB80"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+      authDomain: "raporanx.firebaseapp.com",
+      projectId: "raporanx",
+      storageBucket: "raporanx.firebasestorage.app",
+      messagingSenderId: "715194328346",
+      appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+      measurementId: "G-V749P1HB80"
+    };
 
-        // 2. ADIM: MODÜL MUHAFIZI (Kesin Yönlendirme)
-        auth.onAuthStateChanged((user) => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const reportId = urlParams.get('id');
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-            if (!user) {
-                alert("Lütfen önce giriş yapın!");
-                window.location.href = 'index.html';
-                return;
-            }
+    // Guard (giriş + id)
+    auth.onAuthStateChanged((user) => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const rid = urlParams.get('id');
+      if (!user) {
+        alert("⚠️ Erişim yok! Lütfen giriş yapın.");
+        window.location.href = 'index.html';
+        return;
+      }
+      if (!rid) {
+        alert("⚠️ İşlem yapılacak rapor seçilmedi!");
+        window.location.href = 'index.html';
+        return;
+      }
+    });
 
-            if (!reportId) {
-                alert("Lütfen önce bir rapor seçin!");
-                window.location.href = 'index.html';
-                return;
-            }
-            console.log("Erişim Onaylandı: " + user.email);
-        });
-    </script>
+    // Bu modül SADECE bbDetay alanını yazar (EZME YOK)
+    async function bulutaBBDetayKaydet(reportId, bbDetayObj) {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Kullanıcı oturumu yok");
 
-    <style>
-        :root { --primary: #4a148c; --secondary: #7c4dff; --success: #00c853; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin:0; padding-bottom:100px; color: #333; }
-        .header { background: linear-gradient(135deg,#4a148c,#7c4dff); color:white; padding:25px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; font-size: 14px; cursor: pointer; border: none; }
-        .container { max-width:850px; margin:20px auto; padding:20px; background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-        .section-title { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; color: #4a148c; font-size: 1.2em; font-weight: bold; }
-        .form-group { margin-bottom: 20px; padding: 15px; background: #fdfdfd; border: 1px solid #f0f0f0; border-radius: 10px; }
-        .input-item { margin-bottom: 15px; }
-        .input-item label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; color: #555; }
-        input, select, textarea { padding:12px; width:100%; border:1.5px solid #dee2e6; border-radius:8px; font-size:15px; box-sizing:border-box; outline: none; transition: 0.3s; }
-        input:focus { border-color: #7c4dff; background: #f9f7ff; }
-        .hacim-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 15px; }
-        .hacim-card { background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 8px; text-align: center; }
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
-        .checkbox-group label { background: #f0f0f0; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; }
-        .checkbox-group input { display: none; }
-        .checkbox-group input:checked + span { background: #4a148c; color: white; border-radius: 20px; padding: 8px 15px; margin: -8px -15px; display: inline-block; }
-        .btn { padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
-        .btn-save { background: #00c853; color: white; }
-        .taslak { background:#fff8e1; padding:25px; border-radius:12px; margin-top:30px; border:2px dashed #ffb300; font-size:15px; line-height:1.8; white-space:pre-wrap; color: #333; transition: filter 0.3s ease; }
-        .taslak:not(:hover) { filter: blur(1.5px); }
-        .hidden { display: none !important; }
-    </style>
+      return db.collection("kullanicilar")
+        .doc(user.uid)
+        .collection("raporlar")
+        .doc(String(reportId))
+        .set({
+          bbDetay: bbDetayObj,
+          bb_tamamlandi: true,
+          sonGuncelleme: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    }
+  </script>
+
+  <style>
+    :root { --primary:#4a148c; --secondary:#7c4dff; --success:#00c853; --bg:#f0f2f5; }
+    body { font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:var(--bg); margin:0; padding-bottom:100px; color:#333; }
+    .header { background: linear-gradient(135deg,#4a148c,#7c4dff); color:white; padding:25px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; font-size: 14px; cursor: pointer; border: none; }
+    .container { max-width:850px; margin:20px auto; padding:20px; background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .section-title { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; color: #4a148c; font-size: 1.2em; font-weight: bold; }
+    .form-group { margin-bottom: 20px; padding: 15px; background: #fdfdfd; border: 1px solid #f0f0f0; border-radius: 10px; }
+    .input-item { margin-bottom: 15px; }
+    .input-item label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; color: #555; }
+    input, select, textarea { padding:12px; width:100%; border:1.5px solid #dee2e6; border-radius:8px; font-size:15px; box-sizing:border-box; outline: none; transition: 0.3s; }
+    input:focus, textarea:focus, select:focus { border-color:#7c4dff; background:#f9f7ff; }
+    .hacim-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:10px; margin-bottom:15px; }
+    .hacim-card { background:#fff; border:1px solid #eee; padding:10px; border-radius:8px; text-align:center; }
+    .checkbox-group { display:flex; flex-wrap:wrap; gap:8px; }
+    .checkbox-group label { background:#f0f0f0; padding:8px 15px; border-radius:20px; cursor:pointer; font-size:13px; }
+    .checkbox-group input { display:none; }
+    .checkbox-group input:checked + span { background:#4a148c; color:white; border-radius:20px; padding:8px 15px; margin:-8px -15px; display:inline-block; }
+    .btn { padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+    .btn-save { background:#00c853; color:white; }
+
+    .taslak {
+      background:#fff8e1; padding:25px; border-radius:12px; margin-top:30px; border:2px dashed #ffb300;
+      font-size:15px; line-height:1.8; white-space:pre-wrap; color:#333;
+      -webkit-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none;
+      transition: filter 0.3s ease;
+    }
+    .taslak:not(:hover) { filter: blur(1.5px); }
+    @media print {
+      body * { visibility:hidden; }
+      .taslak { visibility:hidden; }
+      .taslak::after { content:"BU METİN KORUMALIDIR!"; visibility:visible; position:fixed; left:50%; top:50%; transform:translate(-50%, -50%); font-size:30px; color:red; }
+    }
+    .hidden { display:none !important; }
+  </style>
 </head>
+
 <body oncontextmenu="return false;">
-<div class="header">
+  <div class="header">
     <button onclick="anaMenuyeDon()" class="back">← Menü</button>
     <h1>BAĞIMSIZ BÖLÜM DETAY</h1>
     <div id="raporBilgi">Yükleniyor...</div>
-</div>
-<div class="container">
+  </div>
+
+  <div class="container">
     <div class="section-title">1. Temel Bilgiler ve Alanlar (Net Öncelikli)</div>
     <div class="form-group">
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-            <div class="input-item"><label>Kat</label><input type="text" id="kat" oninput="metinOlustur()"></div>
-            <div class="input-item"><label>BB No</label><input type="text" id="bbNo" oninput="metinOlustur()"></div>
-            <div class="input-item"><label>Kapı No</label><input type="text" id="kapiNo" oninput="metinOlustur()"></div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+        <div class="input-item"><label>Kat</label><input type="text" id="kat" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>BB No</label><input type="text" id="bbNo" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Kapı No</label><input type="text" id="kapiNo" oninput="metinOlustur()"></div>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+        <div class="input-item"><label>Proje Net (m²)</label><input type="number" id="alanNet" value="0" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Proje Brüt (m²)</label><input type="number" id="alanBrut" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Girişe Göre Konumu</label><input type="text" id="konum" placeholder="sağ tarafta" oninput="metinOlustur()"></div>
+      </div>
+
+      <div class="input-item">
+        <label>Cepheler</label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" name="cephe" value="Kuzey" onchange="metinOlustur()"><span>Kuzey</span></label>
+          <label><input type="checkbox" name="cephe" value="Güney" onchange="metinOlustur()"><span>Güney</span></label>
+          <label><input type="checkbox" name="cephe" value="Doğu" onchange="metinOlustur()"><span>Doğu</span></label>
+          <label><input type="checkbox" name="cephe" value="Batı" onchange="metinOlustur()"><span>Batı</span></label>
+          <label><input type="checkbox" name="cephe" value="Kuzey-Doğu" onchange="metinOlustur()"><span>Kuzey-Doğu</span></label>
+          <label><input type="checkbox" name="cephe" value="Kuzey-Batı" onchange="metinOlustur()"><span>Kuzey-Batı</span></label>
+          <label><input type="checkbox" name="cephe" value="Güney-Doğu" onchange="metinOlustur()"><span>Güney-Doğu</span></label>
+          <label><input type="checkbox" name="cephe" value="Güney-Batı" onchange="metinOlustur()"><span>Güney-Batı</span></label>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-            <div class="input-item"><label>Proje Net (m²)</label><input type="number" id="alanNet" value="0" oninput="metinOlustur()"></div>
-            <div class="input-item"><label>Proje Brüt (m²)</label><input type="number" id="alanBrut" oninput="metinOlustur()"></div>
-            <div class="input-item"><label>Girişe Göre Konumu</label><input type="text" id="konum" placeholder="sağ tarafta" oninput="metinOlustur()"></div>
-        </div>
-        <div class="input-item">
-            <label>Cepheler</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" name="cephe" value="Kuzey" onchange="metinOlustur()"><span>Kuzey</span></label>
-                <label><input type="checkbox" name="cephe" value="Güney" onchange="metinOlustur()"><span>Güney</span></label>
-                <label><input type="checkbox" name="cephe" value="Doğu" onchange="metinOlustur()"><span>Doğu</span></label>
-                <label><input type="checkbox" name="cephe" value="Batı" onchange="metinOlustur()"><span>Batı</span></label>
-            </div>
-        </div>
+      </div>
     </div>
 
     <div class="section-title">2. Proje Farkı ve Mevcut Durum</div>
     <div class="form-group">
-        <label>Projeye göre değişiklik var mı?</label>
-        <div style="display:flex; gap:20px; margin: 10px 0;">
-            <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="hayir" checked onchange="farkKontrol(); metinOlustur();"> Hayır</label>
-            <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="evet" onchange="farkKontrol(); metinOlustur();"> Evet</label>
-        </div>
-        <div id="farkDetay" class="hidden">
-            <div class="input-item"><label>İlave Açıklaması</label><textarea id="farkAciklama" oninput="metinOlustur()"></textarea></div>
-            <div class="input-item"><label>İlave Brüt Alan (m²)</label><input type="number" id="ilaveBrut" value="0" oninput="metinOlustur()"></div>
-        </div>
+      <label>Projeye göre değişiklik var mı?</label>
+      <div style="display:flex; gap:20px; margin:10px 0;">
+        <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="hayir" checked onchange="farkKontrol(); metinOlustur();"> Hayır</label>
+        <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="evet" onchange="farkKontrol(); metinOlustur();"> Evet</label>
+      </div>
+
+      <div id="farkDetay" class="hidden">
+        <div class="input-item"><label>İlave Açıklaması</label><textarea id="farkAciklama" oninput="metinOlustur()"></textarea></div>
+        <div class="input-item"><label>İlave Brüt Alan (m²)</label><input type="number" id="ilaveBrut" value="0" oninput="metinOlustur()"></div>
+      </div>
     </div>
 
-    <div class="section-title">3. Taşınmaz Hacimleri</div>
+    <div class="section-title">3. Taşınmaz Hacimleri (Sıralama: Salon Başa)</div>
     <div class="hacim-grid">
-        <div class="hacim-card"><label>Salon</label><input type="number" id="count_salon" value="1" oninput="hacimPanelKontrol(); metinOlustur();"></div>
-        <div class="hacim-card"><label>Oda</label><input type="number" id="count_oda" value="3" oninput="hacimPanelKontrol(); metinOlustur();"></div>
-        <div class="hacim-card"><label>Mutfak</label><input type="number" id="count_mutfak" value="1" oninput="metinOlustur()"></div>
-        <div class="hacim-card"><label>Banyo</label><input type="number" id="count_banyo" value="1" oninput="metinOlustur()"></div>
-        <div class="hacim-card"><label>WC</label><input type="number" id="count_wc" value="1" oninput="metinOlustur()"></div>
-        <div class="hacim-card"><label>Antre/Hol</label><input type="number" id="count_antre" value="1" oninput="metinOlustur()"></div>
-        <div class="hacim-card"><label>Balkon</label><input type="number" id="count_balkon" value="1" oninput="metinOlustur()"></div>
+      <div class="hacim-card"><label>Salon</label><input type="number" id="count_salon" value="1" oninput="hacimPanelKontrol(); metinOlustur();"></div>
+      <div class="hacim-card"><label>Oda</label><input type="number" id="count_oda" value="3" oninput="hacimPanelKontrol(); metinOlustur();"></div>
+      <div class="hacim-card"><label>Mutfak</label><input type="number" id="count_mutfak" value="1" oninput="metinOlustur()"></div>
+      <div class="hacim-card"><label>Banyo</label><input type="number" id="count_banyo" value="1" oninput="metinOlustur()"></div>
+      <div class="hacim-card"><label>WC</label><input type="number" id="count_wc" value="1" oninput="metinOlustur()"></div>
+      <div class="hacim-card"><label>Antre/Hol</label><input type="number" id="count_antre" value="1" oninput="metinOlustur()"></div>
+      <div class="hacim-card"><label>Balkon</label><input type="number" id="count_balkon" value="1" oninput="metinOlustur()"></div>
     </div>
 
-    <div class="section-title">4. Detaylar ve Tesisat</div>
+    <div class="section-title">4. Detaylar ve Tesisat (Tıkla-Seç)</div>
     <div class="form-group">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div class="input-item"><label>Antre Zemin</label><input type="text" id="antreZemin" oninput="metinOlustur()"></div>
-            <div class="input-item"><label>Antre Duvar</label><input type="text" id="antreDuvar" oninput="metinOlustur()"></div>
-            <div class="input-item"><label>Giriş Kapısı</label><input type="text" id="daireKapi" oninput="metinOlustur()"></div>
-            <div class="input-item"><label>Isıtma</label><input type="text" id="isitma" oninput="metinOlustur()"></div>
-        </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="input-item"><label>Antre Zemin</label><input type="text" id="antreZemin" list="h_antreZemin" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Antre Duvar</label><input type="text" id="antreDuvar" list="h_antreDuvar" onfocus="showList(this)" oninput="metinOlustur()"></div>
+
+        <div class="input-item salon-inputs"><label>Salon Zemin</label><input type="text" id="salonZemin" list="h_salonZemin" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item salon-inputs"><label>Salon Duvar</label><input type="text" id="salonDuvar" list="h_salonDuvar" onfocus="showList(this)" oninput="metinOlustur()"></div>
+
+        <div class="input-item oda-inputs"><label>Oda Zemin</label><input type="text" id="odaZemin" list="h_odaZemin" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item oda-inputs"><label>Oda Duvar</label><input type="text" id="odaDuvar" list="h_odaDuvar" onfocus="showList(this)" oninput="metinOlustur()"></div>
+
+        <div class="input-item"><label>Mutfak Zemin</label><input type="text" id="mutfakZemin" list="h_mutfakZemin" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Mutfak Duvar</label><input type="text" id="mutfakDuvar" list="h_mutfakDuvar" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Mutfak Dolabı</label><input type="text" id="mutfakDolap" list="h_mutfakDolap" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Mutfak Tezgahı</label><input type="text" id="mutfakTezgah" list="h_mutfakTezgah" onfocus="showList(this)" oninput="metinOlustur()"></div>
+
+        <div class="input-item"><label>Islak Hacim</label><input type="text" id="islakHacim" list="h_islakHacim" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Giriş Kapısı</label><input type="text" id="daireKapi" list="h_daireKapi" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>İç Kapılar</label><input type="text" id="icKapi" list="h_icKapi" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Pencereler</label><input type="text" id="pencere" list="h_pencere" onfocus="showList(this)" oninput="metinOlustur()"></div>
+        <div class="input-item"><label>Isıtma</label><input type="text" id="isitma" list="h_isitma" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      </div>
     </div>
 
-    <button class="btn btn-save" onclick="kaydet()">VERİLERİ KAYDET VE BULUTA MÜHÜRLE</button>
-    <div id="taslak" class="taslak"></div>
-</div>
+    <button class="btn btn-save" onclick="kaydet()">VERİLERİ KAYDET VE KİLİTLE</button>
+    <div id="taslak" class="taslak" oncopy="return false"></div>
+  </div>
 
-<script>
+  <div id="datalist_container">
+    <datalist id="h_antreZemin"></datalist><datalist id="h_antreDuvar"></datalist>
+    <datalist id="h_salonZemin"></datalist><datalist id="h_salonDuvar"></datalist>
+    <datalist id="h_odaZemin"></datalist><datalist id="h_odaDuvar"></datalist>
+    <datalist id="h_mutfakZemin"></datalist><datalist id="h_mutfakDuvar"></datalist>
+    <datalist id="h_mutfakDolap"></datalist><datalist id="h_mutfakTezgah"></datalist>
+    <datalist id="h_islakHacim"></datalist><datalist id="h_daireKapi"></datalist>
+    <datalist id="h_icKapi"></datalist><datalist id="h_pencere"></datalist>
+    <datalist id="h_isitma"></datalist>
+  </div>
+
+  <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id') || 0;
+    const id = urlParams.get('id'); // artık default 0 yok
     let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
     let report = reports[id] || {};
 
+    const fieldsToRemember = [
+      'antreZemin','antreDuvar','salonZemin','salonDuvar','odaZemin','odaDuvar',
+      'mutfakZemin','mutfakDuvar','mutfakDolap','mutfakTezgah',
+      'islakHacim','daireKapi','icKapi','pencere','isitma'
+    ];
+
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) e.preventDefault();
+    });
+
     window.onload = function() {
-        if (report.propertyName) {
-            document.getElementById('raporBilgi').textContent = report.propertyName + " Detayları";
-            veriYukle();
-            metinOlustur();
-        }
+      if (!report || !report.propertyName) {
+        alert("Rapor verisi bulunamadı!");
+        return;
+      }
+      document.getElementById('raporBilgi').textContent = (report.propertyName || "Dosya") + " Detayları";
+      initAutocomplete();
+      veriYukle();
+      farkKontrol();
+      hacimPanelKontrol();
+      metinOlustur();
     };
 
+    function showList(input) {
+      input.setAttribute('autocomplete', 'off');
+      const val = input.value;
+      input.value = '';
+      setTimeout(() => { input.value = val; }, 1);
+    }
+
     function farkKontrol() {
-        const isEvet = document.querySelector('input[name="farkVar"]:checked').value === 'evet';
-        document.getElementById('farkDetay').classList.toggle('hidden', !isEvet);
+      const isEvet = document.querySelector('input[name="farkVar"]:checked')?.value === 'evet';
+      document.getElementById('farkDetay').classList.toggle('hidden', !isEvet);
     }
 
     function hacimPanelKontrol() {
-        const sCount = parseInt(document.getElementById('count_salon').value) || 0;
-        const oCount = parseInt(document.getElementById('count_oda').value) || 0;
+      const sCount = parseInt(document.getElementById('count_salon').value) || 0;
+      const oCount = parseInt(document.getElementById('count_oda').value) || 0;
+      document.querySelectorAll('.salon-inputs').forEach(el => el.classList.toggle('hidden', sCount === 0));
+      document.querySelectorAll('.oda-inputs').forEach(el => el.classList.toggle('hidden', oCount === 0));
+    }
+
+    function initAutocomplete() {
+      fieldsToRemember.forEach(f => {
+        const history = JSON.parse(localStorage.getItem('h_bb_' + f)) || [];
+        const dl = document.getElementById('h_' + f);
+        if (dl) dl.innerHTML = history.map(i => `<option value="${i}">`).join('');
+      });
     }
 
     function metinOlustur() {
-        const v = (id) => document.getElementById(id).value.trim() || "...";
-        let metin = `Değerleme konusu taşınmaz binanın ${v('kat')} katında yer alan ${v('bbNo')} bağımsız bölümdür. `;
-        metin += `Projesine göre brüt ${v('alanBrut')} m² kullanım alanına sahiptir. `;
-        metin += `Isıtılması ${v('isitma')} ile sağlanmaktadır.`;
-        document.getElementById('taslak').textContent = metin;
+      const v = (fid) => document.getElementById(fid).value.trim() || "...";
+      const cphe = Array.from(document.querySelectorAll('input[name="cephe"]:checked')).map(cb => cb.value).join("-") || "...";
+      const aBrut = parseFloat(document.getElementById('alanBrut').value) || 0;
+      const aNet = parseFloat(document.getElementById('alanNet').value) || 0;
+      const farkVar = document.querySelector('input[name="farkVar"]:checked')?.value === 'evet';
+
+      const items = [
+        { id: 'salon', label: 'salon' }, { id: 'oda', label: 'oda' }, { id: 'mutfak', label: 'mutfak' },
+        { id: 'banyo', label: 'banyo' }, { id: 'wc', label: 'wc' }, { id: 'antre', label: 'antre-hol' }, { id: 'balkon', label: 'balkon' }
+      ];
+      let hList = [];
+      items.forEach(i => {
+        let val = parseInt(document.getElementById('count_' + i.id).value) || 0;
+        if (val > 0) hList.push(val === 1 ? i.label : val + " " + i.label);
+      });
+      const hacimMetni = hList.join(", ") || "...";
+
+      let metin = `Değerleme konusu taşınmaz binanın ${v('kat')} katında yer alan ${v('bbNo')} bağımsız bölüm ve ${v('kapiNo')} kapı numaralı taşınmazdır. `;
+      metin += `Taşınmaz bina girişine göre ${v('konum')} yer almaktadır. Taşınmaz ${cphe} cephelidir. `;
+
+      metin += `Projesine göre `;
+      if (aNet > 0) metin += `net ${aNet} m², `;
+      metin += `brüt ${aBrut} m² kullanım alanına sahiptir. `;
+
+      if (farkVar) {
+        metin += `Taşınmaz projesine göre ${hacimMetni} hacimlerinden oluşmaktadır. ${v('farkAciklama')} `;
+        const ilave = parseFloat(document.getElementById('ilaveBrut').value) || 0;
+        if (ilave > 0) metin += `Mevcut durumda brüt ${ilave} m² ilave ile mevcut durumdaki toplam alanın brüt ${aBrut + ilave} m² olduğu tespit edilmiştir. `;
+        else metin += `Mevcut durumda taşınmazın alanı değişmemiştir. `;
+      } else {
+        metin += `Taşınmaz projesine göre ve mevcut durumda ${hacimMetni} hacimlerinden oluşmaktadır. `;
+      }
+
+      metin += `\n\nAntre zeminleri ${v('antreZemin')}, duvarları ${v('antreDuvar')}. `;
+      if ((parseInt(document.getElementById('count_salon').value) || 0) > 0) metin += `Salon zemini ${v('salonZemin')}, duvarları ${v('salonDuvar')}. `;
+      if ((parseInt(document.getElementById('count_oda').value) || 0) > 0) metin += `Oda zeminleri ${v('odaZemin')}, duvarları ${v('odaDuvar')}. `;
+
+      metin += `Mutfak zemini ${v('mutfakZemin')}, duvarları ${v('mutfakDuvar')}. `;
+      metin += `Mutfak dolabı ${v('mutfakDolap')}, tezgâhı ${v('mutfakTezgah')}. Islak hacimlerin zemin ve duvarları ${v('islakHacim')}. `;
+      metin += `Taşınmazın giriş kapısı ${v('daireKapi')}, iç kapıları ${v('icKapi')}. Pencereleri ${v('pencere')} doğramadır. `;
+      metin += `Gayrimenkulün ısıtılması ${v('isitma')} ile sağlanmaktadır. Taşınmazda elektrik, su ve haberleşme tesisatları mevcuttur.`;
+
+      document.getElementById('taslak').textContent = metin;
     }
 
     async function kaydet() {
-        report.bbDetay = {
-            kat: document.getElementById('kat').value,
-            bbNo: document.getElementById('bbNo').value,
-            alanBrut: document.getElementById('alanBrut').value,
-            isitma: document.getElementById('isitma').value,
-            tamMetin: document.getElementById('taslak').textContent
-        };
-        reports[id] = report;
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-        const user = auth.currentUser;
-        if (user) {
-            await db.collection("users").doc(user.uid).set({
-                gayrimenkul_reports: reports
-            }, { merge: true });
-            alert("✅ BULUTA MÜHÜRLENDİ.");
+      // tarihçe
+      fieldsToRemember.forEach(f => {
+        const el = document.getElementById(f);
+        if (!el) return;
+        const val = el.value.trim();
+        if (val) {
+          let h = JSON.parse(localStorage.getItem('h_bb_' + f)) || [];
+          if (!h.includes(val)) {
+            h.unshift(val);
+            localStorage.setItem('h_bb_' + f, JSON.stringify(h.slice(0, 15)));
+          }
         }
+      });
+
+      const seciliCepheler = Array.from(document.querySelectorAll('input[name="cephe"]:checked')).map(cb => cb.value);
+
+      report.bbDetay = {
+        kat: document.getElementById('kat').value,
+        bbNo: document.getElementById('bbNo').value,
+        kapiNo: document.getElementById('kapiNo').value,
+        konum: document.getElementById('konum').value,
+        cephe: seciliCepheler,
+        alanBrut: document.getElementById('alanBrut').value,
+        alanNet: document.getElementById('alanNet').value,
+        ilaveBrut: document.getElementById('ilaveBrut').value,
+        farkVar: document.querySelector('input[name="farkVar"]:checked')?.value || "hayir",
+        farkAciklama: document.getElementById('farkAciklama').value,
+        zeminDuvar: {},
+        tamMetin: document.getElementById('taslak').textContent
+      };
+
+      fieldsToRemember.forEach(f => report.bbDetay.zeminDuvar[f] = document.getElementById(f).value);
+
+      // LOCAL
+      reports[id] = report;
+      localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+
+      // CLOUD (SADECE bbDetay)
+      try {
+        await bulutaBBDetayKaydet(id, report.bbDetay);
+      } catch (e) {
+        console.error(e);
+        alert("⚠️ Buluta kaydedilemedi. (Local kayıt duruyor)");
+        initAutocomplete();
+        return;
+      }
+
+      alert("✅ Bağımsız Bölüm başarıyla kaydedildi ve buluta yedeklendi!");
+      initAutocomplete();
     }
 
     function veriYukle() {
-        if (!report.bbDetay) return;
-        const d = report.bbDetay;
-        document.getElementById('kat').value = d.kat || "";
-        document.getElementById('bbNo').value = d.bbNo || "";
-        document.getElementById('alanBrut').value = d.alanBrut || "";
-        document.getElementById('isitma').value = d.isitma || "";
+      if (!report.bbDetay) return;
+      const d = report.bbDetay;
+
+      document.getElementById('kat').value = d.kat || "";
+      document.getElementById('bbNo').value = d.bbNo || "";
+      document.getElementById('kapiNo').value = d.kapiNo || "";
+      document.getElementById('konum').value = d.konum || "";
+      document.getElementById('alanBrut').value = d.alanBrut || "";
+      document.getElementById('alanNet').value = d.alanNet || 0;
+      document.getElementById('ilaveBrut').value = d.ilaveBrut || 0;
+      document.getElementById('farkAciklama').value = d.farkAciklama || "";
+
+      if (d.cephe && Array.isArray(d.cephe)) {
+        document.querySelectorAll('input[name="cephe"]').forEach(cb => cb.checked = d.cephe.includes(cb.value));
+      }
+
+      const farkRadio = document.querySelector(`input[name="farkVar"][value="${d.farkVar || 'hayir'}"]`);
+      if (farkRadio) { farkRadio.checked = true; farkKontrol(); }
+
+      fieldsToRemember.forEach(f => {
+        if (d.zeminDuvar && d.zeminDuvar[f] != null) document.getElementById(f).value = d.zeminDuvar[f];
+      });
     }
 
     function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${id}`; }
-</script>
+  </script>
 </body>
 </html>
