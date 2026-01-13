@@ -10,173 +10,185 @@
 <title>RaporAn X Taşınmaz Değerleme Sistemi</title>
 
 <style>
-    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
-    .container { max-width: 800px; margin: 0 auto; text-align: center; }
-    h1 { font-size: 42px; margin-bottom: 10px; font-weight: 900; letter-spacing: -1px; }
-    h1 span { color: #ff0000; }
-    .count { font-size: 26px; margin: 40px 0; }
-    .btn-new { display: block; width: 400px; max-width: 90%; margin: 20px auto; background: #00c853; color: white; padding: 25px; text-align: center; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
-    .btn-new:hover { background: #00b140; transform: translateY(-5px); }
-    .btn-google { display: block; width: 400px; max-width: 90%; margin: 10px auto; background: white; color: #444; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.3s; border: none; cursor: pointer; }
-    .btn-logout { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 15px; border-radius: 10px; cursor: pointer; margin-top: 10px; }
-    .slogan { font-size: 22px; margin: 10px 0 40px 0; opacity: 0.95; font-style: italic; font-weight: 300; letter-spacing: 1px; }
-    .reports { display: grid; gap: 20px; margin-top: 40px; }
-    .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; position: relative; transition: 0.3s; cursor: pointer; text-align: left; }
-    .report-card:hover { background: rgba(255,255,255,0.35); transform: translateY(-8px); }
-    .report-title { font-size: 24px; font-weight: bold; }
-    .report-info { font-size: 18px; margin-top: 10px; opacity: 0.95; }
-    .no-reports { font-size: 22px; opacity: 0.8; margin-top: 60px; }
-    .delete-btn { position: absolute; top: 15px; right: 15px; background: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-size: 14px; }
-    .delete-btn:hover { background: #b71c1c; }
-    .user-info { margin-bottom: 20px; font-size: 14px; opacity: 0.9; }
+  body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
+  .container { max-width: 800px; margin: 0 auto; text-align: center; }
+  h1 { font-size: 42px; margin-bottom: 10px; font-weight: 900; letter-spacing: -1px; }
+  h1 span { color: #ff0000; }
+  .count { font-size: 26px; margin: 40px 0; }
+  .btn-new { display: block; width: 400px; max-width: 90%; margin: 20px auto; background: #00c853; color: white; padding: 25px; text-align: center; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
+  .btn-new:hover { background: #00b140; transform: translateY(-5px); }
+  .btn-google { display: block; width: 400px; max-width: 90%; margin: 10px auto; background: white; color: #444; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.3s; border: none; cursor: pointer; }
+  .btn-logout { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 15px; border-radius: 10px; cursor: pointer; margin-top: 10px; }
+  .slogan { font-size: 22px; margin: 10px 0 40px 0; opacity: 0.95; font-style: italic; font-weight: 300; letter-spacing: 1px; }
+  .reports { display: grid; gap: 20px; margin-top: 40px; }
+  .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; position: relative; transition: 0.3s; cursor: pointer; text-align: left; }
+  .report-card:hover { background: rgba(255,255,255,0.35); transform: translateY(-8px); }
+  .report-title { font-size: 24px; font-weight: bold; }
+  .report-info { font-size: 18px; margin-top: 10px; opacity: 0.95; }
+  .no-reports { font-size: 22px; opacity: 0.8; margin-top: 60px; }
+  .delete-btn { position: absolute; top: 15px; right: 15px; background: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-size: 14px; }
+  .delete-btn:hover { background: #b71c1c; }
+  .user-info { margin-bottom: 20px; font-size: 14px; opacity: 0.9; }
 </style>
 </head>
 
 <body>
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 
 <div class="container">
-    <h1>RAPORAN <span>X</span></h1>
-    <p class="slogan">“Çok karakteristik, çok abuzittik!”</p>
+  <h1>RAPORAN <span>X</span></h1>
+  <p class="slogan">“Çok karakteristik, çok abuzittik!”</p>
 
-    <!-- JS bozulsa bile mesaj görünsün -->
-    <div id="userInfo" class="user-info">Devam etmek için Google ile giriş yapın.</div>
+  <!-- JS çalışmasa bile mesaj görünsün -->
+  <div id="userInfo" class="user-info">Devam etmek için Google ile giriş yapın.</div>
 
-    <!-- JS bozulsa bile buton görünsün -->
-    <button id="loginBtn" class="btn-google" onclick="loginWithGoogle()">Google ile Giriş Yap</button>
+  <!-- JS çalışmasa bile buton görünsün -->
+  <button id="loginBtn" class="btn-google" onclick="loginWithGoogle()">Google ile Giriş Yap</button>
 
-    <!-- Giriş yoksa bu bölüm görünmez -->
-    <div id="mainContent" style="display:none;">
-        <div class="count" id="reportCount">Toplam kayıt: 0</div>
-        <a href="yeni_kayit.html" class="btn-new">YENİ DEĞERLEME DOSYASI AÇ</a>
+  <!-- Giriş yoksa bu bölüm gizli -->
+  <div id="mainContent" style="display:none;">
+    <div class="count" id="reportCount">Toplam kayıt: 0</div>
+    <a href="yeni_kayit.html" class="btn-new">YENİ DEĞERLEME DOSYASI AÇ</a>
 
-        <div id="reportsList" class="reports">
-            <div class="no-reports">Henüz kayıt oluşturulmadı.</div>
-        </div>
+    <div id="reportsList" class="reports">
+      <div class="no-reports">Henüz kayıt oluşturulmadı.</div>
     </div>
+  </div>
 </div>
 
 <script>
-    const auth = window.auth;
-    const db = window.db;
+  const auth = window.auth;
+  const db = window.db;
 
-    function loginWithGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(error => alert("Hata: " + error.message));
+  // ✅ REDIRECT dönüş hatası varsa göster (sebebi burada yakalarız)
+  auth.getRedirectResult().catch((error) => {
+    if (error && error.message) {
+      alert("Giriş Hatası: " + error.message);
+    }
+  });
+
+  // ✅ Redirect ile login (Vercel'de popup'tan daha sağlam)
+  function loginWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithRedirect(provider).catch(error => alert("Giriş Hatası: " + error.message));
+  }
+
+  function fmtDate(iso){
+    if(!iso) return "Tarih yok";
+    try { return new Date(iso).toLocaleString("tr-TR"); } catch(e){ return iso; }
+  }
+
+  async function ensureUserDoc(user){
+    const userRef = db.collection("users").doc(user.uid);
+    const snap = await userRef.get();
+
+    if(!snap.exists){
+      await userRef.set({
+        kredi: 5,
+        kayitTarihi: new Date().toISOString(),
+        email: user.email
+      });
+      alert("Hoş geldin! 5 ücretsiz kredi tanımlandı.");
+      return 5;
+    }
+    return snap.data().kredi || 0;
+  }
+
+  async function loadReportsFromCloud(user){
+    const list = document.getElementById('reportsList');
+    const count = document.getElementById('reportCount');
+
+    list.innerHTML = '<div class="no-reports">☁️ Raporlar yükleniyor...</div>';
+
+    const snap = await db.collection("users").doc(user.uid)
+      .collection("reports")
+      .orderBy("updatedAt", "desc")
+      .get();
+
+    const reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    count.textContent = `Toplam kayıt: ${reports.length}`;
+
+    if(reports.length === 0){
+      list.innerHTML = '<div class="no-reports">Henüz kayıt oluşturulmadı.</div>';
+      return;
     }
 
-    function fmtDate(iso) {
-        if (!iso) return "Tarih yok";
-        try { return new Date(iso).toLocaleString("tr-TR"); } catch(e) { return iso; }
-    }
+    list.innerHTML = '';
+    reports.forEach((r) => {
+      const card = document.createElement('div');
+      card.className = 'report-card';
 
-    async function ensureUserDoc(user) {
-        const userRef = db.collection("users").doc(user.uid);
-        const snap = await userRef.get();
+      const title = (r.propertyName && r.propertyName.trim() !== '') ? r.propertyName : 'İsimsiz Gayrimenkul';
 
-        if (!snap.exists) {
-            await userRef.set({
-                kredi: 5,
-                kayitTarihi: new Date().toISOString(),
-                email: user.email
-            });
-            alert("Hoş geldin! 5 ücretsiz kredi tanımlandı.");
-            return 5;
+      card.innerHTML = `
+        <button class="delete-btn">Sil</button>
+        <div class="report-title">${title}</div>
+        <div class="report-info">
+          ${r.il || ''} / ${r.ilce || ''} / ${r.mahalle || ''}<br>
+          Ada: ${r.ada || ''} - Parsel: ${r.parsel || ''}<br>
+          <small>Oluşturulma: ${fmtDate(r.createdAt)}</small>
+        </div>
+      `;
+
+      // Aç
+      card.onclick = (e) => {
+        if (!e.target.classList.contains('delete-btn')) {
+          window.location.href = `rapor-detay.html?id=${encodeURIComponent(r.id)}`;
         }
-        return snap.data().kredi || 0;
-    }
+      };
 
-    async function loadReportsFromCloud(user) {
-        const list = document.getElementById('reportsList');
-        const count = document.getElementById('reportCount');
+      // Sil
+      const delBtn = card.querySelector('.delete-btn');
+      delBtn.onclick = async (event) => {
+        event.stopPropagation();
+        if (!confirm('Bu raporu silmek istediğinize emin misiniz?')) return;
 
-        list.innerHTML = '<div class="no-reports">☁️ Raporlar yükleniyor...</div>';
-
-        const snap = await db.collection("users").doc(user.uid)
-            .collection("reports")
-            .orderBy("updatedAt", "desc")
-            .get();
-
-        const reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        count.textContent = `Toplam kayıt: ${reports.length}`;
-
-        if (reports.length === 0) {
-            list.innerHTML = '<div class="no-reports">Henüz kayıt oluşturulmadı.</div>';
-            return;
+        delBtn.disabled = true;
+        try{
+          await db.collection("users").doc(user.uid)
+            .collection("reports").doc(r.id)
+            .delete();
+          await loadReportsFromCloud(user);
+        } catch(err){
+          alert("Silme hatası: " + err.message);
+          delBtn.disabled = false;
         }
+      };
 
-        list.innerHTML = '';
-        reports.forEach((report) => {
-            const card = document.createElement('div');
-            card.className = 'report-card';
-
-            const title = report.propertyName && report.propertyName.trim() !== '' ? report.propertyName : 'İsimsiz Gayrimenkul';
-
-            card.innerHTML = `
-                <button class="delete-btn">Sil</button>
-                <div class="report-title">${title}</div>
-                <div class="report-info">
-                    ${report.il || ''} / ${report.ilce || ''} / ${report.mahalle || ''}<br>
-                    Ada: ${report.ada || ''} - Parsel: ${report.parsel || ''}<br>
-                    <small>Oluşturulma: ${fmtDate(report.createdAt)}</small>
-                </div>
-            `;
-
-            card.onclick = (e) => {
-                if (!e.target.classList.contains('delete-btn')) {
-                    window.location.href = `rapor-detay.html?id=${encodeURIComponent(report.id)}`;
-                }
-            };
-
-            const delBtn = card.querySelector('.delete-btn');
-            delBtn.onclick = async (event) => {
-                event.stopPropagation();
-                if (!confirm('Bu raporu silmek istediğinize emin misiniz?')) return;
-
-                delBtn.disabled = true;
-                try {
-                    await db.collection("users").doc(user.uid)
-                        .collection("reports").doc(report.id)
-                        .delete();
-
-                    await loadReportsFromCloud(user);
-                } catch (err) {
-                    alert("Silme hatası: " + err.message);
-                    delBtn.disabled = false;
-                }
-            };
-
-            list.appendChild(card);
-        });
-    }
-
-    auth.onAuthStateChanged(async (user) => {
-        const loginBtn = document.getElementById('loginBtn');
-        const userInfo = document.getElementById('userInfo');
-        const mainContent = document.getElementById('mainContent');
-
-        if (user) {
-            loginBtn.style.display = 'none';
-            mainContent.style.display = 'block';
-
-            const kredi = await ensureUserDoc(user);
-            userInfo.innerHTML = `
-                Bağlı Hesap: ${user.email}<br>
-                <b>Kredi: ${kredi}</b><br>
-                <button class="btn-logout" onclick="auth.signOut().then(()=>location.reload())">Çıkış Yap</button>
-            `;
-
-            await loadReportsFromCloud(user);
-        } else {
-            loginBtn.style.display = 'block';
-            mainContent.style.display = 'none';
-            userInfo.textContent = "Devam etmek için Google ile giriş yapın.";
-        }
+      list.appendChild(card);
     });
-</script>
+  }
 
+  auth.onAuthStateChanged(async (user) => {
+    const loginBtn = document.getElementById('loginBtn');
+    const userInfo = document.getElementById('userInfo');
+    const mainContent = document.getElementById('mainContent');
+
+    if(user){
+      loginBtn.style.display = 'none';
+      mainContent.style.display = 'block';
+
+      let kredi = 0;
+      try{ kredi = await ensureUserDoc(user); }catch(e){}
+
+      userInfo.innerHTML = `
+        Bağlı Hesap: ${user.email}<br>
+        <b>Kredi: ${kredi}</b><br>
+        <button class="btn-logout" onclick="auth.signOut().then(()=>location.reload())">Çıkış Yap</button>
+      `;
+
+      await loadReportsFromCloud(user);
+    } else {
+      // giriş yoksa
+      loginBtn.style.display = 'block';
+      mainContent.style.display = 'none';
+      userInfo.textContent = "Devam etmek için Google ile giriş yapın.";
+    }
+  });
+</script>
 </body>
 </html>
