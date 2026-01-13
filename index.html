@@ -3,10 +3,12 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RaporAn X Taşınmaz Değerleme Sistemi</title>
+
 <style>
     body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
     .container { max-width: 800px; margin: 0 auto; text-align: center; }
@@ -29,8 +31,8 @@
     .user-info { margin-bottom: 20px; font-size: 14px; opacity: 0.9; }
 </style>
 </head>
-<body>
 
+<body>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -40,9 +42,13 @@
     <h1>RAPORAN <span>X</span></h1>
     <p class="slogan">“Çok karakteristik, çok abuzittik!”</p>
 
-    <div id="userInfo" class="user-info">Sistem kontrol ediliyor...</div>
-    <button id="loginBtn" class="btn-google" onclick="loginWithGoogle()" style="display:none;">Google ile Giriş Yap</button>
+    <!-- JS bozulsa bile mesaj görünsün -->
+    <div id="userInfo" class="user-info">Devam etmek için Google ile giriş yapın.</div>
 
+    <!-- JS bozulsa bile buton görünsün -->
+    <button id="loginBtn" class="btn-google" onclick="loginWithGoogle()">Google ile Giriş Yap</button>
+
+    <!-- Giriş yoksa bu bölüm görünmez -->
     <div id="mainContent" style="display:none;">
         <div class="count" id="reportCount">Toplam kayıt: 0</div>
         <a href="yeni_kayit.html" class="btn-new">YENİ DEĞERLEME DOSYASI AÇ</a>
@@ -54,124 +60,122 @@
 </div>
 
 <script>
-  const auth = window.auth;
-  const db = window.db;
+    const auth = window.auth;
+    const db = window.db;
 
-  function loginWithGoogle() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    // Popup yerine redirect istersen: signInWithRedirect(provider)
-    auth.signInWithPopup(provider).catch(err => alert("Hata: " + err.message));
-  }
-
-  async function ensureUserDoc(user){
-    const userRef = db.collection("users").doc(user.uid);
-    const snap = await userRef.get();
-
-    if(!snap.exists){
-      await userRef.set({
-        kredi: 5,
-        kayitTarihi: new Date().toISOString(),
-        email: user.email
-      });
-      alert("Hoş geldin! 5 ücretsiz kredi tanımlandı.");
-      return 5;
-    }
-    return snap.data().kredi || 0;
-  }
-
-  function fmtDate(iso){
-    if(!iso) return "Tarih yok";
-    try { return new Date(iso).toLocaleString("tr-TR"); } catch(e){ return iso; }
-  }
-
-  async function loadReportsFromCloud(user){
-    const list = document.getElementById('reportsList');
-    const count = document.getElementById('reportCount');
-
-    list.innerHTML = '<div class="no-reports">☁️ Raporlar yükleniyor...</div>';
-
-    const snap = await db.collection("users").doc(user.uid)
-      .collection("reports")
-      .orderBy("updatedAt", "desc")
-      .get();
-
-    const reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    count.textContent = `Toplam kayıt: ${reports.length}`;
-
-    if(reports.length === 0){
-      list.innerHTML = '<div class="no-reports">Henüz kayıt oluşturulmadı.</div>';
-      return;
+    function loginWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(error => alert("Hata: " + error.message));
     }
 
-    list.innerHTML = '';
-    reports.forEach((r) => {
-      const card = document.createElement('div');
-      card.className = 'report-card';
+    function fmtDate(iso) {
+        if (!iso) return "Tarih yok";
+        try { return new Date(iso).toLocaleString("tr-TR"); } catch(e) { return iso; }
+    }
 
-      const title = (r.propertyName && r.propertyName.trim() !== '') ? r.propertyName : 'İsimsiz Gayrimenkul';
+    async function ensureUserDoc(user) {
+        const userRef = db.collection("users").doc(user.uid);
+        const snap = await userRef.get();
 
-      card.innerHTML = `
-        <button class="delete-btn">Sil</button>
-        <div class="report-title">${title}</div>
-        <div class="report-info">
-          ${r.il || ''} / ${r.ilce || ''} / ${r.mahalle || ''}<br>
-          Ada: ${r.ada || ''} - Parsel: ${r.parsel || ''}<br>
-          <small>Oluşturulma: ${fmtDate(r.createdAt)}</small>
-        </div>
-      `;
-
-      // Aç
-      card.onclick = (e) => {
-        if (!e.target.classList.contains('delete-btn')) {
-          window.location.href = `rapor-detay.html?id=${encodeURIComponent(r.id)}`;
+        if (!snap.exists) {
+            await userRef.set({
+                kredi: 5,
+                kayitTarihi: new Date().toISOString(),
+                email: user.email
+            });
+            alert("Hoş geldin! 5 ücretsiz kredi tanımlandı.");
+            return 5;
         }
-      };
+        return snap.data().kredi || 0;
+    }
 
-      // Sil
-      const delBtn = card.querySelector('.delete-btn');
-      delBtn.onclick = async (event) => {
-        event.stopPropagation();
-        if (!confirm('Bu raporu silmek istediğinize emin misiniz?')) return;
+    async function loadReportsFromCloud(user) {
+        const list = document.getElementById('reportsList');
+        const count = document.getElementById('reportCount');
 
-        delBtn.disabled = true;
-        try{
-          await db.collection("users").doc(user.uid)
-            .collection("reports").doc(r.id)
-            .delete();
-          await loadReportsFromCloud(user);
-        } catch(err){
-          alert("Silme hatası: " + err.message);
-          delBtn.disabled = false;
+        list.innerHTML = '<div class="no-reports">☁️ Raporlar yükleniyor...</div>';
+
+        const snap = await db.collection("users").doc(user.uid)
+            .collection("reports")
+            .orderBy("updatedAt", "desc")
+            .get();
+
+        const reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        count.textContent = `Toplam kayıt: ${reports.length}`;
+
+        if (reports.length === 0) {
+            list.innerHTML = '<div class="no-reports">Henüz kayıt oluşturulmadı.</div>';
+            return;
         }
-      };
 
-      list.appendChild(card);
+        list.innerHTML = '';
+        reports.forEach((report) => {
+            const card = document.createElement('div');
+            card.className = 'report-card';
+
+            const title = report.propertyName && report.propertyName.trim() !== '' ? report.propertyName : 'İsimsiz Gayrimenkul';
+
+            card.innerHTML = `
+                <button class="delete-btn">Sil</button>
+                <div class="report-title">${title}</div>
+                <div class="report-info">
+                    ${report.il || ''} / ${report.ilce || ''} / ${report.mahalle || ''}<br>
+                    Ada: ${report.ada || ''} - Parsel: ${report.parsel || ''}<br>
+                    <small>Oluşturulma: ${fmtDate(report.createdAt)}</small>
+                </div>
+            `;
+
+            card.onclick = (e) => {
+                if (!e.target.classList.contains('delete-btn')) {
+                    window.location.href = `rapor-detay.html?id=${encodeURIComponent(report.id)}`;
+                }
+            };
+
+            const delBtn = card.querySelector('.delete-btn');
+            delBtn.onclick = async (event) => {
+                event.stopPropagation();
+                if (!confirm('Bu raporu silmek istediğinize emin misiniz?')) return;
+
+                delBtn.disabled = true;
+                try {
+                    await db.collection("users").doc(user.uid)
+                        .collection("reports").doc(report.id)
+                        .delete();
+
+                    await loadReportsFromCloud(user);
+                } catch (err) {
+                    alert("Silme hatası: " + err.message);
+                    delBtn.disabled = false;
+                }
+            };
+
+            list.appendChild(card);
+        });
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+        const loginBtn = document.getElementById('loginBtn');
+        const userInfo = document.getElementById('userInfo');
+        const mainContent = document.getElementById('mainContent');
+
+        if (user) {
+            loginBtn.style.display = 'none';
+            mainContent.style.display = 'block';
+
+            const kredi = await ensureUserDoc(user);
+            userInfo.innerHTML = `
+                Bağlı Hesap: ${user.email}<br>
+                <b>Kredi: ${kredi}</b><br>
+                <button class="btn-logout" onclick="auth.signOut().then(()=>location.reload())">Çıkış Yap</button>
+            `;
+
+            await loadReportsFromCloud(user);
+        } else {
+            loginBtn.style.display = 'block';
+            mainContent.style.display = 'none';
+            userInfo.textContent = "Devam etmek için Google ile giriş yapın.";
+        }
     });
-  }
-
-  auth.onAuthStateChanged(async (user) => {
-    const loginBtn = document.getElementById('loginBtn');
-    const userInfo = document.getElementById('userInfo');
-    const mainContent = document.getElementById('mainContent');
-
-    if(user){
-      loginBtn.style.display = 'none';
-      mainContent.style.display = 'block';
-
-      let kredi = 0;
-      try { kredi = await ensureUserDoc(user); } catch(e){}
-
-      userInfo.innerHTML = `Bağlı Hesap: ${user.email}<br><b>Kredi: ${kredi}</b><br>
-        <button class="btn-logout" onclick="auth.signOut().then(()=>location.reload())">Çıkış Yap</button>`;
-
-      await loadReportsFromCloud(user);
-    } else {
-      loginBtn.style.display = 'block';
-      mainContent.style.display = 'none';
-      userInfo.textContent = "Devam etmek için Google ile giriş yapın.";
-    }
-  });
 </script>
 
 </body>
