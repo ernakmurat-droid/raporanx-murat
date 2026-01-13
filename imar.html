@@ -17,7 +17,6 @@
   header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 2px solid #3498db; margin-bottom: 20px; position: relative; gap: 10px; }
   header h1 { color: #3498db; margin: 0; font-size: 1.5em; }
   .header-info { font-size: 0.9em; color: #555; text-align: right; }
-
   .back-btn { position: absolute; left: 0; top: 0; background: #d32f2f; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; cursor: pointer; border: none; }
 
   .form-section { margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
@@ -44,7 +43,7 @@
 
   .status-msg { display: none; text-align: center; font-weight: bold; margin-top: 10px; padding: 10px; border-radius: 8px; }
 
-  /* Modül Durum Rozeti (Boş / Taslak / Tamam) */
+  /* Modül Durum Rozeti */
   .module-badge {
     display: inline-flex; align-items: center;
     border: 1px solid #ddd; border-radius: 999px;
@@ -83,7 +82,7 @@
     <h1>İMAR DURUMU</h1>
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
       <div id="raporBilgi" class="header-info">Yükleniyor...</div>
-      <div id="moduleBadge" class="module-badge"><span id="moduleBadgeText" class="badge-empty">⬜ Boş</span></div>
+      <div class="module-badge"><span id="moduleBadgeText" class="badge-empty">⬜ Boş</span></div>
     </div>
   </header>
 
@@ -168,6 +167,7 @@
 <script>
 /* =========================
    0) ID + Local rapor
+   ✅ reports artık OBJECT (id string olsa bile kaydolur)
 ========================= */
 const urlParams = new URLSearchParams(window.location.search);
 const id = urlParams.get('id');
@@ -175,8 +175,18 @@ const id = urlParams.get('id');
 const LS_REPORTS = 'gayrimenkul_reports';
 const LS_SUGG_GLOBAL = 'gayrimenkul_suggestions_v1';
 
-let reports = JSON.parse(localStorage.getItem(LS_REPORTS)) || [];
+let reports = JSON.parse(localStorage.getItem(LS_REPORTS)) || {};
+if (Array.isArray(reports)) {
+  // eski sistemden gelen array varsa object'e çevir
+  const obj = {};
+  reports.forEach((r, idx) => { if (r) obj[String(idx)] = r; });
+  reports = obj;
+  localStorage.setItem(LS_REPORTS, JSON.stringify(reports));
+}
+
 let report = reports[id] || { imar: {}, modules: {} };
+reports[id] = report;
+persistLocalReports();
 
 const MODULE_KEY = 'imar';
 
@@ -224,10 +234,9 @@ async function firestoreSaveSuggestions(fields){
    2) Modül state (Boş/Taslak/Tamam)
 ========================= */
 function ensureModuleState(){
-  reports[id] = reports[id] || {};
-  reports[id].modules = reports[id].modules || {};
-  reports[id].modules[MODULE_KEY] = reports[id].modules[MODULE_KEY] || {};
-  return reports[id].modules[MODULE_KEY];
+  report.modules = report.modules || {};
+  report.modules[MODULE_KEY] = report.modules[MODULE_KEY] || {};
+  return report.modules[MODULE_KEY];
 }
 
 function computeStatus(mod){
@@ -248,11 +257,12 @@ function setBadge(status){
 }
 
 function persistLocalReports(){
+  reports[id] = report;
   localStorage.setItem(LS_REPORTS, JSON.stringify(reports));
 }
 
 /* =========================
-   3) 5 öneri sistemi (datalist hack yok!)
+   3) 5 öneri sistemi
 ========================= */
 let suggestionStore = loadSuggestionStoreLocal(); // {fields:{}}
 
@@ -286,7 +296,6 @@ function escapeHtml(str){
 }
 
 function attachSuggest(inputEl, fieldKey, onRealInput){
-  // wrap
   if(!inputEl.closest('.suggest-wrap')){
     const wrap=document.createElement('div');
     wrap.className='suggest-wrap';
@@ -297,7 +306,6 @@ function attachSuggest(inputEl, fieldKey, onRealInput){
     box.className='suggest-box';
     wrap.appendChild(box);
   }
-
   const wrap=inputEl.closest('.suggest-wrap');
   const box=wrap.querySelector('.suggest-box');
 
@@ -310,13 +318,10 @@ function attachSuggest(inputEl, fieldKey, onRealInput){
 
     box.querySelectorAll('.suggest-item').forEach(it=>{
       it.addEventListener('mousedown',(e)=>{
-        e.preventDefault(); // blur olmadan seçsin
+        e.preventDefault();
         const val=it.getAttribute('data-val')||'';
         inputEl.value=val;
-
-        // gerçek giriş: öneri seçimi
         if(typeof onRealInput==='function') onRealInput();
-
         guncelleVeAutoSave();
         box.style.display='none';
       });
@@ -325,13 +330,9 @@ function attachSuggest(inputEl, fieldKey, onRealInput){
 
   function hide(delay=120){ setTimeout(()=>box.style.display='none',delay); }
 
-  inputEl.addEventListener('focus',()=>{ render(); /* sadece göster, giriş sayma */ });
+  inputEl.addEventListener('focus',()=>{ render(); }); // sadece göster
   inputEl.addEventListener('blur',()=>hide());
-  inputEl.addEventListener('input',()=>{ 
-    // kullanıcı yazıyorsa gerçek giriş
-    if(typeof onRealInput==='function') onRealInput();
-    render();
-  });
+  inputEl.addEventListener('input',()=>{ if(typeof onRealInput==='function') onRealInput(); render(); });
 
   document.addEventListener('click',(e)=>{
     if(!wrap.contains(e.target)) box.style.display='none';
@@ -339,7 +340,7 @@ function attachSuggest(inputEl, fieldKey, onRealInput){
 }
 
 /* =========================
-   4) started = sadece gerçek girişle true
+   4) started = gerçek giriş
 ========================= */
 function onUserRealInput(){
   const mod=ensureModuleState();
@@ -404,33 +405,24 @@ function guncelle(){
         : `Taşınmaz parselinin ${terk} m² yola terki bulunmakta olup, içindeki yapılarda yola tecavüz bulunmamaktadır.`)
     : `Taşınmaz parselinin yola terki bulunmamaktadır.`;
 
-  // report.ilce varsa kullan, yoksa "İlgili"
   const belediye = (report.ilce || 'İlgili') + " Belediyesi";
-
   let raporMetni = `${belediye} ${planIsmi} uygulama imar planı içerisinde yer almakta olup, ${nizam} Nizam, ${kat} Kat, Taks: ${taks} - Kaks: ${kaks} yapılaşma şartlarındadır. ${tecavuzMetni} İmar Müdürlüğü'nden parselin kentsel dönüşüm alanında ${kentsel === 'Evet' ? 'olduğu' : 'olmadığı'} ve riskli yapı ilan ${riskli === 'Evet' ? 'edildiği' : 'edilmediği'} bilgisi alınmıştır.`;
 
   document.getElementById('rapor-metni-output').textContent = raporMetni;
-
   return { metin: raporMetni, tablo: tabloHTML };
 }
 
-/* =========================
-   6) complete hesabı (zorunlular)
-========================= */
 function computeComplete(){
   const plan = norm(document.getElementById('imar-plani-ismi').value);
   const nizamRadio = document.querySelector('input[name="nizam"]:checked');
   const kat = norm(document.getElementById('kat-sayisi').value);
   const taks = norm(document.getElementById('taks').value);
   const kaks = norm(document.getElementById('kaks').value);
-
   return !!(plan && nizamRadio && kat && taks && kaks);
 }
 
 /* =========================
-   7) Autosave (Taslak)
-   - silent=true: savedAt yazmaz (tamam olmaz)
-   - kullanıcı Kaydet'e basarsa savedAt yazar (tamam olabilir)
+   6) Autosave (Taslak)
 ========================= */
 let autosaveTimer=null;
 function guncelleVeAutoSave(){
@@ -443,8 +435,7 @@ async function kaydet(silent=true){
   const data = guncelle();
   const mod = ensureModuleState();
 
-  // Eğer kullanıcı bir şey yazdıysa started true olmalı
-  // (ekstra güvenlik: dolu alan varsa da started yak)
+  // started yakala
   const anyContent =
     norm(document.getElementById('imar-plani-ismi').value) ||
     norm(document.getElementById('kat-sayisi').value) ||
@@ -454,17 +445,14 @@ async function kaydet(silent=true){
 
   if(anyContent) onUserRealInput();
 
-  const nizamRadio = document.querySelector('input[name="nizam"]:checked');
-
-  // Eksik kontrolü (senin eski kritiğinle aynı)
   const eksikVar = !computeComplete();
 
-  // silent değilse (kullanıcı kaydet tıkladıysa) eksik onayı
   if(!silent && eksikVar){
     if(!confirm("⚠️ Kritik imar verileri (İsim, Nizam, Kat, Taks/Kaks) eksik. Yine de 'Eksik Veri' olarak kaydedilsin mi?")) return;
   }
 
-  // Modül verisini rapora mühürle (eski yapınla uyumlu)
+  const nizamRadio = document.querySelector('input[name="nizam"]:checked');
+
   report.imar = {
     imarPlaniIsmi: document.getElementById('imar-plani-ismi').value,
     nizam: nizamRadio ? nizamRadio.value : "",
@@ -482,16 +470,11 @@ async function kaydet(silent=true){
   report.imarMetni = data.metin;
   report.imarTablo = `<table>${data.tablo}</table>`;
 
-  // Modül state
   mod.complete = !eksikVar;
-  if(!silent){
-    mod.savedAt = Date.now(); // TAMAM olmanın kilidi: kaydet
-  }
+  if(!silent) mod.savedAt = Date.now();
 
-  // rapor üst seviyesi flags
   report.imar_tamamlandi = !!(mod.savedAt && mod.complete);
 
-  // rapor içine modules olarak da yaz (genel sistem için)
   report.modules = report.modules || {};
   report.modules[MODULE_KEY] = {
     ...mod,
@@ -500,21 +483,19 @@ async function kaydet(silent=true){
     imarTablo: report.imarTablo
   };
 
-  reports[id] = report;
+  report.updatedAt = Date.now();
   persistLocalReports();
 
-  // ÖNERİLER: sadece kullanıcı Kaydet'e basınca öneri havuzuna ekle (garanti)
+  // önerileri sadece manuel kaydet’te ekle
   if(!silent){
     addSuggestion(`${MODULE_KEY}.imar_ismi`, report.imar.imarPlaniIsmi);
     addSuggestion(`${MODULE_KEY}.nizam_diger`, report.imar.nizamDiger);
     addSuggestion(`${MODULE_KEY}.taks`, report.imar.taks);
     addSuggestion(`${MODULE_KEY}.kaks`, report.imar.kaks);
 
-    // Firebase suggestions sync (varsa)
     try { await firestoreSaveSuggestions(suggestionStore.fields); } catch(e){}
   }
 
-  // Firebase rapor sync (varsa)
   try {
     await firestoreMergeSave({
       modules: {
@@ -540,49 +521,37 @@ async function kaydet(silent=true){
 }
 
 /* =========================
-   8) Navigation
+   7) Navigation + init
 ========================= */
 function anaMenuyeDon(){ window.location.href = `rapor-detay.html?id=${id}`; }
 
-/* =========================
-   9) Sayfa init + event bind
-========================= */
 function bindEvents(){
-  // Text/number inputs => gerçek giriş
   const imarIsmi = document.getElementById('imar-plani-ismi');
   const nizamDiger = document.getElementById('diğer-nizam-kutusu');
   const taks = document.getElementById('taks');
   const kaks = document.getElementById('kaks');
 
-  // 5'li öneri bağla
   attachSuggest(imarIsmi, `${MODULE_KEY}.imar_ismi`, onUserRealInput);
   attachSuggest(nizamDiger, `${MODULE_KEY}.nizam_diger`, onUserRealInput);
   attachSuggest(taks, `${MODULE_KEY}.taks`, onUserRealInput);
   attachSuggest(kaks, `${MODULE_KEY}.kaks`, onUserRealInput);
 
-  // diğer alanlar
   document.getElementById('kat-sayisi').addEventListener('input', ()=>{ onUserRealInput(); hmaxHesapla(); guncelleVeAutoSave(); });
   document.getElementById('yola-terk').addEventListener('input', ()=>{ onUserRealInput(); guncelleVeAutoSave(); });
   document.getElementById('yola-tecavüz-alan-kutusu').addEventListener('input', ()=>{ onUserRealInput(); guncelleVeAutoSave(); });
 
-  // temel inputlar
   imarIsmi.addEventListener('input', guncelleVeAutoSave);
   nizamDiger.addEventListener('input', guncelleVeAutoSave);
   taks.addEventListener('input', guncelleVeAutoSave);
   kaks.addEventListener('input', guncelleVeAutoSave);
 
-  // radio'lar
   document.querySelectorAll('input[name="nizam"]').forEach(r=>r.addEventListener('change', ()=>{ onUserRealInput(); guncelleVeAutoSave(); }));
   document.querySelectorAll('input[name="tecavuz"]').forEach(r=>r.addEventListener('change', ()=>{ onUserRealInput(); guncelleVeAutoSave(); }));
   document.querySelectorAll('input[name="kentsel"]').forEach(r=>r.addEventListener('change', ()=>{ onUserRealInput(); guncelleVeAutoSave(); }));
   document.querySelectorAll('input[name="riskli"]').forEach(r=>r.addEventListener('change', ()=>{ onUserRealInput(); guncelleVeAutoSave(); }));
 }
 
-function loadFromReport(r){
-  // hem eski hem yeni şema ile uyum
-  report = r || report || {};
-  report.imar = report.imar || {};
-
+function loadFromReport(){
   document.getElementById('raporBilgi').textContent = report.propertyName || "Rapor Bilgisi";
 
   const i = report.imar || {};
@@ -600,7 +569,6 @@ function loadFromReport(r){
       document.getElementById('diğer-nizam-kutusu').value = i.nizamDiger || '';
     }
   }
-
   if(i.tecavuz){
     const rT = document.querySelector(`input[name="tecavuz"][value="${i.tecavuz}"]`);
     if(rT) rT.checked = true;
@@ -609,7 +577,6 @@ function loadFromReport(r){
       document.getElementById('yola-tecavüz-alan-kutusu').value = i.tecavuzMiktar || '';
     }
   }
-
   if(i.kentsel){
     const rK = document.querySelector(`input[name="kentsel"][value="${i.kentsel}"]`);
     if(rK) rK.checked = true;
@@ -619,17 +586,7 @@ function loadFromReport(r){
     if(rR) rR.checked = true;
   }
 
-  // module badge
   const mod = ensureModuleState();
-  // report.modules içinden state geldiyse al
-  const cloudMod = report.modules?.[MODULE_KEY];
-  if(cloudMod){
-    mod.started = cloudMod.started ?? mod.started;
-    mod.startedAt = cloudMod.startedAt ?? mod.startedAt;
-    mod.savedAt = cloudMod.savedAt ?? mod.savedAt;
-    mod.complete = cloudMod.complete ?? mod.complete;
-  }
-  persistLocalReports();
   setBadge(computeStatus(mod));
 
   hmaxHesapla();
@@ -642,27 +599,13 @@ window.onload = async function(){
     return;
   }
 
-  // local yükle
-  reports = JSON.parse(localStorage.getItem(LS_REPORTS)) || [];
-  report = reports[id] || report;
-  // modules yoksa aç
-  report.modules = report.modules || {};
-  reports[id] = report;
-  persistLocalReports();
-
   bindEvents();
+  loadFromReport();
 
-  // local suggestions hazır
-  suggestionStore = loadSuggestionStoreLocal();
-
-  loadFromReport(report);
-
-  // firebase varsa: suggestions + report çek
   if(auth && db){
     auth.onAuthStateChanged(async (user)=>{
       if(!user) return;
 
-      // suggestions merge
       try{
         const s = await firestoreLoadSuggestions();
         if(s?.fields){
@@ -671,15 +614,14 @@ window.onload = async function(){
         }
       }catch(e){}
 
-      // report merge
       try{
         const cloud = await firestoreLoadReport();
         if(cloud){
-          // cloud'u local rapora birleştir
+          // cloud'u local ile birleştir
           report = { ...report, ...cloud, modules: { ...(report.modules||{}), ...(cloud.modules||{}) } };
           reports[id] = report;
           persistLocalReports();
-          loadFromReport(report);
+          loadFromReport();
         }
       }catch(e){}
     });
