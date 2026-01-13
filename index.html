@@ -33,23 +33,17 @@
 </head>
 
 <body>
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
 
 <div class="container">
   <h1>RAPORAN <span>X</span></h1>
   <p class="slogan">“Çok karakteristik, çok abuzittik!”</p>
 
-  <!-- JS çalışmasa bile mesaj görünsün -->
   <div id="userInfo" class="user-info">Devam etmek için Google ile giriş yapın.</div>
-
-  <!-- JS çalışmasa bile buton görünsün -->
   <button id="loginBtn" class="btn-google" onclick="loginWithGoogle()">Google ile Giriş Yap</button>
 
-  <!-- Giriş yoksa bu bölüm gizli -->
   <div id="mainContent" style="display:none;">
     <div class="count" id="reportCount">Toplam kayıt: 0</div>
     <a href="yeni_kayit.html" class="btn-new">YENİ DEĞERLEME DOSYASI AÇ</a>
@@ -61,20 +55,38 @@
 </div>
 
 <script>
-  const auth = window.auth;
-  const db = window.db;
+  // ✅ Firebase INIT (tek dosya)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+    authDomain: "raporanx.firebaseapp.com",
+    projectId: "raporanx",
+    storageBucket: "raporanx.firebasestorage.app",
+    messagingSenderId: "715194328346",
+    appId: "1:715194328346:web:46f0bb98941e01ead6f8a3"
+  };
 
-  // ✅ REDIRECT dönüş hatası varsa göster (sebebi burada yakalarız)
+  try{
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  } catch(e){
+    alert("Firebase init hatası: " + (e?.message || e));
+  }
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // Redirect sonucu (hata varsa gösterecek)
   auth.getRedirectResult().catch((error) => {
-    if (error && error.message) {
-      alert("Giriş Hatası: " + error.message);
-    }
+    if (error && error.message) alert("Giriş Hatası: " + error.message);
   });
 
-  // ✅ Redirect ile login (Vercel'de popup'tan daha sağlam)
+  // ✅ Redirect ile login
   function loginWithGoogle() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithRedirect(provider).catch(error => alert("Giriş Hatası: " + error.message));
+    try{
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithRedirect(provider).catch(error => alert("Giriş Hatası: " + error.message));
+    } catch(e){
+      alert("Login fonksiyonu hatası: " + (e?.message || e));
+    }
   }
 
   function fmtDate(iso){
@@ -85,13 +97,8 @@
   async function ensureUserDoc(user){
     const userRef = db.collection("users").doc(user.uid);
     const snap = await userRef.get();
-
     if(!snap.exists){
-      await userRef.set({
-        kredi: 5,
-        kayitTarihi: new Date().toISOString(),
-        email: user.email
-      });
+      await userRef.set({ kredi: 5, kayitTarihi: new Date().toISOString(), email: user.email });
       alert("Hoş geldin! 5 ücretsiz kredi tanımlandı.");
       return 5;
     }
@@ -121,7 +128,6 @@
     reports.forEach((r) => {
       const card = document.createElement('div');
       card.className = 'report-card';
-
       const title = (r.propertyName && r.propertyName.trim() !== '') ? r.propertyName : 'İsimsiz Gayrimenkul';
 
       card.innerHTML = `
@@ -134,24 +140,20 @@
         </div>
       `;
 
-      // Aç
       card.onclick = (e) => {
         if (!e.target.classList.contains('delete-btn')) {
           window.location.href = `rapor-detay.html?id=${encodeURIComponent(r.id)}`;
         }
       };
 
-      // Sil
       const delBtn = card.querySelector('.delete-btn');
       delBtn.onclick = async (event) => {
         event.stopPropagation();
         if (!confirm('Bu raporu silmek istediğinize emin misiniz?')) return;
-
         delBtn.disabled = true;
+
         try{
-          await db.collection("users").doc(user.uid)
-            .collection("reports").doc(r.id)
-            .delete();
+          await db.collection("users").doc(user.uid).collection("reports").doc(r.id).delete();
           await loadReportsFromCloud(user);
         } catch(err){
           alert("Silme hatası: " + err.message);
@@ -173,17 +175,13 @@
       mainContent.style.display = 'block';
 
       let kredi = 0;
-      try{ kredi = await ensureUserDoc(user); }catch(e){}
+      try { kredi = await ensureUserDoc(user); } catch(e){}
 
-      userInfo.innerHTML = `
-        Bağlı Hesap: ${user.email}<br>
-        <b>Kredi: ${kredi}</b><br>
-        <button class="btn-logout" onclick="auth.signOut().then(()=>location.reload())">Çıkış Yap</button>
-      `;
+      userInfo.innerHTML = `Bağlı Hesap: ${user.email}<br><b>Kredi: ${kredi}</b><br>
+        <button class="btn-logout" onclick="auth.signOut().then(()=>location.reload())">Çıkış Yap</button>`;
 
       await loadReportsFromCloud(user);
     } else {
-      // giriş yoksa
       loginBtn.style.display = 'block';
       mainContent.style.display = 'none';
       userInfo.textContent = "Devam etmek için Google ile giriş yapın.";
