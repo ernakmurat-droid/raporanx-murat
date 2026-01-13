@@ -1,18 +1,21 @@
-// Firebase projenin konsolundan aldığın bilgiler
 const firebaseConfig = {
-  apiKey: "AIzaSy...", 
-  authDomain: "projeniz.firebaseapp.com",
-  projectId: "projeniz",
-  storageBucket: "projeniz.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+  authDomain: "raporanx.firebaseapp.com",
+  projectId: "raporanx",
+  storageBucket: "raporanx.firebasestorage.app",
+  messagingSenderId: "715194328346",
+  appId: "1:715194328346:web:46f0bb98941e01ead6f8a3"
 };
 
-// Firebase'i başlat
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp(firebaseConfig);
 }
 
-// ✅ DİKKAT: index.html'in bu değişkenlere erişebilmesi için pencereye (window) bağlamalıyız
-window.db = firebase.firestore();
-window.auth = firebase.auth();
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+window.auth = auth;
+window.db = db;
+
+// Oturum kalıcı
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
