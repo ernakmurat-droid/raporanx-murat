@@ -30,8 +30,8 @@
   .delete-btn:hover { background: #b71c1c; }
   .user-info { margin-bottom: 20px; font-size: 14px; opacity: 0.9; }
 
-  /* Debug kutusu */
-  .debug {
+  /* Debug kutusu (sadece hata olursa görünür) */
+  .debug{
     display:none;
     margin: 12px auto 0;
     max-width: 800px;
@@ -46,6 +46,7 @@
 </head>
 
 <body>
+<!-- Compat kullanıyoruz: tek yöntem (import yok) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -84,13 +85,11 @@
 
   function friendlyAuthError(err){
     const code = err?.code || "";
-    const msg = err?.message || "Bilinmeyen hata";
-
-    if (code === "auth/unauthorized-domain") return "Yetkisiz alan adı (Firebase > Authorized domains kontrol et).";
-    if (code === "auth/operation-not-allowed") return "Firebase’de Google ile giriş kapalı görünüyor (Sign-in method).";
-    if (code === "auth/network-request-failed") return "Ağ hatası. İnternet/engel olabilir.";
-    if (code === "auth/popup-blocked") return "Popup engeli var (biz redirect kullanıyoruz ama tarayıcı kısıtlıyor olabilir).";
-
+    const msg  = err?.message || "Bilinmeyen hata";
+    // En işe yarayanlar:
+    if (code === "auth/unauthorized-domain") return "Yetkisiz alan adı. Firebase > Authorized domains kontrol et.";
+    if (code === "auth/operation-not-allowed") return "Google ile giriş Firebase’de kapalı (Sign-in method).";
+    if (code === "auth/network-request-failed") return "Ağ hatası / engel. İnternet veya tarayıcı kısıtları.";
     return `${code} - ${msg}`;
   }
 
@@ -111,15 +110,16 @@
   }
 
   const auth = firebase.auth();
-  const db = firebase.firestore();
+  const db   = firebase.firestore();
 
-  // ===== Redirect sonucu yakalama (kritik) =====
+  // ===== Redirect sonucu: sadece catch yetmez, sonucu da oku =====
   let redirectChecked = false;
 
   auth.getRedirectResult()
     .then((result) => {
       redirectChecked = true;
       if (result && result.user) {
+        // giriş dönüşü başarılı
         hideDebug();
       }
     })
@@ -130,11 +130,11 @@
       alert("Giriş Hatası: " + nice);
     });
 
-  // Redirect kontrolü gecikirse UI takılmasın
+  // Redirect gecikirse UI takılı kalmasın
   setTimeout(() => { if (!redirectChecked) redirectChecked = true; }, 2000);
 
-  // ===== Google login (redirect) - GLOBAL =====
-  window.loginWithGoogle = function loginWithGoogle() {
+  // ===== LOGIN (redirect) - inline onclick için GLOBAL olsun =====
+  window.loginWithGoogle = function loginWithGoogle(){
     try{
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.signInWithRedirect(provider).catch((err) => {
@@ -164,7 +164,7 @@
   }
 
   async function loadReportsFromCloud(user){
-    const list = document.getElementById('reportsList');
+    const list  = document.getElementById('reportsList');
     const count = document.getElementById('reportCount');
 
     list.innerHTML = '<div class="no-reports">☁️ Raporlar yükleniyor...</div>';
@@ -177,7 +177,7 @@
         .get();
     } catch(err){
       showDebug("❌ Firestore okuma hatası:\n" + (err?.message || err));
-      list.innerHTML = '<div class="no-reports">❌ Raporlar okunamadı. Yetki/kurallar sorunu olabilir.</div>';
+      list.innerHTML = '<div class="no-reports">❌ Raporlar okunamadı. Firestore Rules/Yetki sorunu olabilir.</div>';
       return;
     }
 
@@ -221,7 +221,7 @@
           await db.collection("users").doc(user.uid).collection("reports").doc(r.id).delete();
           await loadReportsFromCloud(user);
         } catch(err){
-          alert("Silme hatası: " + err.message);
+          alert("Silme hatası: " + (err?.message || err));
           delBtn.disabled = false;
         }
       };
@@ -230,11 +230,11 @@
     });
   }
 
-  // ===== Auth state: Redirect kontrolü oturmadan UI zıplatma =====
+  // ===== Auth state: redirect kontrolü yapılmadan “user yok” diye zıplatma =====
   auth.onAuthStateChanged(async (user) => {
-    const loginBtn = document.getElementById('loginBtn');
-    const userInfo = document.getElementById('userInfo');
-    const mainContent = document.getElementById('mainContent');
+    const loginBtn     = document.getElementById('loginBtn');
+    const userInfo     = document.getElementById('userInfo');
+    const mainContent  = document.getElementById('mainContent');
 
     if (!redirectChecked) {
       loginBtn.style.display = 'none';
@@ -243,7 +243,7 @@
       return;
     }
 
-    if(user){
+    if (user) {
       loginBtn.style.display = 'none';
       mainContent.style.display = 'block';
 
