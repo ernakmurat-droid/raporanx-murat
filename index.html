@@ -30,7 +30,7 @@
   .delete-btn:hover { background: #b71c1c; }
   .user-info { margin-bottom: 20px; font-size: 14px; opacity: 0.9; }
 
-  /* Debug kutusu (sadece sorun olursa görünür) */
+  /* Debug kutusu */
   .debug {
     display:none;
     margin: 12px auto 0;
@@ -70,9 +70,7 @@
 </div>
 
 <script>
-  // =============================
-  // 0) Debug helper
-  // =============================
+  // ===== Debug helper =====
   function showDebug(text){
     const box = document.getElementById("debugBox");
     box.textContent = text;
@@ -88,17 +86,15 @@
     const code = err?.code || "";
     const msg = err?.message || "Bilinmeyen hata";
 
-    if (code === "auth/unauthorized-domain") return "Yetkisiz alan adı (Authorized domains). Domain listeni kontrol et.";
+    if (code === "auth/unauthorized-domain") return "Yetkisiz alan adı (Firebase > Authorized domains kontrol et).";
     if (code === "auth/operation-not-allowed") return "Firebase’de Google ile giriş kapalı görünüyor (Sign-in method).";
     if (code === "auth/network-request-failed") return "Ağ hatası. İnternet/engel olabilir.";
-    if (code === "auth/popup-blocked") return "Popup engellendi (biz redirect kullanıyoruz ama tarayıcı kısıtlıyor olabilir).";
+    if (code === "auth/popup-blocked") return "Popup engeli var (biz redirect kullanıyoruz ama tarayıcı kısıtlıyor olabilir).";
 
     return `${code} - ${msg}`;
   }
 
-  // =============================
-  // 1) Firebase INIT
-  // =============================
+  // ===== Firebase init =====
   const firebaseConfig = {
     apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
     authDomain: "raporanx.firebaseapp.com",
@@ -117,16 +113,13 @@
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  // =============================
-  // 2) Redirect sonucunu GERÇEKTEN yakala
-  // =============================
+  // ===== Redirect sonucu yakalama (kritik) =====
   let redirectChecked = false;
 
   auth.getRedirectResult()
     .then((result) => {
       redirectChecked = true;
       if (result && result.user) {
-        // başarılı dönüş
         hideDebug();
       }
     })
@@ -137,14 +130,10 @@
       alert("Giriş Hatası: " + nice);
     });
 
-  // Eğer redirect sonucu gecikirse, UI takılı kalmasın diye kısa bir fallback
-  setTimeout(() => {
-    if (!redirectChecked) redirectChecked = true;
-  }, 2000);
+  // Redirect kontrolü gecikirse UI takılmasın
+  setTimeout(() => { if (!redirectChecked) redirectChecked = true; }, 2000);
 
-  // =============================
-  // 3) Login fonksiyonunu GLOBAL yap
-  // =============================
+  // ===== Google login (redirect) - GLOBAL =====
   window.loginWithGoogle = function loginWithGoogle() {
     try{
       const provider = new firebase.auth.GoogleAuthProvider();
@@ -156,7 +145,7 @@
     } catch(e){
       alert("Login fonksiyonu hatası: " + (e?.message || e));
     }
-  }
+  };
 
   function fmtDate(iso){
     if(!iso) return "Tarih yok";
@@ -241,15 +230,12 @@
     });
   }
 
-  // =============================
-  // 4) Auth state: redirect sonucu oturmadan "user yok" diye zıplatma
-  // =============================
+  // ===== Auth state: Redirect kontrolü oturmadan UI zıplatma =====
   auth.onAuthStateChanged(async (user) => {
     const loginBtn = document.getElementById('loginBtn');
     const userInfo = document.getElementById('userInfo');
     const mainContent = document.getElementById('mainContent');
 
-    // Redirect kontrolü yapılmadan UI'yi sağa sola çekmeyelim
     if (!redirectChecked) {
       loginBtn.style.display = 'none';
       mainContent.style.display = 'none';
