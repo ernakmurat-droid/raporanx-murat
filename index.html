@@ -3,90 +3,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RaporanX</title>
-  <!-- Firebase CDN (compat) -->
+  <title>Abuzittin Ekspertiz Sistemi</title>
+  <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; text-align: center; }
-    .container { max-width: 800px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
+    .container { max-width: 800px; margin: 0 auto; text-align: center; }
     h1 { font-size: 36px; margin-bottom: 20px; }
-    .btn-new { display: block; width: 400px; max-width: 90%; margin: 50px auto; background: #00c853; color: white; padding: 25px; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
-    .btn-new:hover { transform: scale(1.05); }
-    .login-container { background: white; color: #333; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 100px auto; max-width: 400px; }
-    .login-btn { padding: 15px 30px; font-size: 18px; background: #4285f4; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; margin-bottom: 20px; cursor: pointer; }
-    #statusInfo { margin: 20px 0; font-weight: bold; color: #ffd600; }
+    .btn-new { display: block; width: 400px; max-width: 90%; margin: 50px auto; background: #00c853; color: white; padding: 25px; text-align: center; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; cursor: pointer; border:none; }
+    .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; position: relative; margin-bottom: 20px; cursor: pointer; text-align: left; }
+    .report-card:hover { background: rgba(255,255,255,0.35); }
+    .delete-btn { position: absolute; top: 15px; right: 15px; background: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; }
+    #statusInfo { margin-bottom: 20px; font-weight: bold; color: #ffd600; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div id="loginSection" class="login-container">
-      <h2>RaporanX'e Hoş Geldin</h2>
-      <p>Gayrimenkul ekspertiz raporlarını hızlıca oluştur.</p>
-      <button id="googleBtn" class="login-btn">Google ile Giriş Yap</button>
-      <div id="statusInfo">Bağlantı kuruluyor...</div>
-    </div>
-
-    <div id="mainSection" style="display:none;">
-      <h1>ABUZİTTİN EKSPERTİZ SİSTEMİ</h1>
-      <p>“Abuzittin ile raporun abuzittik olsun!”</p>
-      <div id="statusInfoMain">✅ Hoş geldin <span id="userName"></span></div>
-      
-      <a href="yeni_kayit.html" class="btn-new">YENİ RAPOR OLUŞTUR</a>
-      
-      <div id="reportsList">
-        <!-- Raporlar buraya yüklenecek -->
-      </div>
+    <h1>ABUZİTTİN EKSPERTİZ SİSTEMİ</h1>
+    <p>“Abuzittin ile raporun abuzittik olsun!”</p>
+    <div id="statusInfo">Bulut Bağlantısı Kuruluyor...</div>
+    
+    <button onclick="window.location.href='yeni_kayit.html'" class="btn-new">YENİ RAPOR OLUŞTUR</button>
+    
+    <div id="reportsList">
+      <div style="opacity: 0.8; margin-top: 40px;">Kayıtlar yükleniyor...</div>
     </div>
   </div>
 
   <script>
+    let reports = [];
+
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Google Login
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-
-    document.getElementById("googleBtn").onclick = () => {
-      document.getElementById("googleBtn").textContent = "Yükleniyor...";
-      auth.signInWithPopup(provider)
-        .then((result) => {
-          // Giriş başarılı – sayfa otomatik yenilenecek (onAuthStateChanged çalışacak)
-        })
-        .catch((err) => {
-          alert("Hata: " + err.message);
-          document.getElementById("googleBtn").textContent = "Google ile Giriş Yap";
-        });
-    };
-
-    // Oturum kontrolü – girişliyse ana içeriği göster
-    auth.onAuthStateChanged((user) => {
+    auth.onAuthStateChanged(async (user) => {
       if (user) {
-        document.getElementById("loginSection").style.display = "none";
-        document.getElementById("mainSection").style.display = "block";
-        document.getElementById("userName").textContent = user.displayName || user.email;
-        document.getElementById("statusInfoMain").textContent = "✅ Bulut Aktif: " + user.email;
+        document.getElementById('statusInfo').textContent = "✅ Bulut Aktif: " + user.email;
 
-        // Raporları yükle (önceki kodundan)
-        loadReports(user);
+        // 1. Firestore'dan verileri çek (bulut senkronu)
+        try {
+          const doc = await db.collection("users").doc(user.uid).get();
+          if (doc.exists && doc.data().gayrimenkul_reports) {
+            reports = doc.data().gayrimenkul_reports;
+            // Buluttan geleni localStorage'a mühürle (senkron kalması için)
+            localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+          } else {
+            // Firestore boşsa localStorage'dan çek
+            reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+          }
+        } catch (error) {
+          console.error("Bulut çekme hatası:", error);
+          // Hata olursa localStorage'dan devam et
+          reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+          document.getElementById('statusInfo').textContent = "⚠️ Bulut hatası – yerel veriler yüklendi";
+        }
+
+        loadReports();
       } else {
-        document.getElementById("loginSection").style.display = "block";
-        document.getElementById("mainSection").style.display = "none";
-        document.getElementById("statusInfo").textContent = "Giriş yapın";
+        document.getElementById('statusInfo').textContent = "⚠️ Giriş Yapılmadı!";
+        // Giriş sayfasına yönlendir (eğer ayrı giriş sayfası varsa)
+        // window.location.href = 'login.html';
       }
     });
 
-    // Rapor yükleme fonksiyonu (önceki index.html kodundan al, buraya yapıştır)
-    async function loadReports(user) {
-      // Senin önceki rapor yükleme kodunu buraya koy (verileri buluttan çek, listele vs.)
-      // Örnek olarak basit hali:
-      const reportsList = document.getElementById("reportsList");
-      reportsList.innerHTML = "<p>Raporlar yükleniyor...</p>";
-      // Tam kodunu önceki index.html'den kopyala buraya
+    function loadReports() {
+      const list = document.getElementById('reportsList');
+      list.innerHTML = '';
+      
+      if (reports.length === 0) {
+        list.innerHTML = '<div style="margin-top:40px;">Henüz kayıt oluşturulmadı.</div>';
+        return;
+      }
+
+      reports.forEach((report, index) => {
+        const card = document.createElement('div');
+        card.className = 'report-card';
+        let title = report.propertyName || 'İsimsiz Gayrimenkul';
+        card.innerHTML = `
+          <button class="delete-btn" onclick="deleteReport(${index}, event)">Sil</button>
+          <div style="font-size:22px; font-weight:bold;">${title}</div>
+          <div style="margin-top:10px; opacity:0.9;">
+            ${report.il || ''} / ${report.ilce || ''}<br>
+            <small>Ada: ${report.ada || ''} Parsel: ${report.parsel || ''}</small>
+          </div>
+        `;
+        card.onclick = (e) => {
+          if (!e.target.classList.contains('delete-btn')) {
+            window.location.href = `rapor-detay.html?id=${index}`;
+          }
+        };
+        list.appendChild(card);
+      });
+    }
+
+    async function deleteReport(index, event) {
+      event.stopPropagation();
+      if (confirm('Bu raporu silmek istediğinize emin misiniz?')) {
+        reports.splice(index, 1);
+        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        
+        const user = auth.currentUser;
+        if (user) {
+          await db.collection("users").doc(user.uid).update({
+            gayrimenkul_reports: reports
+          });
+        }
+        loadReports();
+      }
     }
   </script>
 </body>
