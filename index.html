@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -9,7 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <!-- Firebase Config (burada config varsa initialize eder) -->
+  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
   <style>
     body {
@@ -27,6 +26,10 @@
       padding: 40px;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #4a148c;
+      margin-bottom: 30px;
     }
     button {
       padding: 15px 30px;
@@ -50,16 +53,12 @@
 <body>
   <div class="container">
     <h2>RaporanX'e Hoş Geldin</h2>
+    <p>Gayrimenkul ekspertiz raporlarını hızlıca oluştur.</p>
     <button id="googleBtn">Google ile Giriş Yap</button>
   </div>
 
   <script>
-    // Firebase init (config.js'de firebaseConfig tanımlıysa çalışır)
-    // Eğer config.js'de yoksa buraya kendi config'ini yapıştır:
-    // const firebaseConfig = { apiKey: "...", authDomain: "...", projectId: "...", ... };
-    // firebase.initializeApp(firebaseConfig);
-
-    const auth = firebase.auth(); // EKSİK OLAN BUYDU!
+    const auth = firebase.auth();
 
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({
@@ -76,9 +75,11 @@
         .then((result) => {
           const user = result.user;
           console.log("GİRİŞ BAŞARILI:", user.email, user.uid);
-          alert("Hoş geldin " + user.displayName || user.email);
-          // Giriş sonrası yönlendirme (panel.html varsa)
-          window.location.href = "panel.html";
+          alert("Hoş geldin " + (user.displayName || user.email) + "!");
+          
+          // DÜZELTME: Burası 404'e sebep oluyordu! Ana sayfaya (rapor listesi) yönlendir
+          window.location.href = "index.html";  // Ana rapor listesi sayfası
+          // Alternatif: Vercel root için "/" yapabilirsin: window.location.href = "/";
         })
         .catch((err) => {
           console.error("GİRİŞ HATASI:", err);
@@ -90,4 +91,3 @@
   </script>
 </body>
 </html>
-
