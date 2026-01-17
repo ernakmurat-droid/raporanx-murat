@@ -1,55 +1,14 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
-<script>
-    // 1. ADIM: Proje Yapılandırması
-    const firebaseConfig = {
-        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-        authDomain: "raporanx.firebaseapp.com",
-        projectId: "raporanx",
-        storageBucket: "raporanx.firebasestorage.app",
-        messagingSenderId: "715194328346",
-        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-        measurementId: "G-V749P1HB80"
-    };
-
-    // Firebase'i Başlat (Eğer daha önce başlatılmadıysa)
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // 2. ADIM: MODÜL MUHAFIZI (Giriş ve Rapor ID Kontrolü)
-    auth.onAuthStateChanged((user) => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const reportId = urlParams.get('id');
-
-        // Giriş yapılmamışsa index'e at
-        if (!user) {
-            alert("⚠️ Ekiş yetkisi yok! Lütfen giriş yapın.");
-            window.location.href = 'index.html';
-            return;
-        }
-
-        // Rapor seçilmeden modüle girilmeye çalışılırsa index'e at
-        if (!reportId && window.location.pathname.split("/").pop() !== 'index.html') {
-            alert("⚠️ İşlem yapılacak rapor seçilmedi!");
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        console.log("Yetki Onaylandı: " + user.email);
-    });
-</script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Yeni Rapor Oluştur</title>
-<style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yeni Rapor Oluştur - RaporanX</title>
+  <!-- Firebase CDN (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <style>
     body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #ba68c8); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
     .container { max-width: 600px; margin: 0 auto; text-align: center; }
     h1 { font-size: 32px; margin-bottom: 30px; }
@@ -62,104 +21,111 @@
     .geri-btn:hover { background: #5a6268; }
     .referans-btn { background: #2196f3; margin-top: 15px; }
     .referans-btn:hover { background: #1976d2; }
-</style>
+  </style>
 </head>
 <body>
-<div class="container">
+  <div class="container">
     <h1>YENİ RAPOR OLUŞTUR</h1>
     <form>
-        <label>Gayrimenkul Adı</label>
-        <input type="text" id="propertyName" placeholder="Örn: Deniz Apartmanı Daire 5">
-
-        <label>İl</label>
-        <input type="text" id="il" placeholder="Örn: İstanbul">
-
-        <label>İlçe</label>
-        <input type="text" id="ilce" placeholder="Örn: Kadıköy">
-
-        <label>Mahalle</label>
-        <input type="text" id="mahalle" placeholder="Örn: Osmanağa">
-
-        <label>Ada</label>
-        <input type="text" id="ada" placeholder="Örn: 123">
-
-        <label>Parsel</label>
-        <input type="text" id="parsel" placeholder="Örn: 45">
-
-        <button type="button" onclick="raporOlustur()">YENİ RAPOR OLUŞTUR</button>
-
-        <button type="button" class="referans-btn" onclick="referansAc()">REFERANS BİLGİLER (Posta Kodu, Maliyet vb.)</button>
-
-        <button type="button" class="geri-btn" onclick="anaSayfayaDon()">ANA SAYFAYA DÖN</button>
+      <label>Gayrimenkul Adı (Zorunlu)</label>
+      <input type="text" id="propertyName" placeholder="Örn: Deniz Apartmanı Daire 5" required>
+      <label>İl (Zorunlu)</label>
+      <input type="text" id="il" placeholder="Örn: Zonguldak" required>
+      <label>İlçe</label>
+      <input type="text" id="ilce" placeholder="Örn: Merkez">
+      <label>Mahalle</label>
+      <input type="text" id="mahalle" placeholder="Örn: Bahçelievler">
+      <label>Ada</label>
+      <input type="text" id="ada" placeholder="Örn: 123">
+      <label>Parsel</label>
+      <input type="text" id="parsel" placeholder="Örn: 45">
+      <button type="button" onclick="raporOlustur()">YENİ RAPOR OLUŞTUR</button>
+      <button type="button" class="referans-btn" onclick="referansAc()">REFERANS BİLGİLER AÇ</button>
+      <button type="button" class="geri-btn" onclick="anaSayfayaDon()">ANA SAYFAYA DÖN</button>
     </form>
-</div>
+  </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
-<script>
-    // 1. Senin Gerçek Firebase Anahtarların Mühürlendi
+  <script>
+    // Firebase Config ve Init (tek yerde)
     const firebaseConfig = {
-        apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-        authDomain: "raporanx.firebaseapp.com",
-        projectId: "raporanx",
-        storageBucket: "raporanx.firebasestorage.app",
-        messagingSenderId: "715194328346",
-        appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-        measurementId: "G-V749P1HB80"
+      apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
+      authDomain: "raporanx.firebaseapp.com",
+      projectId: "raporanx",
+      storageBucket: "raporanx.firebasestorage.app",
+      messagingSenderId: "715194328346",
+      appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
+      measurementId: "G-V749P1HB80"
     };
-    
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
 
-    // Buluta Yedekleme Fonksiyonu
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Giriş kontrolü (sadece giriş yapılmamışsa ana sayfaya at)
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        alert("⚠️ Giriş yetkisi yok! Lütfen giriş yapın.");
+        window.location.href = 'index.html';
+      } else {
+        console.log("Yetki Onaylandı: " + user.email);
+        // Yeni rapor sayfası olduğu için reportId kontrolünü KALDIRDIK (sorun çıkmasın)
+      }
+    });
+
+    // Buluta yedekleme
     async function bulutaGonder() {
-        const user = auth.currentUser;
-        if (user) {
-            const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-            await db.collection("users").doc(user.uid).set({
-                gayrimenkul_reports: reports,
-                lastUpdate: new Date().toISOString()
-            }, { merge: true });
-            console.log("Yeni rapor buluta işlendi ✅");
-        }
+      const user = auth.currentUser;
+      if (user) {
+        const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        await db.collection("users").doc(user.uid).set({
+          gayrimenkul_reports: reports,
+          lastUpdate: new Date().toISOString()
+        }, { merge: true });
+        console.log("Buluta yedeklendi ✅");
+      }
     }
 
+    // Rapor oluştur
     async function raporOlustur() {
-        const report = {
-            propertyName: document.getElementById('propertyName').value.trim() || "İsimsiz Gayrimenkul",
-            il: document.getElementById('il').value.trim(),
-            ilce: document.getElementById('ilce').value.trim(),
-            mahalle: document.getElementById('mahalle').value.trim(),
-            ada: document.getElementById('ada').value.trim(),
-            parsel: document.getElementById('parsel').value.trim(),
-            createdAt: new Date().toLocaleString('tr-TR'),
-            bina: {},
-            bbDetay: {},
-            emsaller: [],
-            konumCevre: {},
-            tapu: {},
-            imar: {},
-            belgeler: {}
-        };
+      // Zorunlu alan kontrolü
+      if (!document.getElementById('propertyName').value.trim() || !document.getElementById('il').value.trim()) {
+        alert("Gayrimenkul Adı ve İl zorunlu!");
+        return;
+      }
 
-        let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-        reports.push(report);
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-        
-        const newId = reports.length - 1;
+      const report = {
+        propertyName: document.getElementById('propertyName').value.trim() || "İsimsiz Gayrimenkul",
+        il: document.getElementById('il').value.trim(),
+        ilce: document.getElementById('ilce').value.trim(),
+        mahalle: document.getElementById('mahalle').value.trim(),
+        ada: document.getElementById('ada').value.trim(),
+        parsel: document.getElementById('parsel').value.trim(),
+        createdAt: new Date().toLocaleString('tr-TR'),
+        bina: {},
+        bbDetay: {},
+        emsaller: [],
+        konumCevre: {},
+        tapu: {},
+        imar: {},
+        belgeler: {}
+      };
 
-        // ÖNCE BULUTA GÖNDERELİM
-        await bulutaGonder();
+      let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+      reports.push(report);
+      localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-        alert("Rapor oluşturuldu ve buluta yedeklendi!");
-        window.location.href = "rapor-detay.html?id=" + newId;
+      const newId = reports.length - 1;
+
+      await bulutaGonder();
+
+      alert("Rapor oluşturuldu ve buluta yedeklendi!");
+      window.location.href = "rapor-detay.html?id=" + newId;
     }
 
     function referansAc() { window.open('referans-bilgiler.html', '_blank'); }
     function anaSayfayaDon() { window.location.href = 'index.html'; }
-</script>
+  </script>
 </body>
 </html>
