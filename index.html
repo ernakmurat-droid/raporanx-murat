@@ -1,159 +1,124 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <title>RaporAn X Taşınmaz Değerleme Sistemi</title>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 
-  <title>Abuzittin Ekspertiz Sistemi</title>
   <style>
-    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
-    .container { max-width: 800px; margin: 0 auto; text-align: center; }
-    h1 { font-size: 36px; margin-bottom: 20px; }
-    .btn-new { display: block; width: 400px; max-width: 90%; margin: 50px auto; background: #00c853; color: white; padding: 25px; text-align: center; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; cursor: pointer; border:none; }
-    .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; position: relative; margin-bottom: 20px; cursor: pointer; text-align: left; }
-    .report-card:hover { background: rgba(255,255,255,0.35); }
-    .delete-btn { position: absolute; top: 15px; right: 15px; background: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; }
+    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom,#4a148c,#7c4dff); margin:0; padding:40px 20px; color:white; min-height:100vh; }
+    .container { max-width:800px; margin:0 auto; text-align:center; }
+    h1 { font-size:42px; margin-bottom:10px; font-weight:900; }
+    h1 span { color:#ff0000; }
+    .btn-google { width:400px; max-width:90%; margin:20px auto; padding:15px; font-size:18px; font-weight:bold; border-radius:20px; border:none; cursor:pointer; }
+    .btn-new { width:400px; max-width:90%; margin:30px auto; padding:25px; font-size:26px; font-weight:bold; border-radius:20px; border:none; cursor:pointer; background:#00c853; color:white; }
+    .btn-new:hover { background:#00b140; }
+    .user-info { margin:20px 0; font-size:14px; }
+    .reports { margin-top:40px; text-align:left; }
+    .report-card { background:rgba(255,255,255,0.25); padding:20px; border-radius:15px; margin-bottom:15px; cursor:pointer; }
+    .report-card:hover { background:rgba(255,255,255,0.35); }
+    .logout { margin-top:10px; padding:6px 12px; border-radius:10px; border:none; cursor:pointer; }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>ABUZİTTİN EKSPERTİZ SİSTEMİ</h1>
-    <p>“Abuzittin ile raporun abuzittik olsun!”</p>
+<div class="container">
+  <h1>RAPORAN <span>X</span></h1>
+  <p>“Çok karakteristik, çok abuzittik!”</p>
 
-    <div id="statusInfo" style="margin-bottom: 20px; font-weight: bold; color: #ffd600;">
-      Bulut Bağlantısı Kuruluyor...
-    </div>
-
-    <button onclick="window.location.href='yeni_kayit.html'" class="btn-new">YENİ RAPOR OLUŞTUR</button>
-
-    <div id="reportsList">
-      <div style="opacity: 0.8; margin-top: 40px;">Kayıtlar yükleniyor...</div>
-    </div>
+  <div id="userInfo" class="user-info">
+    Devam etmek için Google ile giriş yapın.
   </div>
 
-  <script>
-    // ✅ Firebase-config.js window.auth ve window.db oluşturuyor
-    const auth = window.auth;
-    const db = window.db;
+  <button id="loginBtn" class="btn-google" onclick="login()">Google ile Giriş Yap</button>
 
-    const statusEl = document.getElementById('statusInfo');
-    const listEl = document.getElementById('reportsList');
+  <div id="main" style="display:none;">
+    <button class="btn-new" onclick="location.href='yeni_kayit.html'">
+      YENİ DEĞERLEME DOSYASI AÇ
+    </button>
 
-    // Guard: auth/db yoksa burada dur
-    if (!auth || !db) {
-      statusEl.textContent = "❌ Firebase yüklenemedi (auth/db yok). firebase-config.js kontrol et.";
-      throw new Error("Firebase auth/db tanımsız.");
+    <div id="reports" class="reports"></div>
+  </div>
+</div>
+
+<script>
+  const auth = window.auth;
+  const db = window.db;
+
+  function login() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithRedirect(provider);
+  }
+
+  auth.onAuthStateChanged(async (user) => {
+    const info = document.getElementById("userInfo");
+    const loginBtn = document.getElementById("loginBtn");
+    const main = document.getElementById("main");
+
+    if (!user) {
+      info.textContent = "Devam etmek için Google ile giriş yapın.";
+      loginBtn.style.display = "block";
+      main.style.display = "none";
+      return;
     }
 
-    let reports = [];
+    info.innerHTML = `
+      Bağlı Hesap: ${user.email}<br>
+      <button class="logout" onclick="auth.signOut().then(()=>location.reload())">
+        Çıkış Yap
+      </button>
+    `;
 
-    // 1) Oturum kontrolü
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        statusEl.textContent = "✅ Bulut Aktif: " + (user.email || "");
-        verileriBuluttanCek(user);
-      } else {
-        statusEl.textContent = "⚠️ Giriş yapılmadı. Yönlendiriliyor...";
-        // ✅ Login sayfan hangisiyse oraya gönder
-        window.location.href = "index.html";
-      }
-    });
+    loginBtn.style.display = "none";
+    main.style.display = "block";
 
-    // 2) Buluttan veriyi çek, local’e yaz
-    async function verileriBuluttanCek(user) {
-      try {
-        listEl.innerHTML = '<div style="opacity: 0.8; margin-top: 40px;">☁️ Buluttan çekiliyor...</div>';
+    loadReports(user);
+  });
 
-        const docSnap = await db.collection("users").doc(user.uid).get();
+  async function loadReports(user) {
+    const list = document.getElementById("reports");
+    list.innerHTML = "☁️ Raporlar yükleniyor...";
 
-        if (docSnap.exists && docSnap.data() && Array.isArray(docSnap.data().gayrimenkul_reports)) {
-          reports = docSnap.data().gayrimenkul_reports || [];
-          localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-        } else {
-          reports = [];
-          localStorage.setItem('gayrimenkul_reports', JSON.stringify([]));
-        }
+    try {
+      const snap = await db
+        .collection("users")
+        .doc(user.uid)
+        .collection("reports")
+        .orderBy("updatedAt", "desc")
+        .get();
 
-        loadReports();
-      } catch (error) {
-        console.error("Veri çekme hatası:", error);
-        statusEl.textContent = "❌ Veri Senkronizasyon Hatası!";
-        listEl.innerHTML = `<div style="margin-top:40px; opacity:0.9;">❌ Buluttan veri çekilemedi.<br><small>${(error && error.message) ? error.message : error}</small></div>`;
-      }
-    }
-
-    // 3) Listeyi ekrana bas
-    function loadReports() {
-      listEl.innerHTML = '';
-
-      if (!Array.isArray(reports) || reports.length === 0) {
-        listEl.innerHTML = '<div style="margin-top:40px;">Henüz kayıt oluşturulmadı.</div>';
+      if (snap.empty) {
+        list.innerHTML = "Henüz kayıt oluşturulmadı.";
         return;
       }
 
-      reports.forEach((report, index) => {
-        const card = document.createElement('div');
-        card.className = 'report-card';
-
-        const title = (report && report.propertyName) ? report.propertyName : 'İsimsiz Gayrimenkul';
-
+      list.innerHTML = "";
+      snap.forEach(doc => {
+        const r = doc.data();
+        const card = document.createElement("div");
+        card.className = "report-card";
         card.innerHTML = `
-          <button class="delete-btn" onclick="deleteReport(${index}, event)">Sil</button>
-          <div style="font-size:22px; font-weight:bold;">${escapeHtml(title)}</div>
-          <div style="margin-top:10px; opacity:0.9;">
-            ${escapeHtml(report?.il || '')} / ${escapeHtml(report?.ilce || '')}<br>
-            <small>Ada: ${escapeHtml(report?.ada || '')} Parsel: ${escapeHtml(report?.parsel || '')}</small>
-          </div>
+          <b>${r.propertyName || "İsimsiz Gayrimenkul"}</b><br>
+          ${r.il || ""} / ${r.ilce || ""}<br>
+          <small>Ada: ${r.ada || ""} Parsel: ${r.parsel || ""}</small>
         `;
-
-        card.onclick = (e) => {
-          if (!e.target.classList.contains('delete-btn')) {
-            window.location.href = `rapor-detay.html?id=${index}`;
-          }
+        card.onclick = () => {
+          location.href = "rapor-detay.html?id=" + doc.id;
         };
-
-        listEl.appendChild(card);
+        list.appendChild(card);
       });
+    } catch (e) {
+      list.innerHTML = "❌ Raporlar yüklenemedi.";
+      console.error(e);
     }
-
-    // 4) Silme (local + bulut)
-    window.deleteReport = async function deleteReport(index, event) {
-      event.stopPropagation();
-
-      if (!confirm('Bu raporu silmek istediğinize emin misiniz?')) return;
-
-      try {
-        reports.splice(index, 1);
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-        const user = auth.currentUser;
-        if (user) {
-          await db.collection("users").doc(user.uid).update({
-            gayrimenkul_reports: reports
-          });
-        }
-
-        loadReports();
-      } catch (err) {
-        alert("Silme hatası: " + (err?.message || err));
-      }
-    };
-
-    // küçük güvenlik: HTML injection olmasın
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-  </script>
+  }
+</script>
 </body>
 </html>
