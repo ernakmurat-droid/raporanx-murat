@@ -2,92 +2,92 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>RaporanX - Giriş</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RaporanX</title>
   <!-- Firebase CDN (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      text-align: center;
-      background: white;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    h2 {
-      color: #4a148c;
-      margin-bottom: 30px;
-    }
-    button {
-      padding: 15px 30px;
-      font-size: 18px;
-      background: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #3367d6;
-    }
-    button:disabled {
-      background: #a0c3ff;
-      cursor: not-allowed;
-    }
+    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; text-align: center; }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 36px; margin-bottom: 20px; }
+    .btn-new { display: block; width: 400px; max-width: 90%; margin: 50px auto; background: #00c853; color: white; padding: 25px; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
+    .btn-new:hover { transform: scale(1.05); }
+    .login-container { background: white; color: #333; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 100px auto; max-width: 400px; }
+    .login-btn { padding: 15px 30px; font-size: 18px; background: #4285f4; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; margin-bottom: 20px; cursor: pointer; }
+    #statusInfo { margin: 20px 0; font-weight: bold; color: #ffd600; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>RaporanX'e Hoş Geldin</h2>
-    <p>Gayrimenkul ekspertiz raporlarını hızlıca oluştur.</p>
-    <button id="googleBtn">Google ile Giriş Yap</button>
+    <div id="loginSection" class="login-container">
+      <h2>RaporanX'e Hoş Geldin</h2>
+      <p>Gayrimenkul ekspertiz raporlarını hızlıca oluştur.</p>
+      <button id="googleBtn" class="login-btn">Google ile Giriş Yap</button>
+      <div id="statusInfo">Bağlantı kuruluyor...</div>
+    </div>
+
+    <div id="mainSection" style="display:none;">
+      <h1>ABUZİTTİN EKSPERTİZ SİSTEMİ</h1>
+      <p>“Abuzittin ile raporun abuzittik olsun!”</p>
+      <div id="statusInfoMain">✅ Hoş geldin <span id="userName"></span></div>
+      
+      <a href="yeni_kayit.html" class="btn-new">YENİ RAPOR OLUŞTUR</a>
+      
+      <div id="reportsList">
+        <!-- Raporlar buraya yüklenecek -->
+      </div>
+    </div>
   </div>
 
   <script>
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
+    // Google Login
     const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({
-      prompt: "select_account"
-    });
+    provider.setCustomParameters({ prompt: "select_account" });
 
-    const googleBtn = document.getElementById("googleBtn");
-
-    googleBtn.onclick = () => {
-      googleBtn.disabled = true;
-      googleBtn.textContent = "Yükleniyor...";
-
+    document.getElementById("googleBtn").onclick = () => {
+      document.getElementById("googleBtn").textContent = "Yükleniyor...";
       auth.signInWithPopup(provider)
         .then((result) => {
-          const user = result.user;
-          console.log("GİRİŞ BAŞARILI:", user.email, user.uid);
-          alert("Hoş geldin " + (user.displayName || user.email) + "!");
-          
-          // DÜZELTME: Burası 404'e sebep oluyordu! Ana sayfaya (rapor listesi) yönlendir
-          window.location.href = "index.html";  // Ana rapor listesi sayfası
-          // Alternatif: Vercel root için "/" yapabilirsin: window.location.href = "/";
+          // Giriş başarılı – sayfa otomatik yenilenecek (onAuthStateChanged çalışacak)
         })
         .catch((err) => {
-          console.error("GİRİŞ HATASI:", err);
           alert("Hata: " + err.message);
-          googleBtn.disabled = false;
-          googleBtn.textContent = "Google ile Giriş Yap";
+          document.getElementById("googleBtn").textContent = "Google ile Giriş Yap";
         });
     };
+
+    // Oturum kontrolü – girişliyse ana içeriği göster
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("mainSection").style.display = "block";
+        document.getElementById("userName").textContent = user.displayName || user.email;
+        document.getElementById("statusInfoMain").textContent = "✅ Bulut Aktif: " + user.email;
+
+        // Raporları yükle (önceki kodundan)
+        loadReports(user);
+      } else {
+        document.getElementById("loginSection").style.display = "block";
+        document.getElementById("mainSection").style.display = "none";
+        document.getElementById("statusInfo").textContent = "Giriş yapın";
+      }
+    });
+
+    // Rapor yükleme fonksiyonu (önceki index.html kodundan al, buraya yapıştır)
+    async function loadReports(user) {
+      // Senin önceki rapor yükleme kodunu buraya koy (verileri buluttan çek, listele vs.)
+      // Örnek olarak basit hali:
+      const reportsList = document.getElementById("reportsList");
+      reportsList.innerHTML = "<p>Raporlar yükleniyor...</p>";
+      // Tam kodunu önceki index.html'den kopyala buraya
+    }
   </script>
 </body>
 </html>
