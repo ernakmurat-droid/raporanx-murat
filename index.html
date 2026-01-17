@@ -39,32 +39,30 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    auth.onAuthStateChanged(async (user) => {
+    auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById('statusInfo').textContent = "✅ Bulut Aktif: " + user.email;
 
-        // 1. Firestore'dan verileri çek (bulut senkronu)
-        try {
-          const doc = await db.collection("users").doc(user.uid).get();
+        // Realtime listener – Firestore değişince anında güncelle (gizli modda bile çalışır)
+        const unsubscribe = db.collection("users").doc(user.uid).onSnapshot((doc) => {
           if (doc.exists && doc.data().gayrimenkul_reports) {
-            reports = doc.data().gayrimenkul_reports;
-            // Buluttan geleni localStorage'a mühürle (senkron kalması için)
-            localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+            reports = doc.data().gayrimenkul_reports || [];
           } else {
-            // Firestore boşsa localStorage'dan çek
             reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
           }
-        } catch (error) {
-          console.error("Bulut çekme hatası:", error);
-          // Hata olursa localStorage'dan devam et
+          // LocalStorage'ı her zaman senkron tut
+          localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+          loadReports();
+        }, (error) => {
+          console.error("Bulut hatası:", error);
           reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-          document.getElementById('statusInfo').textContent = "⚠️ Bulut hatası – yerel veriler yüklendi";
-        }
+          loadReports();
+          document.getElementById('statusInfo').textContent = "⚠️ Bulut bağlantısı kesildi – yerel veriler gösteriliyor";
+        });
 
-        loadReports();
       } else {
         document.getElementById('statusInfo').textContent = "⚠️ Giriş Yapılmadı!";
-        // Giriş sayfasına yönlendir (eğer ayrı giriş sayfası varsa)
+        // Giriş sayfasına yönlendir eğer ayrıysa
         // window.location.href = 'login.html';
       }
     });
@@ -74,7 +72,7 @@
       list.innerHTML = '';
       
       if (reports.length === 0) {
-        list.innerHTML = '<div style="margin-top:40px;">Henüz kayıt oluşturulmadı.</div>';
+        list.innerHTML = '<div style="margin-top:40px; opacity:0.8;">Henüz kayıt oluşturulmadı.</div>';
         return;
       }
 
@@ -107,9 +105,9 @@
         
         const user = auth.currentUser;
         if (user) {
-          await db.collection("users").doc(user.uid).update({
+          await db.collection("users").doc(user.uid).set({
             gayrimenkul_reports: reports
-          });
+          }, { merge: true });
         }
         loadReports();
       }
