@@ -32,8 +32,6 @@
 
 <body>
   <div class="container">
-
-    <!-- Giriş Bölümü -->
     <div id="loginSection" class="login-container">
       <h2>RaporanX'e Hoş Geldin</h2>
       <p>Gayrimenkul ekspertiz raporlarını hızlıca oluştur.</p>
@@ -41,7 +39,6 @@
       <div id="statusInfoLogin">Bağlantı kuruluyor...</div>
     </div>
 
-    <!-- Ana Bölüm -->
     <div id="mainSection" style="display:none;">
       <h1>ABUZİTTİN EKSPERTİZ SİSTEMİ</h1>
       <p>“Abuzittin ile raporun abuzittik olsun!”</p>
@@ -66,15 +63,30 @@
 
     document.getElementById("googleBtn").onclick = () => {
       document.getElementById("googleBtn").textContent = "Yükleniyor...";
-      auth.signInWithPopup(provider)
-        .catch((err) => {
-          alert("Giriş hatası: " + err.message);
-          document.getElementById("googleBtn").textContent = "Google ile Giriş Yap";
-        });
+      auth.signInWithPopup(provider).catch((err) => {
+        alert("Giriş hatası: " + err.message);
+        document.getElementById("googleBtn").textContent = "Google ile Giriş Yap";
+      });
     };
 
+    /* ========= RID helpers + migration ========= */
+    function genRid(){
+      try{
+        if (crypto && crypto.randomUUID) return crypto.randomUUID();
+      }catch(e){}
+      return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+    }
+
+    function ensureRidMigration(arr){
+      let changed = false;
+      (arr || []).forEach(r => {
+        if (r && !r.rid) { r.rid = genRid(); changed = true; }
+      });
+      return changed;
+    }
+
     /* ======================
-       VERİ KAYBINI ENGELLEME: MERGE KATMANI
+       VERİ KAYBINI ENGELLEME: MERGE KATMANI (senin sağlam sürüm)
        ====================== */
     function safeArray(x){ return Array.isArray(x) ? x : []; }
 
@@ -105,6 +117,9 @@
             ...l,
             ...c,
 
+            // rid asla kaybolmasın
+            rid: c.rid || l.rid || undefined,
+
             bina: (c.bina && Object.keys(c.bina).length) ? c.bina : (l.bina || {}),
             bbDetay: (c.bbDetay && Object.keys(c.bbDetay).length) ? c.bbDetay : (l.bbDetay || {}),
             konumCevre: (c.konumCevre && Object.keys(c.konumCevre).length) ? c.konumCevre : (l.konumCevre || {}),
@@ -114,7 +129,6 @@
             emsaller: (Array.isArray(c.emsaller) && c.emsaller.length) ? c.emsaller : (l.emsaller || []),
             emsal: (c.emsal && Object.keys(c.emsal).length) ? c.emsal : (l.emsal || {}),
 
-            // geriye dönük uyumluluk
             belgelerMetni: c.belgelerMetni || (c.belgeler && c.belgeler.belgelerMetni) || l.belgelerMetni || (l.belgeler && l.belgeler.belgelerMetni) || ""
           };
         } else {
@@ -125,63 +139,70 @@
       return out.filter(Boolean);
     }
 
-    /* ======================
-       AUTH STATE
-       ====================== */
     auth.onAuthStateChanged((user) => {
-      if (user) {
-        document.getElementById("loginSection").style.display = "none";
-        document.getElementById("mainSection").style.display = "block";
-        document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + user.email;
-
-        // ✅ Önce local göster (hız + güven)
-        reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-        loadReports();
-
-        // ✅ Sonra bulut dinle: merge ile güncelle
-        db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
-          const localReports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-          let cloudReports = [];
-
-          if (doc.exists && doc.data().gayrimenkul_reports) {
-            cloudReports = doc.data().gayrimenkul_reports;
-          }
-
-          const localScore = countFilledReports(localReports);
-          const cloudScore = countFilledReports(cloudReports);
-
-          const merged = mergeReportsPreferMoreComplete(localReports, cloudReports);
-
-          reports = merged;
-          localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-          loadReports();
-
-          // ✅ Bulut boş/eksikse local ile güçlendir (tek seferlik mantık)
-          try{
-            if (cloudScore < localScore) {
-              await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
-            }
-          } catch(e){
-            console.warn("Buluta geri yazma hatası:", e);
-          }
-
-        }, (error) => {
-          console.error("Bulut hatası:", error);
-          reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-          loadReports();
-          document.getElementById("statusInfo").textContent = "⚠️ Yerel veriler gösteriliyor";
-        });
-
-      } else {
+      if (!user) {
         document.getElementById("loginSection").style.display = "block";
         document.getElementById("mainSection").style.display = "none";
         document.getElementById("statusInfoLogin").textContent = "Giriş yapın";
+        return;
       }
+
+      document.getElementById("loginSection").style.display = "none";
+      document.getElementById("mainSection").style.display = "block";
+      document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + user.email;
+
+      // önce local göster
+      reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+      // RID migrasyon (local)
+      if (ensureRidMigration(reports)) {
+        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+      }
+      loadReports();
+
+      // sonra bulut: merge
+      db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
+        const localReports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        let cloudReports = [];
+
+        if (doc.exists && doc.data().gayrimenkul_reports) {
+          cloudReports = doc.data().gayrimenkul_reports;
+        }
+
+        // RID migrasyon (cloud kopyası) — merge sonrası zaten düzelecek
+        ensureRidMigration(localReports);
+        ensureRidMigration(cloudReports);
+
+        const localScore = countFilledReports(localReports);
+        const cloudScore = countFilledReports(cloudReports);
+
+        const merged = mergeReportsPreferMoreComplete(localReports, cloudReports);
+
+        // merged RID garantisi
+        if (ensureRidMigration(merged)) {}
+
+        reports = merged;
+        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        loadReports();
+
+        try{
+          // bulut zayıfsa güçlendir + RID’leri de buluta yaz
+          if (cloudScore < localScore || ensureRidMigration(cloudReports)) {
+            await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
+          }
+        } catch(e){
+          console.warn("Buluta geri yazma hatası:", e);
+        }
+
+      }, (error) => {
+        console.error("Bulut hatası:", error);
+        reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        ensureRidMigration(reports);
+        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        loadReports();
+        document.getElementById("statusInfo").textContent = "⚠️ Yerel veriler gösteriliyor";
+      });
     });
 
-    /* ======================
-       UI
-       ====================== */
     function loadReports() {
       const list = document.getElementById("reportsList");
       list.innerHTML = '';
@@ -191,15 +212,16 @@
         return;
       }
 
-      reports.forEach((report, index) => {
+      reports.forEach((report) => {
+        const rid = report.rid;
         const card = document.createElement("div");
         card.className = "report-card";
 
         card.innerHTML = `
           <div class="actions">
-            <button class="edit-btn" onclick="editReport(${index}, event)">DÜZENLE</button>
-            <button class="view-btn" onclick="viewReport(${index}, event)">AÇ</button>
-            <button class="delete-btn" onclick="deleteReport(${index}, event)">SİL</button>
+            <button class="edit-btn" onclick="editReport('${rid}', event)">DÜZENLE</button>
+            <button class="view-btn" onclick="viewReport('${rid}', event)">AÇ</button>
+            <button class="delete-btn" onclick="deleteReport('${rid}', event)">SİL</button>
           </div>
 
           <div style="font-size:22px; font-weight:bold; padding-right:160px;">
@@ -211,26 +233,33 @@
           </div>
         `;
 
-        card.onclick = () => window.location.href = `rapor-detay.html?id=${index}`;
+        card.onclick = () => window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
         list.appendChild(card);
       });
     }
 
-    function viewReport(index, event){
+    function viewReport(rid, event){
       event.stopPropagation();
-      window.location.href = `rapor-detay.html?id=${index}`;
+      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
     }
 
-    function editReport(index, event){
+    function editReport(rid, event){
       event.stopPropagation();
-      window.location.href = `yeni_kayit.html?id=${index}&mode=edit`;
+      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
     }
 
-    async function deleteReport(index, event) {
+    function findIndexByRid(rid){
+      return (reports || []).findIndex(r => r && r.rid === rid);
+    }
+
+    async function deleteReport(rid, event) {
       event.stopPropagation();
       if (!confirm("Silmek istediğine emin misin?")) return;
 
-      reports.splice(index, 1);
+      const idx = findIndexByRid(rid);
+      if (idx < 0) { alert("Rapor bulunamadı!"); return; }
+
+      reports.splice(idx, 1);
       localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
       const user = auth.currentUser;
