@@ -13,23 +13,42 @@
   <style>
     :root { --primary:#4a148c; --accent:#7c4dff; --success:#2e7d32; --bg:#f5f7fa; --danger:#c62828; --warning:#ff9800; }
     body { font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); margin:0; padding-bottom:140px; color:#333; }
-    .header { background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,0.2); }
-    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; font-size:14px; cursor:pointer; border:none; }
+    .header { background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; font-size: 14px; cursor: pointer; border: none; }
+
     .container { max-width:800px; margin:20px auto; padding:0 15px; }
     .preview-card { background:#e8f5e9; padding:20px; border-radius:12px; margin-bottom:20px; border:2px solid #4caf50; user-select:none; }
-    #taslakMetin { font-size:15px; line-height:1.6; color:#1b5e20; font-weight:500; transition: filter 0.3s ease; }
+    #taslakMetin { font-size:15px; line-height:1.6; color: #1b5e20; font-weight: 500; transition: filter 0.3s ease; white-space: pre-wrap; }
     #taslakMetin:not(:hover) { filter: blur(2px); }
-    .onlu-grup { border-radius:12px; margin-bottom:15px; overflow:hidden; border:1px solid #ddd; background:#fff; }
-    .grup-header { padding:12px 15px; cursor:pointer; font-weight:bold; display:flex; justify-content:space-between; color:#fff; }
-    .kat-grup { background:white; margin-bottom:10px; border-radius:8px; border:1px solid #eee; }
-    .kat-header { padding:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
-    .kat-header.completed { background:#f1f8e9; border-left:5px solid var(--success); }
-    .kat-content { padding:15px; background:#fafafa; border-top:1px solid #eee; }
-    .hidden { display:none !important; }
-    .entry-row { display:flex; gap:8px; align-items:center; background:white; padding:10px; border:1px solid #eee; margin-bottom:8px; border-radius:6px; }
-    .logic-box { background:#fff3e0; padding:12px; border-radius:8px; border:1px dashed var(--warning); margin-top:10px; }
-    .footer { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:800px; padding:20px; background:var(--bg); border-top:1px solid #ddd; z-index:1001; }
-    .save-btn { background:var(--success); color:white; padding:18px; width:100%; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; }
+
+    .kat-grup { background:white; margin-bottom:10px; border-radius:10px; border:1px solid #e8e8e8; overflow:hidden; }
+    .kat-header { padding:12px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#fafafa; }
+    .kat-header.completed { background:#f1f8e9; border-left: 5px solid var(--success); }
+    .kat-title { font-weight:800; }
+    .kat-badge { font-size:12px; padding:6px 10px; border-radius:999px; background:#eee; }
+    .kat-content { padding:14px; background:#fff; border-top: 1px solid #eee; }
+
+    .row { display:grid; grid-template-columns: 140px 1fr; gap:10px; margin-bottom:10px; }
+    @media (max-width: 720px){ .row{ grid-template-columns:1fr; } }
+
+    label { font-weight:800; font-size:13px; color:#333; }
+    input, textarea, select {
+      width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:15px;
+      outline:none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { min-height:70px; resize:vertical; }
+
+    .hint { font-size:12px; opacity:.75; margin-top:-6px; margin-bottom:10px; }
+
+    .footer { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:800px; padding:20px; background: var(--bg); border-top: 1px solid #ddd; z-index: 1001; }
+    .save-btn { background: var(--success); color:white; padding:18px; width:100%; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; }
+
+    .mini-btns { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+    .mini { border:none; cursor:pointer; padding:10px 12px; border-radius:10px; font-weight:800; }
+    .mini-refresh { background:#2196f3; color:#fff; }
+    .mini-collapse { background:#607d8b; color:#fff; }
+    .mini-expand { background:#ff9800; color:#111; }
   </style>
 </head>
 
@@ -41,8 +60,14 @@
 
   <div class="container">
     <div class="preview-card">
-      <h4>OTOMATİK ANALİZ METNİ</h4>
+      <h4 style="margin:0 0 10px;">OTOMATİK ANALİZ METNİ</h4>
       <div id="taslakMetin">Yükleniyor...</div>
+
+      <div class="mini-btns">
+        <button class="mini mini-refresh" onclick="renderPreview()">Metni Güncelle</button>
+        <button class="mini mini-expand" onclick="setAll(true)">Hepsini Aç</button>
+        <button class="mini mini-collapse" onclick="setAll(false)">Hepsini Kapat</button>
+      </div>
     </div>
 
     <div id="katListesi"></div>
@@ -56,7 +81,7 @@
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  /* ========= RID + legacy id desteği ========= */
+  /* ========= RID + legacy id ========= */
   const urlParams = new URLSearchParams(window.location.search);
   let rid = urlParams.get('rid');
   const legacyId = urlParams.get('id');
@@ -77,7 +102,6 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // eski id linki geldiyse rid'e çevir
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -86,8 +110,8 @@
     }
   }
 
-  const idx = rid ? findIndexByRid(reports, rid) : -1;
-  let report = (idx >= 0) ? (reports[idx] || {}) : null;
+  const idx0 = rid ? findIndexByRid(reports, rid) : -1;
+  let report = (idx0 >= 0) ? (reports[idx0] || {}) : null;
 
   function getLatestData(){
     const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
@@ -97,11 +121,10 @@
   }
 
   function binaSayfasinaDon(){
-    // kaydetmeden dönmek isterse
     window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
   }
 
-  // inputlarda sağ tık serbest, diğer alanlarda engel
+  // inputlarda sağ tık serbest
   document.addEventListener('contextmenu', (e) => {
     const isInput = e.target.closest('input, textarea, select');
     if (isInput) return;
@@ -116,65 +139,194 @@
     init();
   });
 
-  let globalKatlar = [];
-  const savedKatVerileri = (report && report.katSatirVerileri) ? report.katSatirVerileri : {};
+  let globalKatlar = [];             // [{id, ad}]
+  let katSatirVerileri = {};         // { katId: { bbAdet, kullanim, aciklama } }
+  let expanded = {};                // katId: true/false
 
-  function init() {
-    const listContainer = document.getElementById('katListesi');
-    globalKatlar = [];
+  function init(){
+    const { report: r } = getLatestData();
+    report = r;
 
+    // kayıtlı veriler
+    katSatirVerileri = (report && report.katSatirVerileri) ? report.katSatirVerileri : {};
+    expanded = {}; // default kapalı
+
+    // bina sayfasından gelen sayılar
     const bodrumCount = parseInt(report?.bina?.bodrumKatSayisi) || 0;
     const normalCount = parseInt(report?.bina?.normalKatSayisi) || 0;
 
-    for (let i = bodrumCount; i >= 1; i--) globalKatlar.push({ id: `b${i}`, ad: `${i}. Bodrum Kat` });
-    globalKatlar.push({ id: 'zemin', ad: 'Zemin Kat' });
-    for (let i = 1; i <= normalCount; i++) globalKatlar.push({ id: `n${i}`, ad: `${i}. Normal Kat` });
+    globalKatlar = [];
+    for (let i = bodrumCount; i >= 1; i--) globalKatlar.push({ id:`b${i}`, ad:`${i}. Bodrum Kat` });
+    globalKatlar.push({ id:'zemin', ad:'Zemin Kat' });
+    for (let i = 1; i <= normalCount; i++) globalKatlar.push({ id:`n${i}`, ad:`${i}. Normal Kat` });
 
-    // ✅ Burada SENİN orijinal kat/grup render döngülerin çalışacak:
-    // - onlu gruplar
-    // - kat başlıkları
-    // - satır ekleme/silme
-    // - savedKatVerileri ile yükleme
-    //
-    // listContainer.innerHTML = ...
-    // ...
-
+    renderKatListesi();
     renderPreview();
   }
 
-  // ✅ renderPreview SENİN orijinal “muazzam cümle kurma” fonksiyonun
-  function renderPreview() {
-    // ... (orijinal renderPreview kodun)
-    //
-    // return {
-    //   katDetayMetni,
-    //   toplamBB,
-    //   tumSatirVerileri
-    // }
+  function renderKatListesi(){
+    const list = document.getElementById('katListesi');
+    list.innerHTML = '';
+
+    globalKatlar.forEach(k => {
+      const saved = katSatirVerileri[k.id] || {};
+      const bbAdet = (saved.bbAdet ?? '');
+      const kullanim = (saved.kullanim ?? '');
+      const aciklama = (saved.aciklama ?? '');
+
+      const wrap = document.createElement('div');
+      wrap.className = 'kat-grup';
+
+      const header = document.createElement('div');
+      header.className = 'kat-header';
+      header.innerHTML = `
+        <div class="kat-title">${k.ad}</div>
+        <div class="kat-badge" id="badge-${k.id}">BB: ${bbAdet || 0}</div>
+      `;
+      header.onclick = () => toggleKat(k.id);
+
+      const content = document.createElement('div');
+      content.className = 'kat-content hidden';
+      content.id = `content-${k.id}`;
+
+      content.innerHTML = `
+        <div class="row">
+          <div>
+            <label>Bağımsız Bölüm Adedi</label>
+            <input type="number" min="0" id="bb-${k.id}" value="${escapeHtml(String(bbAdet))}" placeholder="Örn: 4" oninput="onChange('${k.id}')">
+            <div class="hint">Bu kattaki bağımsız bölüm sayısı.</div>
+          </div>
+          <div>
+            <label>Kat Kullanımı</label>
+            <select id="kul-${k.id}" onchange="onChange('${k.id}')">
+              <option value="">Seçiniz</option>
+              <option ${kullanim==='Konut'?'selected':''}>Konut</option>
+              <option ${kullanim==='Dükkan/İşyeri'?'selected':''}>Dükkan/İşyeri</option>
+              <option ${kullanim==='Otopark'?'selected':''}>Otopark</option>
+              <option ${kullanim==='Depo'?'selected':''}>Depo</option>
+              <option ${kullanim==='Sığınak/Teknik'?'selected':''}>Sığınak/Teknik</option>
+              <option ${kullanim==='Diğer'?'selected':''}>Diğer</option>
+            </select>
+            <div class="hint">Metne daha düzgün otursun diye.</div>
+          </div>
+        </div>
+
+        <div>
+          <label>Açıklama (opsiyonel)</label>
+          <textarea id="ac-${k.id}" placeholder="Örn: Bu katta 2 adet dükkan bulunmaktadır..." oninput="onChange('${k.id}')">${escapeHtml(String(aciklama))}</textarea>
+        </div>
+      `;
+
+      wrap.appendChild(header);
+      wrap.appendChild(content);
+      list.appendChild(wrap);
+
+      // tamamlandı görünümü
+      refreshCompletedState(k.id);
+    });
   }
 
-  async function tumunuKaydet() {
-    const { reports: allReports, report: r, idx: i } = getLatestData();
-    if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
+  function escapeHtml(s){
+    return String(s || '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+  }
+
+  function toggleKat(katId){
+    const el = document.getElementById(`content-${katId}`);
+    const isHidden = el.classList.contains('hidden');
+    el.classList.toggle('hidden', !isHidden); // ters
+    expanded[katId] = isHidden;
+  }
+
+  function setAll(open){
+    globalKatlar.forEach(k => {
+      const el = document.getElementById(`content-${k.id}`);
+      if (!el) return;
+      el.classList.toggle('hidden', !open);
+      expanded[k.id] = open;
+    });
+  }
+
+  function onChange(katId){
+    // oku
+    const bb = parseInt(document.getElementById(`bb-${katId}`).value || '0', 10) || 0;
+    const kul = document.getElementById(`kul-${katId}`).value || '';
+    const ac = document.getElementById(`ac-${katId}`).value || '';
+
+    katSatirVerileri[katId] = { bbAdet: bb, kullanim: kul, aciklama: ac };
+
+    // badge
+    const badge = document.getElementById(`badge-${katId}`);
+    if (badge) badge.textContent = `BB: ${bb}`;
+
+    refreshCompletedState(katId);
+    renderPreview();
+  }
+
+  function refreshCompletedState(katId){
+    const bb = (katSatirVerileri[katId]?.bbAdet ?? 0);
+    const header = document.querySelector(`#badge-${katId}`)?.closest('.kat-grup')?.querySelector('.kat-header');
+    if (!header) return;
+    header.classList.toggle('completed', bb > 0);
+  }
+
+  function renderPreview(){
+    // toplam
+    let toplamBB = 0;
+    globalKatlar.forEach(k => toplamBB += (katSatirVerileri[k.id]?.bbAdet ?? 0));
+
+    // metin üretimi (senin bina şablonuna uyumlu)
+    const satirlar = [];
+    globalKatlar.forEach(k => {
+      const d = katSatirVerileri[k.id] || {};
+      const bb = d.bbAdet ?? 0;
+      const kul = (d.kullanim || '').trim();
+      const ac = (d.aciklama || '').trim();
+
+      if (!bb && !kul && !ac) return; // boşsa yazma
+
+      let s = `${k.ad} seviyesinde`;
+      if (bb) s += ` ${bb} adet bağımsız bölüm`;
+      if (kul) s += ` (kullanım: ${kul})`;
+      if (ac) s += `; ${ac}`;
+      s += `.`;
+      satirlar.push(s);
+    });
+
+    let katDetayMetni = "";
+    if (satirlar.length === 0){
+      katDetayMetni = "Kat detayları girilmemiştir.";
+    } else {
+      katDetayMetni = satirlar.join("\n");
+    }
+
+    const full = `KAT DETAYI:\n${katDetayMetni}\n\nTOPLAM BAĞIMSIZ BÖLÜM: ${toplamBB}`;
+
+    document.getElementById('taslakMetin').innerText = full;
+
+    return {
+      katDetayMetni: katDetayMetni,
+      toplamBB: toplamBB,
+      tumSatirVerileri: katSatirVerileri
+    };
+  }
+
+  async function tumunuKaydet(){
+    const { reports: allReports, report: r, idx } = getLatestData();
+    if (!r || idx < 0) { alert("Rapor bulunamadı!"); return; }
 
     const data = renderPreview();
-    if(!r.bina) r.bina = {};
+    if (!r.bina) r.bina = {};
 
     r.katDetayMetni = data.katDetayMetni;
-    r.bina.toplamBagimsizBolum = data.toplamBB;
     r.katSatirVerileri = data.tumSatirVerileri;
-
-    // geriye dönük uyum
-    r.bina = r.bina || {};
     r.bina.toplamBagimsizBolum = data.toplamBB;
 
-    allReports[i] = r;
+    allReports[idx] = r;
     localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
 
-    // buluta bas
     const user = auth.currentUser;
     if (user) {
-      try {
+      try{
         await db.collection("users").doc(user.uid).set({
           gayrimenkul_reports: allReports,
           lastUpdate: new Date().toISOString()
@@ -182,13 +334,11 @@
 
         alert("✅ Kat detayları buluta mühürlendi!");
         window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
-      } catch (e) {
+      }catch(e){
         alert("Hata: " + e.message);
       }
     }
   }
-
-  // ✅ Orijinal yardımcı fonksiyonların (toggleKat, satirEkle vb.) burada olacak.
 </script>
 </body>
 </html>
