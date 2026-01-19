@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>İncelenen Belgeler</title>
+
   <style>
     :root { --primary: #1a148c; --secondary: #7c4dff; --success: #00c853; --bg: #f4f7f6; }
     body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin:0; padding-bottom:100px; color: #333; }
@@ -38,13 +39,16 @@
     .checkbox-ilave { margin-top:15px; font-weight:bold; }
   </style>
 </head>
+
 <body oncontextmenu="return false;">
   <div class="header">
     <button onclick="anaMenuyeDon()" class="back">← Geri</button>
     <h1>İNCELENEN BELGELER</h1>
     <div id="propertyName" class="property-name">Yükleniyor...</div>
   </div>
+
   <div class="container">
+
     <div class="form-group">
       <strong>1. Belediye ve Lokasyon Bilgisi</strong>
       <div style="display:flex; gap:10px; margin-top:10px; margin-bottom:15px;">
@@ -52,33 +56,40 @@
         <input type="text" id="il" placeholder="İl" list="h_belgeler_il" onfocus="showList(this)">
         <input type="text" id="ilce" placeholder="İlçe" list="h_belgeler_ilce" onfocus="showList(this)">
       </div>
+
       <label><strong>Belgeler farklı ada/parselde mi?</strong></label>
       <div class="radio-group">
         <label><input type="radio" name="farkliParsel" value="hayir" checked onchange="toggleFarkliParsel()"> Hayır (Aynı)</label>
         <label><input type="radio" name="farkliParsel" value="evet" onchange="toggleFarkliParsel()"> Evet (Farklı)</label>
       </div>
+
       <div id="farkliParselDetay" class="conditional" style="display:none; gap:10px;">
         <input type="text" id="arsivAda" placeholder="Arşiv Ada No" list="h_belgeler_arsivAda" onfocus="showList(this)">
         <input type="text" id="arsivParsel" placeholder="Arşiv Parsel No" list="h_belgeler_arsivParsel" onfocus="showList(this)">
       </div>
     </div>
+
     <div class="form-group">
       <strong>2. Mimari Proje Tarihi ve Uyumluluk</strong>
       <div style="display:flex; gap:10px; margin-bottom:10px;">
         <input type="date" id="projeTarihi">
         <input type="text" id="projeTarihiText" placeholder="Alternatif Tarih (Bila vb.)" list="h_belgeler_projeTarihiText" onfocus="showList(this)" oninput="checkBila()">
       </div>
+
       <div class="radio-group">
         <label><input type="radio" name="uyum" value="evet" checked onchange="toggleUyumDetay()"> Evet</label>
         <label><input type="radio" name="uyum" value="hayir" onchange="toggleUyumDetay()"> Hayır</label>
         <label><input type="radio" name="uyum" value="kismen" onchange="toggleUyumDetay()"> Kısmen</label>
       </div>
+
       <textarea id="uyumAciklama" rows="2" placeholder="Uyumsuzluk varsa açıklama..." list="h_belgeler_uyumAciklama" onfocus="showList(this)" style="margin-top:10px; display:none;"></textarea>
-      <!-- İlave Alan Checkbox -->
+
+      <!-- İSTEDİĞİN DEĞİŞİKLİK: sadece İLAVE ALAN -->
       <div id="uyumIlaveCheckbox" class="conditional checkbox-ilave" style="display:none;">
         <label><input type="checkbox" id="ilaveAlanTik" onchange="toggleIlaveAlan()"> İlave Alan</label>
       </div>
-      <!-- İlave Alan Girişi -->
+
+      <!-- İlave alan m² girişi -->
       <div id="ilaveAlanBox" class="conditional" style="display:none; margin-top:10px;">
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <div style="flex:1; min-width:200px;">
@@ -90,33 +101,39 @@
         </div>
       </div>
     </div>
+
     <div class="form-group">
       <strong>3. Yapı Ruhsatları</strong>
       <div id="ruhsatList"></div>
       <button type="button" class="add-btn" onclick="addRuhsat()">+ Yeni Ruhsat Ekle</button>
     </div>
+
     <div class="form-group">
       <strong>4. İskân (Yapı Kullanma İzin Belgesi) Durumu</strong>
       <div class="radio-group">
         <label><input type="radio" name="iskanVar" value="evet" onchange="toggleIskan(true)"> Evet (Var)</label>
         <label><input type="radio" name="iskanVar" value="hayir" checked onchange="toggleIskan(false)"> Hayır (Yok)</label>
       </div>
+
       <div id="iskanSection" style="display:none; margin-top:10px;">
         <div id="iskanList"></div>
         <button type="button" class="add-btn" onclick="addIskan()">+ Yeni İskân Ekle</button>
       </div>
     </div>
+
     <div class="form-group" id="yapiDenetimSection">
       <strong>5. Yapı Denetim Bilgileri (İskân Yoksa)</strong>
       <div class="radio-group">
         <label><input type="radio" name="denetimDevam" value="evet" onchange="toggleDenetim(true)"> Devam Ediyor</label>
         <label><input type="radio" name="denetimDevam" value="hayir" checked onchange="toggleDenetim(false)"> Ayrılmış / Bilgi Yok</label>
       </div>
+
       <div id="denetimEvet" class="conditional" style="display:none;">
         <input type="text" id="denetimFirma" placeholder="Yapı Denetim Şirketi Adı" list="h_belgeler_denetimFirma" onfocus="showList(this)">
         <input type="number" id="bitmislikOrani" placeholder="Bitmişlik Oranı (%)" min="0" max="100">
       </div>
     </div>
+
     <div class="form-group">
       <strong>6. Belgeler Nasıl Teyit Edildi?</strong>
       <div class="radio-group">
@@ -125,20 +142,25 @@
         <label><input type="radio" name="belgeGoruldumu" value="elektronik ortamda teyit edildi"> Elektronik ortamda teyit edildi</label>
       </div>
     </div>
+
     <div class="form-group">
       <strong>7. Belediye Arşiv Tespitleri</strong>
       <div class="radio-group">
         <label><input type="radio" name="yikim" value="hayir" checked onchange="toggleYikim(false)"> Olumsuzluk Yok</label>
         <label><input type="radio" name="yikim" value="evet" onchange="toggleYikim(true)"> Olumsuz Karar ve Tespit Tutanağı Var</label>
       </div>
+
       <textarea id="yikimAciklamaInput" rows="2" placeholder="Olumsuz karar ve tespit tutanağı detayları..."
         list="h_belgeler_yikimAciklamaInput" onfocus="showList(this)"
         style="margin-top:10px; display:none;"></textarea>
     </div>
+
     <button class="btn-kaydet" onclick="kaydetVeIsle()">KAYDET VE METİN ÜRET</button>
     <button class="btn-geri" onclick="anaMenuyeDon()">GERİ DÖN (ÇIK)</button>
+
     <div id="taslak" class="taslak" style="display:none;" oncopy="return false"></div>
   </div>
+
   <div id="datalists">
     <datalist id="h_belgeler_belediye"></datalist>
     <datalist id="h_belgeler_il"></datalist>
@@ -149,15 +171,20 @@
     <datalist id="h_belgeler_uyumAciklama"></datalist>
     <datalist id="h_belgeler_arsivAda"></datalist>
     <datalist id="h_belgeler_arsivParsel"></datalist>
+
+    <!-- yeni hafıza -->
     <datalist id="h_belgeler_ilaveAlanM2"></datalist>
     <datalist id="h_belgeler_ilaveAlanNot"></datalist>
   </div>
+
 <script>
   /* ========= URL & RAPOR ========= */
   const urlParams = new URLSearchParams(window.location.search);
   const id = urlParams.get('id');
-  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || {}; // OBJE OLARAK DÜZELTİLDİ
-  let report = reports[id] || { belgeler: {}, propertyName: "İsimsiz Gayrimenkul" };
+
+  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+  let report = (id !== null && reports[id]) ? reports[id] : {};
+
   document.getElementById('propertyName').textContent = report.propertyName || "İsimsiz";
 
   /* ========= HAFIZA (DATALIST) ========= */
@@ -166,7 +193,9 @@
     'yikimAciklamaInput','uyumAciklama','arsivAda','arsivParsel',
     'ilaveAlanM2','ilaveAlanNot'
   ];
+
   function normalizeText(v){ return (v ?? "").toString().trim(); }
+
   function rememberField(field, value, limit=25){
     const v = normalizeText(value);
     if(!v) return;
@@ -175,6 +204,7 @@
     const next = [v, ...arr.filter(x => x !== v)].slice(0, limit);
     localStorage.setItem(key, JSON.stringify(next));
   }
+
   function escapeHtml(str){
     return (str ?? "").toString()
       .replaceAll("&","&amp;")
@@ -183,6 +213,7 @@
       .replaceAll('"',"&quot;")
       .replaceAll("'","&#039;");
   }
+
   function initAutocomplete(){
     fieldsToRemember.forEach(f=>{
       const h = JSON.parse(localStorage.getItem("h_belgeler_"+f)) || [];
@@ -190,28 +221,34 @@
       if(dl) dl.innerHTML = h.map(v=>`<option value="${escapeHtml(v)}">`).join("");
     });
   }
+
   /* ========= KISAYOL ENGEL ========= */
   document.addEventListener('keydown', e => {
     if (e.ctrlKey && ['c','p','s','u'].includes(e.key.toLowerCase())) e.preventDefault();
   });
+
   /* ========= UTIL ========= */
   function uid(p="x"){ return p+"-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8); }
+
   function formatBelediye(name){
     if(!name) return "[Belediye]";
     const n=name.trim();
     if(n.toLowerCase().includes("belediye")) return n;
     return n+" Belediyesi";
   }
+
   function showList(input){
     input.setAttribute("autocomplete","off");
     const v=input.value;
     input.value="";
     setTimeout(()=>input.value=v,1);
   }
+
   function toggleFarkliParsel(){
     const evet = document.querySelector('input[name="farkliParsel"]:checked')?.value === "evet";
     document.getElementById('farkliParselDetay').style.display = evet ? "flex" : "none";
   }
+
   function checkBila(){
     const t = (document.getElementById('projeTarihiText').value || "").toLowerCase();
     const d = document.getElementById('projeTarihi');
@@ -219,13 +256,16 @@
     d.disabled = bila;
     if(bila) d.value = "";
   }
+
   function toggleUyumDetay() {
     const uyum = document.querySelector('input[name="uyum"]:checked')?.value || "evet";
     const temelAciklama = document.getElementById('uyumAciklama');
     const ilaveCheckboxDiv = document.getElementById('uyumIlaveCheckbox');
+
     const show = (uyum === 'hayir' || uyum === 'kismen');
     temelAciklama.style.display = show ? 'block' : 'none';
     ilaveCheckboxDiv.style.display = show ? 'block' : 'none';
+
     if(!show){
       document.getElementById('ilaveAlanTik').checked = false;
       document.getElementById('ilaveAlanBox').style.display = 'none';
@@ -235,6 +275,7 @@
       toggleIlaveAlan();
     }
   }
+
   function toggleIlaveAlan() {
     const tik = document.getElementById('ilaveAlanTik').checked;
     document.getElementById('ilaveAlanBox').style.display = tik ? 'block' : 'none';
@@ -243,6 +284,7 @@
       document.getElementById('ilaveAlanNot').value = '';
     }
   }
+
   function toggleIskan(show) {
     document.getElementById('iskanSection').style.display = show ? 'block' : 'none';
     document.getElementById('yapiDenetimSection').style.display = show ? 'none' : 'block';
@@ -252,10 +294,12 @@
       toggleDenetim(den === "evet");
     }
   }
+
   function toggleYikim(show) {
     document.getElementById('yikimAciklamaInput').style.display = show ? 'block' : 'none';
     if(!show) document.getElementById('yikimAciklamaInput').value = "";
   }
+
   function toggleDenetim(show) {
     document.getElementById('denetimEvet').style.display = show ? 'block' : 'none';
     if(!show){
@@ -263,6 +307,7 @@
       document.getElementById('bitmislikOrani').value = "";
     }
   }
+
   function formatDateTR(yyyy_mm_dd){
     const v = normalizeText(yyyy_mm_dd);
     if(!v) return "";
@@ -271,6 +316,7 @@
     const [y,m,d] = parts;
     return `${d}.${m}.${y}`;
   }
+
   function humanProjeTarihi(b){
     const d = normalizeText(b.projeTarihi);
     const t = normalizeText(b.projeTarihiText);
@@ -278,11 +324,13 @@
     if(t) return t;
     return "Belirtilmemiş";
   }
+
   function uyumCümle(uyum){
     if(uyum === "hayir") return "uyumlu değildir";
     if(uyum === "kismen") return "kısmen uyumludur";
     return "uyumludur";
   }
+
   /* ========= RUHSAT ========= */
   function addRuhsat(data={}){
     const list=document.getElementById('ruhsatList');
@@ -305,6 +353,7 @@
       <button class="remove-btn" onclick="this.parentElement.remove()">X</button>
     `;
     list.appendChild(el);
+
     el.querySelectorAll(`input[name="${rid}"]`).forEach(r=>{
       r.onchange=()=>{
         const box = el.querySelector(".kismi-box");
@@ -316,6 +365,7 @@
       };
     });
   }
+
   /* ========= İSKAN ========= */
   function addIskan(data={}){
     const list=document.getElementById('iskanList');
@@ -338,6 +388,7 @@
       <button class="remove-btn" onclick="this.parentElement.remove()">X</button>
     `;
     list.appendChild(el);
+
     el.querySelectorAll(`input[name="${iid}"]`).forEach(r=>{
       r.onchange=()=>{
         const box = el.querySelector(".kismi-box");
@@ -349,6 +400,7 @@
       };
     });
   }
+
   /* ========= BELGE ÖZET SATIRI ========= */
   function ruhsatOzetSatiri(r){
     const tarih = r.tarih ? formatDateTR(r.tarih) : "Tarih belirtilmemiş";
@@ -359,6 +411,7 @@
       : "binanın tamamı";
     return `${tarih} tarih ${no} sayılı ${kapsam} için düzenlenmiş ${amac}.`;
   }
+
   function iskanOzetSatiri(i){
     const tarih = i.tarih ? formatDateTR(i.tarih) : "Tarih belirtilmemiş";
     const no = normalizeText(i.no) || "No belirtilmemiş";
@@ -368,72 +421,96 @@
       : "binanın tamamı";
     return `${tarih} tarih ${no} sayılı ${kapsam} için düzenlenmiş ${amac}.`;
   }
+
   function fmtM2(v){
     const n = normalizeText(v);
     if(!n) return "";
+    // 12.5 -> 12,5 gibi TR görünüm istersen:
     const tr = n.replace(".", ",");
     return `${tr} m²`;
   }
+
   /* ========= LOAD ========= */
   window.addEventListener('load', () => {
     initAutocomplete();
+
     toggleUyumDetay();
     toggleFarkliParsel();
     toggleYikim(false);
     checkBila();
+
     if(report.belgeler){
       const b=report.belgeler;
+
       document.getElementById('belediye').value=b.belediyeRaw || '';
       document.getElementById('il').value=b.il||"";
       document.getElementById('ilce').value=b.ilce||"";
       document.getElementById('projeTarihi').value=b.projeTarihi || '';
       document.getElementById('projeTarihiText').value=b.projeTarihiText || '';
       checkBila();
+
       if(b.uyum) {
         const uy = document.querySelector(`input[name="uyum"][value="${b.uyum}"]`);
         if(uy) uy.checked = true;
       }
       toggleUyumDetay();
       document.getElementById('uyumAciklama').value = b.uyumAciklama || '';
+
+      // ilave alan (yeni)
       document.getElementById('ilaveAlanTik').checked = !!b.ilaveAlanTik;
       document.getElementById('ilaveAlanM2').value = b.ilaveAlanM2 || '';
       document.getElementById('ilaveAlanNot').value = b.ilaveAlanNot || '';
       toggleIlaveAlan();
+
       if(b.belgeGoruldumu){
         const bg = document.querySelector(`input[name="belgeGoruldumu"][value="${b.belgeGoruldumu}"]`);
         if(bg) bg.checked = true;
       }
+
       if(b.yikimKarari){
         const yk = document.querySelector(`input[name="yikim"][value="${b.yikimKarari}"]`);
         if(yk) yk.checked = true;
       }
       document.getElementById('yikimAciklamaInput').value = b.yikimAciklamaInput || '';
       toggleYikim(b.yikimKarari === 'evet');
+
       if(b.denetimDevam){
         const dd = document.querySelector(`input[name="denetimDevam"][value="${b.denetimDevam}"]`);
         if(dd) dd.checked = true;
       }
       document.getElementById('denetimFirma').value = b.denetimFirma || '';
       document.getElementById('bitmislikOrani').value = b.bitmislikOrani || '';
+
       if(b.farkliParsel === 'evet') {
-        const fp = document.querySelector('input[name="farkliParsel"][value="evet"]`);
+        const fp = document.querySelector('input[name="farkliParsel"][value="evet"]');
         if(fp) fp.checked = true;
       }
       toggleFarkliParsel();
       document.getElementById('arsivAda').value = b.arsivAda || '';
       document.getElementById('arsivParsel').value = b.arsivParsel || '';
+
+      // ruhsatlar
       document.getElementById('ruhsatList').innerHTML = "";
       if(b.ruhsatlar?.length) b.ruhsatlar.forEach(addRuhsat);
       else addRuhsat();
+
+      // iskan
       if(b.iskanVar === 'evet') {
         const iv = document.querySelector('input[name="iskanVar"][value="evet"]');
         if(iv) iv.checked = true;
         toggleIskan(true);
+
         document.getElementById('iskanList').innerHTML = "";
         if(b.iskanlar?.length) b.iskanlar.forEach(addIskan);
         else addIskan();
       } else {
         toggleIskan(false);
+        const den = document.querySelector('input[name="denetimDevam"]:checked')?.value || "hayir";
+        toggleDenetim(den === "evet");
+      }
+
+      if((b.iskanVar || "hayir") !== "evet"){
+        toggleDenetim((b.denetimDevam || "hayir") === "evet");
       }
     } else {
       addRuhsat();
@@ -441,30 +518,43 @@
       toggleDenetim(false);
     }
   });
-  /* ========= KAYDET VE METİN ÜRET ========= */
+
+  /* ========= KAYDET VE METİN ÜRET (ÖRNEK STİL) ========= */
   function kaydetVeIsle() {
     const b = {};
+
     b.belediyeRaw = normalizeText(document.getElementById('belediye').value);
     b.belediye = formatBelediye(b.belediyeRaw);
     b.il = normalizeText(document.getElementById('il').value);
     b.ilce = normalizeText(document.getElementById('ilce').value);
+
     b.projeTarihi = document.getElementById('projeTarihi').value;
     b.projeTarihiText = normalizeText(document.getElementById('projeTarihiText').value);
+
     b.uyum = document.querySelector('input[name="uyum"]:checked')?.value || "evet";
     b.uyumAciklama = normalizeText(document.getElementById('uyumAciklama').value);
+
+    // ilave alan (yeni)
     b.ilaveAlanTik = !!document.getElementById('ilaveAlanTik').checked;
     b.ilaveAlanM2 = normalizeText(document.getElementById('ilaveAlanM2').value);
     b.ilaveAlanNot = normalizeText(document.getElementById('ilaveAlanNot').value);
+
     b.belgeGoruldumu = document.querySelector('input[name="belgeGoruldumu"]:checked')?.value || "görüldü";
+
     b.yikimKarari = document.querySelector('input[name="yikim"]:checked')?.value || "hayir";
     b.yikimAciklamaInput = normalizeText(document.getElementById('yikimAciklamaInput').value);
+
     b.denetimDevam = document.querySelector('input[name="denetimDevam"]:checked')?.value || "hayir";
     b.denetimFirma = normalizeText(document.getElementById('denetimFirma').value);
     b.bitmislikOrani = normalizeText(document.getElementById('bitmislikOrani').value);
+
     b.farkliParsel = document.querySelector('input[name="farkliParsel"]:checked')?.value || "hayir";
     b.arsivAda = normalizeText(document.getElementById('arsivAda').value);
     b.arsivParsel = normalizeText(document.getElementById('arsivParsel').value);
+
     b.iskanVar = document.querySelector('input[name="iskanVar"]:checked')?.value || "hayir";
+
+    // Ruhsatlar
     b.ruhsatlar = Array.from(document.querySelectorAll('#ruhsatList .dynamic-item')).map(el => ({
       _rid: el.dataset.rid,
       tarih: el.querySelector('.r-tarih')?.value || "",
@@ -472,7 +562,9 @@
       amac: normalizeText(el.querySelector('.r-amac')?.value),
       kapsam: el.querySelector('input[name="'+el.dataset.rid+'"]:checked')?.value || "tamami",
       kismi_text: normalizeText(el.querySelector('.r-kismi')?.value)
-    })).filter(x => x.tarih || x.no || x.amac || x.kismi_text);
+    })).filter(x => x.tarih || x.no || x.amac || x.kismi_text); // tamamen boş satırları at
+
+    // İskân
     if (b.iskanVar === 'evet') {
       b.iskanlar = Array.from(document.querySelectorAll('#iskanList .dynamic-item')).map(el => ({
         _iid: el.dataset.iid,
@@ -485,34 +577,57 @@
     } else {
       b.iskanlar = [];
     }
-    // Hafıza kaydet
-    fieldsToRemember.forEach(f => {
-      const val = normalizeText(document.getElementById(f === 'belediye' ? 'belediye' : f === 'ilaveAlanM2' ? 'ilaveAlanM2' : f === 'ilaveAlanNot' ? 'ilaveAlanNot' : f)?.value);
-      if(val) rememberField(f, val);
-    });
-    // Rapor kaydet
+
+    // HAFIZA
+    rememberField("belediye", b.belediyeRaw);
+    rememberField("il", b.il);
+    rememberField("ilce", b.ilce);
+    rememberField("projeTarihiText", b.projeTarihiText);
+    rememberField("uyumAciklama", b.uyumAciklama);
+    rememberField("denetimFirma", b.denetimFirma);
+    rememberField("yikimAciklamaInput", b.yikimAciklamaInput);
+    rememberField("arsivAda", b.arsivAda);
+    rememberField("arsivParsel", b.arsivParsel);
+    rememberField("ilaveAlanM2", b.ilaveAlanM2);
+    rememberField("ilaveAlanNot", b.ilaveAlanNot);
+
+    // rapora yaz
     report.belgeler = b;
-    reports[id] = report; // obje olarak
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+    if(id !== null){
+      reports[id] = report;
+      localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+    } else {
+      localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+    }
     initAutocomplete();
-    // Metin üret (orijinal metin mantığı korundu)
+
+    // ====== ÖRNEK STİL METİN ======
     const projeT = humanProjeTarihi(b);
     const uyumTxt = uyumCümle(b.uyum);
+
     const belediyeKisa = (normalizeText(b.belediyeRaw) || "İlgili");
     const tapuBelediye = `${belediyeKisa} Tapu Müdürlüğü ve ${belediyeKisa} Belediyesi'nde`;
+
+    // 1) ana paragraf
     const parts = [];
     parts.push("Taşınmazın bulunduğu ana taşınmazın konumu imar paftasıyla uyumludur.");
+
+    // uyum cümlesi
     let uyumCumle = `${tapuBelediye} incelenen ${projeT} tarihli projesiyle ${uyumTxt}.`;
     if((b.uyum === "hayir" || b.uyum === "kismen") && b.uyumAciklama){
       uyumCumle += ` ${b.uyumAciklama}`;
     }
     parts.push(uyumCumle);
+
+    // ilave alan m² (istenen)
     if(b.ilaveAlanTik && normalizeText(b.ilaveAlanM2)){
       const m2 = fmtM2(b.ilaveAlanM2);
       let ilaveCumle = `İlave alan ${m2} olarak beyan edilmiştir.`;
       if(b.ilaveAlanNot) ilaveCumle += ` ${b.ilaveAlanNot}`;
       parts.push(ilaveCumle);
     }
+
+    // ruhsat (paragrafta 1 adet özet, detaylar altta)
     if(b.ruhsatlar.length){
       const r0 = b.ruhsatlar[0];
       const tarih = r0.tarih ? formatDateTR(r0.tarih) : "Tarih belirtilmemiş";
@@ -523,6 +638,8 @@
     } else {
       parts.push("Yapı ruhsatına ilişkin belge sunulmamıştır.");
     }
+
+    // iskan + denetim
     if(b.iskanVar === "evet"){
       parts.push("Taşınmazın Yapı Kullanma İzin Belgesi (İskân) bulunmaktadır.");
     } else {
@@ -533,30 +650,50 @@
         parts.push(`Yapının yapı denetimi ${firma} şirketi tarafından yapı denetime devam edildiği, bitmişlik oranının ${oran} olduğu ilgili belediyesinden öğrenilmiştir.`);
       }
     }
+
+    // yıkım
     if(b.yikimKarari === "evet"){
       const det = b.yikimAciklamaInput || "Detay belirtilmemiştir.";
       parts.push(`Belediye arşivinde olumsuz karar ve tespit tutanağı bulunduğu görülmüştür. ${det}`);
     } else {
       parts.push("Belediye arşivinde herhangi bir olumsuz karar ve tespit tutanağına rastlanmamıştır.");
     }
+
+    // farklı parsel bilgisi (istersen paragrafta)
     if(b.farkliParsel === "evet"){
       const ada = b.arsivAda || "Belirtilmemiş";
       const parsel = b.arsivParsel || "Belirtilmemiş";
       parts.push(`Belgelerin farklı ada/parsel için düzenlendiği beyan edilmiştir (Arşiv: ${ada}/${parsel}).`);
     }
+
     const paragraf = parts.join(" ");
+
+    // 2) belge özetleri
     const bullets = [];
     b.ruhsatlar.forEach(r => bullets.push(ruhsatOzetSatiri(r)));
     if(b.iskanVar === "evet") b.iskanlar.forEach(i => bullets.push(iskanOzetSatiri(i)));
+
+    // hiç belge yoksa
     if(!bullets.length) bullets.push("Belge özeti bulunmamaktadır.");
-    const metin = `${paragraf}\n\nBELGE ÖZETLERİ:\n- ${bullets.join("\n- ")}`;
-    document.getElementById('taslak').textContent = metin;
-    document.getElementById('taslak').style.display = 'block';
+
+    const metin =
+`${paragraf}
+
+BELGE ÖZETLERİ:
+- ${bullets.join("\n- ")}`;
+
+    const taslakEl = document.getElementById('taslak');
+    taslakEl.textContent = metin;
+    taslakEl.style.display = 'block';
+
     alert("Kaydedildi ve metin üretildi!");
   }
+
   function anaMenuyeDon() {
-    window.location.href = `rapor-detay.html?id=${id || ''}`;
+    if(id !== null) window.location.href = `rapor-detay.html?id=${id}`;
+    else window.location.href = `rapor-detay.html`;
   }
 </script>
+
 </body>
 </html>
