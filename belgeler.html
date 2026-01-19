@@ -1,108 +1,150 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İncelenen Belgeler</title>
-    <style>
-        :root { --primary: #1a148c; --secondary: #7c4dff; --success: #00c853; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin:0; padding-bottom:100px; color: #333; }
-        .header { background: linear-gradient(135deg,#4a148c,#7c4dff); color:white; padding:20px; text-align:center; position:relative; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .back { position:absolute; left:15px; top:18px; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:30px; color:white; text-decoration:none; font-weight:bold; cursor: pointer; border: none; }
-        .container { max-width:900px; margin:20px auto; padding:20px; background:white; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); }
-        .form-group { margin:25px 0; padding:20px; background:#f9f9f9; border-radius:12px; border: 1px solid #eee; }
-        .radio-group { display:flex; gap:20px; flex-wrap:wrap; margin:10px 0; }
-       
-        input[type=text], input[type=date], input[type=number], textarea { padding:12px; border:1px solid #ccc; border-radius:8px; font-size:16px; box-sizing:border-box; transition: 0.3s; width: 100%; }
-        input:focus { border-color: var(--secondary); outline: none; background: #fdfdfd; }
-        input:disabled { background: #e0e0e0; cursor: not-allowed; }
-        .dynamic-item { display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; }
-        .dynamic-item > div { flex:1; min-width:180px; }
-        .remove-btn { background:#d32f2f; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
-        .add-btn { background:#2196f3; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; margin-top:10px; font-weight: bold; }
-        .btn-kaydet { background:#00c853; color:white; padding:20px; width:100%; border:none; border-radius:12px; font-size:22px; font-weight:bold; cursor:pointer; margin-top:20px; box-shadow: 0 4px 15px rgba(0,200,83,0.3); }
-        .btn-geri { background:#6c757d; color:white; padding:15px; width:100%; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; margin-top:10px; text-align:center; text-decoration:none; display:block; }
-       
-        .taslak {
-            background:#e8f5e9; padding:30px; border-radius:12px; margin-top:30px; border:3px solid #4caf50;
-            font-size:19px; line-height:1.8; white-space:pre-wrap;
-            -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
-            transition: filter 0.3s ease;
-            pointer-events: none;
-        }
-        .taslak:not(:hover) { filter: blur(1px); }
-        @media print {
-            body * { visibility: hidden; }
-            .taslak, .taslak * { visibility: visible; }
-            .taslak { position: absolute; left: 0; top: 0; }
-        }
-        .conditional { display:none; margin-top:10px; }
-        .property-name { font-weight: bold; margin-top: 5px; color: #ffd700; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İncelenen Belgeler</title>
 
-        /* Giriş alanları serbest */
-        input, textarea, button, .add-btn, .remove-btn {
-            pointer-events: auto !important;
-            -webkit-user-select: text !important;
-            user-select: text !important;
-        }
-    </style>
+  <style>
+    :root { --primary: #1a148c; --secondary: #7c4dff; --success: #00c853; --bg: #f4f7f6; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin:0; padding-bottom:100px; color: #333; }
+
+    .header {
+      background: linear-gradient(135deg,#4a148c,#7c4dff);
+      color:white; padding:20px; text-align:center; position:relative;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .back {
+      position:absolute; left:15px; top:18px;
+      background:rgba(255,255,255,0.2);
+      padding:10px 20px; border-radius:30px;
+      color:white; text-decoration:none; font-weight:bold;
+      cursor: pointer; border: none;
+    }
+
+    .container {
+      max-width:900px; margin:20px auto; padding:20px;
+      background:white; border-radius:16px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+      margin:25px 0; padding:20px; background:#f9f9f9;
+      border-radius:12px; border: 1px solid #eee;
+    }
+
+    .radio-group { display:flex; gap:20px; flex-wrap:wrap; margin:10px 0; }
+
+    input[type=text], input[type=date], input[type=number], textarea {
+      padding:12px; border:1px solid #ccc; border-radius:8px;
+      font-size:16px; box-sizing:border-box; transition: 0.3s; width: 100%;
+    }
+    input:focus { border-color: var(--secondary); outline: none; background: #fdfdfd; }
+    input:disabled { background: #e0e0e0; cursor: not-allowed; }
+
+    .dynamic-item {
+      display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap;
+      background:#fff; padding:15px; border-radius:8px; border:1px solid #eee;
+    }
+    .dynamic-item > div { flex:1; min-width:180px; }
+
+    .remove-btn { background:#d32f2f; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    .add-btn { background:#2196f3; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; margin-top:10px; font-weight: bold; }
+
+    .btn-kaydet {
+      background:#00c853; color:white; padding:20px; width:100%;
+      border:none; border-radius:12px; font-size:22px; font-weight:bold;
+      cursor:pointer; margin-top:20px;
+      box-shadow: 0 4px 15px rgba(0,200,83,0.3);
+    }
+    .btn-geri {
+      background:#6c757d; color:white; padding:15px; width:100%;
+      border:none; border-radius:12px; font-size:18px; font-weight:bold;
+      cursor:pointer; margin-top:10px;
+      text-align:center; text-decoration:none; display:block;
+    }
+
+    .taslak {
+      background:#e8f5e9; padding:30px; border-radius:12px; margin-top:30px;
+      border:3px solid #4caf50;
+      font-size:19px; line-height:1.8; white-space:pre-wrap;
+      -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+      transition: filter 0.3s ease;
+      pointer-events: none;
+    }
+    .taslak:not(:hover) { filter: blur(1px); }
+
+    @media print {
+      body * { visibility: hidden; }
+      .taslak, .taslak * { visibility: visible; }
+      .taslak { position: absolute; left: 0; top: 0; }
+    }
+
+    .conditional { display:none; margin-top:10px; }
+    .property-name { font-weight: bold; margin-top: 5px; color: #ffd700; }
+
+    /* Giriş alanları serbest */
+    input, textarea, button, .add-btn, .remove-btn {
+      pointer-events: auto !important;
+      -webkit-user-select: text !important;
+      user-select: text !important;
+    }
+  </style>
 </head>
+
 <body oncontextmenu="return false;">
-<div class="header">
+  <div class="header">
     <button onclick="anaMenuyeDon()" class="back">← Geri</button>
     <h1>İNCELENEN BELGELER</h1>
     <div id="propertyName" class="property-name">Yükleniyor...</div>
-</div>
-<div class="container">
-    <!-- Senin gönderdiğin HTML kısmı tamamen aynı -->
-    <!-- (tüm form-group'lar, butonlar vs. aynı) -->
+  </div>
+
+  <div class="container">
     <div class="form-group">
-        <strong>1. Belediye ve Lokasyon Bilgisi</strong>
-        <div style="display:flex; gap:10px; margin-top:10px; margin-bottom:15px;">
-            <input type="text" id="belediye" placeholder="Belediye" list="h_belgeler_belediye" onfocus="showList(this)">
-            <input type="text" id="il" placeholder="İl" list="h_belgeler_il" onfocus="showList(this)">
-            <input type="text" id="ilce" placeholder="İlçe" list="h_belgeler_ilce" onfocus="showList(this)">
-        </div>
-       
-        <label><strong>Belgeler farklı ada/parselde mi?</strong></label>
-        <div class="radio-group">
-            <label><input type="radio" name="farkliParsel" value="hayir" checked onchange="toggleFarkliParsel()"> Hayır (Aynı)</label>
-            <label><input type="radio" name="farkliParsel" value="evet" onchange="toggleFarkliParsel()"> Evet (Farklı)</label>
-        </div>
-       
-        <div id="farkliParselDetay" class="conditional" style="display:flex; gap:10px;">
-            <input type="text" id="arsivAda" placeholder="Arşiv Ada No" list="h_belgeler_arsivAda" onfocus="showList(this)">
-            <input type="text" id="arsivParsel" placeholder="Arşiv Parsel No" list="h_belgeler_arsivParsel" onfocus="showList(this)">
-        </div>
+      <strong>1. Belediye ve Lokasyon Bilgisi</strong>
+
+      <div style="display:flex; gap:10px; margin-top:10px; margin-bottom:15px;">
+        <input type="text" id="belediye" placeholder="Belediye" list="h_belgeler_belediye" onfocus="showList(this)">
+        <input type="text" id="il" placeholder="İl" list="h_belgeler_il" onfocus="showList(this)">
+        <input type="text" id="ilce" placeholder="İlçe" list="h_belgeler_ilce" onfocus="showList(this)">
+      </div>
+
+      <label><strong>Belgeler farklı ada/parselde mi?</strong></label>
+      <div class="radio-group">
+        <label><input type="radio" name="farkliParsel" value="hayir" checked onchange="toggleFarkliParsel()"> Hayır (Aynı)</label>
+        <label><input type="radio" name="farkliParsel" value="evet" onchange="toggleFarkliParsel()"> Evet (Farklı)</label>
+      </div>
+
+      <div id="farkliParselDetay" class="conditional" style="display:flex; gap:10px;">
+        <input type="text" id="arsivAda" placeholder="Arşiv Ada No" list="h_belgeler_arsivAda" onfocus="showList(this)">
+        <input type="text" id="arsivParsel" placeholder="Arşiv Parsel No" list="h_belgeler_arsivParsel" onfocus="showList(this)">
+      </div>
     </div>
-    <!-- Diğer form-group'lar tamamen aynı -->
-    <!-- ... (kısaltıyorum, senin kodundaki gibi devam ediyor) ... -->
+
+    <!-- diğer form-group'lar burada devam edecek -->
 
     <button class="btn-kaydet" onclick="kaydetVeIsle()">KAYDET VE METİN ÜRET</button>
     <button class="btn-geri" onclick="anaMenuyeDon()">GERİ DÖN (ÇIK)</button>
-   
-    <div id="taslak" class="taslak"></div> <!-- başlangıçta boş ama onload'da dolduruluyor -->
-</div>
-<!-- datalists aynı -->
 
-<script>
-    // Script tamamen senin gönderdiğin gibi, sadece onload'da taslak gösterimi eklendi ve pointer-events düzeltildi
-    // (tam script senin kodundaki gibi, sadece küçük eklemelerle)
+    <div id="taslak" class="taslak"></div>
+  </div>
 
+  <!-- datalist'ler burada (aynı şekilde) -->
+
+  <script>
     window.onload = () => {
-        initAutocomplete();
-        if (report.belgeler) {
-            // ... (yükleme kodları aynı)
-            if (report.belgeler.belgelerMetni) {
-                document.getElementById('taslak').innerText = report.belgeler.belgelerMetni;
-                document.getElementById('taslak').style.display = 'block';
-            }
-        } else {
-            addRuhsat();
-        }
-    };
+      initAutocomplete();
 
-    // Diğer fonksiyonlar (kaydetVeIsle, addRuhsat vs.) tamamen aynı
-</script>
+      if (typeof report !== "undefined" && report.belgeler) {
+        if (report.belgeler.belgelerMetni) {
+          const taslakEl = document.getElementById('taslak');
+          taslakEl.innerText = report.belgeler.belgelerMetni;
+          taslakEl.style.display = 'block';
+        }
+      } else {
+        addRuhsat();
+      }
+    };
+  </script>
 </body>
 </html>
