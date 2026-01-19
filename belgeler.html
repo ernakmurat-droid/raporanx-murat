@@ -19,32 +19,38 @@
         .add-btn { background:#2196f3; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; margin-top:10px; }
         .btn { background:#00c853; color:white; padding:16px; width:100%; border:none; border-radius:12px; font-size:20px; font-weight:bold; cursor:pointer; margin-top:20px; }
         .btn-taslak { background:#2196f3; margin-bottom:10px; }
-        .taslak { background:#e8f5e9; padding:30px; border-radius:12px; margin-top:30px; border:3px solid #4caf50; font-size:19px; line-height:1.8; white-space:pre-wrap; user-select:text; }
+        .taslak { background:#e8f5e9; padding:30px; border-radius:12px; margin-top:30px; border:3px solid #4caf50; font-size:19px; line-height:1.8; white-space:pre-wrap; user-select:none; }
         .kopyalanabilir { background:#e3f2fd; padding:20px; border-radius:12px; margin:30px 0; border:2px dashed #1976d2; font-family: monospace; font-size:16px; line-height:1.8; user-select:all; }
         .kopyala-buton { background:#1976d2; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:10px; }
         .conditional { display:none; margin-top:15px; padding:15px; background:#fff; border:1px solid #ddd; border-radius:8px; }
         .inline-input { display:inline-block; width:200px; margin-left:10px; }
 
-        /* Kopyala-Yapıştır Kontrolü - YENİ EKLENEN KISIM */
-        /* Veri girişi alanlarında serbest */
+        /* Veri girişi serbest */
         input, textarea, select, .radio-group, .dynamic-item {
             -webkit-user-select: text !important;
             -moz-user-select: text !important;
             -ms-user-select: text !important;
             user-select: text !important;
         }
-        /* Otomatik taslak metninde kopyalama yasak */
-        .taslak {
+        /* Dinamik ruhsat/iskan listeleri kopyalanamaz */
+        #ruhsatList, #iskanList, .dynamic-item {
             -webkit-user-select: none !important;
             -moz-user-select: none !important;
             -ms-user-select: none !important;
             user-select: none !important;
             pointer-events: none !important;
         }
-        /* Kopyalanabilir tablo serbest (butonla kopyalansın) */
-        .kopyalanabilir {
-            -webkit-user-select: all !important;
-            user-select: all !important;
+        /* Dinamik item'larda butonlar çalışsın */
+        .dynamic-item button {
+            pointer-events: auto !important;
+        }
+        /* Taslak tamamen kopyalanamaz */
+        .taslak {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            pointer-events: none !important;
         }
     </style>
 </head>
@@ -80,7 +86,7 @@
 
     <div class="form-group">
         <strong>5. Proje ile uyumlumu?</strong>
-        <div class="radio-group">
+        <div class="radio-group" id="uyum-group">
             <label><input type="radio" name="uyum" value="evet"> Evet</label>
             <label><input type="radio" name="uyum" value="hayir"> Hayır</label>
             <label><input type="radio" name="uyum" value="kismen"> Kısmen</label>
@@ -111,7 +117,7 @@
         </div>
     </div>
 
-    <!-- Yapı Denetim (sadece iskân yoksa) -->
+    <!-- Yapı Denetim -->
     <div class="form-group" id="yapiDenetimSection" style="display:none;">
         <strong>Yapı denetim firması denetime devam ediyor mu?</strong>
         <div class="radio-group">
@@ -164,14 +170,12 @@
     <button class="btn btn-taslak" onclick="taslakOlustur()">OTOMATİK METİN + KOPYALANABİLİR TABLO OLUŞTUR</button>
     <button class="btn" onclick="kaydet()">KAYDET VE ANA MENÜYE DÖN</button>
 
-    <!-- KOPYALANABİLİR TABLO -->
     <div id="kopyaTablo" class="kopyalanabilir" style="display:none;">
         <strong>Banka / Ekspertiz Raporuna Yapıştırmak İçin:</strong><br>
         <div id="kopyaIcerik"></div>
         <button class="kopyala-buton" onclick="kopyalaMetin()">TÜMÜNÜ KOPYALA</button>
     </div>
 
-    <!-- RAPOR METNİ -->
     <div id="taslak" class="taslak">
         Bilgileri doldurun → "OTOMATİK METİN + KOPYALANABİLİR TABLO OLUŞTUR" butonuna basın...
     </div>
@@ -180,13 +184,12 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
-    const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    const report = reports[id] || {};
+    const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || {};
+    let report = reports[id] || {};
     const belgeler = report.belgeler || {};
 
-    document.getElementById('propertyName').textContent = report.propertyName || "İsimsiz Gayrimenkul";
+    document.getElementById('propertyName').textContent = report.adi || report.propertyName || "İsimsiz Gayrimenkul";
 
-    // Belediye otomatik "Belediyesi"
     function formatBelediye(name) {
         if (!name) return "[Belediye]";
         name = name.trim();
@@ -216,7 +219,6 @@
     document.getElementById('eskiAda').value = belgeler.eskiAda || '';
     document.getElementById('eskiParsel').value = belgeler.eskiParsel || '';
 
-    // İskân kontrolü
     const iskanVar = belgeler.iskanVar === 'evet';
     if (iskanVar) {
         document.querySelector('input[name="iskanVar"][value="evet"]').checked = true;
@@ -227,7 +229,6 @@
         document.getElementById('yapiDenetimSection').style.display = 'block';
     }
 
-    // Ruhsat ve İskân yükleme
     if (belgeler.ruhsatlar && belgeler.ruhsatlar.length > 0) {
         belgeler.ruhsatlar.forEach(r => addRuhsat(r));
     } else {
@@ -307,6 +308,14 @@
         document.getElementById('eskiParselSection').style.display = r.value === 'evet' ? 'block' : 'none';
     }));
 
+    // Uyum seçildiğinde otomatik taslak oluştur (Hayır veya Kısmen için)
+    document.getElementById('uyum-group').addEventListener('change', () => {
+        const uyum = document.querySelector('input[name="uyum"]:checked')?.value;
+        if (uyum === 'hayir' || uyum === 'kismen') {
+            taslakOlustur();
+        }
+    });
+
     function taslakOlustur() {
         const belediyeRaw = document.getElementById('belediye').value.trim();
         const belediye = formatBelediye(belediyeRaw);
@@ -319,7 +328,6 @@
         const uyum = document.querySelector('input[name="uyum"]:checked')?.value || '';
         const uyumText = uyum === 'evet' ? 'uyumludur' : uyum === 'hayir' ? 'uyumlu değildir' : uyum === 'kismen' ? 'kısmen uyumludur' : '[uyum durumu]';
 
-        // Ruhsatlar - Veriliş amacı eklendi
         const ruhsatlar = Array.from(document.querySelectorAll('#ruhsatList .dynamic-item')).map(item => ({
             tarih: item.querySelector('.ruhsat-tarih').value,
             no: item.querySelector('.ruhsat-no').value.trim(),
@@ -328,12 +336,11 @@
             kismi: item.querySelector('.ruhsat-kismi')?.value.trim() || ''
         }));
         const ruhsatText = ruhsatlar.map(r => {
-            const kapsamText = r.kapsam === 'tamami' ? 'taşınmazın tamamı için' : r.kismi;
+            const kapsamText = r.kapsam === 'tamami' ? 'binanın tamamı için' : r.kismi;
             const tarihFmt = r.tarih ? new Date(r.tarih).toLocaleDateString('tr-TR') : '[tarih]';
             return `${tarihFmt} tarih ve ${r.no || '[no]'} sayılı ${r.aciklama} için ${kapsamText} düzenlenmiş yapı ruhsatı`;
         }).join(', ');
 
-        // İskân - Veriliş amacı eklendi
         const iskanVar = document.querySelector('input[name="iskanVar"]:checked')?.value === 'evet';
         let iskanText = '';
         if (iskanVar) {
@@ -345,7 +352,7 @@
                 kismi: item.querySelector('.iskan-kismi')?.value.trim() || ''
             }));
             iskanText = iskanlar.map(i => {
-                const kapsamText = i.kapsam === 'tamami' ? 'taşınmazın tamamı için' : i.kismi;
+                const kapsamText = i.kapsam === 'tamami' ? 'binanın tamamı için' : i.kismi;
                 const tarihFmt = i.tarih ? new Date(i.tarih).toLocaleDateString('tr-TR') : '[tarih]';
                 return `${tarihFmt} tarih ve ${i.no || '[no]'} sayılı ${i.aciklama} için ${kapsamText} düzenlenmiş yapı kullanma izin belgesi`;
             }).join(', ');
@@ -377,7 +384,6 @@
         const eskiParsel = document.getElementById('eskiParsel').value || '[parsel]';
         const eskiParselText = eskiParselVar ? `Taşınmaz belgeleri eski ada parsel numarası olan ${eskiAda} ada ${eskiParsel} parsel üzerine çıkarılmıştır.` : '';
 
-        // Tam rapor metni
         let rapor = `Taşınmazın bulunduğu ana taşınmazın konumu imar paftasıyla uyumludur. ${il}/${ilce} Tapu Müdürlüğü Web Tapu’da ve ${belediye}'nde bulunan ${projeTarihiFmt} tarihli mimari projesiyle ${uyumText}.`;
         if (ruhsatText) rapor += ` ${ruhsatText},`;
         if (iskanText) rapor += ` ${iskanText}`;
@@ -387,7 +393,6 @@
 
         document.getElementById('taslak').textContent = rapor.trim();
 
-        // KOPYALANABİLİR TABLO
         let kopyaMetin = `PROJE TARİHİ: ${projeTarihiFmt}\n`;
         ruhsatlar.forEach(r => {
             const tarihFmt = r.tarih ? new Date(r.tarih).toLocaleDateString('tr-TR') : '[tarih]';
@@ -436,7 +441,7 @@
             kismi: item.querySelector('.iskan-kismi')?.value.trim() || ''
         })) : [];
 
-        reports[id].belgeler = {
+        report.belgeler = {
             belediyeRaw: document.getElementById('belediye').value.trim(),
             belediye: formatBelediye(document.getElementById('belediye').value.trim()),
             il: document.getElementById('il').value.trim(),
@@ -458,17 +463,20 @@
             eskiParsel: document.getElementById('eskiParsel').value
         };
 
+        reports[id] = report;
         localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
         alert("Belgeler kaydedildi!");
         window.location.href = `rapor-detay.html?id=${id}`;
     }
 
-    // YENİ: Taslak metninde kopyalamayı tamamen engelle
+    // Kopyalama tamamen engelle (taslak ve dinamik listeler)
     document.addEventListener('DOMContentLoaded', () => {
-        const taslak = document.getElementById('taslak');
-        taslak.oncopy = e => e.preventDefault();
-        taslak.onpaste = e => e.preventDefault();
-        taslak.oncontextmenu = e => e.preventDefault();
+        const protectedElements = document.querySelectorAll('.taslak, #ruhsatList, #iskanList');
+        protectedElements.forEach(el => {
+            el.oncopy = e => e.preventDefault();
+            el.onpaste = e => e.preventDefault();
+            el.oncontextmenu = e => e.preventDefault();
+        });
     });
 </script>
 </body>
