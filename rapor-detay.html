@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -21,11 +21,13 @@
         .footer-btn { background:#ff5722; padding:25px; font-size:28px; width:90%; max-width:600px; margin:20px auto; border-radius:20px; border:none; color:white; font-weight:bold; cursor: pointer; text-align: center; }
     </style>
 </head>
+
 <body oncontextmenu="return false;">
     <div class="header">
         <a href="index.html" class="back">Ana Sayfa</a>
         <div id="baslik">Gayrimenkul Raporu</div>
     </div>
+
     <div class="menu">
         <button class="btn btn-main-feature" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
         <button class="btn" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
@@ -35,27 +37,82 @@
         <button class="btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
         <button class="btn" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
     </div>
-    
+
     <button class="footer-btn" onclick="go('rapor-olustur.html')">TAM RAPOR OLUŞTUR</button>
 
     <script>
-        // 2. ADIM: GÜVENLİK VE VERİ KONTROLÜ
+        // ✅ Firebase auth/db garanti
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ✅ RID helpers (geriye dönük uyumluluk + migration)
+        function genRid(){
+            try{
+                if (crypto && crypto.randomUUID) return crypto.randomUUID();
+            }catch(e){}
+            return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+        }
+
+        function ensureRidMigration(arr){
+            let changed = false;
+            (arr || []).forEach(r => {
+                if (r && !r.rid) { r.rid = genRid(); changed = true; }
+            });
+            return changed;
+        }
+
+        function findIndexByRid(arr, rid){
+            return (arr || []).findIndex(r => r && r.rid === rid);
+        }
+
+        // ✅ URL Params: rid öncelikli, id varsa onu da rid'ye çevirip devam et
         const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
+        let rid = urlParams.get('rid');
+        const legacyId = urlParams.get('id'); // eski linkler için
+
         let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-        let report = reports[id];
+        if (ensureRidMigration(reports)) {
+            localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        }
+
+        // Eski ?id= ile gelmişse, ilgili raporun rid'sini bulup yönlendir
+        if (!rid && legacyId !== null && legacyId !== "") {
+            const idx = Number(legacyId);
+            if (!Number.isNaN(idx) && reports[idx] && reports[idx].rid) {
+                rid = reports[idx].rid;
+                // sayfayı temiz şekilde rid ile yenile
+                window.location.replace("rapor-detay.html?rid=" + encodeURIComponent(rid));
+            }
+        }
+
+        function getReportByRid(rid){
+            const idx = findIndexByRid(reports, rid);
+            if (idx < 0) return null;
+            return reports[idx];
+        }
 
         auth.onAuthStateChanged((user) => {
-            if (!user || !id || !report) {
+            if (!user || !rid) {
                 window.location.href = 'index.html';
-            } else {
-                document.getElementById('baslik').textContent = report.propertyName || "İsimsiz Gayrimenkul";
+                return;
             }
+
+            const report = getReportByRid(rid);
+            if (!report) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('baslik').textContent = report.propertyName || "İsimsiz Gayrimenkul";
         });
 
-        // Yönlendirme Fonksiyonu (ID'yi koruyarak geçer)
+        // ✅ Yönlendirme Fonksiyonu (RID’yi koruyarak geçer)
         function go(page) {
-            window.location.href = page + "?id=" + id;
+            if (!rid) {
+                window.location.href = "index.html";
+                return;
+            }
+            window.location.href = page + "?rid=" + encodeURIComponent(rid);
         }
     </script>
 </body>
