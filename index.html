@@ -41,8 +41,8 @@
       <div id="statusInfoLogin">Bağlantı kuruluyor...</div>
     </div>
 
-    <!-- Ana Bölüm (Giriş Yapılınca Görünür) -->
-    <div id="mainSection" style="display: none;">
+    <!-- Ana Bölüm -->
+    <div id="mainSection" style="display:none;">
       <h1>ABUZİTTİN EKSPERTİZ SİSTEMİ</h1>
       <p>“Abuzittin ile raporun abuzittik olsun!”</p>
       <div id="statusInfo">Yükleniyor...</div>
@@ -73,28 +73,105 @@
         });
     };
 
-    // Auth state kontrol – girişliyse ana bölümü göster
+    /* ======================
+       VERİ KAYBINI ENGELLEME: MERGE KATMANI
+       ====================== */
+    function safeArray(x){ return Array.isArray(x) ? x : []; }
+
+    function countFilledReports(arr){
+      return safeArray(arr).filter(r => r && (
+        r.propertyName || r.il || r.ada || r.parsel ||
+        (r.belgeler && (r.belgeler.belgelerMetni || r.belgelerMetni)) ||
+        (r.tapu && Object.keys(r.tapu||{}).length) ||
+        (r.imar && Object.keys(r.imar||{}).length)
+      )).length;
+    }
+
+    function mergeReportsPreferMoreComplete(localArr, cloudArr){
+      const L = safeArray(localArr);
+      const C = safeArray(cloudArr);
+      const maxLen = Math.max(L.length, C.length);
+      const out = [];
+
+      for(let i=0;i<maxLen;i++){
+        const l = L[i];
+        const c = C[i];
+
+        if (!c && l) { out[i] = l; continue; }
+        if (c && !l) { out[i] = c; continue; }
+
+        if (c && l) {
+          out[i] = {
+            ...l,
+            ...c,
+
+            bina: (c.bina && Object.keys(c.bina).length) ? c.bina : (l.bina || {}),
+            bbDetay: (c.bbDetay && Object.keys(c.bbDetay).length) ? c.bbDetay : (l.bbDetay || {}),
+            konumCevre: (c.konumCevre && Object.keys(c.konumCevre).length) ? c.konumCevre : (l.konumCevre || {}),
+            tapu: (c.tapu && Object.keys(c.tapu).length) ? c.tapu : (l.tapu || {}),
+            imar: (c.imar && Object.keys(c.imar).length) ? c.imar : (l.imar || {}),
+            belgeler: (c.belgeler && Object.keys(c.belgeler).length) ? c.belgeler : (l.belgeler || {}),
+            emsaller: (Array.isArray(c.emsaller) && c.emsaller.length) ? c.emsaller : (l.emsaller || []),
+            emsal: (c.emsal && Object.keys(c.emsal).length) ? c.emsal : (l.emsal || {}),
+
+            // geriye dönük uyumluluk
+            belgelerMetni: c.belgelerMetni || (c.belgeler && c.belgeler.belgelerMetni) || l.belgelerMetni || (l.belgeler && l.belgeler.belgelerMetni) || ""
+          };
+        } else {
+          out[i] = c || l || null;
+        }
+      }
+
+      return out.filter(Boolean);
+    }
+
+    /* ======================
+       AUTH STATE
+       ====================== */
     auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById("loginSection").style.display = "none";
         document.getElementById("mainSection").style.display = "block";
         document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + user.email;
 
-        // Realtime Firestore listener
-        db.collection("users").doc(user.uid).onSnapshot((doc) => {
+        // ✅ Önce local göster (hız + güven)
+        reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        loadReports();
+
+        // ✅ Sonra bulut dinle: merge ile güncelle
+        db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
+          const localReports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+          let cloudReports = [];
+
           if (doc.exists && doc.data().gayrimenkul_reports) {
-            reports = doc.data().gayrimenkul_reports;
-          } else {
-            reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+            cloudReports = doc.data().gayrimenkul_reports;
           }
+
+          const localScore = countFilledReports(localReports);
+          const cloudScore = countFilledReports(cloudReports);
+
+          const merged = mergeReportsPreferMoreComplete(localReports, cloudReports);
+
+          reports = merged;
           localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
           loadReports();
+
+          // ✅ Bulut boş/eksikse local ile güçlendir (tek seferlik mantık)
+          try{
+            if (cloudScore < localScore) {
+              await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
+            }
+          } catch(e){
+            console.warn("Buluta geri yazma hatası:", e);
+          }
+
         }, (error) => {
           console.error("Bulut hatası:", error);
           reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
           loadReports();
           document.getElementById("statusInfo").textContent = "⚠️ Yerel veriler gösteriliyor";
         });
+
       } else {
         document.getElementById("loginSection").style.display = "block";
         document.getElementById("mainSection").style.display = "none";
@@ -102,11 +179,14 @@
       }
     });
 
+    /* ======================
+       UI
+       ====================== */
     function loadReports() {
       const list = document.getElementById("reportsList");
       list.innerHTML = '';
 
-      if (reports.length === 0) {
+      if (!reports || reports.length === 0) {
         list.innerHTML = '<div style="margin-top:40px;">Henüz rapor yok.</div>';
         return;
       }
@@ -131,9 +211,7 @@
           </div>
         `;
 
-        // kartın boş yerine tıklayınca rapor-detay açılsın
         card.onclick = () => window.location.href = `rapor-detay.html?id=${index}`;
-
         list.appendChild(card);
       });
     }
@@ -143,24 +221,23 @@
       window.location.href = `rapor-detay.html?id=${index}`;
     }
 
-    // ✅ DÜZENLE: yeni_kayit.html sayfasına edit modu ile git
     function editReport(index, event){
       event.stopPropagation();
-      // mode=edit => yeni_kayit sayfası "güncelleme" gibi davranacak
       window.location.href = `yeni_kayit.html?id=${index}&mode=edit`;
     }
 
     async function deleteReport(index, event) {
       event.stopPropagation();
-      if (confirm("Silmek istediğine emin misin?")) {
-        reports.splice(index, 1);
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-        const user = auth.currentUser;
-        if (user) {
-          await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
-        }
-        loadReports();
+      if (!confirm("Silmek istediğine emin misin?")) return;
+
+      reports.splice(index, 1);
+      localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+
+      const user = auth.currentUser;
+      if (user) {
+        await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
       }
+      loadReports();
     }
   </script>
 </body>
