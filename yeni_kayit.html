@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yeni Rapor Oluştur - RaporanX</title>
 
+  <!-- Firebase CDN (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -13,7 +14,12 @@
   <style>
     body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #ba68c8); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
     .container { max-width: 600px; margin: 0 auto; text-align: center; }
-    h1 { font-size: 32px; margin-bottom: 30px; }
+    h1 { font-size: 32px; margin-bottom: 10px; }
+    .mode-badge{
+      display:inline-block; margin: 10px 0 18px;
+      background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:999px;
+      font-weight:bold; font-size:13px;
+    }
     form { background: rgba(255,255,255,0.2); padding: 30px; border-radius: 15px; }
     label { display: block; margin: 15px 0 5px; font-weight: bold; text-align: left; }
     input { width: 100%; padding: 14px; border: none; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
@@ -23,18 +29,13 @@
     .geri-btn:hover { background: #5a6268; }
     .referans-btn { background: #2196f3; margin-top: 15px; }
     .referans-btn:hover { background: #1976d2; }
-    .mode-badge{
-      display:inline-block; margin-top:-10px; margin-bottom:18px;
-      background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:999px;
-      font-weight:bold; font-size:13px;
-    }
   </style>
 </head>
 
 <body>
   <div class="container">
     <h1 id="pageTitle">YENİ RAPOR OLUŞTUR</h1>
-    <div id="modeBadge" class="mode-badge" style="display:none;">Düzenleme Modu</div>
+    <div id="modeBadge" class="mode-badge" style="display:none;">Düzenleme Modu (RID)</div>
 
     <form>
       <label>Gayrimenkul Adı (Zorunlu)</label>
@@ -62,34 +63,54 @@
   </div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = (urlParams.get('mode') || '').toLowerCase();
-    const ridParam = urlParams.get('rid');
-    const idParam = urlParams.get('id'); // geri uyum
-    const isEditMode = (mode === 'edit');
-
-    function safeText(v){ return (v ?? '').toString().trim(); }
-
-    function genRid(){
-      try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
-      return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
-    }
-
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    auth.onAuthStateChanged((user) => {
-      if (!user) {
-        alert("⚠️ Giriş yetkisi yok! Lütfen giriş yapın.");
-        window.location.href = 'index.html';
-        return;
-      }
+    /* ========= RID helpers ========= */
+    function genRid(){
+      try{
+        if (crypto && crypto.randomUUID) return crypto.randomUUID();
+      }catch(e){}
+      return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+    }
 
-      if (isEditMode) {
-        setupEditUI();
-        loadForEdit();
-      }
-    });
+    function ensureRidMigration(arr){
+      let changed = false;
+      (arr || []).forEach(r => {
+        if (r && !r.rid) { r.rid = genRid(); changed = true; }
+      });
+      return changed;
+    }
+
+    function safeText(v){ return (v ?? '').toString().trim(); }
+
+    function getReports(){
+      return JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+    }
+    function setReports(arr){
+      localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr || []));
+    }
+
+    async function bulutaGonder() {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const reports = getReports();
+      await db.collection("users").doc(user.uid).set({
+        gayrimenkul_reports: reports,
+        lastUpdate: new Date().toISOString()
+      }, { merge: true });
+    }
+
+    function findIndexByRid(arr, rid){
+      return (arr || []).findIndex(r => r && r.rid === rid);
+    }
+
+    /* ========= URL params ========= */
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = (urlParams.get('mode') || '').toLowerCase();
+    const rid = urlParams.get('rid');          // ✅ RID ile çalışıyoruz
+    const isEditMode = (mode === 'edit' && !!rid);
 
     function setupEditUI(){
       document.getElementById('pageTitle').textContent = "RAPOR DÜZENLE";
@@ -97,42 +118,19 @@
       document.getElementById('btnSave').textContent = "RAPORU GÜNCELLE";
     }
 
-    function getReports(){
-      const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-      // rid migrasyon
-      let changed = false;
-      arr.forEach(r => { if (r && !r.rid) { r.rid = genRid(); changed = true; } });
-      if (changed) localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
-      return arr;
-    }
-
-    function findIndexByRid(reports, rid){
-      return (reports || []).findIndex(r => r && r.rid === rid);
-    }
-
-    function loadForEdit(){
+    function loadReportToFormByRid(rid){
       const reports = getReports();
-
-      let rid = ridParam;
-      if (!rid && idParam !== null && idParam !== '') {
-        const idx = Number(idParam);
-        if (!Number.isNaN(idx) && reports[idx] && reports[idx].rid) rid = reports[idx].rid;
-      }
-
-      if (!rid) {
-        alert("⚠️ Düzenleme için rid bulunamadı!");
-        window.location.href = "index.html";
-        return;
-      }
+      ensureRidMigration(reports);
+      setReports(reports);
 
       const idx = findIndexByRid(reports, rid);
       if (idx < 0) {
-        alert("⚠️ Düzenlenecek rapor bulunamadı!");
+        alert("⚠️ Düzenlenecek rapor bulunamadı! (RID)");
         window.location.href = "index.html";
         return;
       }
-
       const r = reports[idx];
+
       document.getElementById('propertyName').value = r.propertyName || "";
       document.getElementById('il').value = r.il || "";
       document.getElementById('ilce').value = r.ilce || "";
@@ -141,15 +139,26 @@
       document.getElementById('parsel').value = r.parsel || "";
     }
 
-    async function bulutaGonder() {
-      const user = auth.currentUser;
-      if (!user) return;
-      const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-      await db.collection("users").doc(user.uid).set({
-        gayrimenkul_reports: reports,
-        lastUpdate: new Date().toISOString()
-      }, { merge: true });
-    }
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        alert("⚠️ Giriş yetkisi yok! Lütfen giriş yapın.");
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // edit moduysa doldur
+      if (isEditMode) {
+        setupEditUI();
+        loadReportToFormByRid(rid);
+      } else {
+        // yeni rapor sayfasına girildiğinde var olan raporların rid eksikse ekle (güvenlik)
+        const reports = getReports();
+        if (ensureRidMigration(reports)) {
+          setReports(reports);
+          bulutaGonder().catch(()=>{});
+        }
+      }
+    });
 
     async function raporKaydet() {
       if (!safeText(document.getElementById('propertyName').value) || !safeText(document.getElementById('il').value)) {
@@ -158,20 +167,18 @@
       }
 
       let reports = getReports();
+      ensureRidMigration(reports);
 
       if (isEditMode) {
-        let rid = ridParam;
-        if (!rid && idParam !== null && idParam !== '') {
-          const idx0 = Number(idParam);
-          if (!Number.isNaN(idx0) && reports[idx0] && reports[idx0].rid) rid = reports[idx0].rid;
-        }
-        if (!rid) { alert("RID bulunamadı!"); return; }
-
         const idx = findIndexByRid(reports, rid);
-        if (idx < 0) { alert("Güncellenecek rapor bulunamadı!"); return; }
+        if (idx < 0) {
+          alert("⚠️ Güncellenecek rapor bulunamadı!");
+          window.location.href = "index.html";
+          return;
+        }
 
+        // diğer modülleri silmeden üst bilgileri güncelle
         const existing = reports[idx];
-
         existing.propertyName = safeText(document.getElementById('propertyName').value) || existing.propertyName || "İsimsiz Gayrimenkul";
         existing.il = safeText(document.getElementById('il').value);
         existing.ilce = safeText(document.getElementById('ilce').value);
@@ -181,20 +188,21 @@
 
         existing.createdAt = existing.createdAt || new Date().toLocaleString('tr-TR');
         existing.updatedAt = new Date().toLocaleString('tr-TR');
-        existing.rid = existing.rid || rid || genRid();
 
         reports[idx] = existing;
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        setReports(reports);
+
         await bulutaGonder();
 
         alert("✅ Rapor güncellendi ve buluta yedeklendi!");
-        window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(existing.rid);
+        window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
         return;
       }
 
       // yeni rapor
+      const newRid = genRid();
       const report = {
-        rid: genRid(),
+        rid: newRid,
         propertyName: safeText(document.getElementById('propertyName').value) || "İsimsiz Gayrimenkul",
         il: safeText(document.getElementById('il').value),
         ilce: safeText(document.getElementById('ilce').value),
@@ -213,11 +221,12 @@
       };
 
       reports.push(report);
-      localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+      setReports(reports);
+
       await bulutaGonder();
 
       alert("✅ Rapor oluşturuldu ve buluta yedeklendi!");
-      window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(report.rid);
+      window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(newRid);
     }
 
     function referansAc() { window.open('referans-bilgiler.html', '_blank'); }
