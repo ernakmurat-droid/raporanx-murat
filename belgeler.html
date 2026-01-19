@@ -48,6 +48,7 @@
   </div>
 
   <div class="container">
+
     <div class="form-group">
       <strong>1. Belediye ve Lokasyon Bilgisi</strong>
       <div style="display:flex; gap:10px; margin-top:10px; margin-bottom:15px;">
@@ -83,11 +84,22 @@
 
       <textarea id="uyumAciklama" rows="2" placeholder="Uyumsuzluk varsa açıklama..." list="h_belgeler_uyumAciklama" onfocus="showList(this)" style="margin-top:10px; display:none;"></textarea>
 
+      <!-- İSTEDİĞİN DEĞİŞİKLİK: sadece İLAVE ALAN -->
       <div id="uyumIlaveCheckbox" class="conditional checkbox-ilave" style="display:none;">
-        <label><input type="checkbox" id="detayliUyumTik" onchange="toggleIlaveAlan()"> Detaylı uyumsuzluk açıklaması ekle</label>
+        <label><input type="checkbox" id="ilaveAlanTik" onchange="toggleIlaveAlan()"> İlave Alan</label>
       </div>
 
-      <textarea id="detayliUyumAciklama" rows="4" placeholder="Detaylı açıklama (opsiyonel ilave alan)..." class="conditional" style="margin-top:10px; display:none;"></textarea>
+      <!-- İlave alan m² girişi -->
+      <div id="ilaveAlanBox" class="conditional" style="display:none; margin-top:10px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px;">
+            <input type="number" id="ilaveAlanM2" placeholder="İlave alan (m²)" min="0" step="0.01" list="h_belgeler_ilaveAlanM2" onfocus="showList(this)">
+          </div>
+          <div style="flex:2; min-width:240px;">
+            <input type="text" id="ilaveAlanNot" placeholder="İlave alan notu (opsiyonel)" list="h_belgeler_ilaveAlanNot" onfocus="showList(this)">
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="form-group">
@@ -159,6 +171,10 @@
     <datalist id="h_belgeler_uyumAciklama"></datalist>
     <datalist id="h_belgeler_arsivAda"></datalist>
     <datalist id="h_belgeler_arsivParsel"></datalist>
+
+    <!-- yeni hafıza -->
+    <datalist id="h_belgeler_ilaveAlanM2"></datalist>
+    <datalist id="h_belgeler_ilaveAlanNot"></datalist>
   </div>
 
 <script>
@@ -174,12 +190,11 @@
   /* ========= HAFIZA (DATALIST) ========= */
   const fieldsToRemember = [
     'belediye','il','ilce','projeTarihiText','denetimFirma',
-    'yikimAciklamaInput','uyumAciklama','arsivAda','arsivParsel'
+    'yikimAciklamaInput','uyumAciklama','arsivAda','arsivParsel',
+    'ilaveAlanM2','ilaveAlanNot'
   ];
 
-  function normalizeText(v){
-    return (v ?? "").toString().trim();
-  }
+  function normalizeText(v){ return (v ?? "").toString().trim(); }
 
   function rememberField(field, value, limit=25){
     const v = normalizeText(value);
@@ -188,14 +203,6 @@
     const arr = JSON.parse(localStorage.getItem(key)) || [];
     const next = [v, ...arr.filter(x => x !== v)].slice(0, limit);
     localStorage.setItem(key, JSON.stringify(next));
-  }
-
-  function initAutocomplete(){
-    fieldsToRemember.forEach(f=>{
-      const h = JSON.parse(localStorage.getItem("h_belgeler_"+f)) || [];
-      const dl = document.getElementById("h_belgeler_"+f);
-      if(dl) dl.innerHTML = h.map(v=>`<option value="${escapeHtml(v)}">`).join("");
-    });
   }
 
   function escapeHtml(str){
@@ -207,17 +214,21 @@
       .replaceAll("'","&#039;");
   }
 
+  function initAutocomplete(){
+    fieldsToRemember.forEach(f=>{
+      const h = JSON.parse(localStorage.getItem("h_belgeler_"+f)) || [];
+      const dl = document.getElementById("h_belgeler_"+f);
+      if(dl) dl.innerHTML = h.map(v=>`<option value="${escapeHtml(v)}">`).join("");
+    });
+  }
+
   /* ========= KISAYOL ENGEL ========= */
   document.addEventListener('keydown', e => {
-    if (e.ctrlKey && ['c','p','s','u'].includes(e.key.toLowerCase())) {
-      e.preventDefault();
-    }
+    if (e.ctrlKey && ['c','p','s','u'].includes(e.key.toLowerCase())) e.preventDefault();
   });
 
   /* ========= UTIL ========= */
-  function uid(p="x"){
-    return p+"-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
-  }
+  function uid(p="x"){ return p+"-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8); }
 
   function formatBelediye(name){
     if(!name) return "[Belediye]";
@@ -256,26 +267,29 @@
     ilaveCheckboxDiv.style.display = show ? 'block' : 'none';
 
     if(!show){
-      document.getElementById('detayliUyumTik').checked = false;
-      document.getElementById('detayliUyumAciklama').style.display = 'none';
-      document.getElementById('detayliUyumAciklama').value = '';
+      document.getElementById('ilaveAlanTik').checked = false;
+      document.getElementById('ilaveAlanBox').style.display = 'none';
+      document.getElementById('ilaveAlanM2').value = '';
+      document.getElementById('ilaveAlanNot').value = '';
     } else {
       toggleIlaveAlan();
     }
   }
 
   function toggleIlaveAlan() {
-    const tik = document.getElementById('detayliUyumTik').checked;
-    document.getElementById('detayliUyumAciklama').style.display = tik ? 'block' : 'none';
+    const tik = document.getElementById('ilaveAlanTik').checked;
+    document.getElementById('ilaveAlanBox').style.display = tik ? 'block' : 'none';
+    if(!tik){
+      document.getElementById('ilaveAlanM2').value = '';
+      document.getElementById('ilaveAlanNot').value = '';
+    }
   }
 
   function toggleIskan(show) {
     document.getElementById('iskanSection').style.display = show ? 'block' : 'none';
     document.getElementById('yapiDenetimSection').style.display = show ? 'none' : 'block';
-
     if (show && document.getElementById('iskanList').children.length === 0) addIskan();
     if (!show) {
-      // İskan yoksa denetim bölümünü default seçime göre ayarla
       const den = document.querySelector('input[name="denetimDevam"]:checked')?.value || "hayir";
       toggleDenetim(den === "evet");
     }
@@ -309,6 +323,12 @@
     if(d) return formatDateTR(d);
     if(t) return t;
     return "Belirtilmemiş";
+  }
+
+  function uyumCümle(uyum){
+    if(uyum === "hayir") return "uyumlu değildir";
+    if(uyum === "kismen") return "kısmen uyumludur";
+    return "uyumludur";
   }
 
   /* ========= RUHSAT ========= */
@@ -381,11 +401,39 @@
     });
   }
 
+  /* ========= BELGE ÖZET SATIRI ========= */
+  function ruhsatOzetSatiri(r){
+    const tarih = r.tarih ? formatDateTR(r.tarih) : "Tarih belirtilmemiş";
+    const no = normalizeText(r.no) || "No belirtilmemiş";
+    const amac = normalizeText(r.amac) || "Yeni yapı yapı ruhsatı";
+    const kapsam = r.kapsam === "kismi"
+      ? `kısmi (${normalizeText(r.kismi_text) || "Açıklama yok"})`
+      : "binanın tamamı";
+    return `${tarih} tarih ${no} sayılı ${kapsam} için düzenlenmiş ${amac}.`;
+  }
+
+  function iskanOzetSatiri(i){
+    const tarih = i.tarih ? formatDateTR(i.tarih) : "Tarih belirtilmemiş";
+    const no = normalizeText(i.no) || "No belirtilmemiş";
+    const amac = normalizeText(i.amac) || "Yapı Kullanma İzin Belgesi (İskân)";
+    const kapsam = i.kapsam === "kismi"
+      ? `kısmi (${normalizeText(i.kismi_text) || "Açıklama yok"})`
+      : "binanın tamamı";
+    return `${tarih} tarih ${no} sayılı ${kapsam} için düzenlenmiş ${amac}.`;
+  }
+
+  function fmtM2(v){
+    const n = normalizeText(v);
+    if(!n) return "";
+    // 12.5 -> 12,5 gibi TR görünüm istersen:
+    const tr = n.replace(".", ",");
+    return `${tr} m²`;
+  }
+
   /* ========= LOAD ========= */
   window.addEventListener('load', () => {
     initAutocomplete();
 
-    // başlangıç toggle senkronu
     toggleUyumDetay();
     toggleFarkliParsel();
     toggleYikim(false);
@@ -407,8 +455,11 @@
       }
       toggleUyumDetay();
       document.getElementById('uyumAciklama').value = b.uyumAciklama || '';
-      document.getElementById('detayliUyumTik').checked = !!b.detayliUyumTik;
-      document.getElementById('detayliUyumAciklama').value = b.detayliUyumAciklama || '';
+
+      // ilave alan (yeni)
+      document.getElementById('ilaveAlanTik').checked = !!b.ilaveAlanTik;
+      document.getElementById('ilaveAlanM2').value = b.ilaveAlanM2 || '';
+      document.getElementById('ilaveAlanNot').value = b.ilaveAlanNot || '';
       toggleIlaveAlan();
 
       if(b.belgeGoruldumu){
@@ -458,7 +509,6 @@
         toggleDenetim(den === "evet");
       }
 
-      // denetim toggle (iskan yoksa göster)
       if((b.iskanVar || "hayir") !== "evet"){
         toggleDenetim((b.denetimDevam || "hayir") === "evet");
       }
@@ -469,85 +519,7 @@
     }
   });
 
-  /* ========= METİN ÜRET (TAM) ========= */
-  function buildRuhsatText(ruhsatlar){
-    if(!ruhsatlar || !ruhsatlar.length) return "Yapı ruhsatına ilişkin bilgi sunulmamıştır.";
-    const lines = [];
-    ruhsatlar.forEach((r, idx) => {
-      const tarih = r.tarih ? formatDateTR(r.tarih) : "Tarih belirtilmemiş";
-      const no = normalizeText(r.no) || "No belirtilmemiş";
-      const amac = normalizeText(r.amac) || "Amaç belirtilmemiş";
-      const kapsam = r.kapsam === "kismi"
-        ? `kısmi (Açıklama: ${normalizeText(r.kismi_text) || "Belirtilmemiş"})`
-        : "tam";
-      lines.push(`${idx+1}) ${tarih} tarihli, ${no} no'lu ruhsat (${amac}) - Kapsam: ${kapsam}.`);
-    });
-    return lines.join("\n");
-  }
-
-  function buildIskanText(iskanlar){
-    if(!iskanlar || !iskanlar.length) return "İskâna ilişkin belge sunulmamıştır.";
-    const lines = [];
-    iskanlar.forEach((i, idx) => {
-      const tarih = i.tarih ? formatDateTR(i.tarih) : "Tarih belirtilmemiş";
-      const no = normalizeText(i.no) || "No belirtilmemiş";
-      const amac = normalizeText(i.amac) || "Yapı Kullanma İzin Belgesi";
-      const kapsam = i.kapsam === "kismi"
-        ? `kısmi (Açıklama: ${normalizeText(i.kismi_text) || "Belirtilmemiş"})`
-        : "tam";
-      lines.push(`${idx+1}) ${tarih} tarihli, ${no} no'lu ${amac} - Kapsam: ${kapsam}.`);
-    });
-    return lines.join("\n");
-  }
-
-  function buildUyumText(b){
-    const u = b.uyum || "evet";
-    if(u === "evet"){
-      return "Mimari proje ile mevcut durumun uyumlu olduğu beyan edilmiştir.";
-    }
-    let out = (u === "hayir")
-      ? "Mimari proje ile mevcut durumun uyumsuz olduğu beyan edilmiştir."
-      : "Mimari proje ile mevcut durumun kısmen uyumlu olduğu beyan edilmiştir.";
-
-    const ac = normalizeText(b.uyumAciklama);
-    if(ac) out += `\nUyumsuzluk açıklaması: ${ac}`;
-
-    if(b.detayliUyumTik){
-      const det = normalizeText(b.detayliUyumAciklama);
-      if(det) out += `\nDetaylı açıklama: ${det}`;
-    }
-    return out;
-  }
-
-  function buildDenetimText(b){
-    // sadece iskan yoksa anlamlı
-    if((b.iskanVar || "hayir") === "evet") return "";
-    const dev = b.denetimDevam || "hayir";
-    if(dev !== "evet"){
-      return "Yapı denetim sürecine ilişkin devam bilgisi bulunmadığı/ayrıldığı belirtilmiştir.";
-    }
-    const firma = normalizeText(b.denetimFirma) || "Belirtilmemiş";
-    const oran = normalizeText(b.bitmislikOrani);
-    const oranTxt = oran ? `%${oran}` : "Belirtilmemiş";
-    return `Yapı denetim sürecinin devam ettiği, denetim firmasının "${firma}" olduğu ve bitmişlik oranının ${oranTxt} olduğu beyan edilmiştir.`;
-  }
-
-  function buildYikimText(b){
-    const y = b.yikimKarari || "hayir";
-    if(y !== "evet") return "Belediye arşivinde olumsuz karar ve tespit tutanağı bulunmadığı beyan edilmiştir.";
-    const det = normalizeText(b.yikimAciklamaInput) || "Detay belirtilmemiştir.";
-    return `Belediye arşivinde olumsuz karar ve tespit tutanağı bulunduğu beyan edilmiştir.\nDetay: ${det}`;
-  }
-
-  function buildParselText(b){
-    const fp = b.farkliParsel || "hayir";
-    if(fp !== "evet") return "Belgelerin aynı ada/parsel için düzenlendiği beyan edilmiştir.";
-    const ada = normalizeText(b.arsivAda) || "Belirtilmemiş";
-    const parsel = normalizeText(b.arsivParsel) || "Belirtilmemiş";
-    return `Belgelerin farklı ada/parsel için düzenlendiği beyan edilmiştir.\nArşiv Ada/Parsel: ${ada} / ${parsel}`;
-  }
-
-  /* ========= KAYDET VE METİN ÜRET ========= */
+  /* ========= KAYDET VE METİN ÜRET (ÖRNEK STİL) ========= */
   function kaydetVeIsle() {
     const b = {};
 
@@ -561,8 +533,11 @@
 
     b.uyum = document.querySelector('input[name="uyum"]:checked')?.value || "evet";
     b.uyumAciklama = normalizeText(document.getElementById('uyumAciklama').value);
-    b.detayliUyumTik = !!document.getElementById('detayliUyumTik').checked;
-    b.detayliUyumAciklama = normalizeText(document.getElementById('detayliUyumAciklama').value);
+
+    // ilave alan (yeni)
+    b.ilaveAlanTik = !!document.getElementById('ilaveAlanTik').checked;
+    b.ilaveAlanM2 = normalizeText(document.getElementById('ilaveAlanM2').value);
+    b.ilaveAlanNot = normalizeText(document.getElementById('ilaveAlanNot').value);
 
     b.belgeGoruldumu = document.querySelector('input[name="belgeGoruldumu"]:checked')?.value || "görüldü";
 
@@ -587,7 +562,7 @@
       amac: normalizeText(el.querySelector('.r-amac')?.value),
       kapsam: el.querySelector('input[name="'+el.dataset.rid+'"]:checked')?.value || "tamami",
       kismi_text: normalizeText(el.querySelector('.r-kismi')?.value)
-    }));
+    })).filter(x => x.tarih || x.no || x.amac || x.kismi_text); // tamamen boş satırları at
 
     // İskân
     if (b.iskanVar === 'evet') {
@@ -595,15 +570,15 @@
         _iid: el.dataset.iid,
         tarih: el.querySelector('.i-tarih')?.value || "",
         no: normalizeText(el.querySelector('.i-no')?.value),
-        amac: normalizeText(el.querySelector('.i-amac')?.value) || "Yapı Kullanma İzin Belgesi",
+        amac: normalizeText(el.querySelector('.i-amac')?.value) || "Yapı Kullanma İzin Belgesi (İskân)",
         kapsam: el.querySelector('input[name="'+el.dataset.iid+'"]:checked')?.value || "tamami",
         kismi_text: normalizeText(el.querySelector('.i-kismi')?.value)
-      }));
+      })).filter(x => x.tarih || x.no || x.amac || x.kismi_text);
     } else {
       b.iskanlar = [];
     }
 
-    // HAFIZA KAYDI (datalist önerileri)
+    // HAFIZA
     rememberField("belediye", b.belediyeRaw);
     rememberField("il", b.il);
     rememberField("ilce", b.ilce);
@@ -613,70 +588,110 @@
     rememberField("yikimAciklamaInput", b.yikimAciklamaInput);
     rememberField("arsivAda", b.arsivAda);
     rememberField("arsivParsel", b.arsivParsel);
+    rememberField("ilaveAlanM2", b.ilaveAlanM2);
+    rememberField("ilaveAlanNot", b.ilaveAlanNot);
 
     // rapora yaz
     report.belgeler = b;
-
     if(id !== null){
       reports[id] = report;
       localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
     } else {
-      // id yoksa yine de kaydet (tekil)
       localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
     }
-
-    // TAM METİN ÜRET
-    const lines = [];
-    lines.push("İNCELENEN BELGELER");
-    lines.push("------------------------------------------------------------");
-    lines.push(`Belediye: ${b.belediye}`);
-    lines.push(`İl/İlçe: ${b.il || "Belirtilmemiş"} / ${b.ilce || "Belirtilmemiş"}`);
-    lines.push(buildParselText(b));
-    lines.push("");
-
-    lines.push(`Mimari Proje Tarihi: ${humanProjeTarihi(b)}`);
-    lines.push(buildUyumText(b));
-    lines.push("");
-
-    lines.push("Yapı Ruhsatları:");
-    lines.push(buildRuhsatText(b.ruhsatlar));
-    lines.push("");
-
-    if(b.iskanVar === "evet"){
-      lines.push("İskân (Yapı Kullanma İzin Belgeleri):");
-      lines.push(buildIskanText(b.iskanlar));
-      lines.push("");
-    } else {
-      lines.push("İskân Durumu: İskân belgesi bulunmadığı beyan edilmiştir.");
-      lines.push(buildDenetimText(b));
-      lines.push("");
-    }
-
-    lines.push(`Belgeler Nasıl Teyit Edildi?: ${b.belgeGoruldumu}`);
-    lines.push("");
-
-    lines.push("Belediye Arşiv Tespitleri:");
-    lines.push(buildYikimText(b));
-    lines.push("");
-
-    const anaMetin = lines.join("\n");
-
-    const taslakEl = document.getElementById('taslak');
-    taslakEl.textContent = anaMetin;
-    taslakEl.style.display = 'block';
-
-    // datalistleri güncelle
     initAutocomplete();
 
-    alert("Kaydedildi ve tam metin üretildi!");
+    // ====== ÖRNEK STİL METİN ======
+    const projeT = humanProjeTarihi(b);
+    const uyumTxt = uyumCümle(b.uyum);
+
+    const belediyeKisa = (normalizeText(b.belediyeRaw) || "İlgili");
+    const tapuBelediye = `${belediyeKisa} Tapu Müdürlüğü ve ${belediyeKisa} Belediyesi'nde`;
+
+    // 1) ana paragraf
+    const parts = [];
+    parts.push("Taşınmazın bulunduğu ana taşınmazın konumu imar paftasıyla uyumludur.");
+
+    // uyum cümlesi
+    let uyumCumle = `${tapuBelediye} incelenen ${projeT} tarihli projesiyle ${uyumTxt}.`;
+    if((b.uyum === "hayir" || b.uyum === "kismen") && b.uyumAciklama){
+      uyumCumle += ` ${b.uyumAciklama}`;
+    }
+    parts.push(uyumCumle);
+
+    // ilave alan m² (istenen)
+    if(b.ilaveAlanTik && normalizeText(b.ilaveAlanM2)){
+      const m2 = fmtM2(b.ilaveAlanM2);
+      let ilaveCumle = `İlave alan ${m2} olarak beyan edilmiştir.`;
+      if(b.ilaveAlanNot) ilaveCumle += ` ${b.ilaveAlanNot}`;
+      parts.push(ilaveCumle);
+    }
+
+    // ruhsat (paragrafta 1 adet özet, detaylar altta)
+    if(b.ruhsatlar.length){
+      const r0 = b.ruhsatlar[0];
+      const tarih = r0.tarih ? formatDateTR(r0.tarih) : "Tarih belirtilmemiş";
+      const no = normalizeText(r0.no) || "No belirtilmemiş";
+      const amac = normalizeText(r0.amac) || "Yeni yapı yapı ruhsatı";
+      const kapsamTxt = (r0.kapsam === "kismi") ? "kısmi" : "binanın tamı için";
+      parts.push(`Yapı için; ${tarih} tarih ${no} sayılı ${kapsamTxt} düzenlenmiş ${amac} görülmüştür.`);
+    } else {
+      parts.push("Yapı ruhsatına ilişkin belge sunulmamıştır.");
+    }
+
+    // iskan + denetim
+    if(b.iskanVar === "evet"){
+      parts.push("Taşınmazın Yapı Kullanma İzin Belgesi (İskân) bulunmaktadır.");
+    } else {
+      parts.push("Taşınmazın Yapı Kullanma İzin Belgesi (İskân) bulunmamaktadır.");
+      if(b.denetimDevam === "evet"){
+        const firma = b.denetimFirma || "ilgili";
+        const oran = b.bitmislikOrani ? `%${b.bitmislikOrani}` : "%0";
+        parts.push(`Yapının yapı denetimi ${firma} şirketi tarafından yapı denetime devam edildiği, bitmişlik oranının ${oran} olduğu ilgili belediyesinden öğrenilmiştir.`);
+      }
+    }
+
+    // yıkım
+    if(b.yikimKarari === "evet"){
+      const det = b.yikimAciklamaInput || "Detay belirtilmemiştir.";
+      parts.push(`Belediye arşivinde olumsuz karar ve tespit tutanağı bulunduğu görülmüştür. ${det}`);
+    } else {
+      parts.push("Belediye arşivinde herhangi bir olumsuz karar ve tespit tutanağına rastlanmamıştır.");
+    }
+
+    // farklı parsel bilgisi (istersen paragrafta)
+    if(b.farkliParsel === "evet"){
+      const ada = b.arsivAda || "Belirtilmemiş";
+      const parsel = b.arsivParsel || "Belirtilmemiş";
+      parts.push(`Belgelerin farklı ada/parsel için düzenlendiği beyan edilmiştir (Arşiv: ${ada}/${parsel}).`);
+    }
+
+    const paragraf = parts.join(" ");
+
+    // 2) belge özetleri
+    const bullets = [];
+    b.ruhsatlar.forEach(r => bullets.push(ruhsatOzetSatiri(r)));
+    if(b.iskanVar === "evet") b.iskanlar.forEach(i => bullets.push(iskanOzetSatiri(i)));
+
+    // hiç belge yoksa
+    if(!bullets.length) bullets.push("Belge özeti bulunmamaktadır.");
+
+    const metin =
+`${paragraf}
+
+BELGE ÖZETLERİ:
+- ${bullets.join("\n- ")}`;
+
+    const taslakEl = document.getElementById('taslak');
+    taslakEl.textContent = metin;
+    taslakEl.style.display = 'block';
+
+    alert("Kaydedildi ve metin üretildi!");
   }
 
   function anaMenuyeDon() {
-    if(id !== null){
-      window.location.href = `rapor-detay.html?id=${id}`;
-    } else {
-      window.location.href = `rapor-detay.html`;
-    }
+    if(id !== null) window.location.href = `rapor-detay.html?id=${id}`;
+    else window.location.href = `rapor-detay.html`;
   }
 </script>
 
