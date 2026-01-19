@@ -5,12 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yeni Rapor Oluştur - RaporanX</title>
 
-  <!-- Firebase CDN (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
-  <!-- ✅ Eğer projende varsa kullan (index’te var) -->
   <script src="firebase-config.js"></script>
 
   <style>
@@ -58,51 +55,29 @@
       <label>Parsel</label>
       <input type="text" id="parsel" placeholder="Örn: 45">
 
-      <!-- ✅ Buton metni mod’a göre değişecek -->
       <button type="button" id="btnSave" onclick="raporKaydet()">YENİ RAPOR OLUŞTUR</button>
-
       <button type="button" class="referans-btn" onclick="referansAc()">REFERANS BİLGİLER AÇ</button>
       <button type="button" class="geri-btn" onclick="anaSayfayaDon()">ANA SAYFAYA DÖN</button>
     </form>
   </div>
 
   <script>
-    /* ==========
-      0) URL PARAMS (edit modu)
-    ========== */
     const urlParams = new URLSearchParams(window.location.search);
-    const mode = (urlParams.get('mode') || '').toLowerCase(); // 'edit' bekliyoruz
-    const editIdRaw = urlParams.get('id');
-    const isEditMode = (mode === 'edit' && editIdRaw !== null && editIdRaw !== '');
-    const editId = isEditMode ? Number(editIdRaw) : null;
+    const mode = (urlParams.get('mode') || '').toLowerCase();
+    const ridParam = urlParams.get('rid');
+    const idParam = urlParams.get('id'); // geri uyum
+    const isEditMode = (mode === 'edit');
 
     function safeText(v){ return (v ?? '').toString().trim(); }
 
-    /* ==========
-      1) Firebase Init (çakışmasın diye guard)
-      - index’te zaten firebase-config.js ile auth/db oluşturuyorsun.
-      - burada yoksa fallback config ile initialize.
-    ========== */
-    const fallbackConfig = {
-      apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
-      authDomain: "raporanx.firebaseapp.com",
-      projectId: "raporanx",
-      storageBucket: "raporanx.firebasestorage.app",
-      messagingSenderId: "715194328346",
-      appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-      measurementId: "G-V749P1HB80"
-    };
-
-    if (!firebase.apps.length) {
-      firebase.initializeApp(fallbackConfig);
+    function genRid(){
+      try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+      return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
     }
 
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    /* ==========
-      2) Auth kontrolü
-    ========== */
     auth.onAuthStateChanged((user) => {
       if (!user) {
         alert("⚠️ Giriş yetkisi yok! Lütfen giriş yapın.");
@@ -110,10 +85,9 @@
         return;
       }
 
-      // ✅ Edit moduysa formu doldur
       if (isEditMode) {
         setupEditUI();
-        loadReportToForm(editId);
+        loadForEdit();
       }
     });
 
@@ -123,34 +97,42 @@
       document.getElementById('btnSave').textContent = "RAPORU GÜNCELLE";
     }
 
-    /* ==========
-      3) Buluta yedekleme (local -> firestore)
-    ========== */
-    async function bulutaGonder() {
-      const user = auth.currentUser;
-      if (user) {
-        const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-        await db.collection("users").doc(user.uid).set({
-          gayrimenkul_reports: reports,
-          lastUpdate: new Date().toISOString()
-        }, { merge: true });
-        console.log("Buluta yedeklendi ✅");
-      }
+    function getReports(){
+      const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+      // rid migrasyon
+      let changed = false;
+      arr.forEach(r => { if (r && !r.rid) { r.rid = genRid(); changed = true; } });
+      if (changed) localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+      return arr;
     }
 
-    /* ==========
-      4) Edit modu: raporu form alanlarına doldur
-    ========== */
-    function loadReportToForm(id){
-      const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-      const r = reports[id];
+    function findIndexByRid(reports, rid){
+      return (reports || []).findIndex(r => r && r.rid === rid);
+    }
 
-      if (!r) {
-        alert("⚠️ Düzenlenecek rapor bulunamadı! (ID: " + id + ")");
+    function loadForEdit(){
+      const reports = getReports();
+
+      let rid = ridParam;
+      if (!rid && idParam !== null && idParam !== '') {
+        const idx = Number(idParam);
+        if (!Number.isNaN(idx) && reports[idx] && reports[idx].rid) rid = reports[idx].rid;
+      }
+
+      if (!rid) {
+        alert("⚠️ Düzenleme için rid bulunamadı!");
         window.location.href = "index.html";
         return;
       }
 
+      const idx = findIndexByRid(reports, rid);
+      if (idx < 0) {
+        alert("⚠️ Düzenlenecek rapor bulunamadı!");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const r = reports[idx];
       document.getElementById('propertyName').value = r.propertyName || "";
       document.getElementById('il').value = r.il || "";
       document.getElementById('ilce').value = r.ilce || "";
@@ -159,28 +141,37 @@
       document.getElementById('parsel').value = r.parsel || "";
     }
 
-    /* ==========
-      5) KAYDET (Yeni oluştur / Güncelle)
-    ========== */
+    async function bulutaGonder() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+      await db.collection("users").doc(user.uid).set({
+        gayrimenkul_reports: reports,
+        lastUpdate: new Date().toISOString()
+      }, { merge: true });
+    }
+
     async function raporKaydet() {
-      // Zorunlu alan kontrolü
       if (!safeText(document.getElementById('propertyName').value) || !safeText(document.getElementById('il').value)) {
         alert("Gayrimenkul Adı ve İl zorunlu!");
         return;
       }
 
-      let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+      let reports = getReports();
 
       if (isEditMode) {
-        // === GÜNCELLEME ===
-        const existing = reports[editId];
-        if (!existing) {
-          alert("⚠️ Güncellenecek rapor bulunamadı!");
-          window.location.href = "index.html";
-          return;
+        let rid = ridParam;
+        if (!rid && idParam !== null && idParam !== '') {
+          const idx0 = Number(idParam);
+          if (!Number.isNaN(idx0) && reports[idx0] && reports[idx0].rid) rid = reports[idx0].rid;
         }
+        if (!rid) { alert("RID bulunamadı!"); return; }
 
-        // Sadece üst bilgileri güncelle, diğer modülleri ASLA silme
+        const idx = findIndexByRid(reports, rid);
+        if (idx < 0) { alert("Güncellenecek rapor bulunamadı!"); return; }
+
+        const existing = reports[idx];
+
         existing.propertyName = safeText(document.getElementById('propertyName').value) || existing.propertyName || "İsimsiz Gayrimenkul";
         existing.il = safeText(document.getElementById('il').value);
         existing.ilce = safeText(document.getElementById('ilce').value);
@@ -188,22 +179,22 @@
         existing.ada = safeText(document.getElementById('ada').value);
         existing.parsel = safeText(document.getElementById('parsel').value);
 
-        // createdAt korunur, updatedAt eklenir
         existing.createdAt = existing.createdAt || new Date().toLocaleString('tr-TR');
         existing.updatedAt = new Date().toLocaleString('tr-TR');
+        existing.rid = existing.rid || rid || genRid();
 
-        reports[editId] = existing;
+        reports[idx] = existing;
         localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
         await bulutaGonder();
 
         alert("✅ Rapor güncellendi ve buluta yedeklendi!");
-        window.location.href = "rapor-detay.html?id=" + editId;
+        window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(existing.rid);
         return;
       }
 
-      // === YENİ RAPOR ===
+      // yeni rapor
       const report = {
+        rid: genRid(),
         propertyName: safeText(document.getElementById('propertyName').value) || "İsimsiz Gayrimenkul",
         il: safeText(document.getElementById('il').value),
         ilce: safeText(document.getElementById('ilce').value),
@@ -212,7 +203,6 @@
         parsel: safeText(document.getElementById('parsel').value),
         createdAt: new Date().toLocaleString('tr-TR'),
 
-        // mevcut modül alanları (boş şablon)
         bina: {},
         bbDetay: {},
         emsaller: [],
@@ -224,13 +214,10 @@
 
       reports.push(report);
       localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-      const newId = reports.length - 1;
-
       await bulutaGonder();
 
       alert("✅ Rapor oluşturuldu ve buluta yedeklendi!");
-      window.location.href = "rapor-detay.html?id=" + newId;
+      window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(report.rid);
     }
 
     function referansAc() { window.open('referans-bilgiler.html', '_blank'); }
