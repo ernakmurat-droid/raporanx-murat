@@ -1,119 +1,194 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Kat Detayları - Raporan X</title>
-    <style>
-        :root { --primary: #4a148c; --accent: #7c4dff; --success: #2e7d32; --bg: #f5f7fa; --danger: #c62828; --warning: #ff9800; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin:0; padding-bottom:140px; color: #333; }
-        .header { background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; font-size: 14px; cursor: pointer; border: none; }
-        .container { max-width:800px; margin:20px auto; padding:0 15px; }
-        .preview-card { background:#e8f5e9; padding:20px; border-radius:12px; margin-bottom:20px; border:2px solid #4caf50; user-select: none; }
-        #taslakMetin { font-size:15px; line-height:1.6; color: #1b5e20; font-weight: 500; transition: filter 0.3s ease; }
-        #taslakMetin:not(:hover) { filter: blur(2px); }
-        .onlu-grup { border-radius: 12px; margin-bottom: 15px; overflow: hidden; border: 1px solid #ddd; background: #fff; }
-        .grup-header { padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; color: #fff; }
-        .kat-grup { background:white; margin-bottom:10px; border-radius:8px; border:1px solid #eee; }
-        .kat-header { padding:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
-        .kat-header.completed { background:#f1f8e9; border-left: 5px solid var(--success); }
-        .kat-content { padding:15px; background:#fafafa; border-top: 1px solid #eee; }
-        .hidden { display:none !important; }
-        .entry-row { display:flex; gap:8px; align-items:center; background:white; padding:10px; border:1px solid #eee; margin-bottom:8px; border-radius:6px; }
-        .logic-box { background:#fff3e0; padding:12px; border-radius:8px; border:1px dashed var(--warning); margin-top:10px; }
-        .footer { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:800px; padding:20px; background: var(--bg); border-top: 1px solid #ddd; z-index: 1001; }
-        .save-btn { background: var(--success); color:white; padding:18px; width:100%; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; }
-    </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <title>Kat Detayları - Raporan X</title>
+  <style>
+    :root { --primary:#4a148c; --accent:#7c4dff; --success:#2e7d32; --bg:#f5f7fa; --danger:#c62828; --warning:#ff9800; }
+    body { font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); margin:0; padding-bottom:140px; color:#333; }
+    .header { background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,0.2); }
+    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; font-size:14px; cursor:pointer; border:none; }
+    .container { max-width:800px; margin:20px auto; padding:0 15px; }
+    .preview-card { background:#e8f5e9; padding:20px; border-radius:12px; margin-bottom:20px; border:2px solid #4caf50; user-select:none; }
+    #taslakMetin { font-size:15px; line-height:1.6; color:#1b5e20; font-weight:500; transition: filter 0.3s ease; }
+    #taslakMetin:not(:hover) { filter: blur(2px); }
+    .onlu-grup { border-radius:12px; margin-bottom:15px; overflow:hidden; border:1px solid #ddd; background:#fff; }
+    .grup-header { padding:12px 15px; cursor:pointer; font-weight:bold; display:flex; justify-content:space-between; color:#fff; }
+    .kat-grup { background:white; margin-bottom:10px; border-radius:8px; border:1px solid #eee; }
+    .kat-header { padding:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+    .kat-header.completed { background:#f1f8e9; border-left:5px solid var(--success); }
+    .kat-content { padding:15px; background:#fafafa; border-top:1px solid #eee; }
+    .hidden { display:none !important; }
+    .entry-row { display:flex; gap:8px; align-items:center; background:white; padding:10px; border:1px solid #eee; margin-bottom:8px; border-radius:6px; }
+    .logic-box { background:#fff3e0; padding:12px; border-radius:8px; border:1px dashed var(--warning); margin-top:10px; }
+    .footer { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:800px; padding:20px; background:var(--bg); border-top:1px solid #ddd; z-index:1001; }
+    .save-btn { background:var(--success); color:white; padding:18px; width:100%; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; }
+  </style>
 </head>
-<body>
 
-<div class="header">
-    <button onclick="window.location.href='bina.html?id=' + id" class="back">← Bina Sayfasına Dön</button>
+<body oncontextmenu="return false;">
+  <div class="header">
+    <button onclick="binaSayfasinaDon()" class="back">← Bina Sayfasına Dön</button>
     <h1>BİNA KAT DETAYLARI</h1>
-</div>
+  </div>
 
-<div class="container">
+  <div class="container">
     <div class="preview-card">
-        <h4>OTOMATİK ANALİZ METNİ</h4>
-        <div id="taslakMetin">Yükleniyor...</div>
+      <h4>OTOMATİK ANALİZ METNİ</h4>
+      <div id="taslakMetin">Yükleniyor...</div>
     </div>
+
     <div id="katListesi"></div>
+
     <div class="footer">
-        <button class="save-btn" onclick="tumunuKaydet()">ANALİZİ BİTİR VE BULUTA MÜHÜRLE</button>
+      <button class="save-btn" onclick="tumunuKaydet()">ANALİZİ BİTİR VE BULUTA MÜHÜRLE</button>
     </div>
-</div>
+  </div>
 
 <script>
-    // 2. ADIM: GÜVENLİK VE VERİ ÇEKME
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-    let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    let report = reports[id];
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-    auth.onAuthStateChanged((user) => {
-        if (!user || !id || !report) {
-            window.location.href = 'index.html';
-        } else {
-            init();
-        }
-    });
+  /* ========= RID + legacy id desteği ========= */
+  const urlParams = new URLSearchParams(window.location.search);
+  let rid = urlParams.get('rid');
+  const legacyId = urlParams.get('id');
 
-    let globalKatlar = [];
-    const savedKatVerileri = report.katSatirVerileri || {};
+  function genRid(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
+  function ensureRidMigration(arr){
+    let changed = false;
+    (arr || []).forEach(r => { if (r && !r.rid) { r.rid = genRid(); changed = true; }});
+    return changed;
+  }
+  function findIndexByRid(arr, rid){
+    return (arr || []).findIndex(r => r && r.rid === rid);
+  }
 
-    function init() {
-        const listContainer = document.getElementById('katListesi');
-        const bodrumCount = parseInt(report.bina?.bodrumKatSayisi) || 0;
-        const normalCount = parseInt(report.bina?.normalKatSayisi) || 0;
+  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-        for (let i = bodrumCount; i >= 1; i--) globalKatlar.push({ id: `b${i}`, ad: `${i}. Bodrum Kat` });
-        globalKatlar.push({ id: 'zemin', ad: 'Zemin Kat' });
-        for (let i = 1; i <= normalCount; i++) globalKatlar.push({ id: `n${i}`, ad: `${i}. Normal Kat` });
-
-        // Kat listesini ve grupları oluşturan orijinal döngülerin...
-        // (Kodun bu kısmı orijinal dosyadaki init fonksiyonun aynısıdır)
-        // ...
-        renderPreview();
+  // eski id linki geldiyse rid'e çevir
+  if (!rid && legacyId !== null && legacyId !== "") {
+    const idxLegacy = Number(legacyId);
+    if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
+      rid = reports[idxLegacy].rid;
+      window.location.replace("kat-detay.html?rid=" + encodeURIComponent(rid));
     }
+  }
 
-    // Kat ekleme, silme ve mantık (Logic) fonksiyonlarının orijinal hali...
-    function renderPreview() {
-        // Senin yazdığın o muazzam cümle kurma algoritması burada çalışmaya devam ediyor.
-        // ...
+  const idx = rid ? findIndexByRid(reports, rid) : -1;
+  let report = (idx >= 0) ? (reports[idx] || {}) : null;
+
+  function getLatestData(){
+    const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+    const i = rid ? findIndexByRid(arr, rid) : -1;
+    const r = (i >= 0) ? (arr[i] || {}) : null;
+    return { reports: arr, report: r, idx: i };
+  }
+
+  function binaSayfasinaDon(){
+    // kaydetmeden dönmek isterse
+    window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
+  }
+
+  // inputlarda sağ tık serbest, diğer alanlarda engel
+  document.addEventListener('contextmenu', (e) => {
+    const isInput = e.target.closest('input, textarea, select');
+    if (isInput) return;
+    e.preventDefault();
+  });
+
+  auth.onAuthStateChanged((user) => {
+    if (!user || !rid || !report) {
+      window.location.href = 'index.html';
+      return;
     }
+    init();
+  });
 
-    async function tumunuKaydet() {
-        const data = renderPreview();
-        if(!report.bina) report.bina = {};
-        
-        report.katDetayMetni = data.katDetayMetni;
-        report.bina.toplamBagimsizBolum = data.toplamBB;
-        report.katSatirVerileri = data.tumSatirVerileri;
-        
-        reports[id] = report;
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+  let globalKatlar = [];
+  const savedKatVerileri = (report && report.katSatirVerileri) ? report.katSatirVerileri : {};
 
-        // 3. ADIM: BULUT SENKRONİZASYONU
-        const user = auth.currentUser;
-        if (user) {
-            try {
-                await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
-                alert("✅ Kat detayları buluta mühürlendi!");
-                window.location.href = `bina.html?id=${id}`;
-            } catch (e) {
-                alert("Hata: " + e.message);
-            }
-        }
+  function init() {
+    const listContainer = document.getElementById('katListesi');
+    globalKatlar = [];
+
+    const bodrumCount = parseInt(report?.bina?.bodrumKatSayisi) || 0;
+    const normalCount = parseInt(report?.bina?.normalKatSayisi) || 0;
+
+    for (let i = bodrumCount; i >= 1; i--) globalKatlar.push({ id: `b${i}`, ad: `${i}. Bodrum Kat` });
+    globalKatlar.push({ id: 'zemin', ad: 'Zemin Kat' });
+    for (let i = 1; i <= normalCount; i++) globalKatlar.push({ id: `n${i}`, ad: `${i}. Normal Kat` });
+
+    // ✅ Burada SENİN orijinal kat/grup render döngülerin çalışacak:
+    // - onlu gruplar
+    // - kat başlıkları
+    // - satır ekleme/silme
+    // - savedKatVerileri ile yükleme
+    //
+    // listContainer.innerHTML = ...
+    // ...
+
+    renderPreview();
+  }
+
+  // ✅ renderPreview SENİN orijinal “muazzam cümle kurma” fonksiyonun
+  function renderPreview() {
+    // ... (orijinal renderPreview kodun)
+    //
+    // return {
+    //   katDetayMetni,
+    //   toplamBB,
+    //   tumSatirVerileri
+    // }
+  }
+
+  async function tumunuKaydet() {
+    const { reports: allReports, report: r, idx: i } = getLatestData();
+    if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
+
+    const data = renderPreview();
+    if(!r.bina) r.bina = {};
+
+    r.katDetayMetni = data.katDetayMetni;
+    r.bina.toplamBagimsizBolum = data.toplamBB;
+    r.katSatirVerileri = data.tumSatirVerileri;
+
+    // geriye dönük uyum
+    r.bina = r.bina || {};
+    r.bina.toplamBagimsizBolum = data.toplamBB;
+
+    allReports[i] = r;
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
+
+    // buluta bas
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await db.collection("users").doc(user.uid).set({
+          gayrimenkul_reports: allReports,
+          lastUpdate: new Date().toISOString()
+        }, { merge: true });
+
+        alert("✅ Kat detayları buluta mühürlendi!");
+        window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
+      } catch (e) {
+        alert("Hata: " + e.message);
+      }
     }
-    
-    // Orijinal yardımcı fonksiyonların (toggleKat, satirEkle vb.) hepsi burada yer alacak.
+  }
+
+  // ✅ Orijinal yardımcı fonksiyonların (toggleKat, satirEkle vb.) burada olacak.
 </script>
 </body>
 </html>
