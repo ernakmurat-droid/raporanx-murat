@@ -112,7 +112,6 @@
   // ctrl+c engelini kaldırıyoruz (inputlarda kopyala yapıştır serbest)
   // sadece taslak metin korunuyor (oncopy=false)
   document.addEventListener('keydown', function(e) {
-    // İstersen sadece print/save/view-source engelle:
     if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) { e.preventDefault(); }
   });
 
@@ -226,11 +225,20 @@
   function toggleKat(id) { document.getElementById(`content-${id}`).classList.toggle('hidden'); }
   function toggleLogicPanel(id, cb) { document.getElementById(`panel-${id}`).classList.toggle('hidden', !cb.checked); }
 
+  /* ============================================================
+     SATIR EKLE - DÜZELTİLDİ:
+     - qty default: 0 (boş satır BB şişirmesin)
+     - min=0
+  ============================================================ */
   function satirEkle(katId, data = null) {
     const container = document.getElementById(`rows-${katId}`);
     const rowId = Math.random().toString(36).substr(2, 5);
     const div = document.createElement('div');
     div.className = 'entry-row';
+
+    const safeDesc = (data?.desc || '').replace(/"/g,'&quot;');
+    const safeQty = (data?.qty ?? 0);
+
     div.innerHTML = `
       <label style="display:flex; align-items:center; gap:6px;">
         <input type="radio" name="tip_${katId}_${rowId}" value="B.B." ${(!data || data.tip === 'B.B.') ? 'checked' : ''} onchange="renderPreview()"> B.B.
@@ -238,8 +246,14 @@
       <label style="display:flex; align-items:center; gap:6px;">
         <input type="radio" name="tip_${katId}_${rowId}" value="Ortak" ${(data?.tip === 'Ortak') ? 'checked' : ''} onchange="renderPreview()"> Ortak
       </label>
-      <input type="number" class="qty" value="${data?.qty ?? 1}" style="width:60px" oninput="renderPreview()">
-      <input type="text" class="desc" value="${(data?.desc || '').replace(/"/g,'&quot;')}" placeholder="Cins" style="flex:1" oninput="renderPreview()">
+
+      <input type="number" class="qty" value="${safeQty}" min="0" step="1"
+        style="width:60px"
+        oninput="if(this.value==='') this.value=0; if(Number(this.value)<0) this.value=0; renderPreview()">
+
+      <input type="text" class="desc" value="${safeDesc}" placeholder="Cins"
+        style="flex:1" oninput="renderPreview()">
+
       <button class="btn-remove" type="button" onclick="this.parentElement.remove(); renderPreview();">X</button>
     `;
     container.appendChild(div);
@@ -252,8 +266,8 @@
 
     const kopyalanacaklar = Array.from(rows).map(r => ({
       tip: r.querySelector('input:checked').value,
-      qty: r.querySelector('.qty').value,
-      desc: r.querySelector('.desc').value
+      qty: Math.max(0, parseInt(r.querySelector('.qty').value, 10) || 0),
+      desc: (r.querySelector('.desc').value || "").trim()
     }));
 
     const isLast = document.getElementById(`last-${kaynakId}`).checked;
@@ -282,6 +296,11 @@
     renderPreview();
   }
 
+  /* ============================================================
+     PREVIEW + BAĞIMSIZ BÖLÜM HESABI - DÜZELTİLDİ:
+     - toplamBB sadece (desc dolu AND qty>0 AND tip==B.B.) ise artar
+     - boş satırlar metne girmez, BB saymaz
+  ============================================================ */
   function renderPreview() {
     let gruplanmisKatlar = [];
     let toplamBB = 0;
@@ -294,11 +313,12 @@
 
       rows.forEach(r => {
         const tip = r.querySelector('input:checked').value;
-        const qty = parseInt(r.querySelector('.qty').value) || 0;
-        const desc = r.querySelector('.desc').value || "";
+        const qty = Math.max(0, parseInt(r.querySelector('.qty').value, 10) || 0);
+        const desc = (r.querySelector('.desc').value || "").trim();
+
         katSatirlari.push({ tip, qty, desc });
 
-        if(desc || qty > 0) {
+        if (desc && qty > 0) {
           icerikList.push(`${qty} ${desc}`.trim());
           if (tip === "B.B.") toplamBB += qty;
         }
@@ -387,8 +407,7 @@
 
   // Sayfa ilk açılış
   window.onload = function(){
-    // auth bekleniyor; auth yoksa init() çalıştırmayacağız
-    // auth callback içinde init() var
+    // auth bekleniyor; auth callback içinde init() var
   };
 </script>
 </body>
