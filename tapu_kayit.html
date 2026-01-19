@@ -15,23 +15,29 @@
   <style>
     body { background-color: #f8f9fa; padding: 25px; font-family: 'Segoe UI', sans-serif; }
     .card { border-radius: 15px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 30px; }
-    .result-body {
-      background: white; border: 2px solid #dee2e6; padding: 20px; border-radius: 10px;
-      white-space: pre-wrap; font-size: 13px; margin-bottom: 25px;
-      filter: blur(2.5px); transition: 0.3s; cursor: text; line-height: 1.6;
-      -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+
+    .result-body{
+      background:white; border:2px solid #dee2e6; padding:20px; border-radius:10px;
+      white-space:pre-wrap; font-size:13px; margin-bottom:25px;
+      filter: blur(2.5px); transition:.3s; cursor:text; line-height:1.6;
+      -webkit-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none;
     }
-    .result-body:hover { filter: blur(0); }
-    .engel-evet { background-color: #fff0f0 !important; }
-    .btn-geri { background: #d32f2f; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
-    .btn-save-final { background: #198754; color: white; padding: 20px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; transition: 0.3s; box-shadow: 0 4px 15px rgba(25, 135, 84, 0.3); border: none; width: 100%; margin-top: 30px; }
-    .save-status { display: none; color: #198754; font-weight: bold; margin-top: 10px; text-align: center; border: 1px solid #198754; padding: 10px; border-radius: 8px; background: #e8f5e9; }
-    .format-label { font-weight: bold; color: #4a148c; margin-bottom: 5px; display: block; text-decoration: underline; }
+    .result-body:hover{ filter: blur(0); }
+
+    .engel-evet{ background-color:#fff0f0 !important; }
+    .btn-geri{ background:#d32f2f; color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:bold; cursor:pointer; }
+    .btn-save-final{ background:#198754; color:white; padding:20px; font-size:1.2rem; font-weight:bold; border-radius:12px; box-shadow:0 4px 15px rgba(25,135,84,.3); border:none; width:100%; margin-top:30px; }
+    .save-status{ display:none; color:#198754; font-weight:bold; margin-top:10px; text-align:center; border:1px solid #198754; padding:10px; border-radius:8px; background:#e8f5e9; }
+
+    .format-label{ font-weight:bold; color:#4a148c; margin-bottom:5px; display:block; text-decoration:underline; }
+    .engel-aciklama{ margin-top:6px; display:none; }
+    .engel-aciklama input{ font-size: 12.5px; }
   </style>
 </head>
 
 <body>
 <div class="container-fluid">
+
   <div class="card p-4">
     <div class="mb-3">
       <button onclick="anaMenuyeDon()" class="btn-geri">← ANA MENÜYE DÖN</button>
@@ -87,7 +93,6 @@
     <div id="saveStatus" class="save-status">✅ Kaydedildi ve Buluta Senkronize Edildi!</div>
   </div>
 
-  <!-- ✅ Tek Metin -->
   <span class="format-label">📄 TEK METİN (B1 + B2)</span>
   <div class="result-body" id="tek_sonuc" oncopy="return false"></div>
 
@@ -123,7 +128,7 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // legacy id -> rid (geriye dönük uyum)
+  // legacy id -> rid
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -136,21 +141,17 @@
   let report = (idx >= 0) ? (reports[idx] || {}) : null;
 
   auth.onAuthStateChanged((user) => {
-    if (!user || !rid || !report) {
-      window.location.href = 'index.html';
-      return;
-    }
+    if (!user || !rid || !report) { window.location.href = 'index.html'; return; }
     initFromReport();
   });
 
   /* ========= Kopyala/Yapıştır Serbest (Inputlarda) ========= */
   document.addEventListener('contextmenu', (e) => {
     const isInput = e.target.closest('input, textarea, select');
-    if (isInput) return;      // form alanlarında serbest
-    e.preventDefault();       // diğer yerlerde engel (metin koruma)
+    if (isInput) return;
+    e.preventDefault();
   });
 
-  /* ========= Buluta gönder ========= */
   async function bulutaGonder() {
     const user = auth.currentUser;
     if (user) {
@@ -162,24 +163,62 @@
     }
   }
 
-  /* ========= Takyidat / Malik ========= */
-  function takyidatEkle(v1='', v2='', v3='', v4='', v5='hayir') {
+  function escapeHtml(str){
+    return (str ?? "").toString()
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  /* ========= Takyidat Satırı =========
+     Engel?=Evet seçilince AÇIKLAMA alanı açılır ve kayda dahil edilir
+  */
+  function takyidatEkle(tur='', acik='', tar='', say='', engel='hayir', engelAciklama='') {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="text" class="form-control t-tur" value="${escapeHtml(v1)}" oninput="guncelle()"></td>
-      <td><input type="text" class="form-control t-acik" value="${escapeHtml(v2)}" oninput="guncelle()"></td>
-      <td><input type="text" class="form-control t-tar" value="${escapeHtml(v3)}" placeholder="GG.AA.YYYY" oninput="guncelle()"></td>
-      <td><input type="text" class="form-control t-say" value="${escapeHtml(v4)}" oninput="guncelle()"></td>
       <td>
-        <select class="form-select t-engel" onchange="renkGuncelle(this); guncelle();">
-          <option value="hayir" ${v5=='hayir'?'selected':''}>Hayır</option>
-          <option value="evet" ${v5=='evet'?'selected':''}>Evet</option>
+        <input type="text" class="form-control t-tur" value="${escapeHtml(tur)}" oninput="guncelle()">
+      </td>
+
+      <td>
+        <input type="text" class="form-control t-acik" value="${escapeHtml(acik)}" oninput="guncelle()">
+        <div class="engel-aciklama">
+          <input type="text" class="form-control t-engel-acik" placeholder="Engel açıklaması (kısa not)..." value="${escapeHtml(engelAciklama)}" oninput="guncelle()">
+        </div>
+      </td>
+
+      <td><input type="text" class="form-control t-tar" value="${escapeHtml(tar)}" placeholder="GG.AA.YYYY" oninput="guncelle()"></td>
+      <td><input type="text" class="form-control t-say" value="${escapeHtml(say)}" oninput="guncelle()"></td>
+
+      <td>
+        <select class="form-select t-engel">
+          <option value="hayir" ${engel==='hayir'?'selected':''}>Hayır</option>
+          <option value="evet" ${engel==='evet'?'selected':''}>Evet</option>
         </select>
       </td>
-      <td><button class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); guncelle()">X</button></td>
+
+      <td>
+        <button class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); guncelle()">X</button>
+      </td>
     `;
+
     document.getElementById('tabloGövde').appendChild(tr);
-    renkGuncelle(tr.querySelector('select'));
+
+    const sel = tr.querySelector('.t-engel');
+    sel.addEventListener('change', () => { toggleEngelUI(tr); guncelle(); });
+
+    toggleEngelUI(tr);
+    guncelle();
+  }
+
+  function toggleEngelUI(tr){
+    const sel = tr.querySelector('.t-engel');
+    const box = tr.querySelector('.engel-aciklama');
+    const isEvet = sel.value === 'evet';
+
+    tr.classList.toggle('engel-evet', isEvet);
+    box.style.display = isEvet ? 'block' : 'none';
+
+    // evet değilse açıklamayı temizlemeyelim; kullanıcı fikrini değiştirirse geri gelsin
   }
 
   function malikEkle(ad='', pay='') {
@@ -191,6 +230,7 @@
     `;
     document.getElementById('malikGövde').appendChild(tr);
     payHesapla();
+    guncelle();
   }
 
   function payHesapla() {
@@ -198,28 +238,14 @@
     rows.forEach(row => { row.querySelector('.m-pay').value = `1/${rows.length || 1}`; });
   }
 
-  function renkGuncelle(s) {
-    if (!s) return;
-    s.closest('tr').classList.toggle('engel-evet', s.value === 'evet');
-  }
-
-  function escapeHtml(str){
-    return (str ?? "").toString()
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  /* ========= Metin üretim (B1, B2, TEK) ========= */
+  /* ========= Metin üretim ========= */
   function guncelle() {
     const tVal = document.getElementById('tarihInput').value;
     const tarihTakbis = tVal ? tVal.split('-').reverse().join('.') : "....";
     const saatTakbis = document.getElementById('saatInput').value || "....";
 
-    let hayirlar = [];
-    let evetler = [];
+    const satisEngelOlmayan = [];
+    const satisEngelOlabilecek = [];
 
     document.querySelectorAll('#tabloGövde tr').forEach(row => {
       const tur = row.querySelector('.t-tur').value.trim();
@@ -227,12 +253,16 @@
       const tar = row.querySelector('.t-tar').value.trim();
       const say = row.querySelector('.t-say').value.trim();
       const engelMi = row.querySelector('.t-engel').value;
+      const engelAcik = row.querySelector('.t-engel-acik') ? row.querySelector('.t-engel-acik').value.trim() : "";
 
       if(tur || acik) {
         let detay = `${tur} ${acik}`.trim();
         if(tar) detay += ` Tarih: ${tar}`;
         if(say) detay += ` Sayı: ${say}`;
-        if(engelMi === 'evet') evetler.push(detay); else hayirlar.push(detay);
+        if(engelMi === 'evet' && engelAcik) detay += ` (Engel Açıklaması: ${engelAcik})`;
+
+        if(engelMi === 'evet') satisEngelOlabilecek.push(detay);
+        else satisEngelOlmayan.push(detay);
       }
     });
 
@@ -242,38 +272,40 @@
       if(ad) malikMetni += `- ${ad} (Hisse: ${row.querySelector('.m-pay').value})\n`;
     });
 
-    // B1
-    let b1 = `YASAL KISITLAMALAR (Şerh, Rehin, Beyan, İpotek, Haciz ve Diğer Haklar)\n\n` +
-      `TKGM Portal Takbis Sisteminden Takbis Tarihi: ${tarihTakbis} tarihinde İnceleme Saati: ${saatTakbis} itibariyle yapılan incelemede konu taşınmazın tapu kaydı üzerinde aşağıdaki bilgilere ulaşılmıştır:\n\n`;
+    // ✅ B1 (AYRIMLI)
+    let b1 =
+`YASAL KISITLAMALAR (Şerh, Rehin, Beyan, İpotek, Haciz ve Diğer Haklar)
 
-    b1 += (hayirlar.length > 0 ? hayirlar.join(", ") : "Herhangi bir takyidat bulunmamaktadır.") + ".\n\n";
+TKGM Portal Takbis Sisteminden Takbis Tarihi: ${tarihTakbis} tarihinde İnceleme Saati: ${saatTakbis} itibariyle yapılan incelemede konu taşınmazın tapu kaydı üzerinde aşağıdaki bilgilere ulaşılmıştır:
 
-    // ✅ Satışa engel cümlesi KOŞULLU
-    if (evetler.length > 0) {
-      b1 += "Taşınmaz üzerinde 'Engel? = Evet' işaretlenen takyidatlar satışa engel teşkil edebilir; kesin değerlendirme banka/hukuk birimi tarafından yapılmalıdır.";
-      b1 += `\n\nSATIŞA ENGEL TEŞKİL EDEBİLECEK KAYITLAR:\n- ${evetler.join("\n- ")}`;
-    } else {
-      b1 += "Taşınmaz üzerinde satışa engel teşkil eden bir takyidat kaydına rastlanmadığı anlaşılmıştır.";
-    }
+SATIŞA ENGEL OLMAYAN TAKYİDATLAR:
+${satisEngelOlmayan.length ? "- " + satisEngelOlmayan.join("\n- ") : "Herhangi bir kayıt bulunmamaktadır."}
 
-    b1 += `\n\nMALİK BİLGİLERİ:\n${malikMetni || "Girilmedi."}`;
+SATIŞA ENGEL TEŞKİL EDEBİLECEK TAKYİDATLAR (Engel?=Evet):
+${satisEngelOlabilecek.length ? "- " + satisEngelOlabilecek.join("\n- ") : "Engel?=Evet olarak işaretlenen kayıt bulunmamaktadır."}
 
-    // B2
-    let b2 = `TAPU KAYIT VE TAKYİDAT ANALİZİ\n\n` +
-      `Takbis Tarihi: ${tarihTakbis} / İnceleme Saati: ${saatTakbis}\n\n`;
+Not: 'Engel?=Evet' seçilen kayıtlar satışa engel teşkil edebilir; nihai değerlendirme banka/hukuk birimi tarafından yapılmalıdır.
 
-    b2 += `MEVCUT TAKYİDATLAR:\n${hayirlar.map(h => "• " + h).join("\n") || "- Kayıt Yok"}\n\n`;
+MALİK BİLGİLERİ:
+${malikMetni || "Girilmedi."}`;
 
-    if(evetler.length > 0) {
-      b2 += `ENGEL TEŞKİL EDEBİLECEK KAYITLAR (Engel?=Evet):\n${evetler.map(e => "• " + e).join("\n")}\n\n`;
-      b2 += "Not: 'Engel?=Evet' seçilen kayıtlar satışa engel teşkil edebilir; nihai karar banka/hukuk değerlendirmesine bağlıdır.\n\n";
-    } else {
-      b2 += "ENGEL TEŞKİL EDEN KAYIT: Yok.\n\n";
-    }
+    // ✅ B2 (AYRIMLI)
+    let b2 =
+`TAPU KAYIT VE TAKYİDAT ANALİZİ
 
-    b2 += `MÜLKİYET YAPISI:\n${malikMetni || "- Bilgi Yok"}`;
+Takbis Tarihi: ${tarihTakbis} / İnceleme Saati: ${saatTakbis}
 
-    // ✅ TEK METİN (B1 + B2)
+SATIŞA ENGEL OLMAYAN TAKYİDATLAR:
+${satisEngelOlmayan.length ? satisEngelOlmayan.map(x => "• " + x).join("\n") : "- Kayıt Yok"}
+
+SATIŞA ENGEL TEŞKİL EDEBİLECEK TAKYİDATLAR (Engel?=Evet):
+${satisEngelOlabilecek.length ? satisEngelOlabilecek.map(x => "• " + x).join("\n") : "- Yok"}
+
+Not: 'Engel?=Evet' seçilen kayıtlar satışa engel teşkil edebilir; nihai karar banka/hukuk değerlendirmesine bağlıdır.
+
+MÜLKİYET YAPISI:
+${malikMetni || "- Bilgi Yok"}`;
+
     const tek = b1 + "\n\n----------------------------------------\n\n" + b2;
 
     document.getElementById('b1_sonuc').innerText = b1;
@@ -283,7 +315,6 @@
     return { b1, b2, tek };
   }
 
-  /* ========= Kaydet ========= */
   async function kaydet() {
     const metinler = guncelle();
 
@@ -296,10 +327,11 @@
       const tar = row.querySelector('.t-tar').value.trim();
       const say = row.querySelector('.t-say').value.trim();
       const engel = row.querySelector('.t-engel').value;
+      const engelAciklama = row.querySelector('.t-engel-acik') ? row.querySelector('.t-engel-acik').value.trim() : "";
 
       if((tur + acik).trim().length > 1) takyidatVar = true;
 
-      takyidatData.push({ tur, acik, tar, say, engel });
+      takyidatData.push({ tur, acik, tar, say, engel, engelAciklama });
     });
 
     let malikData = [];
@@ -308,9 +340,7 @@
     document.querySelectorAll('#malikGövde tr').forEach(row => {
       const ad = row.querySelector('.m-ad').value.trim();
       const pay = row.querySelector('.m-pay').value;
-
       if(ad.length > 1) malikVar = true;
-
       malikData.push({ ad, pay });
     });
 
@@ -328,14 +358,9 @@
       tapuSaat: saat,
       tapuTakyidatDizi: takyidatData,
       tapuMalikDizi: malikData,
-
-      // eski alanlar dursun
       tapuMetniB1: metinler.b1,
       tapuMetniB2: metinler.b2,
-
-      // ✅ tek metin alanı
       tapuMetniTek: metinler.tek,
-
       tapu_tamamlandi: !eksik
     };
 
@@ -358,7 +383,7 @@
     // takyidat
     document.getElementById('tabloGövde').innerHTML = "";
     if(report.tapuTakyidatDizi && report.tapuTakyidatDizi.length > 0) {
-      report.tapuTakyidatDizi.forEach(d => takyidatEkle(d.tur, d.acik, d.tar, d.say, d.engel));
+      report.tapuTakyidatDizi.forEach(d => takyidatEkle(d.tur, d.acik, d.tar, d.say, d.engel, d.engelAciklama || ""));
     } else {
       takyidatEkle();
     }
