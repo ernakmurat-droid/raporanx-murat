@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RaporanX</title>
+
   <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+
   <style>
     body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; text-align: center; }
     .container { max-width: 800px; margin: 0 auto; }
@@ -16,13 +18,21 @@
     .btn-new { display: block; width: 400px; max-width: 90%; margin: 50px auto; background: #00c853; color: white; padding: 25px; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
     .login-container { background: white; color: #333; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 400px; margin: 100px auto; }
     .login-btn { padding: 15px 30px; font-size: 18px; background: #4285f4; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    .report-card { background: rgba(255,255,255,0.25); padding: 25px; border-radius: 15px; position: relative; margin-bottom: 20px; cursor: pointer; text-align: left; }
-    .delete-btn { position: absolute; top: 15px; right: 15px; background: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 10px; cursor: pointer; }
+
+    .report-card { background: rgba(255,255,255,0.25); padding: 22px; border-radius: 15px; position: relative; margin-bottom: 20px; cursor: pointer; text-align: left; }
+    .actions { position:absolute; top: 12px; right: 12px; display:flex; gap:10px; flex-wrap:wrap; }
+
+    .delete-btn { background: #d32f2f; color: white; border: none; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+    .edit-btn { background: #ff9800; color: #111; border: none; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+    .view-btn { background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.25); padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+
     #statusInfo { margin: 20px 0; font-weight: bold; color: #ffd600; }
   </style>
 </head>
+
 <body>
   <div class="container">
+
     <!-- Giriş Bölümü -->
     <div id="loginSection" class="login-container">
       <h2>RaporanX'e Hoş Geldin</h2>
@@ -36,9 +46,9 @@
       <h1>ABUZİTTİN EKSPERTİZ SİSTEMİ</h1>
       <p>“Abuzittin ile raporun abuzittik olsun!”</p>
       <div id="statusInfo">Yükleniyor...</div>
-      
+
       <a href="yeni_kayit.html" class="btn-new">YENİ RAPOR OLUŞTUR</a>
-      
+
       <div id="reportsList">
         <div style="opacity: 0.8; margin-top: 40px;">Kayıtlar yükleniyor...</div>
       </div>
@@ -57,9 +67,6 @@
     document.getElementById("googleBtn").onclick = () => {
       document.getElementById("googleBtn").textContent = "Yükleniyor...";
       auth.signInWithPopup(provider)
-        .then(() => {
-          // Giriş başarılı – sayfa otomatik güncellenecek
-        })
         .catch((err) => {
           alert("Giriş hatası: " + err.message);
           document.getElementById("googleBtn").textContent = "Google ile Giriş Yap";
@@ -98,25 +105,49 @@
     function loadReports() {
       const list = document.getElementById("reportsList");
       list.innerHTML = '';
+
       if (reports.length === 0) {
         list.innerHTML = '<div style="margin-top:40px;">Henüz rapor yok.</div>';
         return;
       }
+
       reports.forEach((report, index) => {
         const card = document.createElement("div");
         card.className = "report-card";
+
         card.innerHTML = `
-          <button class="delete-btn" onclick="deleteReport(${index}, event)">Sil</button>
-          <div style="font-size:22px; font-weight:bold;">${report.propertyName || 'İsimsiz'}</div>
-          <div>${report.il || ''} / ${report.ilce || ''} <br><small>Ada: ${report.ada || ''} Parsel: ${report.parsel || ''}</small></div>
+          <div class="actions">
+            <button class="edit-btn" onclick="editReport(${index}, event)">DÜZENLE</button>
+            <button class="view-btn" onclick="viewReport(${index}, event)">AÇ</button>
+            <button class="delete-btn" onclick="deleteReport(${index}, event)">SİL</button>
+          </div>
+
+          <div style="font-size:22px; font-weight:bold; padding-right:160px;">
+            ${report.propertyName || 'İsimsiz'}
+          </div>
+          <div>
+            ${report.il || ''} / ${report.ilce || ''} <br>
+            <small>Ada: ${report.ada || ''} Parsel: ${report.parsel || ''}</small>
+          </div>
         `;
-        card.onclick = (e) => {
-          if (!e.target.classList.contains("delete-btn")) {
-            window.location.href = `rapor-detay.html?id=${index}`;
-          }
-        };
+
+        // kartın boş yerine tıklayınca rapor-detay açılsın
+        card.onclick = () => window.location.href = `rapor-detay.html?id=${index}`;
+
         list.appendChild(card);
       });
+    }
+
+    function viewReport(index, event){
+      event.stopPropagation();
+      window.location.href = `rapor-detay.html?id=${index}`;
+    }
+
+    // ✅ DÜZENLE: yeni_kayit.html sayfasına edit modu ile git
+    function editReport(index, event){
+      event.stopPropagation();
+      // mode=edit => yeni_kayit sayfası "güncelleme" gibi davranacak
+      window.location.href = `yeni_kayit.html?id=${index}&mode=edit`;
     }
 
     async function deleteReport(index, event) {
