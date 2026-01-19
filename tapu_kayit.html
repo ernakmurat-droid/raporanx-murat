@@ -19,6 +19,7 @@
       background: white; border: 2px solid #dee2e6; padding: 20px; border-radius: 10px;
       white-space: pre-wrap; font-size: 13px; margin-bottom: 25px;
       filter: blur(2.5px); transition: 0.3s; cursor: text; line-height: 1.6;
+      -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
     }
     .result-body:hover { filter: blur(0); }
     .engel-evet { background-color: #fff0f0 !important; }
@@ -29,7 +30,7 @@
   </style>
 </head>
 
-<body oncontextmenu="return false;">
+<body>
 <div class="container-fluid">
   <div class="card p-4">
     <div class="mb-3">
@@ -86,16 +87,15 @@
     <div id="saveStatus" class="save-status">✅ Kaydedildi ve Buluta Senkronize Edildi!</div>
   </div>
 
-  <!-- ✅ Tek Metin (B1+B2) -->
+  <!-- ✅ Tek Metin -->
   <span class="format-label">📄 TEK METİN (B1 + B2)</span>
-  <div class="result-body" id="tek_sonuc"></div>
+  <div class="result-body" id="tek_sonuc" oncopy="return false"></div>
 
-  <!-- (İstersen kalsın diye ayrı ayrı da gösteriyorum) -->
   <span class="format-label">📄 BANKA FORMATI B1</span>
-  <div class="result-body" id="b1_sonuc"></div>
+  <div class="result-body" id="b1_sonuc" oncopy="return false"></div>
 
   <span class="format-label">📄 BANKA FORMATI B2</span>
-  <div class="result-body" id="b2_sonuc"></div>
+  <div class="result-body" id="b2_sonuc" oncopy="return false"></div>
 </div>
 
 <script>
@@ -143,6 +143,13 @@
     initFromReport();
   });
 
+  /* ========= Kopyala/Yapıştır Serbest (Inputlarda) ========= */
+  document.addEventListener('contextmenu', (e) => {
+    const isInput = e.target.closest('input, textarea, select');
+    if (isInput) return;      // form alanlarında serbest
+    e.preventDefault();       // diğer yerlerde engel (metin koruma)
+  });
+
   /* ========= Buluta gönder ========= */
   async function bulutaGonder() {
     const user = auth.currentUser;
@@ -159,10 +166,10 @@
   function takyidatEkle(v1='', v2='', v3='', v4='', v5='hayir') {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="text" class="form-control t-tur" value="${v1}" oninput="guncelle()"></td>
-      <td><input type="text" class="form-control t-acik" value="${v2}" oninput="guncelle()"></td>
-      <td><input type="text" class="form-control t-tar" value="${v3}" placeholder="GG.AA.YYYY" oninput="guncelle()"></td>
-      <td><input type="text" class="form-control t-say" value="${v4}" oninput="guncelle()"></td>
+      <td><input type="text" class="form-control t-tur" value="${escapeHtml(v1)}" oninput="guncelle()"></td>
+      <td><input type="text" class="form-control t-acik" value="${escapeHtml(v2)}" oninput="guncelle()"></td>
+      <td><input type="text" class="form-control t-tar" value="${escapeHtml(v3)}" placeholder="GG.AA.YYYY" oninput="guncelle()"></td>
+      <td><input type="text" class="form-control t-say" value="${escapeHtml(v4)}" oninput="guncelle()"></td>
       <td>
         <select class="form-select t-engel" onchange="renkGuncelle(this); guncelle();">
           <option value="hayir" ${v5=='hayir'?'selected':''}>Hayır</option>
@@ -178,8 +185,8 @@
   function malikEkle(ad='', pay='') {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="text" class="form-control m-ad" value="${ad}" placeholder="Ad Soyad" oninput="guncelle()"></td>
-      <td><input type="text" class="form-control m-pay" value="${pay}" readonly></td>
+      <td><input type="text" class="form-control m-ad" value="${escapeHtml(ad)}" placeholder="Ad Soyad" oninput="guncelle()"></td>
+      <td><input type="text" class="form-control m-pay" value="${escapeHtml(pay)}" readonly></td>
       <td><button class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); payHesapla(); guncelle()">X</button></td>
     `;
     document.getElementById('malikGövde').appendChild(tr);
@@ -188,11 +195,21 @@
 
   function payHesapla() {
     const rows = document.querySelectorAll('#malikGövde tr');
-    rows.forEach(row => { row.querySelector('.m-pay').value = `1/${rows.length}`; });
+    rows.forEach(row => { row.querySelector('.m-pay').value = `1/${rows.length || 1}`; });
   }
 
   function renkGuncelle(s) {
-    if(s) s.closest('tr').classList.toggle('engel-evet', s.value === 'evet');
+    if (!s) return;
+    s.closest('tr').classList.toggle('engel-evet', s.value === 'evet');
+  }
+
+  function escapeHtml(str){
+    return (str ?? "").toString()
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
   }
 
   /* ========= Metin üretim (B1, B2, TEK) ========= */
@@ -230,10 +247,13 @@
       `TKGM Portal Takbis Sisteminden Takbis Tarihi: ${tarihTakbis} tarihinde İnceleme Saati: ${saatTakbis} itibariyle yapılan incelemede konu taşınmazın tapu kaydı üzerinde aşağıdaki bilgilere ulaşılmıştır:\n\n`;
 
     b1 += (hayirlar.length > 0 ? hayirlar.join(", ") : "Herhangi bir takyidat bulunmamaktadır.") + ".\n\n";
-    b1 += "Taşınmaz üzerinde yer alan kayıtların taşınmazın satışına engel teşkil etmediği bilgisi alınmıştır.";
 
-    if(evetler.length > 0) {
-      b1 += `\n\nSATIŞA ENGEL TEŞKİL EDEN DURUMLAR: ${evetler.join(", ")}`;
+    // ✅ Satışa engel cümlesi KOŞULLU
+    if (evetler.length > 0) {
+      b1 += "Taşınmaz üzerinde 'Engel? = Evet' işaretlenen takyidatlar satışa engel teşkil edebilir; kesin değerlendirme banka/hukuk birimi tarafından yapılmalıdır.";
+      b1 += `\n\nSATIŞA ENGEL TEŞKİL EDEBİLECEK KAYITLAR:\n- ${evetler.join("\n- ")}`;
+    } else {
+      b1 += "Taşınmaz üzerinde satışa engel teşkil eden bir takyidat kaydına rastlanmadığı anlaşılmıştır.";
     }
 
     b1 += `\n\nMALİK BİLGİLERİ:\n${malikMetni || "Girilmedi."}`;
@@ -243,9 +263,14 @@
       `Takbis Tarihi: ${tarihTakbis} / İnceleme Saati: ${saatTakbis}\n\n`;
 
     b2 += `MEVCUT TAKYİDATLAR:\n${hayirlar.map(h => "• " + h).join("\n") || "- Kayıt Yok"}\n\n`;
+
     if(evetler.length > 0) {
-      b2 += `ENGEL TEŞKİL EDEN KAYITLAR:\n${evelterFix(evetler).map(e => "• " + e).join("\n")}\n\n`;
+      b2 += `ENGEL TEŞKİL EDEBİLECEK KAYITLAR (Engel?=Evet):\n${evetler.map(e => "• " + e).join("\n")}\n\n`;
+      b2 += "Not: 'Engel?=Evet' seçilen kayıtlar satışa engel teşkil edebilir; nihai karar banka/hukuk değerlendirmesine bağlıdır.\n\n";
+    } else {
+      b2 += "ENGEL TEŞKİL EDEN KAYIT: Yok.\n\n";
     }
+
     b2 += `MÜLKİYET YAPISI:\n${malikMetni || "- Bilgi Yok"}`;
 
     // ✅ TEK METİN (B1 + B2)
@@ -258,9 +283,6 @@
     return { b1, b2, tek };
   }
 
-  // küçük güvenlik: evetler null gelirse
-  function evelterFix(arr){ return Array.isArray(arr) ? arr : []; }
-
   /* ========= Kaydet ========= */
   async function kaydet() {
     const metinler = guncelle();
@@ -270,15 +292,14 @@
 
     document.querySelectorAll('#tabloGövde tr').forEach(row => {
       const tur = row.querySelector('.t-tur').value.trim();
-      if(tur.length > 1) takyidatVar = true;
+      const acik = row.querySelector('.t-acik').value.trim();
+      const tar = row.querySelector('.t-tar').value.trim();
+      const say = row.querySelector('.t-say').value.trim();
+      const engel = row.querySelector('.t-engel').value;
 
-      takyidatData.push({
-        tur: tur,
-        acik: row.querySelector('.t-acik').value,
-        tar: row.querySelector('.t-tar').value,
-        say: row.querySelector('.t-say').value,
-        engel: row.querySelector('.t-engel').value
-      });
+      if((tur + acik).trim().length > 1) takyidatVar = true;
+
+      takyidatData.push({ tur, acik, tar, say, engel });
     });
 
     let malikData = [];
@@ -286,12 +307,11 @@
 
     document.querySelectorAll('#malikGövde tr').forEach(row => {
       const ad = row.querySelector('.m-ad').value.trim();
+      const pay = row.querySelector('.m-pay').value;
+
       if(ad.length > 1) malikVar = true;
 
-      malikData.push({
-        ad: ad,
-        pay: row.querySelector('.m-pay').value
-      });
+      malikData.push({ ad, pay });
     });
 
     const tarih = document.getElementById('tarihInput').value;
@@ -302,7 +322,6 @@
       if (!confirm("⚠️ Bazı teknik alanlar boş! Yine de 'Eksik Kayıt' olarak mühürlensin mi?")) return;
     }
 
-    // ✅ RID’li doğru rapora yaz
     reports[idx] = {
       ...reports[idx],
       tapuTarih: tarih,
@@ -314,7 +333,7 @@
       tapuMetniB1: metinler.b1,
       tapuMetniB2: metinler.b2,
 
-      // ✅ YENİ: tek metin alanı
+      // ✅ tek metin alanı
       tapuMetniTek: metinler.tek,
 
       tapu_tamamlandi: !eksik
