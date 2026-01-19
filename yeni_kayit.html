@@ -4,10 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yeni Rapor Oluştur - RaporanX</title>
+
   <!-- Firebase CDN (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <!-- ✅ Eğer projende varsa kullan (index’te var) -->
+  <script src="firebase-config.js"></script>
+
   <style>
     body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #ba68c8); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
     .container { max-width: 600px; margin: 0 auto; text-align: center; }
@@ -21,33 +26,64 @@
     .geri-btn:hover { background: #5a6268; }
     .referans-btn { background: #2196f3; margin-top: 15px; }
     .referans-btn:hover { background: #1976d2; }
+    .mode-badge{
+      display:inline-block; margin-top:-10px; margin-bottom:18px;
+      background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:999px;
+      font-weight:bold; font-size:13px;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h1>YENİ RAPOR OLUŞTUR</h1>
+    <h1 id="pageTitle">YENİ RAPOR OLUŞTUR</h1>
+    <div id="modeBadge" class="mode-badge" style="display:none;">Düzenleme Modu</div>
+
     <form>
       <label>Gayrimenkul Adı (Zorunlu)</label>
       <input type="text" id="propertyName" placeholder="Örn: Deniz Apartmanı Daire 5" required>
+
       <label>İl (Zorunlu)</label>
       <input type="text" id="il" placeholder="Örn: Zonguldak" required>
+
       <label>İlçe</label>
       <input type="text" id="ilce" placeholder="Örn: Merkez">
+
       <label>Mahalle</label>
       <input type="text" id="mahalle" placeholder="Örn: Bahçelievler">
+
       <label>Ada</label>
       <input type="text" id="ada" placeholder="Örn: 123">
+
       <label>Parsel</label>
       <input type="text" id="parsel" placeholder="Örn: 45">
-      <button type="button" onclick="raporOlustur()">YENİ RAPOR OLUŞTUR</button>
+
+      <!-- ✅ Buton metni mod’a göre değişecek -->
+      <button type="button" id="btnSave" onclick="raporKaydet()">YENİ RAPOR OLUŞTUR</button>
+
       <button type="button" class="referans-btn" onclick="referansAc()">REFERANS BİLGİLER AÇ</button>
       <button type="button" class="geri-btn" onclick="anaSayfayaDon()">ANA SAYFAYA DÖN</button>
     </form>
   </div>
 
   <script>
-    // Firebase Config ve Init (tek yerde)
-    const firebaseConfig = {
+    /* ==========
+      0) URL PARAMS (edit modu)
+    ========== */
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = (urlParams.get('mode') || '').toLowerCase(); // 'edit' bekliyoruz
+    const editIdRaw = urlParams.get('id');
+    const isEditMode = (mode === 'edit' && editIdRaw !== null && editIdRaw !== '');
+    const editId = isEditMode ? Number(editIdRaw) : null;
+
+    function safeText(v){ return (v ?? '').toString().trim(); }
+
+    /* ==========
+      1) Firebase Init (çakışmasın diye guard)
+      - index’te zaten firebase-config.js ile auth/db oluşturuyorsun.
+      - burada yoksa fallback config ile initialize.
+    ========== */
+    const fallbackConfig = {
       apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
       authDomain: "raporanx.firebaseapp.com",
       projectId: "raporanx",
@@ -58,23 +94,38 @@
     };
 
     if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+      firebase.initializeApp(fallbackConfig);
     }
+
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Giriş kontrolü (sadece giriş yapılmamışsa ana sayfaya at)
+    /* ==========
+      2) Auth kontrolü
+    ========== */
     auth.onAuthStateChanged((user) => {
       if (!user) {
         alert("⚠️ Giriş yetkisi yok! Lütfen giriş yapın.");
         window.location.href = 'index.html';
-      } else {
-        console.log("Yetki Onaylandı: " + user.email);
-        // Yeni rapor sayfası olduğu için reportId kontrolünü KALDIRDIK (sorun çıkmasın)
+        return;
+      }
+
+      // ✅ Edit moduysa formu doldur
+      if (isEditMode) {
+        setupEditUI();
+        loadReportToForm(editId);
       }
     });
 
-    // Buluta yedekleme
+    function setupEditUI(){
+      document.getElementById('pageTitle').textContent = "RAPOR DÜZENLE";
+      document.getElementById('modeBadge').style.display = "inline-block";
+      document.getElementById('btnSave').textContent = "RAPORU GÜNCELLE";
+    }
+
+    /* ==========
+      3) Buluta yedekleme (local -> firestore)
+    ========== */
     async function bulutaGonder() {
       const user = auth.currentUser;
       if (user) {
@@ -87,22 +138,81 @@
       }
     }
 
-    // Rapor oluştur
-    async function raporOlustur() {
+    /* ==========
+      4) Edit modu: raporu form alanlarına doldur
+    ========== */
+    function loadReportToForm(id){
+      const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+      const r = reports[id];
+
+      if (!r) {
+        alert("⚠️ Düzenlenecek rapor bulunamadı! (ID: " + id + ")");
+        window.location.href = "index.html";
+        return;
+      }
+
+      document.getElementById('propertyName').value = r.propertyName || "";
+      document.getElementById('il').value = r.il || "";
+      document.getElementById('ilce').value = r.ilce || "";
+      document.getElementById('mahalle').value = r.mahalle || "";
+      document.getElementById('ada').value = r.ada || "";
+      document.getElementById('parsel').value = r.parsel || "";
+    }
+
+    /* ==========
+      5) KAYDET (Yeni oluştur / Güncelle)
+    ========== */
+    async function raporKaydet() {
       // Zorunlu alan kontrolü
-      if (!document.getElementById('propertyName').value.trim() || !document.getElementById('il').value.trim()) {
+      if (!safeText(document.getElementById('propertyName').value) || !safeText(document.getElementById('il').value)) {
         alert("Gayrimenkul Adı ve İl zorunlu!");
         return;
       }
 
+      let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+
+      if (isEditMode) {
+        // === GÜNCELLEME ===
+        const existing = reports[editId];
+        if (!existing) {
+          alert("⚠️ Güncellenecek rapor bulunamadı!");
+          window.location.href = "index.html";
+          return;
+        }
+
+        // Sadece üst bilgileri güncelle, diğer modülleri ASLA silme
+        existing.propertyName = safeText(document.getElementById('propertyName').value) || existing.propertyName || "İsimsiz Gayrimenkul";
+        existing.il = safeText(document.getElementById('il').value);
+        existing.ilce = safeText(document.getElementById('ilce').value);
+        existing.mahalle = safeText(document.getElementById('mahalle').value);
+        existing.ada = safeText(document.getElementById('ada').value);
+        existing.parsel = safeText(document.getElementById('parsel').value);
+
+        // createdAt korunur, updatedAt eklenir
+        existing.createdAt = existing.createdAt || new Date().toLocaleString('tr-TR');
+        existing.updatedAt = new Date().toLocaleString('tr-TR');
+
+        reports[editId] = existing;
+        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+
+        await bulutaGonder();
+
+        alert("✅ Rapor güncellendi ve buluta yedeklendi!");
+        window.location.href = "rapor-detay.html?id=" + editId;
+        return;
+      }
+
+      // === YENİ RAPOR ===
       const report = {
-        propertyName: document.getElementById('propertyName').value.trim() || "İsimsiz Gayrimenkul",
-        il: document.getElementById('il').value.trim(),
-        ilce: document.getElementById('ilce').value.trim(),
-        mahalle: document.getElementById('mahalle').value.trim(),
-        ada: document.getElementById('ada').value.trim(),
-        parsel: document.getElementById('parsel').value.trim(),
+        propertyName: safeText(document.getElementById('propertyName').value) || "İsimsiz Gayrimenkul",
+        il: safeText(document.getElementById('il').value),
+        ilce: safeText(document.getElementById('ilce').value),
+        mahalle: safeText(document.getElementById('mahalle').value),
+        ada: safeText(document.getElementById('ada').value),
+        parsel: safeText(document.getElementById('parsel').value),
         createdAt: new Date().toLocaleString('tr-TR'),
+
+        // mevcut modül alanları (boş şablon)
         bina: {},
         bbDetay: {},
         emsaller: [],
@@ -112,7 +222,6 @@
         belgeler: {}
       };
 
-      let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
       reports.push(report);
       localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
@@ -120,7 +229,7 @@
 
       await bulutaGonder();
 
-      alert("Rapor oluşturuldu ve buluta yedeklendi!");
+      alert("✅ Rapor oluşturuldu ve buluta yedeklendi!");
       window.location.href = "rapor-detay.html?id=" + newId;
     }
 
