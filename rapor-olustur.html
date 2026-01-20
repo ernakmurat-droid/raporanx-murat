@@ -1,112 +1,122 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Final Raporu Oluşturucu - Raporan X</title>
-    <style>
-        :root { --primary: #1a237e; --secondary: #3949ab; --accent: #ffd600; --bg: #f4f7f9; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; color: #2c3e50; scroll-behavior: smooth; }
-        .header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 30px 20px; text-align: center; position: relative; z-index: 10; }
-        .back { position: absolute; left: 20px; top: 25px; background: rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 30px; color: white; text-decoration: none; font-weight: bold; cursor: pointer; border: none; font-size: 13px; }
-        .main-wrapper { max-width: 1300px; margin: 20px auto; display: grid; grid-template-columns: 280px 1fr; gap: 30px; padding: 0 20px; }
-        .toc-container { position: sticky; top: 20px; height: fit-content; }
-        .toc { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid var(--primary); }
-        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 0 40px rgba(0,0,0,0.05); }
-        .section { margin-bottom: 50px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; }
-        .text-block { font-size: 14.5px; line-height: 1.7; white-space: pre-wrap; color: #34495e; text-align: justify; }
-        .print-btn { background: #27ae60; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 50px; cursor: pointer; margin: 40px auto; display: block; font-weight: bold; }
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 
-        @media print {
-            .header, .back, .print-btn, .toc-container { display: none !important; }
-            .main-wrapper { display: block; }
-            .container { box-shadow: none; padding: 0; }
-        }
-    </style>
+<title>Final Raporu Oluşturucu - Raporan X</title>
+
+<style>
+:root { --primary:#1a237e; --secondary:#3949ab; --bg:#f4f7f9; }
+body { font-family:'Segoe UI',Tahoma,sans-serif; background:var(--bg); margin:0; color:#2c3e50; }
+.header { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; padding:30px 20px; text-align:center; position:relative; }
+.back { position:absolute; left:20px; top:25px; background:rgba(255,255,255,.2); padding:8px 15px; border-radius:30px; color:#fff; border:none; cursor:pointer; font-weight:bold; }
+.main { max-width:1100px; margin:30px auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 0 40px rgba(0,0,0,.05); }
+.section { margin-bottom:45px; }
+.section h2 { color:var(--primary); border-bottom:2px solid #eee; padding-bottom:8px; }
+.text { white-space:pre-wrap; line-height:1.7; font-size:14.5px; text-align:justify; }
+.print-btn { display:block; margin:40px auto 0; background:#27ae60; color:#fff; padding:15px 30px; font-size:18px; border:none; border-radius:50px; cursor:pointer; font-weight:bold; }
+
+@media print {
+  .header,.back,.print-btn { display:none; }
+  body { background:#fff; }
+  .main { box-shadow:none; padding:0; }
+}
+</style>
 </head>
+
 <body>
 
 <div class="header">
-    <button onclick="window.location.href='rapor-detay.html?id='+id" class="back">← Yönetim Paneline Dön</button>
-    <h1 style="margin:0; font-size: 1.8em; letter-spacing: 1px;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
-    <div id="raporTarih" style="margin-top: 8px; opacity: 0.8; font-size: 13px;"></div>
+  <button class="back" onclick="geriDon()">← Yönetim Paneli</button>
+  <h1>GAYRİMENKUL DEĞERLEME RAPORU</h1>
+  <div id="raporTarih" style="opacity:.85;font-size:13px;"></div>
 </div>
 
-<div class="main-wrapper">
-    <aside class="toc-container">
-        <div class="toc">
-            <div style="font-weight: bold; color: var(--primary); margin-bottom: 15px;">RAPOR BÖLÜMLERİ</div>
-            <ul style="list-style: none; padding: 0; font-size: 14px;">
-                <li><a href="#genel" style="text-decoration: none; color: #555;">1. Genel Bilgiler</a></li>
-                <li><a href="#imar" style="text-decoration: none; color: #555;">2. İmar Durumu</a></li>
-                <li><a href="#bina" style="text-decoration: none; color: #555;">3. Bina Bilgileri</a></li>
-                <li><a href="#emsal" style="text-decoration: none; color: #555;">4. Değerleme Sonucu</a></li>
-            </ul>
-        </div>
-    </aside>
+<div class="main">
 
-    <main class="container">
-        <div class="section" id="genel">
-            <div style="font-size: 1.4em; font-weight: bold; color: var(--primary);">1. Genel Bilgiler</div>
-            <div id="genelBilgi" style="margin-top: 15px;"></div>
-        </div>
+  <div class="section">
+    <h2>1. Genel Bilgiler</h2>
+    <div id="genelBilgi"></div>
+  </div>
 
-        <div class="section" id="imar">
-            <div style="font-size: 1.4em; font-weight: bold; color: var(--primary);">2. İmar Durumu</div>
-            <div id="imarTablo" style="margin-top: 15px;"></div>
-            <div class="text-block" id="imarMetin"></div>
-        </div>
+  <div class="section">
+    <h2>2. İmar Durumu</h2>
+    <div id="imarMetin" class="text"></div>
+  </div>
 
-        <div class="section" id="bina">
-            <div style="font-size: 1.4em; font-weight: bold; color: var(--primary);">3. Ana Bina Bilgileri</div>
-            <div class="text-block" id="binaMetin"></div>
-        </div>
+  <div class="section">
+    <h2>3. Bina Bilgileri</h2>
+    <div id="binaMetin" class="text"></div>
+  </div>
 
-        <div class="section" id="emsal">
-            <div style="font-size: 1.4em; font-weight: bold; color: var(--primary);">4. Değerleme ve Analiz</div>
-            <div class="text-block" id="emsalMetin"></div>
-        </div>
+  <div class="section">
+    <h2>4. Değerleme ve Analiz</h2>
+    <div id="emsalMetin" class="text"></div>
+  </div>
 
-        <button class="print-btn" onclick="window.print()">📑 RAPORU PDF OLARAK KAYDET</button>
-    </main>
+  <button class="print-btn" onclick="window.print()">📑 RAPORU PDF OLARAK KAYDET</button>
 </div>
 
 <script>
-    // 2. ADIM: GÜVENLİK VE VERİ ÇEKME
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-    let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    let report = reports[id];
+/* ========= TÜRKÇE METİN TOPARLAMA ========= */
+function duzeltTR(metin){
+  if(!metin) return "";
+  return metin
+    .replace(/\s{2,}/g," ")
+    .replace(/\s+\./g,".")
+    .replace(/\s+,/g,",")
+    .replace(/\.(\S)/g,". $1")
+    .replace(/\bm2\b/gi,"m²")
+    .replace(/tl\b/gi,"TL")
+    .replace(/\n\s*\n/g,"\n\n")
+    .trim();
+}
 
-    auth.onAuthStateChanged((user) => {
-        if (!user || !id || !report) {
-            window.location.href = 'index.html';
-        } else {
-            raporOlustur();
-        }
-    });
+/* ========= RID OKUMA ========= */
+const params = new URLSearchParams(location.search);
+const rid = params.get("rid");
 
-    function raporOlustur() {
-        const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
-        document.getElementById('raporTarih').textContent = `Rapor Tarihi: ${today}`;
+let reports = JSON.parse(localStorage.getItem("gayrimenkul_reports")) || [];
+let report = reports.find(r => r && r.rid === rid);
 
-        // Verileri ekrana basma (Senin orijinal mantığın)
-        document.getElementById('genelBilgi').innerHTML = `
-            <p><b>Gayrimenkul:</b> ${report.propertyName || "..."}</p>
-            <p><b>Konum:</b> ${report.il || '-'} / ${report.ilce || '-'}</p>
-        `;
+/* ========= GÜVENLİK ========= */
+auth.onAuthStateChanged(user=>{
+  if(!user || !rid || !report){
+    location.href="index.html";
+    return;
+  }
+  raporuBas();
+});
 
-        document.getElementById('imarTablo').innerHTML = report.imarTablo || '';
-        document.getElementById('imarMetin').textContent = report.imarMetni || '';
-        document.getElementById('binaMetin').textContent = report.bina?.metin || '';
-        document.getElementById('emsalMetin').textContent = report.degerlemeOzet?.emsalFinalMetni || '';
-    }
+function raporuBas(){
+  const today = new Date().toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
+  document.getElementById("raporTarih").innerText = "Rapor Tarihi: " + today;
+
+  document.getElementById("genelBilgi").innerHTML = `
+    <p><b>Gayrimenkul:</b> ${report.propertyName || "-"}</p>
+    <p><b>Konum:</b> ${report.il || "-"} / ${report.ilce || "-"}</p>
+  `;
+
+  document.getElementById("imarMetin").innerText =
+    duzeltTR(report.imarMetni || "");
+
+  document.getElementById("binaMetin").innerText =
+    duzeltTR(report.bina?.metin || "");
+
+  document.getElementById("emsalMetin").innerText =
+    duzeltTR(report.degerlemeOzet?.emsalFinalMetni || "");
+}
+
+function geriDon(){
+  location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
+}
 </script>
+
 </body>
 </html>
