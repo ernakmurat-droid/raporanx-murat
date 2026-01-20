@@ -245,8 +245,32 @@
     document.getElementById('tapuMetinB2').textContent = pickText(r.tapuMetniB2, r.tapu?.metinB2, r.tapuB2);
 
     // Emsal/Değerleme
-    const emsalText = getEmsalMetni(r);
-    document.getElementById('emsalMetin').textContent = emsalText || 'Analiz tamamlanmadı.';
+    function emsalMetniBul(report){
+  // 1) Eski tekli yapı
+  const eski = report?.degerlemeOzet?.emsalFinalMetni;
+  if (eski && eski.trim()) return eski;
+
+  // 2) Yeni çoklu BB yapısı: hepsini birleştir
+  if (Array.isArray(report?.bbDetayList) && report.bbDetayList.length){
+    const bloklar = report.bbDetayList.map((bb, idx) => {
+      const baslik = bb?.baslik || `${idx+1}. BB`;
+      const m = bb?.degerleme?.degerlemeOzet?.emsalFinalMetni;
+      if (m && m.trim()){
+        return `${baslik}\n${m.trim()}`;
+      }
+      return null;
+    }).filter(Boolean);
+
+    if (bloklar.length) return bloklar.join("\n\n");
+  }
+
+  // 3) Olmazsa boş
+  return "";
+}
+
+document.getElementById('emsalMetin').textContent =
+  emsalMetniBul(report) || "Analiz tamamlanmadı.";
+
   }
 
   auth.onAuthStateChanged((user) => {
@@ -260,3 +284,4 @@
 </script>
 </body>
 </html>
+
