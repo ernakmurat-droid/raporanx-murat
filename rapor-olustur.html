@@ -1,75 +1,66 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Final Raporu Oluşturucu - Profesyonel Panel</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
 
-<style>
-  :root { --primary: #1a237e; --secondary: #3949ab; --accent: #ffd600; --bg: #f4f7f9; }
-  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; color: #2c3e50; scroll-behavior: smooth; }
+  <title>Final Raporu Oluşturucu - Profesyonel Panel</title>
+  <style>
+    :root { --primary:#1a237e; --secondary:#3949ab; --accent:#ffd600; --bg:#f4f7f9; }
+    body { font-family:'Segoe UI', Tahoma, sans-serif; background:var(--bg); margin:0; color:#2c3e50; scroll-behavior:smooth; }
+    .header { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; padding:30px 20px; text-align:center; position:relative; z-index:10; }
+    .back { position:absolute; left:20px; top:25px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:30px; color:white; text-decoration:none; font-weight:bold; cursor:pointer; border:none; font-size:13px; }
+    .main-wrapper { max-width:1300px; margin:20px auto; display:grid; grid-template-columns:280px 1fr; gap:30px; padding:0 20px; }
+    .toc-container { position:sticky; top:20px; height:fit-content; }
+    .toc { background:white; padding:20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border-left:6px solid var(--primary); }
+    .toc-title { font-size:1.1em; font-weight:bold; color:var(--primary); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px; }
+    .toc-list { list-style:none; padding:0; margin:0; }
+    .toc-list li { margin-bottom:8px; }
+    .toc-list a { color:#555; text-decoration:none; font-size:.9em; font-weight:500; transition:.2s; display:block; padding:5px; border-radius:4px; }
+    .toc-list a:hover { background:#f0f2ff; color:var(--primary); padding-left:10px; }
 
-  .header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 30px 20px; text-align: center; position: relative; z-index: 10; }
-  .back { position: absolute; left: 20px; top: 25px; background: rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 30px; color: white; text-decoration: none; font-weight: bold; cursor: pointer; border: none; font-size: 13px; }
+    .container { background:white; padding:40px; border-radius:12px; box-shadow:0 0 40px rgba(0,0,0,0.05); }
+    .section { margin-bottom:50px; padding-bottom:20px; border-bottom:1px solid #f0f0f0; page-break-inside:avoid; }
+    .section-title { font-size:1.4em; font-weight:bold; color:var(--primary); margin-bottom:20px; display:flex; align-items:center; }
+    .section-title::after { content:""; flex:1; height:1px; background:#eee; margin-left:15px; }
+    .text-block { font-size:14.5px; line-height:1.7; white-space:pre-wrap; color:#34495e; text-align:justify; }
+    .info-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:15px; margin-bottom:25px; }
+    .info-item { background:#fcfcfc; border:1px solid #f0f0f0; padding:12px; border-radius:6px; }
+    .info-item strong { display:block; color:#888; font-size:.75em; text-transform:uppercase; margin-bottom:3px; }
+    .info-item span { font-weight:600; font-size:.95em; color:#2c3e50; }
 
-  .main-wrapper { max-width: 1300px; margin: 20px auto; display: grid; grid-template-columns: 280px 1fr; gap: 30px; padding: 0 20px; }
+    #imarTablo table { width:100%!important; border-collapse:collapse; margin:15px 0; font-size:12px!important; }
+    #imarTablo table th, #imarTablo table td { border:1px solid #dcdde1; padding:6px 10px!important; line-height:1.2; }
+    #imarTablo table th { background:#f8f9fa; color:#444; width:30%; }
 
-  .toc-container { position: sticky; top: 20px; height: fit-content; }
-  .toc { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid var(--primary); }
-  .toc-title { font-size: 1.1em; font-weight: bold; color: var(--primary); margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-  .toc-list { list-style: none; padding: 0; margin: 0; }
-  .toc-list li { margin-bottom: 8px; }
-  .toc-list a { color: #555; text-decoration: none; font-size: 0.9em; font-weight: 500; transition: 0.2s; display: block; padding: 5px; border-radius: 4px; }
-  .toc-list a:hover { background: #f0f2ff; color: var(--primary); padding-left: 10px; }
+    .print-btn { background:#27ae60; color:white; padding:15px 30px; font-size:18px; border:none; border-radius:50px; cursor:pointer; margin:40px auto; display:block; font-weight:bold; box-shadow:0 6px 15px rgba(39,174,96,0.3); transition:.3s; }
+    .print-btn:hover { background:#219150; transform:translateY(-2px); }
 
-  .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 0 40px rgba(0,0,0,0.05); }
-
-  .section { margin-bottom: 50px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; page-break-inside: avoid; }
-  .section-title { font-size: 1.4em; font-weight: bold; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; }
-  .section-title::after { content: ""; flex: 1; height: 1px; background: #eee; margin-left: 15px; }
-
-  #imarTablo table { width: 100% !important; border-collapse: collapse; margin: 15px 0; font-size: 12px !important; }
-  #imarTablo table th, #imarTablo table td { border: 1px solid #dcdde1; padding: 6px 10px !important; line-height: 1.2; }
-  #imarTablo table th { background: #f8f9fa; color: #444; width: 30%; }
-
-  .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
-  .info-item { background: #fcfcfc; border: 1px solid #f0f0f0; padding: 12px; border-radius: 6px; }
-  .info-item strong { display: block; color: #888; font-size: 0.75em; text-transform: uppercase; margin-bottom: 3px; }
-  .info-item span { font-weight: 600; font-size: 0.95em; color: #2c3e50; }
-
-  .text-block { font-size: 14.5px; line-height: 1.7; white-space: pre-wrap; color: #34495e; text-align: justify; }
-  .format-badge { background: #546e7a; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; margin-bottom: 10px; display: inline-block; }
-
-  .print-btn { background: #27ae60; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 50px; cursor: pointer; margin: 40px auto; display: block; font-weight: bold; box-shadow: 0 6px 15px rgba(39,174,96,0.3); transition: 0.3s; }
-  .print-btn:hover { background: #219150; transform: translateY(-2px); }
-
-  @media print {
-    body { background: white; }
-    .header, .back, .print-btn, .toc-container { display: none !important; }
-    .main-wrapper { display: block; max-width: 100%; margin: 0; padding: 0; }
-    .container { box-shadow: none; padding: 0; margin: 0; width: 100%; }
-    .section-title { color: black; border-bottom: 2px solid black; }
-    #imarTablo table { font-size: 10px !important; }
-  }
-
-  @media (max-width: 992px) {
-    .main-wrapper { grid-template-columns: 1fr; }
-    .toc-container { position: relative; top: 0; margin-bottom: 20px; }
-  }
-</style>
+    @media print {
+      body { background:white; }
+      .header, .back, .print-btn, .toc-container { display:none!important; }
+      .main-wrapper { display:block; max-width:100%; margin:0; padding:0; }
+      .container { box-shadow:none; padding:0; margin:0; width:100%; }
+      .section-title { color:black; border-bottom:2px solid black; }
+      #imarTablo table { font-size:10px!important; }
+    }
+    @media (max-width:992px) {
+      .main-wrapper { grid-template-columns:1fr; }
+      .toc-container { position:relative; top:0; margin-bottom:20px; }
+    }
+  </style>
 </head>
 
 <body>
-
 <div class="header">
   <button onclick="geriDon()" class="back">← Yönetim Paneli</button>
-  <h1 style="margin:0; font-size: 1.8em; letter-spacing: 1px;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
-  <div id="raporTarih" style="margin-top: 8px; opacity: 0.8; font-size: 13px;"></div>
+  <h1 style="margin:0; font-size:1.8em; letter-spacing:1px;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
+  <div id="raporTarih" style="margin-top:8px; opacity:.8; font-size:13px;"></div>
 </div>
 
 <div class="main-wrapper">
@@ -123,9 +114,7 @@
 
     <div class="section" id="tapu">
       <div class="section-title">7. Tapu ve Takyidat Kayıtları</div>
-      <div class="format-badge">BANKA FORMATI B1</div>
-      <div class="text-block" id="tapuMetinB1" style="margin-bottom: 25px;"></div>
-      <div class="format-badge">BANKA FORMATI B2</div>
+      <div class="text-block" id="tapuMetinB1" style="margin-bottom:25px;"></div>
       <div class="text-block" id="tapuMetinB2"></div>
     </div>
 
@@ -140,73 +129,12 @@
 
 <script>
   const auth = firebase.auth();
+  const db = firebase.firestore();
 
-  /* ========= Türkçe toparlama ========= */
-  function duzeltTR(metin){
-    if(!metin) return "";
-    return String(metin)
-      .replace(/\s{2,}/g," ")
-      .replace(/\s+\./g,".")
-      .replace(/\s+,/g,",")
-      .replace(/\s+:/g,":")
-      .replace(/\.(\S)/g,". $1")
-      .replace(/\bm2\b/gi,"m²")
-      .replace(/tl\b/gi,"TL")
-      .replace(/\n\s*\n/g,"\n\n")
-      .trim();
-  }
-
-  /* ========= Yardımcılar ========= */
-  function valOr(...cands){
-    for (const c of cands){
-      if (c !== undefined && c !== null){
-        const s = String(c).trim();
-        if (s) return s;
-      }
-    }
-    return "";
-  }
-
-  function getByPath(obj, path){
-    try{
-      return path.split(".").reduce((o,k)=> (o && o[k] !== undefined) ? o[k] : undefined, obj);
-    }catch(e){ return undefined; }
-  }
-
-  // Derinden anahtar arama (alan adı değişmiş olsa bile metni bulur)
-  function findDeepString(obj, keySet, maxNodes = 8000){
-    const keys = new Set(keySet.map(k => String(k).toLowerCase()));
-    const seen = new Set();
-    const q = [obj];
-    let visited = 0;
-
-    while(q.length && visited < maxNodes){
-      const cur = q.shift();
-      if(!cur || typeof cur !== "object") continue;
-      if(seen.has(cur)) continue;
-      seen.add(cur);
-      visited++;
-
-      for (const k in cur){
-        const v = cur[k];
-        const kl = String(k).toLowerCase();
-
-        if (keys.has(kl) && typeof v === "string" && v.trim()){
-          return v;
-        }
-
-        if (v && typeof v === "object"){
-          q.push(v);
-        }
-      }
-    }
-    return "";
-  }
-
-  /* ========= RID + legacy id ========= */
-  const params = new URLSearchParams(location.search);
-  let rid = params.get("rid");
-  const legacyId = params.get("id");
+  /* ========= RID + legacy id desteği ========= */
+  const params = new URLSearchParams(window.location.search);
+  let rid = params.get('rid');
+  const legacyId = params.get('id');
 
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
@@ -221,171 +149,114 @@
     return (arr||[]).findIndex(r => r && r.rid === rid);
   }
 
-  let reports = JSON.parse(localStorage.getItem("gayrimenkul_reports")) || [];
-  if (ensureRidMigration(reports)) localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
+  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // legacy id -> rid
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
       rid = reports[idxLegacy].rid;
-      const file = (location.pathname.split("/").pop() || "final-rapor.html");
-      location.replace(file + "?rid=" + encodeURIComponent(rid));
+      window.location.replace("rapor-olustur.html?rid=" + encodeURIComponent(rid));
     }
   }
 
-  const idx = rid ? findIndexByRid(reports, rid) : -1;
-  const report = (idx >= 0) ? (reports[idx] || {}) : null;
-
-  /* ========= Çoklu BB metni ========= */
-  function combineBBMetin(r){
-    if (Array.isArray(r.bbDetayList) && r.bbDetayList.length > 0) {
-      const parts = [];
-      r.bbDetayList.forEach((wrap, i) => {
-        const bb = wrap?.bbDetay || {};
-        const no = valOr(bb.bbNo, wrap?.baslik, `${i+1}. BB`);
-        const metin = valOr(bb.tamMetin);
-        if (metin) parts.push(`${no}:\n${metin}`);
-      });
-      return parts.join("\n\n");
-    }
-    return valOr(r.bbDetay?.tamMetin);
-  }
-
-  /* ========= EMSAL METNİ (global + multi-bb fallback) ========= */
-  function getEmsalMetni(r){
-    // 1) global alanlar
-    let m = valOr(
-      getByPath(r, "degerlemeOzet.emsalFinalMetni"),
-      r.emsalFinalMetni
-    );
-    if (m) return m;
-
-    // 2) çoklu BB içinden bul
-    if (Array.isArray(r.bbDetayList) && r.bbDetayList.length > 0) {
-      const parts = [];
-      r.bbDetayList.forEach((wrap, i) => {
-        const label = valOr(wrap?.bbDetay?.bbNo, wrap?.baslik, `${i+1}. BB`);
-        const mm = valOr(
-          getByPath(wrap, "degerleme.degerlemeOzet.emsalFinalMetni"),
-          getByPath(wrap, "degerleme.emsalFinalMetni")
-        );
-        if (mm) parts.push(`${label}:\n${mm}`);
-      });
-      if (parts.length) return parts.join("\n\n");
-    }
-
-    // 3) en son çare: derin arama
-    return findDeepString(r, [
-      "emsalfinalmetni",
-      "emsalmetni",
-      "analizmetni",
-      "degerlemeanalizmetni"
-    ]);
-  }
-
-  /* ========= KONUM/ÇEVRE METNİ ========= */
-  function getKonumMetni(r){
-    // önce en olası path’ler
-    let m = valOr(
-      getByPath(r, "konumCevre.tamMetin"),
-      getByPath(r, "konumVeCevre.tamMetin"),
-      getByPath(r, "cevreOzellikleri.tamMetin"),
-      getByPath(r, "konumCevreMetni"),
-      getByPath(r, "konumMetni"),
-      getByPath(r, "cevreMetni")
-    );
-    if (m) return m;
-
-    // derinden anahtar ara
-    return findDeepString(r, [
-      "tammetin",
-      "konumcevremetni",
-      "konummetni",
-      "cevremetni",
-      "konumvecevremetni",
-      "cevreozelliklerimetni"
-    ]);
-  }
-
-  /* ========= TAPU METNİ ========= */
-  function getTapuMetniB1(r){
-    let m = valOr(
-      r.tapuMetniB1,
-      getByPath(r, "tapu.tapuMetniB1"),
-      getByPath(r, "tapuMetinB1"),
-      getByPath(r, "tapu.b1"),
-      getByPath(r, "tapu.B1")
-    );
-    if (m) return m;
-    return findDeepString(r, ["tapumetnib1", "tapub1", "tapu_b1"]);
-  }
-
-  function getTapuMetniB2(r){
-    let m = valOr(
-      r.tapuMetniB2,
-      getByPath(r, "tapu.tapuMetniB2"),
-      getByPath(r, "tapuMetinB2"),
-      getByPath(r, "tapu.b2"),
-      getByPath(r, "tapu.B2")
-    );
-    if (m) return m;
-    return findDeepString(r, ["tapumetnib2", "tapub2", "tapu_b2"]);
-  }
-
-  /* ========= Rapor Bas ========= */
-  function raporOlustur(){
-    const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
-    document.getElementById('raporTarih').textContent = `Rapor Oluşturma: ${today}`;
-
-    // GENEL
-    document.getElementById('genelBilgi').innerHTML = `
-      <div class="info-item"><strong>Taşınmaz Adı</strong><span>${valOr(report.propertyName,"...")}</span></div>
-      <div class="info-item"><strong>İl / İlçe</strong><span>${valOr(report.il,"-")} / ${valOr(report.ilce,"-")}</span></div>
-      <div class="info-item"><strong>Ada / Parsel</strong><span>${valOr(report.ada,"...")} / ${valOr(report.parsel,"...")}</span></div>
-      <div class="info-item"><strong>Arsa Alanı</strong><span>${valOr(report.bina?.arsaAlani,"...")} m²</span></div>
-    `;
-
-    // İMAR
-    document.getElementById('imarTablo').innerHTML = report.imarTablo || '<p class="empty">Veri yok.</p>';
-    document.getElementById('imarMetin').textContent = duzeltTR(valOr(report.imarMetni));
-
-    // BELGELER
-    document.getElementById('belgelerMetin').textContent = duzeltTR(valOr(report.belgelerMetni, "Veri girilmedi."));
-
-    // BİNA
-    document.getElementById('binaMetin').textContent = duzeltTR(valOr(report.bina?.metin, report.binaMetni, "Veri girilmedi."));
-
-    // BB (tek + çoklu)
-    document.getElementById('bbMetin').textContent = duzeltTR(valOr(combineBBMetin(report), "Veri girilmedi."));
-
-    // KONUM/ÇEVRE
-    const konum = getKonumMetni(report);
-    document.getElementById('konumMetin').textContent = duzeltTR(valOr(konum, "Veri girilmedi."));
-
-    // TAPU
-    document.getElementById('tapuMetinB1').textContent = duzeltTR(valOr(getTapuMetniB1(report), "Veri girilmedi."));
-    document.getElementById('tapuMetinB2').textContent = duzeltTR(valOr(getTapuMetniB2(report), "Veri girilmedi."));
-
-    // EMSAL / DEĞERLEME
-    const emsal = getEmsalMetni(report);
-    document.getElementById('emsalMetin').textContent = duzeltTR(valOr(emsal, "Analiz tamamlanmadı."));
+  function getLatestData(){
+    const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+    const i = rid ? findIndexByRid(arr, rid) : -1;
+    const r = (i >= 0) ? (arr[i] || null) : null;
+    return { arr, i, r };
   }
 
   function geriDon(){
-    location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid || "");
+    window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
   }
 
-  // güvenlik
-  auth.onAuthStateChanged((user)=>{
-    if(!user || !rid || !report){
-      location.href = "index.html";
+  function pickText(...candidates){
+    for (const c of candidates){
+      if (c != null && String(c).trim() !== "") return String(c);
+    }
+    return "";
+  }
+
+  function getEmsalMetni(r){
+    // 1) Eski yer
+    const legacy = r?.degerlemeOzet?.emsalFinalMetni;
+    if (legacy && String(legacy).trim() !== "") return String(legacy);
+
+    // 2) Yeni yer: bbDetayList[*].degerleme.degerlemeOzet.emsalFinalMetni
+    const list = Array.isArray(r?.bbDetayList) ? r.bbDetayList : [];
+    const chunks = [];
+
+    list.forEach((bb, idx) => {
+      const t = bb?.degerleme?.degerlemeOzet?.emsalFinalMetni;
+      if (t && String(t).trim() !== "") {
+        const baslik = bb?.bbDetay?.bbNo ? `${bb.bbDetay.bbNo} BB Nolu Taşınmaz` : `${idx+1}. Bağımsız Bölüm`;
+        chunks.push(`${baslik}\n${String(t).trim()}`);
+      }
+    });
+
+    return chunks.join("\n\n");
+  }
+
+  function raporOlustur(r) {
+    const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
+    document.getElementById('raporTarih').textContent = `Rapor Oluşturma: ${today}`;
+
+    document.getElementById('genelBilgi').innerHTML = `
+      <div class="info-item"><strong>Taşınmaz Adı</strong><span>${r.propertyName || "..."}</span></div>
+      <div class="info-item"><strong>İl / İlçe</strong><span>${r.il || '-'} / ${r.ilce || '-'}</span></div>
+      <div class="info-item"><strong>Ada / Parsel</strong><span>${r.ada || '...'} / ${r.parsel || '...'}</span></div>
+      <div class="info-item"><strong>Arsa Alanı</strong><span>${r.bina?.arsaAlani || '...'} m²</span></div>
+    `;
+
+    // İmar
+    document.getElementById('imarTablo').innerHTML = r.imarTablo || '<p>Veri yok.</p>';
+    document.getElementById('imarMetin').textContent = pickText(r.imarMetni, r.imarDurumuMetni, r.imar?.tamMetin);
+
+    // Belgeler
+    document.getElementById('belgelerMetin').textContent = pickText(r.belgelerMetni, r.belgeler?.metin);
+
+    // Bina
+    document.getElementById('binaMetin').textContent = pickText(r.bina?.metin, r.binaMetin, r.bina?.tamMetin);
+
+    // BB (eski tek bb + yeni çoklu bb)
+    const bbLegacy = r.bbDetay?.tamMetin;
+    if (bbLegacy && String(bbLegacy).trim() !== "") {
+      document.getElementById('bbMetin').textContent = bbLegacy;
+    } else {
+      const list = Array.isArray(r.bbDetayList) ? r.bbDetayList : [];
+      const bbText = list
+        .map((bb, idx) => {
+          const t = bb?.bbDetay?.tamMetin;
+          if (!t || String(t).trim() === "") return "";
+          const baslik = bb?.bbDetay?.bbNo ? `${bb.bbDetay.bbNo} BB` : `${idx+1}. BB`;
+          return `${baslik}\n${String(t).trim()}`;
+        })
+        .filter(Boolean)
+        .join("\n\n");
+      document.getElementById('bbMetin').textContent = bbText || 'Veri girilmedi.';
+    }
+
+    // Konum/Çevre
+    document.getElementById('konumMetin').textContent = pickText(r.konumCevre?.tamMetin, r.konumMetni, r.konumCevreMetni);
+
+    // Tapu
+    document.getElementById('tapuMetinB1').textContent = pickText(r.tapuMetniB1, r.tapu?.metinB1, r.tapuB1);
+    document.getElementById('tapuMetinB2').textContent = pickText(r.tapuMetniB2, r.tapu?.metinB2, r.tapuB2);
+
+    // Emsal/Değerleme
+    const emsalText = getEmsalMetni(r);
+    document.getElementById('emsalMetin').textContent = emsalText || 'Analiz tamamlanmadı.';
+  }
+
+  auth.onAuthStateChanged((user) => {
+    const { r } = getLatestData();
+    if (!user || !rid || !r) {
+      window.location.href = 'index.html';
       return;
     }
-    raporOlustur();
+    raporOlustur(r);
   });
 </script>
-
 </body>
 </html>
-
