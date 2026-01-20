@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bağımsız Bölüm Detay</title>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -97,26 +97,26 @@
   <div class="section-title">1. Temel Bilgiler ve Alanlar (Net Öncelikli)</div>
   <div class="form-group">
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-      <div class="input-item"><label>Kat</label><input type="text" id="kat" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>BB No</label><input type="text" id="bbNo" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Kapı No</label><input type="text" id="kapiNo" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
+      <div class="input-item"><label>Kat</label><input type="text" id="kat" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>BB No</label><input type="text" id="bbNo" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Kapı No</label><input type="text" id="kapiNo" oninput="metinOlustur()"></div>
     </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-      <div class="input-item"><label>Proje Net (m²)</label><input type="number" id="alanNet" value="0" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Proje Brüt (m²)</label><input type="number" id="alanBrut" value="0" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Girişe Göre Konumu</label><input type="text" id="konum" placeholder="sağ tarafta" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
+      <div class="input-item"><label>Proje Net (m²)</label><input type="number" id="alanNet" value="0" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Proje Brüt (m²)</label><input type="number" id="alanBrut" value="0" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Girişe Göre Konumu</label><input type="text" id="konum" placeholder="sağ tarafta" oninput="metinOlustur()"></div>
     </div>
     <div class="input-item">
       <label>Cepheler</label>
       <div class="checkbox-group">
-        <label><input type="checkbox" name="cephe" value="Kuzey" onchange="metinOlustur(); saveActiveToModelSoft();"><span>Kuzey</span></label>
-        <label><input type="checkbox" name="cephe" value="Güney" onchange="metinOlustur(); saveActiveToModelSoft();"><span>Güney</span></label>
-        <label><input type="checkbox" name="cephe" value="Doğu" onchange="metinOlustur(); saveActiveToModelSoft();"><span>Doğu</span></label>
-        <label><input type="checkbox" name="cephe" value="Batı" onchange="metinOlustur(); saveActiveToModelSoft();"><span>Batı</span></label>
-        <label><input type="checkbox" name="cephe" value="Kuzey-Doğu" onchange="metinOlustur(); saveActiveToModelSoft();"><span>Kuzey-Doğu</span></label>
-        <label><input type="checkbox" name="cephe" value="Kuzey-Batı" onchange="metinOlustur(); saveActiveToModelSoft();"><span>Kuzey-Batı</span></label>
-        <label><input type="checkbox" name="cephe" value="Güney-Doğu" onchange="metinOlustur(); saveActiveToModelSoft();"><span>Güney-Doğu</span></label>
-        <label><input type="checkbox" name="cephe" value="Güney-Batı" onchange="metinOlustur(); saveActiveToModelSoft();"><span>Güney-Batı</span></label>
+        <label><input type="checkbox" name="cephe" value="Kuzey" onchange="metinOlustur()"><span>Kuzey</span></label>
+        <label><input type="checkbox" name="cephe" value="Güney" onchange="metinOlustur()"><span>Güney</span></label>
+        <label><input type="checkbox" name="cephe" value="Doğu" onchange="metinOlustur()"><span>Doğu</span></label>
+        <label><input type="checkbox" name="cephe" value="Batı" onchange="metinOlustur()"><span>Batı</span></label>
+        <label><input type="checkbox" name="cephe" value="Kuzey-Doğu" onchange="metinOlustur()"><span>Kuzey-Doğu</span></label>
+        <label><input type="checkbox" name="cephe" value="Kuzey-Batı" onchange="metinOlustur()"><span>Kuzey-Batı</span></label>
+        <label><input type="checkbox" name="cephe" value="Güney-Doğu" onchange="metinOlustur()"><span>Güney-Doğu</span></label>
+        <label><input type="checkbox" name="cephe" value="Güney-Batı" onchange="metinOlustur()"><span>Güney-Batı</span></label>
       </div>
     </div>
   </div>
@@ -125,53 +125,51 @@
   <div class="form-group">
     <label>Projeye göre değişiklik var mı?</label>
     <div style="display:flex; gap:20px; margin: 10px 0;">
-      <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="hayir" checked onchange="farkKontrol(); metinOlustur(); saveActiveToModelSoft();"> Hayır</label>
-      <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="evet" onchange="farkKontrol(); metinOlustur(); saveActiveToModelSoft();"> Evet</label>
+      <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="hayir" checked onchange="farkKontrol(); metinOlustur();"> Hayır</label>
+      <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="evet" onchange="farkKontrol(); metinOlustur();"> Evet</label>
     </div>
     <div id="farkDetay" class="hidden">
-      <div class="input-item"><label>İlave Açıklaması</label><textarea id="farkAciklama" oninput="metinOlustur(); saveActiveToModelSoft();"></textarea></div>
-      <div class="input-item"><label>İlave Brüt Alan (m²)</label><input type="number" id="ilaveBrut" value="0" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
+      <div class="input-item"><label>İlave Açıklaması</label><textarea id="farkAciklama" oninput="metinOlustur()"></textarea></div>
+      <div class="input-item"><label>İlave Brüt Alan (m²)</label><input type="number" id="ilaveBrut" value="0" oninput="metinOlustur()"></div>
     </div>
   </div>
 
   <div class="section-title">3. Taşınmaz Hacimleri (Sıralama: Salon Başa)</div>
   <div class="hacim-grid">
-    <div class="hacim-card"><label>Salon</label><input type="number" id="count_salon" value="1" oninput="hacimPanelKontrol(); metinOlustur(); saveActiveToModelSoft();"></div>
-    <div class="hacim-card"><label>Oda</label><input type="number" id="count_oda" value="3" oninput="hacimPanelKontrol(); metinOlustur(); saveActiveToModelSoft();"></div>
-    <div class="hacim-card"><label>Mutfak</label><input type="number" id="count_mutfak" value="1" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-    <div class="hacim-card"><label>Banyo</label><input type="number" id="count_banyo" value="1" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-    <div class="hacim-card"><label>WC</label><input type="number" id="count_wc" value="1" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-    <div class="hacim-card"><label>Antre/Hol</label><input type="number" id="count_antre" value="1" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-    <div class="hacim-card"><label>Balkon</label><input type="number" id="count_balkon" value="1" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
+    <div class="hacim-card"><label>Salon</label><input type="number" id="count_salon" value="1" oninput="hacimPanelKontrol(); metinOlustur();"></div>
+    <div class="hacim-card"><label>Oda</label><input type="number" id="count_oda" value="3" oninput="hacimPanelKontrol(); metinOlustur();"></div>
+    <div class="hacim-card"><label>Mutfak</label><input type="number" id="count_mutfak" value="1" oninput="metinOlustur()"></div>
+    <div class="hacim-card"><label>Banyo</label><input type="number" id="count_banyo" value="1" oninput="metinOlustur()"></div>
+    <div class="hacim-card"><label>WC</label><input type="number" id="count_wc" value="1" oninput="metinOlustur()"></div>
+    <div class="hacim-card"><label>Antre/Hol</label><input type="number" id="count_antre" value="1" oninput="metinOlustur()"></div>
+    <div class="hacim-card"><label>Balkon</label><input type="number" id="count_balkon" value="1" oninput="metinOlustur()"></div>
   </div>
 
   <div class="section-title">4. Detaylar ve Tesisat (Tıkla-Seç)</div>
   <div class="form-group">
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      <div class="input-item"><label>Antre Zemin</label><input type="text" id="antreZemin" list="h_antreZemin" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Antre Duvar</label><input type="text" id="antreDuvar" list="h_antreDuvar" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item salon-inputs"><label>Salon Zemin</label><input type="text" id="salonZemin" list="h_salonZemin" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item salon-inputs"><label>Salon Duvar</label><input type="text" id="salonDuvar" list="h_salonDuvar" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item oda-inputs"><label>Oda Zemin</label><input type="text" id="odaZemin" list="h_odaZemin" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item oda-inputs"><label>Oda Duvar</label><input type="text" id="odaDuvar" list="h_odaDuvar" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Mutfak Zemin</label><input type="text" id="mutfakZemin" list="h_mutfakZemin" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Mutfak Duvar</label><input type="text" id="mutfakDuvar" list="h_mutfakDuvar" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Mutfak Dolabı</label><input type="text" id="mutfakDolap" list="h_mutfakDolap" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Mutfak Tezgahı</label><input type="text" id="mutfakTezgah" list="h_mutfakTezgah" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Islak Hacim</label><input type="text" id="islakHacim" list="h_islakHacim" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Giriş Kapısı</label><input type="text" id="daireKapi" list="h_daireKapi" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>İç Kapılar</label><input type="text" id="icKapi" list="h_icKapi" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Pencereler</label><input type="text" id="pencere" list="h_pencere" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
-      <div class="input-item"><label>Isıtma</label><input type="text" id="isitma" list="h_isitma" onfocus="showList(this)" oninput="metinOlustur(); saveActiveToModelSoft();"></div>
+      <div class="input-item"><label>Antre Zemin</label><input type="text" id="antreZemin" list="h_antreZemin" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Antre Duvar</label><input type="text" id="antreDuvar" list="h_antreDuvar" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item salon-inputs"><label>Salon Zemin</label><input type="text" id="salonZemin" list="h_salonZemin" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item salon-inputs"><label>Salon Duvar</label><input type="text" id="salonDuvar" list="h_salonDuvar" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item oda-inputs"><label>Oda Zemin</label><input type="text" id="odaZemin" list="h_odaZemin" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item oda-inputs"><label>Oda Duvar</label><input type="text" id="odaDuvar" list="h_odaDuvar" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Mutfak Zemin</label><input type="text" id="mutfakZemin" list="h_mutfakZemin" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Mutfak Duvar</label><input type="text" id="mutfakDuvar" list="h_mutfakDuvar" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Mutfak Dolabı</label><input type="text" id="mutfakDolap" list="h_mutfakDolap" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Mutfak Tezgahı</label><input type="text" id="mutfakTezgah" list="h_mutfakTezgah" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Islak Hacim</label><input type="text" id="islakHacim" list="h_islakHacim" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Giriş Kapısı</label><input type="text" id="daireKapi" list="h_daireKapi" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>İç Kapılar</label><input type="text" id="icKapi" list="h_icKapi" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Pencereler</label><input type="text" id="pencere" list="h_pencere" onfocus="showList(this)" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Isıtma</label><input type="text" id="isitma" list="h_isitma" onfocus="showList(this)" oninput="metinOlustur()"></div>
     </div>
   </div>
 
   <button class="btn btn-save" onclick="kaydet()">AKTİF BB'Yİ KAYDET (LOCAL + BULUT)</button>
 
-  <!-- Aktif BB taslağı -->
   <div id="taslak" class="taslak" oncopy="return false"></div>
 
-  <!-- Tüm BB metinleri birleşik -->
   <div style="margin-top:22px; font-weight:bold; color:var(--primary);">TÜM BAĞIMSIZ BÖLÜM METİNLERİ (ALT ALTA)</div>
   <div id="taslakAll" class="taslakAll" oncopy="return false">Veri girişi bekleniyor...</div>
 
@@ -189,18 +187,48 @@
 </div>
 
 <script>
-  // Firebase refs
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  // URL'den rapor numarasını al (senin yapında legacy id index var)
-  const urlParams = new URLSearchParams(window.location.search);
-  const id = urlParams.get('id');
+  /* ========= RID + legacy id desteği ========= */
+  const params = new URLSearchParams(window.location.search);
+  let rid = params.get('rid');
+  const legacyId = params.get('id');
+
+  function genRid(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
+  function ensureRidMigration(arr){
+    let changed=false;
+    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
+    return changed;
+  }
+  function findIndexByRid(arr, rid){
+    return (arr||[]).findIndex(r => r && r.rid === rid);
+  }
 
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-  let report = (id !== null && reports[id]) ? reports[id] : null;
+  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // Çoklu BB listesi
+  // legacy id -> rid yönlendirme
+  if (!rid && legacyId !== null && legacyId !== "") {
+    const idxLegacy = Number(legacyId);
+    if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
+      rid = reports[idxLegacy].rid;
+      const file = (location.pathname.split("/").pop() || "bb-detay.html");
+      window.location.replace(file + "?rid=" + encodeURIComponent(rid));
+    }
+  }
+
+  function getLatestData(){
+    const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+    const i = rid ? findIndexByRid(arr, rid) : -1;
+    const r = (i >= 0) ? (arr[i] || null) : null;
+    return { arr, i, r };
+  }
+
+  /* ========= Çoklu BB ========= */
   let activeBBIndex = 0;
 
   function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
@@ -213,16 +241,15 @@
     };
   }
 
-  function ensureBBList(){
+  function ensureBBList(report){
     if (!report.bbDetayList || !Array.isArray(report.bbDetayList) || report.bbDetayList.length === 0) {
       // Eski tek kayıt varsa migrate et
       if (report.bbDetay) {
-        report.bbDetayList = [ { bbid: "bb_1", baslik: "1. BB", bbDetay: deepClone(report.bbDetay) } ];
+        report.bbDetayList = [ { bbid:"bb_1", baslik:"1. BB", bbDetay: deepClone(report.bbDetay) } ];
       } else {
         report.bbDetayList = [ createEmptyBB(1) ];
       }
     } else {
-      // eksik alanları toparla
       report.bbDetayList.forEach((x, idx) => {
         if (!x.bbid) x.bbid = "bb_" + (idx+1);
         if (!x.baslik) x.baslik = `${idx+1}. BB`;
@@ -231,14 +258,11 @@
     }
   }
 
-  // Güvenlik: inputlarda kopyala/yapıştır serbest, sadece taslak korunsun
+  /* GÜVENLİK: sadece print/save/view-source engelle; inputlarda kopyala serbest */
   document.addEventListener('keydown', function(e) {
     const isInput = e.target.closest('input, textarea, select');
-    if (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) {
-      // inputlarda ctrl+c serbest
-      if (isInput && e.key === 'c') return;
-      e.preventDefault();
-    }
+    if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) e.preventDefault();
+    if (e.ctrlKey && e.key === 'c' && !isInput) e.preventDefault();
   });
 
   document.addEventListener('contextmenu', (e) => {
@@ -247,35 +271,37 @@
     e.preventDefault();
   });
 
-  // Giriş yapılmadıysa veya ID yoksa kov
+  // Auth guard
   auth.onAuthStateChanged((user) => {
-    if (!user || !id || !report) {
+    const { r } = getLatestData();
+    if (!user || !rid || !r) {
       window.location.href = 'index.html';
       return;
     }
   });
 
-  const fieldsToRemember = ['antreZemin', 'antreDuvar', 'salonZemin', 'salonDuvar', 'odaZemin', 'odaDuvar', 'mutfakZemin', 'mutfakDuvar', 'mutfakDolap', 'mutfakTezgah', 'islakHacim', 'daireKapi', 'icKapi', 'pencere', 'isitma'];
+  const fieldsToRemember = ['antreZemin','antreDuvar','salonZemin','salonDuvar','odaZemin','odaDuvar','mutfakZemin','mutfakDuvar','mutfakDolap','mutfakTezgah','islakHacim','daireKapi','icKapi','pencere','isitma'];
 
   window.onload = function() {
-    if (!report || !report.propertyName) {
-      alert("Rapor verisi bulunamadı!");
-      return;
-    }
+    const { arr, i, r } = getLatestData();
+    if (!r) { alert("Rapor verisi bulunamadı!"); return; }
 
-    ensureBBList();
-    document.getElementById('raporBilgi').textContent = (report.propertyName || "Dosya") + " Detayları";
+    ensureBBList(r);
+
+    document.getElementById('raporBilgi').textContent = (r.propertyName || "Dosya") + " Detayları";
 
     initAutocomplete();
     renderBBTabs();
 
-    // Aktif BB'de kayıt varsa yükle
     loadActiveBBToForm();
-
     hacimPanelKontrol();
     farkKontrol();
     metinOlustur();
     buildAllText();
+
+    // kaydet geri
+    arr[i] = r;
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
   };
 
   function showList(input) {
@@ -309,10 +335,12 @@
      BB Sekmeleri / Kopyalama
   ============================ */
   function renderBBTabs(){
-    const el = document.getElementById("bbTabs");
-    if (!el) return;
+    const { r } = getLatestData();
+    if (!r) return;
+    ensureBBList(r);
 
-    el.innerHTML = report.bbDetayList.map((x, idx) => {
+    const el = document.getElementById("bbTabs");
+    el.innerHTML = r.bbDetayList.map((x, idx) => {
       const active = idx === activeBBIndex ? "bbTab active" : "bbTab";
       const label = x.baslik || `${idx+1}. BB`;
       return `<button type="button" class="${active}" onclick="setActiveBB(${idx})">${label}</button>`;
@@ -320,7 +348,6 @@
   }
 
   function setActiveBB(idx){
-    // önce aktif BB'yi soft kaydet (formdan modele)
     saveActiveToModelSoft();
     activeBBIndex = idx;
     renderBBTabs();
@@ -332,25 +359,28 @@
   }
 
   function addNewBB(fromClone){
+    const { arr, i, r } = getLatestData();
+    if (!r || i < 0) return;
+
+    ensureBBList(r);
     saveActiveToModelSoft();
 
     if (fromClone) {
-      const src = report.bbDetayList[activeBBIndex];
+      const src = r.bbDetayList[activeBBIndex];
       const cloned = deepClone(src);
       cloned.bbid = "bb_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8);
-      cloned.baslik = `${report.bbDetayList.length + 1}. BB`;
-      // metni kopyalayacağız ama istersen burada sıfırlayabilirsin:
-      // if (cloned.bbDetay) cloned.bbDetay.tamMetin = "";
-      report.bbDetayList.push(cloned);
+      cloned.baslik = `${r.bbDetayList.length + 1}. BB`;
+      r.bbDetayList.push(cloned);
     } else {
-      report.bbDetayList.push(createEmptyBB(report.bbDetayList.length + 1));
+      r.bbDetayList.push(createEmptyBB(r.bbDetayList.length + 1));
     }
 
-    // sırala başlıkları
-    report.bbDetayList.forEach((x, i) => x.baslik = `${i+1}. BB`);
+    r.bbDetayList.forEach((x, idx) => x.baslik = x.baslik || `${idx+1}. BB`);
+    activeBBIndex = r.bbDetayList.length - 1;
 
-    activeBBIndex = report.bbDetayList.length - 1;
-    persistReportLocalOnly();
+    arr[i] = r;
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+
     renderBBTabs();
     loadActiveBBToForm();
     hacimPanelKontrol();
@@ -360,28 +390,29 @@
   }
 
   function deleteActiveBB(){
-    if (report.bbDetayList.length === 1) {
+    const { arr, i, r } = getLatestData();
+    if (!r || i < 0) return;
+    ensureBBList(r);
+
+    if (r.bbDetayList.length === 1) {
       alert("En az 1 bağımsız bölüm kalmalı.");
       return;
     }
     if (!confirm("Seçili bağımsız bölümü silmek istiyor musun?")) return;
 
-    report.bbDetayList.splice(activeBBIndex, 1);
-    report.bbDetayList.forEach((x, i) => x.baslik = `${i+1}. BB`);
+    r.bbDetayList.splice(activeBBIndex, 1);
+    r.bbDetayList.forEach((x, idx) => x.baslik = `${idx+1}. BB`);
     activeBBIndex = Math.max(0, activeBBIndex - 1);
 
-    persistReportLocalOnly();
+    arr[i] = r;
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+
     renderBBTabs();
     loadActiveBBToForm();
     hacimPanelKontrol();
     farkKontrol();
     metinOlustur();
     buildAllText();
-  }
-
-  function persistReportLocalOnly(){
-    reports[id] = report;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
   }
 
   /* ===========================
@@ -415,12 +446,10 @@
     };
 
     fieldsToRemember.forEach(f => obj.zeminDuvar[f] = document.getElementById(f).value);
-
     return obj;
   }
 
   function loadBBDetayToForm(d){
-    // boşsa sıfırla
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = (val ?? ""); };
 
     set('kat', d?.kat || "");
@@ -432,7 +461,6 @@
     set('ilaveBrut', d?.ilaveBrut || 0);
     set('farkAciklama', d?.farkAciklama || "");
 
-    // sayaçlar
     set('count_salon', d?.sayaclar?.count_salon ?? 1);
     set('count_oda', d?.sayaclar?.count_oda ?? 3);
     set('count_mutfak', d?.sayaclar?.count_mutfak ?? 1);
@@ -441,7 +469,6 @@
     set('count_antre', d?.sayaclar?.count_antre ?? 1);
     set('count_balkon', d?.sayaclar?.count_balkon ?? 1);
 
-    // cepheler
     document.querySelectorAll('input[name="cephe"]').forEach(cb => cb.checked = false);
     if (d?.cephe && Array.isArray(d.cephe)) {
       document.querySelectorAll('input[name="cephe"]').forEach(cb => {
@@ -458,23 +485,26 @@
       if (el) el.value = (d?.zeminDuvar && d.zeminDuvar[f]) ? d.zeminDuvar[f] : "";
     });
 
-    // taslak
     document.getElementById('taslak').textContent = d?.tamMetin || "";
   }
 
   function loadActiveBBToForm(){
-    ensureBBList();
-    const active = report.bbDetayList[activeBBIndex];
-    loadBBDetayToForm(active.bbDetay);
+    const { r } = getLatestData();
+    if (!r) return;
+    ensureBBList(r);
+    const active = r.bbDetayList[activeBBIndex];
+    loadBBDetayToForm(active?.bbDetay);
   }
 
-  // input değiştikçe modele yaz (sessiz)
   function saveActiveToModelSoft(){
-    ensureBBList();
-    const active = report.bbDetayList[activeBBIndex];
+    const { arr, i, r } = getLatestData();
+    if (!r || i < 0) return;
+
+    ensureBBList(r);
+    const active = r.bbDetayList[activeBBIndex];
     active.bbDetay = readFormToBBDetay();
 
-    // sekme başlığını biraz anlamlı yapalım (Kat / Kapı ile)
+    // sekme başlığı (kat/kapi/bbno)
     const k = (active.bbDetay.kat || "").trim();
     const kap = (active.bbDetay.kapiNo || "").trim();
     const bbno = (active.bbDetay.bbNo || "").trim();
@@ -482,12 +512,12 @@
     if (k || kap || bbno) suffix = ` (${k || "-"} / BB:${bbno || "-"} / K:${kap || "-"})`;
     active.baslik = `${activeBBIndex+1}. BB${suffix}`;
 
-    persistReportLocalOnly();
-    renderBBTabs();
+    arr[i] = r;
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
   }
 
   /* ===========================
-     Metin üretimi (tek BB)
+     Metin üretimi (tek BB) + birleşik
   ============================ */
   function metinOlustur() {
     const v = (id) => (document.getElementById(id).value || "").trim() || "...";
@@ -537,14 +567,17 @@
 
     document.getElementById('taslak').textContent = metin;
 
-    // aktif modele yaz + birleşik metni güncelle
     saveActiveToModelSoft();
     buildAllText();
+    renderBBTabs();
   }
 
   function buildAllText(){
-    ensureBBList();
-    const blocks = report.bbDetayList.map((x, idx) => {
+    const { arr, i, r } = getLatestData();
+    if (!r || i < 0) return;
+    ensureBBList(r);
+
+    const blocks = r.bbDetayList.map((x, idx) => {
       const d = x.bbDetay || {};
       const kat = (d.kat || "-").trim();
       const bbNo = (d.bbNo || "-").trim();
@@ -556,45 +589,42 @@
 
     document.getElementById('taslakAll').textContent = blocks || "Veri girişi bekleniyor...";
 
-    // raporda kullanılmak üzere birleşik metni de sakla
-    report.bbDetayCombinedText = blocks;
-    persistReportLocalOnly();
+    r.bbDetayCombinedText = blocks;
+    // geri uyumluluk: eski rapor oluşturan sayfa bbDetay bekliyorsa 1. BB’yi de yaz
+    r.bbDetay = deepClone(r.bbDetayList[0].bbDetay || {});
+
+    arr[i] = r;
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
   }
 
   /* ===========================
      Kaydet (aktif BB + bulut)
   ============================ */
   async function kaydet() {
-    // history kaydet
     fieldsToRemember.forEach(f => {
       const el = document.getElementById(f);
       const val = el ? el.value.trim() : "";
       if(val) {
         let h = JSON.parse(localStorage.getItem('h_bb_' + f)) || [];
-        if(!h.includes(val)) {
-          h.unshift(val);
-          localStorage.setItem('h_bb_' + f, JSON.stringify(h.slice(0,15)));
-        }
+        if(!h.includes(val)) { h.unshift(val); localStorage.setItem('h_bb_' + f, JSON.stringify(h.slice(0,15))); }
       }
     });
 
-    // aktif BB'yi kesin kaydet
-    ensureBBList();
-    report.bbDetayList[activeBBIndex].bbDetay = readFormToBBDetay();
-    buildAllText();
+    const { arr, i, r } = getLatestData();
+    if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
+    ensureBBList(r);
 
-    // geri uyumluluk: eskisi tek bbDetay bekleyen sayfalar varsa 1. BB'yi de yaz
-    report.bbDetay = deepClone(report.bbDetayList[0].bbDetay || {});
+    r.bbDetayList[activeBBIndex].bbDetay = readFormToBBDetay();
+    buildAllText(); // birleşik metni günceller + bbDetay sync
 
-    reports[id] = report;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+    arr[i] = r;
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
 
-    // Firestore senkron
     const user = auth.currentUser;
     if (user) {
       try{
         await db.collection("users").doc(user.uid).set({
-          gayrimenkul_reports: reports,
+          gayrimenkul_reports: arr,
           lastUpdate: new Date().toISOString()
         }, { merge: true });
         alert("✅ Aktif bağımsız bölüm kaydedildi ve buluta işlendi!");
@@ -607,10 +637,12 @@
     }
 
     initAutocomplete();
+    renderBBTabs();
   }
 
   function anaMenuyeDon() {
-    window.location.href = `rapor-detay.html?id=${id}`;
+    // rapor-detay sayfan rid ile çalışıyor varsayıyorum
+    window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
   }
 </script>
 
