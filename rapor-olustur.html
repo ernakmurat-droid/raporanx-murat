@@ -156,7 +156,54 @@
       .trim();
   }
 
-  /* ========= RID + legacy id desteği ========= */
+  /* ========= Yardımcılar ========= */
+  function valOr(...cands){
+    for (const c of cands){
+      if (c !== undefined && c !== null){
+        const s = String(c).trim();
+        if (s) return s;
+      }
+    }
+    return "";
+  }
+
+  function getByPath(obj, path){
+    try{
+      return path.split(".").reduce((o,k)=> (o && o[k] !== undefined) ? o[k] : undefined, obj);
+    }catch(e){ return undefined; }
+  }
+
+  // Derinden anahtar arama (alan adı değişmiş olsa bile metni bulur)
+  function findDeepString(obj, keySet, maxNodes = 8000){
+    const keys = new Set(keySet.map(k => String(k).toLowerCase()));
+    const seen = new Set();
+    const q = [obj];
+    let visited = 0;
+
+    while(q.length && visited < maxNodes){
+      const cur = q.shift();
+      if(!cur || typeof cur !== "object") continue;
+      if(seen.has(cur)) continue;
+      seen.add(cur);
+      visited++;
+
+      for (const k in cur){
+        const v = cur[k];
+        const kl = String(k).toLowerCase();
+
+        if (keys.has(kl) && typeof v === "string" && v.trim()){
+          return v;
+        }
+
+        if (v && typeof v === "object"){
+          q.push(v);
+        }
+      }
+    }
+    return "";
+  }
+
+  /* ========= RID + legacy id ========= */
   const params = new URLSearchParams(location.search);
   let rid = params.get("rid");
   const legacyId = params.get("id");
@@ -177,7 +224,7 @@
   let reports = JSON.parse(localStorage.getItem("gayrimenkul_reports")) || [];
   if (ensureRidMigration(reports)) localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
 
-  // legacy id -> rid yönlendirme
+  // legacy id -> rid
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -190,34 +237,103 @@
   const idx = rid ? findIndexByRid(reports, rid) : -1;
   const report = (idx >= 0) ? (reports[idx] || {}) : null;
 
-  function valOr(...cands){
-    for (const c of cands){
-      if (c !== undefined && c !== null){
-        const s = String(c).trim();
-        if (s) return s;
-      }
-    }
-    return "";
-  }
-
+  /* ========= Çoklu BB metni ========= */
   function combineBBMetin(r){
-    // yeni sistem: bbDetayList
     if (Array.isArray(r.bbDetayList) && r.bbDetayList.length > 0) {
       const parts = [];
-      r.bbDetayList.forEach((bbWrap, i) => {
-        const bb = bbWrap?.bbDetay || {};
-        const no = valOr(bb.bbNo, bbWrap?.baslik, `${i+1}. BB`);
+      r.bbDetayList.forEach((wrap, i) => {
+        const bb = wrap?.bbDetay || {};
+        const no = valOr(bb.bbNo, wrap?.baslik, `${i+1}. BB`);
         const metin = valOr(bb.tamMetin);
-        if (metin) {
-          parts.push(`${no}:\n${metin}`);
-        }
+        if (metin) parts.push(`${no}:\n${metin}`);
       });
       return parts.join("\n\n");
     }
-    // eski sistem: tek bbDetay
     return valOr(r.bbDetay?.tamMetin);
   }
 
+  /* ========= EMSAL METNİ (global + multi-bb fallback) ========= */
+  function getEmsalMetni(r){
+    // 1) global alanlar
+    let m = valOr(
+      getByPath(r, "degerlemeOzet.emsalFinalMetni"),
+      r.emsalFinalMetni
+    );
+    if (m) return m;
+
+    // 2) çoklu BB içinden bul
+    if (Array.isArray(r.bbDetayList) && r.bbDetayList.length > 0) {
+      const parts = [];
+      r.bbDetayList.forEach((wrap, i) => {
+        const label = valOr(wrap?.bbDetay?.bbNo, wrap?.baslik, `${i+1}. BB`);
+        const mm = valOr(
+          getByPath(wrap, "degerleme.degerlemeOzet.emsalFinalMetni"),
+          getByPath(wrap, "degerleme.emsalFinalMetni")
+        );
+        if (mm) parts.push(`${label}:\n${mm}`);
+      });
+      if (parts.length) return parts.join("\n\n");
+    }
+
+    // 3) en son çare: derin arama
+    return findDeepString(r, [
+      "emsalfinalmetni",
+      "emsalmetni",
+      "analizmetni",
+      "degerlemeanalizmetni"
+    ]);
+  }
+
+  /* ========= KONUM/ÇEVRE METNİ ========= */
+  function getKonumMetni(r){
+    // önce en olası path’ler
+    let m = valOr(
+      getByPath(r, "konumCevre.tamMetin"),
+      getByPath(r, "konumVeCevre.tamMetin"),
+      getByPath(r, "cevreOzellikleri.tamMetin"),
+      getByPath(r, "konumCevreMetni"),
+      getByPath(r, "konumMetni"),
+      getByPath(r, "cevreMetni")
+    );
+    if (m) return m;
+
+    // derinden anahtar ara
+    return findDeepString(r, [
+      "tammetin",
+      "konumcevremetni",
+      "konummetni",
+      "cevremetni",
+      "konumvecevremetni",
+      "cevreozelliklerimetni"
+    ]);
+  }
+
+  /* ========= TAPU METNİ ========= */
+  function getTapuMetniB1(r){
+    let m = valOr(
+      r.tapuMetniB1,
+      getByPath(r, "tapu.tapuMetniB1"),
+      getByPath(r, "tapuMetinB1"),
+      getByPath(r, "tapu.b1"),
+      getByPath(r, "tapu.B1")
+    );
+    if (m) return m;
+    return findDeepString(r, ["tapumetnib1", "tapub1", "tapu_b1"]);
+  }
+
+  function getTapuMetniB2(r){
+    let m = valOr(
+      r.tapuMetniB2,
+      getByPath(r, "tapu.tapuMetniB2"),
+      getByPath(r, "tapuMetinB2"),
+      getByPath(r, "tapu.b2"),
+      getByPath(r, "tapu.B2")
+    );
+    if (m) return m;
+    return findDeepString(r, ["tapumetnib2", "tapub2", "tapu_b2"]);
+  }
+
+  /* ========= Rapor Bas ========= */
   function raporOlustur(){
     const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
     document.getElementById('raporTarih').textContent = `Rapor Oluşturma: ${today}`;
@@ -235,41 +351,25 @@
     document.getElementById('imarMetin').textContent = duzeltTR(valOr(report.imarMetni));
 
     // BELGELER
-    document.getElementById('belgelerMetin').textContent = duzeltTR(valOr(report.belgelerMetni));
+    document.getElementById('belgelerMetin').textContent = duzeltTR(valOr(report.belgelerMetni, "Veri girilmedi."));
 
     // BİNA
-    // bazen bina metni report.bina.metin bazen report.binaMetni gibi eski alanlarda olabiliyor:
-    document.getElementById('binaMetin').textContent = duzeltTR(valOr(report.bina?.metin, report.binaMetni));
+    document.getElementById('binaMetin').textContent = duzeltTR(valOr(report.bina?.metin, report.binaMetni, "Veri girilmedi."));
 
-    // BB
+    // BB (tek + çoklu)
     document.getElementById('bbMetin').textContent = duzeltTR(valOr(combineBBMetin(report), "Veri girilmedi."));
 
-    // KONUM / ÇEVRE
-    // “rid kayması” dediğin genelde burada olur çünkü bazı raporlarda alan ismi farklı:
-    // report.konumCevre.tamMetin / report.konumMetni / report.cevreMetni vs.
-    document.getElementById('konumMetin').textContent = duzeltTR(
-      valOr(
-        report.konumCevre?.tamMetin,
-        report.konumCevreMetni,
-        report.konumMetni,
-        report.cevreMetni,
-        "Veri girilmedi."
-      )
-    );
+    // KONUM/ÇEVRE
+    const konum = getKonumMetni(report);
+    document.getElementById('konumMetin').textContent = duzeltTR(valOr(konum, "Veri girilmedi."));
 
     // TAPU
-    document.getElementById('tapuMetinB1').textContent = duzeltTR(valOr(report.tapuMetniB1, "Veri girilmedi."));
-    document.getElementById('tapuMetinB2').textContent = duzeltTR(valOr(report.tapuMetniB2, "Veri girilmedi."));
+    document.getElementById('tapuMetinB1').textContent = duzeltTR(valOr(getTapuMetniB1(report), "Veri girilmedi."));
+    document.getElementById('tapuMetinB2').textContent = duzeltTR(valOr(getTapuMetniB2(report), "Veri girilmedi."));
 
     // EMSAL / DEĞERLEME
-    // yeni/çoklu BB sisteminde metin bazen bbDetayList içinde saklanıyor ama sen global metne geçmiştin
-    const emsalMetni =
-      valOr(
-        report.degerlemeOzet?.emsalFinalMetni,
-        report.emsalFinalMetni
-      ) || "Analiz tamamlanmadı.";
-
-    document.getElementById('emsalMetin').textContent = duzeltTR(emsalMetni);
+    const emsal = getEmsalMetni(report);
+    document.getElementById('emsalMetin').textContent = duzeltTR(valOr(emsal, "Analiz tamamlanmadı."));
   }
 
   function geriDon(){
@@ -288,3 +388,4 @@
 
 </body>
 </html>
+
