@@ -1,237 +1,608 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Profesyonel Emsal Analiz Sistemi - Raporan X</title>
-    <style>
-        :root { --primary: #1a237e; --secondary: #3f51b5; --success: #2e7d32; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin:0; padding-bottom: 100px; color: #333; }
-        .header { background: var(--primary); color:white; padding:25px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; cursor: pointer; border: none; }
-        .container { max-width:950px; margin:20px auto; padding:0 20px; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e0e6ed; }
-        .section-title { color: var(--primary); font-size: 1.1rem; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px; }
-        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .input-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; }
-        .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; }
-        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-add { background: var(--success); color: white; width: 100%; box-shadow: 0 4px 10px rgba(46,125,50,0.2); }
-        .btn-save-final { background: var(--primary); color: white; margin-top: 15px; }
-        
-        .final-box { 
-            background: #fff; border: 2px solid #ddd; padding: 25px; border-radius: 12px; 
-            white-space: pre-wrap; font-size: 15px; line-height: 1.8; color: #333; min-height: 100px;
-            user-select: none; transition: filter 0.3s ease;
-        }
-        .final-box:not(:hover) { filter: blur(2px); }
-        .insaat-toggle { background: #fff3e0; border: 1px solid #ffe0b2; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #e65100; }
-        .hidden { display: none !important; }
-        .emsal-liste-item { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 5px solid var(--primary); display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
-    </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <title>Profesyonel Emsal Analiz Sistemi - Raporan X</title>
+
+  <style>
+    :root { --primary: #1a237e; --secondary: #3f51b5; --success: #2e7d32; --bg: #f4f7f6; --danger:#c62828; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin:0; padding-bottom: 100px; color: #333; }
+    .header { background: var(--primary); color:white; padding:25px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; cursor: pointer; border: none; }
+    .container { max-width:950px; margin:20px auto; padding:0 20px; }
+    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e0e6ed; }
+    .section-title { color: var(--primary); font-size: 1.1rem; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px; }
+    .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .input-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; }
+    .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+    .btn-add { background: var(--success); color: white; width: 100%; box-shadow: 0 4px 10px rgba(46,125,50,0.2); }
+    .btn-save-final { background: var(--primary); color: white; margin-top: 15px; }
+
+    .final-box {
+      background: #fff; border: 2px solid #ddd; padding: 25px; border-radius: 12px;
+      white-space: pre-wrap; font-size: 15px; line-height: 1.8; color: #333; min-height: 100px;
+      user-select: none; transition: filter 0.3s ease;
+    }
+    .final-box:not(:hover) { filter: blur(2px); }
+
+    .insaat-toggle {
+      background: #fff3e0; border: 1px solid #ffe0b2; padding: 15px; border-radius: 8px; margin-bottom: 15px;
+      display: flex; align-items: center; gap: 10px; font-weight: bold; color: #e65100;
+    }
+    .hidden { display: none !important; }
+
+    .emsal-liste-item {
+      background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px;
+      border-left: 5px solid var(--primary);
+      display: flex; justify-content: space-between; align-items: center; font-size: 14px;
+    }
+    .emsal-liste-item button {
+      padding:8px 10px; border:none; border-radius:8px; cursor:pointer;
+      background: var(--primary); color:white; font-weight:bold;
+    }
+    .emsal-liste-item .del { background: var(--danger); margin-left:6px; }
+
+    /* BB bar */
+    .bbbar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      padding:12px; border:1px solid #e0e6ed; border-radius:12px; background:#fff; margin-bottom:16px;
+    }
+    .bbTabs{ display:flex; gap:8px; flex-wrap:wrap; }
+    .bbTab{
+      padding:10px 12px; border-radius:10px; border:1px solid #ddd; cursor:pointer;
+      background:#fff; color:#333; font-weight:bold;
+    }
+    .bbTab.active{ background: var(--primary); color:#fff; border-color: transparent; }
+  </style>
 </head>
+
 <body oncontextmenu="return false;">
 
 <div class="header">
-    <button onclick="anaMenuyeDon()" class="back">← Menü</button>
-    <h1>EMSAL ANALİZİ VE DEĞERLEME</h1>
-    <div id="raporBilgi">Yükleniyor...</div>
+  <button onclick="anaMenuyeDon()" class="back">← Menü</button>
+  <h1>EMSAL ANALİZİ VE DEĞERLEME</h1>
+  <div id="raporBilgi">Yükleniyor...</div>
 </div>
 
 <div class="container">
-    <div class="section-title">1. Kayıtlı Emsaller (Gizli Veri)</div>
-    <div id="emsalListesi"></div>
-    <button id="btnYeniEkle" class="btn btn-add" onclick="formuAc()">+ YENİ EMSAL ARAŞTIRMASI EKLE</button>
 
-    <div id="emsalFormContainer" class="card" style="display:none; border-top: 5px solid var(--primary);">
-        <div class="section-title" id="formBaslik">Emsal Detay Girişi</div>
-        <input type="hidden" id="editIndex" value="-1">
-        <div class="grid-form">
-            <div class="input-group"><label>(1) Kaynağı</label><input type="text" id="f1" list="h_f1"></div>
-            <div class="input-group"><label>(2) İletişim Telefonu</label><input type="text" id="f2" oninput="formatPhone(this)"></div>
-            <div class="input-group"><label>(3) Konum/Yakınlık</label><input type="text" id="f3" list="h_f3"></div>
-            <div class="input-group"><label>(4) Bina Kat Sayısı</label><input type="number" id="f4"></div>
-            <div class="input-group"><label>(5) Bulunduğu Kat</label><input type="text" id="f5" list="h_f5"></div>
-            <div class="input-group"><label>(6) Oda Sayısı</label><input type="text" id="f6" list="h_f6"></div>
-            <div class="input-group"><label>(7) Beyan Alan (m²)</label><input type="number" id="f7"></div>
-            <div class="input-group"><label>(8) Tahmini Alan (m²)</label><input type="number" id="f8" oninput="hesapla()"></div>
-            <div class="input-group"><label>(9) Taşınmaz Cinsi</label><input type="text" id="f9" list="h_f9"></div>
-            <div class="input-group"><label>(10) İstenen Fiyat (TL)</label>
-                <input type="text" id="f10_mask" oninput="formatMoneyInput(this); hesapla();">
-                <input type="hidden" id="f10">
-            </div>
-            <div class="input-group"><label>(11) Durumu</label><select id="f11"><option value="satılıktır">Satılık</option><option value="kiralıktır">Kiralık</option></select></div>
-            <div class="input-group"><label>(14) Pazarlık Payı %</label><input type="number" id="f14" value="5" oninput="hesapla()"></div>
-            <div class="input-group"><label>(12) Şerefiye (+)</label><input type="number" id="f12" value="0" oninput="hesapla()"></div>
-            <div class="input-group"><label>(13) Şerefiye (-)</label><input type="number" id="f13" value="0" oninput="hesapla()"></div>
-            <div class="input-group" style="grid-column: span 2;"><label>(17) Düzeltilmiş Birim Değer</label><input type="text" id="f17" readonly style="background:#e8f5e9; font-weight:bold; color:#2e7d32;"></div>
-        </div>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn btn-save-final" onclick="emsalKaydet()" style="flex:2; margin:0;">VERİYİ LİSTEYE İŞLE</button>
-            <button class="btn" onclick="formuKapat()" style="flex:1; background:#9e9e9e; color:white;">İPTAL</button>
-        </div>
+  <!-- BB Sekmeleri -->
+  <div class="bbbar">
+    <div style="font-weight:bold; color:var(--primary);">Bağımsız Bölüm Seç:</div>
+    <div class="bbTabs" id="bbTabs"></div>
+  </div>
+
+  <div class="section-title">1. Kayıtlı Emsaller (Gizli Veri)</div>
+  <div id="emsalListesi"></div>
+  <button id="btnYeniEkle" class="btn btn-add" onclick="formuAc()">+ YENİ EMSAL ARAŞTIRMASI EKLE</button>
+
+  <div id="emsalFormContainer" class="card" style="display:none; border-top: 5px solid var(--primary);">
+    <div class="section-title" id="formBaslik">Emsal Detay Girişi</div>
+    <input type="hidden" id="editIndex" value="-1">
+
+    <div class="grid-form">
+      <div class="input-group"><label>(1) Kaynağı</label><input type="text" id="f1" list="h_f1"></div>
+      <div class="input-group"><label>(2) İletişim Telefonu</label><input type="text" id="f2" oninput="formatPhone(this)"></div>
+      <div class="input-group"><label>(3) Konum/Yakınlık</label><input type="text" id="f3" list="h_f3"></div>
+      <div class="input-group"><label>(4) Bina Kat Sayısı</label><input type="number" id="f4"></div>
+      <div class="input-group"><label>(5) Bulunduğu Kat</label><input type="text" id="f5" list="h_f5"></div>
+      <div class="input-group"><label>(6) Oda Sayısı</label><input type="text" id="f6" list="h_f6"></div>
+      <div class="input-group"><label>(7) Beyan Alan (m²)</label><input type="number" id="f7"></div>
+      <div class="input-group"><label>(8) Tahmini Alan (m²)</label><input type="number" id="f8" oninput="hesapla()"></div>
+      <div class="input-group"><label>(9) Taşınmaz Cinsi</label><input type="text" id="f9" list="h_f9"></div>
+
+      <div class="input-group"><label>(10) İstenen Fiyat (TL)</label>
+        <input type="text" id="f10_mask" oninput="formatMoneyInput(this); hesapla();">
+        <input type="hidden" id="f10">
+      </div>
+
+      <div class="input-group"><label>(11) Durumu</label>
+        <select id="f11">
+          <option value="satılıktır">Satılık</option>
+          <option value="kiralıktır">Kiralık</option>
+        </select>
+      </div>
+
+      <div class="input-group"><label>(14) Pazarlık Payı %</label><input type="number" id="f14" value="5" oninput="hesapla()"></div>
+      <div class="input-group"><label>(12) Şerefiye (+)</label><input type="number" id="f12" value="0" oninput="hesapla()"></div>
+      <div class="input-group"><label>(13) Şerefiye (-)</label><input type="number" id="f13" value="0" oninput="hesapla()"></div>
+
+      <div class="input-group" style="grid-column: span 2;">
+        <label>(17) Düzeltilmiş Birim Değer</label>
+        <input type="text" id="f17" readonly style="background:#e8f5e9; font-weight:bold; color:#2e7d32;">
+      </div>
     </div>
 
-    <div class="insaat-toggle">
-        <input type="checkbox" id="chk_insaat" onchange="toggleInsaat(); finalHesapla();">
-        <label for="chk_insaat" style="cursor:pointer;">İnşaat Seviyeli (Mevcut Durum) Değerleme Yap</label>
+    <div style="display:flex; gap:10px; margin-top:20px;">
+      <button class="btn btn-save-final" onclick="emsalKaydet()" style="flex:2; margin:0;">VERİYİ LİSTEYE İŞLE</button>
+      <button class="btn" onclick="formuKapat()" style="flex:1; background:#9e9e9e; color:white;">İPTAL</button>
     </div>
+  </div>
 
-    <div id="insaat_detay" class="card hidden">
-        <div class="grid-form">
-            <div class="input-group"><label>Mevcut İnşaat Seviyesi (%)</label><input type="number" id="inp_seviye" value="81" oninput="finalHesapla()"></div>
-            <div class="input-group"><label>Eksik İmalat (TL)</label>
-                <input type="text" id="inp_eksik_mask" oninput="formatMoneyInput(this); finalHesapla();">
-                <input type="hidden" id="inp_eksik">
-            </div>
-        </div>
+  <div class="insaat-toggle">
+    <input type="checkbox" id="chk_insaat" onchange="toggleInsaat(); finalHesapla();">
+    <label for="chk_insaat" style="cursor:pointer;">İnşaat Seviyeli (Mevcut Durum) Değerleme Yap</label>
+  </div>
+
+  <div id="insaat_detay" class="card hidden">
+    <div class="grid-form">
+      <div class="input-group"><label>Mevcut İnşaat Seviyesi (%)</label><input type="number" id="inp_seviye" value="81" oninput="finalHesapla()"></div>
+      <div class="input-group"><label>Eksik İmalat (TL)</label>
+        <input type="text" id="inp_eksik_mask" oninput="formatMoneyInput(this); finalHesapla();">
+        <input type="hidden" id="inp_eksik">
+      </div>
     </div>
+  </div>
 
-    <div class="card">
-        <div class="section-title">2. Değerleme ve Birim Analizi</div>
-        <div class="grid-form">
-            <div class="input-group"><label>Bölge Alt Sınır</label><input type="text" id="inp_dusuk_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_dusuk"></div>
-            <div class="input-group"><label>Bölge Üst Sınır</label><input type="text" id="inp_yuksek_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_yuksek"></div>
-            <div class="input-group"><label>Uygulanan Yasal Birim</label><input type="text" id="inp_uygulanan_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_uygulanan"></div>
-            <div class="input-group"><label>Yasal Brüt Alan (m²)</label><input type="text" id="res_brut" readonly style="background:#eee; font-weight: bold;"></div>
-            <div class="input-group"><label>İlave Alan (m²)</label><input type="number" id="inp_proje_disi" oninput="finalHesapla()"></div>
-            <div class="input-group"><label>İlave Birim Değeri</label><input type="text" id="inp_proje_birim_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_proje_birim"></div>
-        </div>
+  <div class="card">
+    <div class="section-title">2. Değerleme ve Birim Analizi</div>
+    <div class="grid-form">
+      <div class="input-group"><label>Bölge Alt Sınır</label>
+        <input type="text" id="inp_dusuk_mask" oninput="formatMoneyInput(this); finalHesapla();">
+        <input type="hidden" id="inp_dusuk">
+      </div>
+
+      <div class="input-group"><label>Bölge Üst Sınır</label>
+        <input type="text" id="inp_yuksek_mask" oninput="formatMoneyInput(this); finalHesapla();">
+        <input type="hidden" id="inp_yuksek">
+      </div>
+
+      <div class="input-group"><label>Uygulanan Yasal Birim</label>
+        <input type="text" id="inp_uygulanan_mask" oninput="formatMoneyInput(this); finalHesapla();">
+        <input type="hidden" id="inp_uygulanan">
+      </div>
+
+      <div class="input-group"><label>Yasal Brüt Alan (m²)</label>
+        <input type="text" id="res_brut" readonly style="background:#eee; font-weight: bold;">
+      </div>
+
+      <div class="input-group"><label>İlave Alan (m²)</label>
+        <input type="number" id="inp_proje_disi" oninput="finalHesapla()">
+      </div>
+
+      <div class="input-group"><label>İlave Birim Değeri</label>
+        <input type="text" id="inp_proje_birim_mask" oninput="formatMoneyInput(this); finalHesapla();">
+        <input type="hidden" id="inp_proje_birim">
+      </div>
     </div>
+  </div>
 
-    <div class="section-title">3. Rapor Analiz Metni</div>
-    <div id="yorumMetni" class="final-box"></div>
-    
-    <button class="btn btn-save-final" style="width:100%; padding:18px; font-size:18px; background: #2e7d32;" onclick="tumRaporuKaydet()">ANALİZİ SİSTEME KAYDET VE BULUTA MÜHÜRLE</button>
+  <div class="section-title">3. Rapor Analiz Metni</div>
+  <div id="yorumMetni" class="final-box"></div>
+
+  <button class="btn btn-save-final" style="width:100%; padding:18px; font-size:18px; background: #2e7d32;" onclick="tumRaporuKaydet()">
+    ANALİZİ SİSTEME KAYDET VE BULUTA MÜHÜRLE
+  </button>
+
 </div>
 
 <script>
-    // 2. ADIM: GÜVENLİK VE ID YÖNETİMİ
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-    let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    let report = reports[id];
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-    // Oturum Kontrolü
-    auth.onAuthStateChanged((user) => {
-        if (!user || !id || !report) {
-            window.location.href = 'index.html';
-        } else {
-            document.getElementById('raporBilgi').textContent = report.propertyName || "Analiz Dosyası";
-            const tasinmazBrut = parseFloat(report.bbDetay?.alanBrut) || 0;
-            document.getElementById('res_brut').value = tasinmazBrut;
-            initAutocomplete();
-            if(report.degerlemeOzet) yukle(report.degerlemeOzet);
-            listele();
-        }
+  /* ========= RID + legacy id desteği ========= */
+  const params = new URLSearchParams(window.location.search);
+  let rid = params.get('rid');
+  const legacyId = params.get('id');
+
+  function genRid(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
+  function ensureRidMigration(arr){
+    let changed=false;
+    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
+    return changed;
+  }
+  function findIndexByRid(arr, rid){
+    return (arr||[]).findIndex(r => r && r.rid === rid);
+  }
+
+  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+
+  // legacy id -> rid yönlendirme
+  if (!rid && legacyId !== null && legacyId !== "") {
+    const idxLegacy = Number(legacyId);
+    if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
+      rid = reports[idxLegacy].rid;
+      const file = (location.pathname.split("/").pop() || "emsal.html");
+      window.location.replace(file + "?rid=" + encodeURIComponent(rid));
+    }
+  }
+
+  function getLatestData(){
+    const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+    const i = rid ? findIndexByRid(arr, rid) : -1;
+    const r = (i >= 0) ? (arr[i] || null) : null;
+    return { arr, i, r };
+  }
+
+  /* ========= Çoklu BB ========= */
+  let activeBBIndex = 0;
+  function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
+
+  function ensureBBList(report){
+    if (!report.bbDetayList || !Array.isArray(report.bbDetayList) || report.bbDetayList.length === 0) {
+      // Eski tek BB varsa migrate et
+      if (report.bbDetay) {
+        report.bbDetayList = [
+          { bbid:"bb_1", baslik:"1. BB", bbDetay: deepClone(report.bbDetay), degerleme: { emsaller: [], degerlemeOzet: {} } }
+        ];
+      } else {
+        report.bbDetayList = [
+          { bbid:"bb_1", baslik:"1. BB", bbDetay: null, degerleme: { emsaller: [], degerlemeOzet: {} } }
+        ];
+      }
+    }
+
+    report.bbDetayList.forEach((x, idx) => {
+      if (!x.bbid) x.bbid = "bb_" + (idx+1);
+      if (!x.baslik) x.baslik = `${idx+1}. BB`;
+      if (typeof x.degerleme !== "object" || x.degerleme === null) x.degerleme = { emsaller: [], degerlemeOzet: {} };
+      if (!Array.isArray(x.degerleme.emsaller)) x.degerleme.emsaller = [];
+      if (typeof x.degerleme.degerlemeOzet !== "object" || x.degerleme.degerlemeOzet === null) x.degerleme.degerlemeOzet = {};
     });
+  }
 
-    // Form Fonksiyonları (Orijinal Kodların)
-    function formatMoneyInput(input) {
-        let value = input.value.replace(/\D/g, "");
-        input.value = value ? new Intl.NumberFormat('tr-TR').format(value) : "";
-        document.getElementById(input.id.replace("_mask", "")).value = value;
+  // güvenlik: print/save/view-source engelle, inputlarda kopyala serbest
+  document.addEventListener('keydown', function(e) {
+    const isInput = e.target.closest('input, textarea, select');
+    if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) e.preventDefault();
+    if (e.ctrlKey && e.key === 'c' && !isInput) e.preventDefault();
+  });
+  document.addEventListener('contextmenu', (e) => {
+    const isInput = e.target.closest('input, textarea, select');
+    if (isInput) return;
+    e.preventDefault();
+  });
+
+  /* ========= Helpers ========= */
+  function formatMoneyInput(input) {
+    let value = input.value.replace(/\D/g, "");
+    input.value = value ? new Intl.NumberFormat('tr-TR').format(value) : "";
+    const hid = input.id.replace("_mask", "");
+    const hEl = document.getElementById(hid);
+    if (hEl) hEl.value = value;
+  }
+
+  function formatPhone(input) {
+    let x = input.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+    input.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '');
+  }
+
+  function toggleInsaat() {
+    document.getElementById('insaat_detay').classList.toggle('hidden', !document.getElementById('chk_insaat').checked);
+  }
+
+  function formatLira(num) {
+    return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num || 0);
+  }
+
+  function getActive(){
+    const { arr, i, r } = getLatestData();
+    if (!r || i < 0) return { arr, i, r, bb:null, deg:null };
+    ensureBBList(r);
+    const bb = r.bbDetayList[activeBBIndex];
+    const deg = bb.degerleme || { emsaller: [], degerlemeOzet: {} };
+    return { arr, i, r, bb, deg };
+  }
+
+  function persist(arr, i, r){
+    arr[i] = r;
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+  }
+
+  /* ========= BB Tabs ========= */
+  function renderBBTabs(){
+    const { r } = getLatestData();
+    if (!r) return;
+    ensureBBList(r);
+
+    const el = document.getElementById("bbTabs");
+    el.innerHTML = r.bbDetayList.map((x, idx) => {
+      const active = idx === activeBBIndex ? "bbTab active" : "bbTab";
+      const label = x.baslik || `${idx+1}. BB`;
+      return `<button type="button" class="${active}" onclick="setActiveBB(${idx})">${label}</button>`;
+    }).join("");
+  }
+
+  function setActiveBB(idx){
+    activeBBIndex = idx;
+    renderBBTabs();
+    refreshActiveBBUI();
+  }
+
+  function refreshActiveBBUI(){
+    const { r, bb, deg } = getActive();
+    if (!r || !bb) return;
+
+    // BB brüt alanını BB detaydan çek
+    const tasinmazBrut = parseFloat(bb.bbDetay?.alanBrut) || 0;
+    document.getElementById('res_brut').value = tasinmazBrut;
+
+    // Kayıtlı özet varsa doldur
+    if (deg.degerlemeOzet) yukle(deg.degerlemeOzet);
+
+    // liste + analiz
+    listele();
+  }
+
+  /* ========= Hesap / Emsal ========= */
+  function hesapla() {
+    const fiyat = parseFloat(document.getElementById('f10').value) || 0;
+    const alan = parseFloat(document.getElementById('f8').value) || 1;
+    const pazarlik = parseFloat(document.getElementById('f14').value) || 0;
+    const serefiyeArti = parseFloat(document.getElementById('f12').value) || 0;
+    const serefiyeEksi = parseFloat(document.getElementById('f13').value) || 0;
+    const birim = (fiyat * (1 - pazarlik/100) / alan) * (1 + (serefiyeArti - serefiyeEksi)/100);
+    document.getElementById('f17').value = formatLira(birim);
+  }
+
+  function emsalKaydet() {
+    const { arr, i, r, bb, deg } = getActive();
+    if (!r || !bb) return;
+
+    const index = parseInt(document.getElementById('editIndex').value);
+    if(!Array.isArray(deg.emsaller)) deg.emsaller = [];
+
+    let e = {};
+    for(let k=1; k<=14; k++) {
+      const el = document.getElementById('f'+k);
+      if(el) e['f'+k] = el.value;
+    }
+    e.f10 = document.getElementById('f10').value;
+    e.f17 = document.getElementById('f17').value;
+
+    const hamBirim = (parseFloat(e.f10) || 0) / (parseFloat(e.f8) || 1);
+    e.hesapSatiri = `(${formatLira(hamBirim)} TL/m², -% ${e.f14 || 0} pazarlık : ${e.f17} TL/m²)`;
+    e.anaMetin =
+      `${(e.f1 || "BELİRTİLMEMİŞ").toUpperCase()} (${e.f2 || "..."}) Konu taşınmazla ${e.f3 || "..."} konumlu, ` +
+      `${e.f4 || "..."} katlı binanın ${e.f5 || "..."} katında, ${e.f6 || "..."} tipindeki, ${e.f8 || "..."} m² alanlı ` +
+      `${e.f9 || "daire"} ${new Intl.NumberFormat('tr-TR').format(e.f10 || 0)} TL bedel ile ${e.f11}.`;
+
+    if(index > -1) deg.emsaller[index] = e;
+    else deg.emsaller.push(e);
+
+    bb.degerleme = deg;
+    persist(arr, i, r);
+
+    formuKapat();
+    listele();
+  }
+
+  function emsalSil(index){
+    const { arr, i, r, bb, deg } = getActive();
+    if (!r || !bb) return;
+    if (!confirm("Bu emsali silmek istiyor musun?")) return;
+
+    deg.emsaller.splice(index, 1);
+    bb.degerleme = deg;
+    persist(arr, i, r);
+    listele();
+  }
+
+  function finalHesapla() {
+    const { arr, i, r, bb, deg } = getActive();
+    if(!r || !bb) return;
+
+    const emsaller = Array.isArray(deg.emsaller) ? deg.emsaller : [];
+    const tasinmazBrut = parseFloat(document.getElementById('res_brut').value) || 0;
+
+    const uygulanan = parseFloat(document.getElementById('inp_uygulanan').value) || 0;
+    const pDisiAlan = parseFloat(document.getElementById('inp_proje_disi').value) || 0;
+    const pDisiBirim = parseFloat(document.getElementById('inp_proje_birim').value) || 0;
+
+    const yasalDeger = Math.round(uygulanan * tasinmazBrut);
+    const pDisiDeger = Math.round(pDisiBirim * pDisiAlan);
+    let toplamDeger = yasalDeger + pDisiDeger;
+
+    // İnşaat seviyeli ise
+    if (document.getElementById('chk_insaat').checked) {
+      const seviye = parseFloat(document.getElementById('inp_seviye').value) || 0;
+      const eksik = parseFloat(document.getElementById('inp_eksik').value) || 0;
+      // Basit yaklaşım: (toplamDeger * seviye%) - eksik
+      toplamDeger = Math.round((toplamDeger * (seviye/100)) - eksik);
+      if (toplamDeger < 0) toplamDeger = 0;
     }
 
-    function formatPhone(input) {
-        let x = input.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
-        input.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '');
+    let metin = "";
+    if (emsaller.length > 0) {
+      metin += emsaller.map(e => e.anaMetin).join("\n") + "\n\n";
+    } else {
+      metin += "Emsal kaydı bulunmamaktadır.\n\n";
     }
 
-    function toggleInsaat() { document.getElementById('insaat_detay').classList.toggle('hidden', !document.getElementById('chk_insaat').checked); }
-    
-    function formatLira(num) { 
-        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num || 0); 
+    metin += `Yapılan analizler sonucunda taşınmaza ${formatLira(uygulanan)}.-TL/m² birim fiyatı takdir edilmiştir.\n`;
+    metin += `Yasal Brüt Alan: ${formatLira(tasinmazBrut)} m²\n`;
+    metin += `Yasal Değer: ${formatLira(yasalDeger)} TL\n`;
+
+    if (pDisiAlan > 0 && pDisiBirim > 0) {
+      metin += `İlave Alan: ${formatLira(pDisiAlan)} m², İlave Birim: ${formatLira(pDisiBirim)} TL/m²\n`;
+      metin += `İlave Değer: ${formatLira(pDisiDeger)} TL\n`;
     }
 
-    function hesapla() {
-        const fiyat = parseFloat(document.getElementById('f10').value) || 0;
-        const alan = parseFloat(document.getElementById('f8').value) || 1;
-        const pazarlik = parseFloat(document.getElementById('f14').value) || 0;
-        const serefiyeArti = parseFloat(document.getElementById('f12').value) || 0;
-        const serefiyeEksi = parseFloat(document.getElementById('f13').value) || 0;
-        const birim = (fiyat * (1 - pazarlik/100) / alan) * (1 + (serefiyeArti - serefiyeEksi)/100);
-        document.getElementById('f17').value = formatLira(birim);
+    if (document.getElementById('chk_insaat').checked) {
+      const seviye = parseFloat(document.getElementById('inp_seviye').value) || 0;
+      const eksik = parseFloat(document.getElementById('inp_eksik').value) || 0;
+      metin += `\n(Mevcut Durum) İnşaat Seviyesi: %${seviye}\n`;
+      metin += `Eksik İmalat: ${formatLira(eksik)} TL\n`;
     }
 
-    function emsalKaydet() {
-        const index = parseInt(document.getElementById('editIndex').value);
-        if(!report.emsaller) report.emsaller = [];
-        let e = {};
-        for(let i=1; i<=14; i++) { if(document.getElementById('f'+i)) e['f'+i] = document.getElementById('f'+i).value; }
-        e.f10 = document.getElementById('f10').value;
-        e.f17 = document.getElementById('f17').value;
-        
-        const hamBirim = (parseFloat(e.f10) || 0) / (parseFloat(e.f8) || 1);
-        e.hesapSatiri = `(${formatLira(hamBirim)} TL/m², -% ${e.f14 || 0} pazarlık : ${e.f17} TL/m²)`;
-        e.anaMetin = `${(e.f1 || "BELİRTİLMEMİŞ").toUpperCase()} (${e.f2 || "..."}) Konu taşınmazla ${e.f3 || "..."} konumlu, ${e.f4 || "..."} katlı binanın ${e.f5 || "..."} katında, ${e.f6 || "..."} tipindeki, ${e.f8 || "..."} m² alanlı ${e.f9 || "daire"} ${new Intl.NumberFormat('tr-TR').format(e.f10 || 0)} TL bedel ile ${e.f11}.`;
-        
-        if(index > -1) report.emsaller[index] = e; else report.emsaller.push(e);
-        formuKapat(); listele();
+    metin += `\nToplam Değer: ${formatLira(toplamDeger)} TL.`;
+
+    document.getElementById('yorumMetni').innerText = metin;
+
+    // aktif BB içine özet yaz (otomatik)
+    deg.degerlemeOzet = {
+      uygulananBirim: document.getElementById('inp_uygulanan').value,
+      dusukBirim: document.getElementById('inp_dusuk').value,
+      yuksekBirim: document.getElementById('inp_yuksek').value,
+      projeDisiAlan: document.getElementById('inp_proje_disi').value,
+      projeDisiBirim: document.getElementById('inp_proje_birim').value,
+      insaatAktif: document.getElementById('chk_insaat').checked ? "1" : "0",
+      insaatSeviye: document.getElementById('inp_seviye').value,
+      eksikImalat: document.getElementById('inp_eksik').value,
+      emsalFinalMetni: metin
+    };
+
+    bb.degerleme = deg;
+    persist(arr, i, r);
+  }
+
+  async function tumRaporuKaydet() {
+    // önce son hesap
+    finalHesapla();
+
+    const { arr, i, r, bb, deg } = getActive();
+    if (!r || !bb) { alert("Rapor bulunamadı!"); return; }
+
+    // buluta
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await db.collection("users").doc(user.uid).set({
+          gayrimenkul_reports: arr,
+          lastUpdate: new Date().toISOString()
+        }, { merge: true });
+        alert("✅ Emsal analizi buluta mühürlendi!");
+      } catch (e) {
+        alert("⚠️ Bulut hatası oluştu. Yerel kayıt var.");
+      }
+    } else {
+      alert("✅ Emsal analizi yerel kaydedildi!");
+    }
+  }
+
+  function listele() {
+    const { r, bb, deg } = getActive();
+    const list = document.getElementById('emsalListesi');
+    list.innerHTML = "";
+
+    const emsaller = Array.isArray(deg?.emsaller) ? deg.emsaller : [];
+    if (emsaller.length > 0) {
+      emsaller.forEach((e, i) => {
+        list.innerHTML += `
+          <div class="emsal-liste-item">
+            <div>
+              <strong>Araştırma Emsali ${i+1}</strong><br>
+              <span style="color:#666;">${(e.hesapSatiri || "")}</span>
+            </div>
+            <div>
+              <button onclick="formuAc(${i})">Düzenle</button>
+              <button class="del" onclick="emsalSil(${i})">Sil</button>
+            </div>
+          </div>`;
+      });
+    } else {
+      list.innerHTML = `<div class="card" style="border-left:5px solid var(--primary);">Bu bağımsız bölüm için emsal kaydı yok.</div>`;
     }
 
-    function finalHesapla() {
-        if(!report.emsaller) return;
-        const tasinmazBrut = parseFloat(document.getElementById('res_brut').value) || 0;
-        const uygulanan = parseFloat(document.getElementById('inp_uygulanan').value) || 0;
-        const pDisiAlan = parseFloat(document.getElementById('inp_proje_disi').value) || 0;
-        const pDisiBirim = parseFloat(document.getElementById('inp_proje_birim').value) || 0;
-        
-        const yasalDeger = Math.round(uygulanan * tasinmazBrut);
-        const pDisiDeger = Math.round(pDisiBirim * pDisiAlan);
-        const toplamDeger = yasalDeger + pDisiDeger;
+    finalHesapla();
+  }
 
-        let metin = report.emsaller.map(e => e.anaMetin).join("\n") + "\n\n";
-        metin += `Yapılan analizler sonucunda taşınmaza ${formatLira(uygulanan)}.-TL/m² birim fiyatı takdir edilmiştir. Toplam Değer: ${formatLira(toplamDeger)} TL.`;
-        
-        document.getElementById('yorumMetni').innerText = metin;
+  /* ========= Form aç/kapat + edit yükleme ========= */
+  function formuAc(index = -1) {
+    document.getElementById('emsalFormContainer').style.display = 'block';
+    document.getElementById('editIndex').value = index;
+
+    // temizle
+    for(let k=1; k<=14; k++){
+      const el = document.getElementById('f'+k);
+      if(el) el.value = "";
+    }
+    document.getElementById('f10').value = "";
+    document.getElementById('f10_mask').value = "";
+    document.getElementById('f17').value = "";
+
+    // edit ise doldur
+    const { deg } = getActive();
+    if (index > -1 && deg && Array.isArray(deg.emsaller) && deg.emsaller[index]) {
+      const e = deg.emsaller[index];
+      for(let k=1; k<=14; k++){
+        const el = document.getElementById('f'+k);
+        if(el && typeof e['f'+k] !== "undefined") el.value = e['f'+k];
+      }
+      document.getElementById('f10').value = e.f10 || "";
+      document.getElementById('f10_mask').value = (e.f10 ? new Intl.NumberFormat('tr-TR').format(e.f10) : "");
+      document.getElementById('f17').value = e.f17 || "";
     }
 
-    async function tumRaporuKaydet() {
-        finalHesapla();
-        report.degerlemeOzet = {
-            uygulananBirim: document.getElementById('inp_uygulanan').value,
-            dusukBirim: document.getElementById('inp_dusuk').value,
-            yuksekBirim: document.getElementById('inp_yuksek').value,
-            projeDisiAlan: document.getElementById('inp_proje_disi').value,
-            projeDisiBirim: document.getElementById('inp_proje_birim').value,
-            emsalFinalMetni: document.getElementById('yorumMetni').innerText
-        };
-        reports[id] = report;
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+    hesapla();
+  }
 
-        // 3. ADIM: BULUT SENKRONİZASYONU
-        const user = auth.currentUser;
-        if (user) {
-            try {
-                await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
-                alert("✅ Emsal analizi buluta mühürlendi!");
-            } catch (e) { alert("⚠️ Bulut hatası oluştu."); }
-        }
+  function formuKapat() {
+    document.getElementById('emsalFormContainer').style.display = 'none';
+    document.getElementById('editIndex').value = -1;
+  }
+
+  /* ========= Özet yükle ========= */
+  function yukle(d) {
+    if (!d) return;
+
+    // normal alanlar
+    if (typeof d.dusukBirim !== "undefined") {
+      document.getElementById('inp_dusuk').value = d.dusukBirim || "";
+      document.getElementById('inp_dusuk_mask').value = d.dusukBirim ? new Intl.NumberFormat('tr-TR').format(d.dusukBirim) : "";
+    }
+    if (typeof d.yuksekBirim !== "undefined") {
+      document.getElementById('inp_yuksek').value = d.yuksekBirim || "";
+      document.getElementById('inp_yuksek_mask').value = d.yuksekBirim ? new Intl.NumberFormat('tr-TR').format(d.yuksekBirim) : "";
+    }
+    if (typeof d.uygulananBirim !== "undefined") {
+      document.getElementById('inp_uygulanan').value = d.uygulananBirim || "";
+      document.getElementById('inp_uygulanan_mask').value = d.uygulananBirim ? new Intl.NumberFormat('tr-TR').format(d.uygulananBirim) : "";
+    }
+    if (typeof d.projeDisiAlan !== "undefined") document.getElementById('inp_proje_disi').value = d.projeDisiAlan || "";
+    if (typeof d.projeDisiBirim !== "undefined") {
+      document.getElementById('inp_proje_birim').value = d.projeDisiBirim || "";
+      document.getElementById('inp_proje_birim_mask').value = d.projeDisiBirim ? new Intl.NumberFormat('tr-TR').format(d.projeDisiBirim) : "";
     }
 
-    function listele() {
-        const list = document.getElementById('emsalListesi');
-        list.innerHTML = "";
-        if(report.emsaller) {
-            report.emsaller.forEach((e, i) => {
-                list.innerHTML += `<div class="emsal-liste-item"><div><strong>Araştırma Emsali ${i+1}</strong></div><div><button onclick="formuAc(${i})">Düzenle</button></div></div>`;
-            });
-        }
-        finalHesapla();
+    // inşaat
+    const ins = (d.insaatAktif === "1");
+    document.getElementById('chk_insaat').checked = ins;
+    toggleInsaat();
+    if (typeof d.insaatSeviye !== "undefined") document.getElementById('inp_seviye').value = d.insaatSeviye || 0;
+    if (typeof d.eksikImalat !== "undefined") {
+      document.getElementById('inp_eksik').value = d.eksikImalat || "";
+      document.getElementById('inp_eksik_mask').value = d.eksikImalat ? new Intl.NumberFormat('tr-TR').format(d.eksikImalat) : "";
     }
 
-    function formuAc(index = -1) { document.getElementById('emsalFormContainer').style.display = 'block'; document.getElementById('editIndex').value = index; }
-    function formuKapat() { document.getElementById('emsalFormContainer').style.display = 'none'; }
-    function anaMenuyeDon() { window.location.href = `rapor-detay.html?id=${id}`; }
-    function initAutocomplete() {} // Gerekli datalist mantığı buraya eklenebilir
-    function yukle(d) {} // Eski veri yükleme mantığı
+    // metin
+    if (d.emsalFinalMetni) document.getElementById('yorumMetni').innerText = d.emsalFinalMetni;
+  }
+
+  /* ========= Menü ========= */
+  function anaMenuyeDon() {
+    window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+  }
+
+  /* ========= Başlat ========= */
+  auth.onAuthStateChanged((user) => {
+    const { r } = getLatestData();
+    if (!user || !rid || !r) {
+      window.location.href = 'index.html';
+      return;
+    }
+
+    ensureBBList(r);
+    document.getElementById('raporBilgi').textContent = r.propertyName || "Analiz Dosyası";
+
+    // Eğer bbDetayList yok ama report.bbDetayCombinedText vs varsa da sıkıntı yok.
+
+    renderBBTabs();
+    refreshActiveBBUI();
+  });
+
 </script>
 </body>
 </html>
