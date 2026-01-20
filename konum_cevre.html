@@ -9,72 +9,122 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 
-  <title>Konum ve Çevre Özellikleri - Raporan X</title>
+  <title>Final Raporu Oluşturucu - Profesyonel Panel</title>
   <style>
-    :root { --primary:#1a237e; --secondary:#3f51b5; --success:#00c853; --bg:#f4f7f6; }
-    body { font-family:'Segoe UI', sans-serif; background:var(--bg); margin:0; padding-bottom:50px; }
-    .header { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; padding:15px; text-align:center; position:sticky; top:0; z-index:1000; }
-    .back { position:absolute; left:10px; top:12px; background:#d32f2f; padding:8px 12px; border-radius:12px; color:white; text-decoration:none; border:none; cursor:pointer; }
-    .main-wrapper { display:flex; flex-direction:column; max-width:1000px; margin:15px auto; gap:15px; padding:0 15px; }
-    .form-container { background:white; padding:25px; border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
-    .grid-form { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
-    .section-title { grid-column:span 2; border-left:5px solid var(--primary); margin-top:20px; padding-left:10px; color:var(--primary); font-weight:bold; background:#f0f2ff; padding:8px; border-radius:0 8px 8px 0; }
-    .input-item { display:flex; flex-direction:column; }
-    .input-item label { font-weight:600; font-size:13px; color:#444; margin-bottom:5px; }
-    input, textarea { padding:12px; border:1px solid #ccc; border-radius:10px; font-size:15px; background:#fff; transition:0.3s; width:100%; box-sizing:border-box; }
-    .radio-group { display:flex; gap:20px; padding:10px 0; }
-    .preview-box {
-      background:#333; color:#00ff00; padding:20px; border-radius:15px;
-      font-family:'Courier New', monospace; white-space:pre-wrap; font-size:13px;
-      margin-top:20px; border:2px solid #555;
-      user-select:none; transition:filter 0.3s ease;
+    :root { --primary:#1a237e; --secondary:#3949ab; --accent:#ffd600; --bg:#f4f7f9; }
+    body { font-family:'Segoe UI', Tahoma, sans-serif; background:var(--bg); margin:0; color:#2c3e50; scroll-behavior:smooth; }
+    .header { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; padding:30px 20px; text-align:center; position:relative; z-index:10; }
+    .back { position:absolute; left:20px; top:25px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:30px; color:white; text-decoration:none; font-weight:bold; cursor:pointer; border:none; font-size:13px; }
+    .main-wrapper { max-width:1300px; margin:20px auto; display:grid; grid-template-columns:280px 1fr; gap:30px; padding:0 20px; }
+    .toc-container { position:sticky; top:20px; height:fit-content; }
+    .toc { background:white; padding:20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border-left:6px solid var(--primary); }
+    .toc-title { font-size:1.1em; font-weight:bold; color:var(--primary); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px; }
+    .toc-list { list-style:none; padding:0; margin:0; }
+    .toc-list li { margin-bottom:8px; }
+    .toc-list a { color:#555; text-decoration:none; font-size:.9em; font-weight:500; transition:.2s; display:block; padding:5px; border-radius:4px; }
+    .toc-list a:hover { background:#f0f2ff; color:var(--primary); padding-left:10px; }
+
+    .container { background:white; padding:40px; border-radius:12px; box-shadow:0 0 40px rgba(0,0,0,0.05); }
+    .section { margin-bottom:50px; padding-bottom:20px; border-bottom:1px solid #f0f0f0; page-break-inside:avoid; }
+    .section-title { font-size:1.4em; font-weight:bold; color:var(--primary); margin-bottom:20px; display:flex; align-items:center; }
+    .section-title::after { content:""; flex:1; height:1px; background:#eee; margin-left:15px; }
+    .text-block { font-size:14.5px; line-height:1.7; white-space:pre-wrap; color:#34495e; text-align:justify; }
+    .info-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:15px; margin-bottom:25px; }
+    .info-item { background:#fcfcfc; border:1px solid #f0f0f0; padding:12px; border-radius:6px; }
+    .info-item strong { display:block; color:#888; font-size:.75em; text-transform:uppercase; margin-bottom:3px; }
+    .info-item span { font-weight:600; font-size:.95em; color:#2c3e50; }
+
+    #imarTablo table { width:100%!important; border-collapse:collapse; margin:15px 0; font-size:12px!important; }
+    #imarTablo table th, #imarTablo table td { border:1px solid #dcdde1; padding:6px 10px!important; line-height:1.2; }
+    #imarTablo table th { background:#f8f9fa; color:#444; width:30%; }
+
+    .print-btn { background:#27ae60; color:white; padding:15px 30px; font-size:18px; border:none; border-radius:50px; cursor:pointer; margin:40px auto; display:block; font-weight:bold; box-shadow:0 6px 15px rgba(39,174,96,0.3); transition:.3s; }
+    .print-btn:hover { background:#219150; transform:translateY(-2px); }
+
+    @media print {
+      body { background:white; }
+      .header, .back, .print-btn, .toc-container { display:none!important; }
+      .main-wrapper { display:block; max-width:100%; margin:0; padding:0; }
+      .container { box-shadow:none; padding:0; margin:0; width:100%; }
+      .section-title { color:black; border-bottom:2px solid black; }
+      #imarTablo table { font-size:10px!important; }
     }
-    .preview-box:not(:hover) { filter:blur(1.5px); }
-    .btn-save { background:var(--success); color:white; padding:20px; border:none; border-radius:15px; width:100%; font-weight:bold; font-size:18px; cursor:pointer; margin-top:30px; }
+    @media (max-width:992px) {
+      .main-wrapper { grid-template-columns:1fr; }
+      .toc-container { position:relative; top:0; margin-bottom:20px; }
+    }
   </style>
 </head>
 
-<body oncontextmenu="return false;">
+<body>
 <div class="header">
-  <button onclick="anaMenuyeDon()" class="back">← Menüye Dön</button>
-  <h1>KONUM VE ÇEVRESEL ÖZELLİKLER</h1>
-  <div id="raporBilgi" style="font-size:12px; opacity:0.8;">Yükleniyor...</div>
+  <button onclick="geriDon()" class="back">← Yönetim Paneli</button>
+  <h1 style="margin:0; font-size:1.8em; letter-spacing:1px;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
+  <div id="raporTarih" style="margin-top:8px; opacity:.8; font-size:13px;"></div>
 </div>
 
 <div class="main-wrapper">
-  <div class="form-container">
-    <form id="mainForm" onsubmit="return false;">
-      <div class="grid-form">
-        <div class="section-title">📊 TABLO VERİLERİ</div>
-        <div class="input-item"><label>(1) UAVT</label><input type="text" id="v1"></div>
-        <div class="input-item"><label>(4) İli</label><input type="text" id="v4"></div>
-        <div class="input-item"><label>(5) İlçesi</label><input type="text" id="v5"></div>
-        <div class="input-item"><label>(6) Mahallesi</label><input type="text" id="v6"></div>
-        <div class="input-item"><label>(7) Cadde/Sokak</label><input type="text" id="v7"></div>
-        <div class="input-item"><label>(12) Bölge Yapılaşması</label><input type="text" id="v12"></div>
-        <div class="input-item"><label>(13) Yapı Tipleri</label><input type="text" id="v13"></div>
-        <div class="input-item"><label>(14) Gelir Düzeyi</label><input type="text" id="v14"></div>
-        <div class="input-item"><label>(15) Yakın Yapı 1</label><input type="text" id="v15"></div>
-        <div class="input-item"><label>(16) Yakın Yapı 2</label><input type="text" id="v16"></div>
+  <aside class="toc-container">
+    <div class="toc">
+      <div class="toc-title">RAPOR BÖLÜMLERİ</div>
+      <ul class="toc-list">
+        <li><a href="#genel">1. Genel Bilgiler</a></li>
+        <li><a href="#imar">2. İmar Durumu</a></li>
+        <li><a href="#belgeler">3. İncelenen Belgeler</a></li>
+        <li><a href="#bina">4. Ana Bina Bilgileri</a></li>
+        <li><a href="#bb">5. Bağımsız Bölüm</a></li>
+        <li><a href="#konum">6. Konum Analizi</a></li>
+        <li><a href="#tapu">7. Tapu Kayıtları</a></li>
+        <li><a href="#emsal">8. Değerleme Sonucu</a></li>
+      </ul>
+    </div>
+  </aside>
 
-        <div class="section-title">📝 METİN DEĞİŞKENLERİ</div>
-        <div class="input-item" style="grid-column:span 2;"><label>Ulaşım Tarifi</label><textarea id="ulasimTarifi" rows="3"></textarea></div>
-        <div class="input-item" style="grid-column:span 2;"><label>Ulaşım Olanakları</label><input type="text" id="ulasimOlanaklari"></div>
+  <main class="container">
+    <div class="section" id="genel">
+      <div class="section-title">1. Gayrimenkul Genel Bilgileri</div>
+      <div class="info-grid" id="genelBilgi"></div>
+    </div>
 
-        <div class="input-item">
-          <label>Altyapı Durumu</label>
-          <div class="radio-group">
-            <label><input type="radio" name="altyapi" value="Evet" checked onclick="toggleAltyapi(true)"> Evet</label>
-            <label><input type="radio" name="altyapi" value="Hayır" onclick="toggleAltyapi(false)"> Hayır</label>
-          </div>
-        </div>
-        <div class="input-item"><label>Altyapı Açıklaması</label><input type="text" id="altyapiAciklama" disabled></div>
-      </div>
-    </form>
+    <div class="section" id="imar">
+      <div class="section-title">2. İmar Durumu Verileri</div>
+      <div id="imarTablo"></div>
+      <div class="text-block" id="imarMetin"></div>
+    </div>
 
-    <div class="preview-box" id="livePreview">Veri bekleniyor...</div>
-    <button class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET VE BULUTA MÜHÜRLE</button>
-  </div>
+    <div class="section" id="belgeler">
+      <div class="section-title">3. İncelenen Belgeler</div>
+      <div class="text-block" id="belgelerMetin"></div>
+    </div>
+
+    <div class="section" id="bina">
+      <div class="section-title">4. Ana Gayrimenkul Bilgileri</div>
+      <div class="text-block" id="binaMetin"></div>
+    </div>
+
+    <div class="section" id="bb">
+      <div class="section-title">5. Bağımsız Bölüm Analizi</div>
+      <div class="text-block" id="bbMetin"></div>
+    </div>
+
+    <div class="section" id="konum">
+      <div class="section-title">6. Konum ve Çevre Analizi</div>
+      <div class="text-block" id="konumMetin"></div>
+    </div>
+
+    <div class="section" id="tapu">
+      <div class="section-title">7. Tapu ve Takyidat Kayıtları</div>
+      <div class="text-block" id="tapuMetinB1" style="margin-bottom:25px;"></div>
+      <div class="text-block" id="tapuMetinB2"></div>
+    </div>
+
+    <div class="section" id="emsal">
+      <div class="section-title">8. Değerleme ve Sonuç Analizi</div>
+      <div class="text-block" id="emsalMetin"></div>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">📑 RAPORU YAZDIR / PDF OLARAK KAYDET</button>
+  </main>
 </div>
 
 <script>
@@ -102,12 +152,11 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // legacy id -> rid yönlendirme
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
       rid = reports[idxLegacy].rid;
-      window.location.replace("konum-cevre.html?rid=" + encodeURIComponent(rid));
+      window.location.replace("rapor-olustur.html?rid=" + encodeURIComponent(rid));
     }
   }
 
@@ -118,102 +167,95 @@
     return { arr, i, r };
   }
 
-  const inputIds = ['v1','v4','v5','v6','v7','v12','v13','v14','v15','v16','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'];
-
-  function yukleVeBaslat(report) {
-    if(report.konumCevre) {
-      inputIds.forEach(fid => {
-        if (report.konumCevre[fid] != null) document.getElementById(fid).value = report.konumCevre[fid];
-      });
-
-      // radio
-      if (report.konumCevre.altyapiTik === "Hayır") {
-        document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
-        toggleAltyapi(false);
-      } else {
-        document.querySelector('input[name="altyapi"][value="Evet"]').checked = true;
-        toggleAltyapi(true);
-      }
-    }
-    guncelleOnizleme();
-  }
-
-  function guncelleOnizleme() {
-    let v = {};
-    inputIds.forEach(fid => { v[fid] = (document.getElementById(fid).value || "").trim() || "..."; });
-
-    const altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
-    const altyapiMetni = (altyapiTik === "Evet")
-      ? "altyapısı tamamlanmıştır"
-      : ((v.altyapiAciklama && v.altyapiAciklama !== "...") ? v.altyapiAciklama : "...");
-
-    const f1 =
-      `KONUMU VE ÇEVRESEL ÖZELLİKLERİ\n` +
-      `Taşınmaz, ${v.v4} ili, ${v.v5} ilçesi, ${v.v6} mahallesi posta adresinde yer almaktadır. ` +
-      `Ulaşım; ${v.ulasimTarifi}. ` +
-      `Bölge ${v.v14} gelir grubu tarafından talep görmektedir. ` +
-      `Yakın çevresinde ${v.v15} ve ${v.v16} yer almaktadır. ` +
-      `Altyapı olarak ${altyapiMetni}.`;
-
-    document.getElementById('livePreview').textContent = f1;
-    return f1;
-  }
-
-  async function verileriKaydet() {
-    const paket = guncelleOnizleme();
-
-    const { arr, i, r } = getLatestData();
-    if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
-
-    let v = {};
-    inputIds.forEach(fid => { v[fid] = document.getElementById(fid).value; });
-    v.altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
-
-    // ✅ Final raporun beklediği: report.konumCevre.tamMetin
-    r.konumCevre = { ...v, tamMetin: paket };
-
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
-
-    // buluta yaz
-    const user = auth.currentUser;
-    if (user) {
-      try {
-        await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: arr }, { merge: true });
-        alert("✅ Konum/Çevre verileri hem cihaza hem buluta mühürlendi!");
-      } catch (e) {
-        console.error(e);
-        alert("⚠️ Yerel kaydedildi ama buluta gönderilemedi: " + e.message);
-      }
-    } else {
-      alert("✅ Yerel kaydedildi (oturum yok).");
-    }
-  }
-
-  function toggleAltyapi(isEvet) {
-    document.getElementById('altyapiAciklama').disabled = isEvet;
-  }
-
-  function anaMenuyeDon() {
+  function geriDon(){
     window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
   }
 
-  // live preview
-  inputIds.forEach(fid => {
-    const el = document.getElementById(fid);
-    if(el) el.addEventListener('input', guncelleOnizleme);
-  });
-  document.querySelectorAll('input[name="altyapi"]').forEach(r => r.addEventListener('change', guncelleOnizleme));
+  function pickText(...candidates){
+    for (const c of candidates){
+      if (c != null && String(c).trim() !== "") return String(c);
+    }
+    return "";
+  }
 
-  // auth guard
+  function getEmsalMetni(r){
+    // 1) Eski yer
+    const legacy = r?.degerlemeOzet?.emsalFinalMetni;
+    if (legacy && String(legacy).trim() !== "") return String(legacy);
+
+    // 2) Yeni yer: bbDetayList[*].degerleme.degerlemeOzet.emsalFinalMetni
+    const list = Array.isArray(r?.bbDetayList) ? r.bbDetayList : [];
+    const chunks = [];
+
+    list.forEach((bb, idx) => {
+      const t = bb?.degerleme?.degerlemeOzet?.emsalFinalMetni;
+      if (t && String(t).trim() !== "") {
+        const baslik = bb?.bbDetay?.bbNo ? `${bb.bbDetay.bbNo} BB Nolu Taşınmaz` : `${idx+1}. Bağımsız Bölüm`;
+        chunks.push(`${baslik}\n${String(t).trim()}`);
+      }
+    });
+
+    return chunks.join("\n\n");
+  }
+
+  function raporOlustur(r) {
+    const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
+    document.getElementById('raporTarih').textContent = `Rapor Oluşturma: ${today}`;
+
+    document.getElementById('genelBilgi').innerHTML = `
+      <div class="info-item"><strong>Taşınmaz Adı</strong><span>${r.propertyName || "..."}</span></div>
+      <div class="info-item"><strong>İl / İlçe</strong><span>${r.il || '-'} / ${r.ilce || '-'}</span></div>
+      <div class="info-item"><strong>Ada / Parsel</strong><span>${r.ada || '...'} / ${r.parsel || '...'}</span></div>
+      <div class="info-item"><strong>Arsa Alanı</strong><span>${r.bina?.arsaAlani || '...'} m²</span></div>
+    `;
+
+    // İmar
+    document.getElementById('imarTablo').innerHTML = r.imarTablo || '<p>Veri yok.</p>';
+    document.getElementById('imarMetin').textContent = pickText(r.imarMetni, r.imarDurumuMetni, r.imar?.tamMetin);
+
+    // Belgeler
+    document.getElementById('belgelerMetin').textContent = pickText(r.belgelerMetni, r.belgeler?.metin);
+
+    // Bina
+    document.getElementById('binaMetin').textContent = pickText(r.bina?.metin, r.binaMetin, r.bina?.tamMetin);
+
+    // BB (eski tek bb + yeni çoklu bb)
+    const bbLegacy = r.bbDetay?.tamMetin;
+    if (bbLegacy && String(bbLegacy).trim() !== "") {
+      document.getElementById('bbMetin').textContent = bbLegacy;
+    } else {
+      const list = Array.isArray(r.bbDetayList) ? r.bbDetayList : [];
+      const bbText = list
+        .map((bb, idx) => {
+          const t = bb?.bbDetay?.tamMetin;
+          if (!t || String(t).trim() === "") return "";
+          const baslik = bb?.bbDetay?.bbNo ? `${bb.bbDetay.bbNo} BB` : `${idx+1}. BB`;
+          return `${baslik}\n${String(t).trim()}`;
+        })
+        .filter(Boolean)
+        .join("\n\n");
+      document.getElementById('bbMetin').textContent = bbText || 'Veri girilmedi.';
+    }
+
+    // Konum/Çevre
+    document.getElementById('konumMetin').textContent = pickText(r.konumCevre?.tamMetin, r.konumMetni, r.konumCevreMetni);
+
+    // Tapu
+    document.getElementById('tapuMetinB1').textContent = pickText(r.tapuMetniB1, r.tapu?.metinB1, r.tapuB1);
+    document.getElementById('tapuMetinB2').textContent = pickText(r.tapuMetniB2, r.tapu?.metinB2, r.tapuB2);
+
+    // Emsal/Değerleme
+    const emsalText = getEmsalMetni(r);
+    document.getElementById('emsalMetin').textContent = emsalText || 'Analiz tamamlanmadı.';
+  }
+
   auth.onAuthStateChanged((user) => {
     const { r } = getLatestData();
     if (!user || !rid || !r) {
       window.location.href = 'index.html';
       return;
     }
-    document.getElementById('raporBilgi').textContent = r.propertyName || "Rapor";
-    yukleVeBaslat(r);
+    raporOlustur(r);
   });
 </script>
 </body>
