@@ -109,8 +109,7 @@
   let currentReport = (idx0 >= 0) ? (reports[idx0] || { bina:{} }) : null;
   let savedKatVerileri = (currentReport && currentReport.katSatirVerileri) ? currentReport.katSatirVerileri : {};
 
-  // ctrl+c engelini kaldırıyoruz (inputlarda kopyala yapıştır serbest)
-  // sadece taslak metin korunuyor (oncopy=false)
+  // sadece print/save/view-source engelle (kopyala yapıştır inputlarda serbest)
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) { e.preventDefault(); }
   });
@@ -225,11 +224,9 @@
   function toggleKat(id) { document.getElementById(`content-${id}`).classList.toggle('hidden'); }
   function toggleLogicPanel(id, cb) { document.getElementById(`panel-${id}`).classList.toggle('hidden', !cb.checked); }
 
-  /* ============================================================
-     SATIR EKLE - DÜZELTİLDİ:
-     - qty default: 0 (boş satır BB şişirmesin)
-     - min=0
-  ============================================================ */
+  /* =========================
+     SATIR EKLE (qty default 0)
+     ========================= */
   function satirEkle(katId, data = null) {
     const container = document.getElementById(`rows-${katId}`);
     const rowId = Math.random().toString(36).substr(2, 5);
@@ -296,11 +293,9 @@
     renderPreview();
   }
 
-  /* ============================================================
-     PREVIEW + BAĞIMSIZ BÖLÜM HESABI - DÜZELTİLDİ:
-     - toplamBB sadece (desc dolu AND qty>0 AND tip==B.B.) ise artar
-     - boş satırlar metne girmez, BB saymaz
-  ============================================================ */
+  /* =========================
+     PREVIEW + BB HESABI + "adet" FIX
+     ========================= */
   function renderPreview() {
     let gruplanmisKatlar = [];
     let toplamBB = 0;
@@ -318,8 +313,16 @@
 
         katSatirlari.push({ tip, qty, desc });
 
+        // sadece dolu satirlar metne girer + BB sayilir
         if (desc && qty > 0) {
-          icerikList.push(`${qty} ${desc}`.trim());
+
+          // ✅ "adet" kelimesi 1'e donusmesin
+          if (desc.toLowerCase() === "adet") {
+            icerikList.push("adet");
+          } else {
+            icerikList.push(`${qty} ${desc}`.trim());
+          }
+
           if (tip === "B.B.") toplamBB += qty;
         }
       });
@@ -405,9 +408,8 @@
     window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
   }
 
-  // Sayfa ilk açılış
   window.onload = function(){
-    // auth bekleniyor; auth callback içinde init() var
+    // auth callback içinde init() var
   };
 </script>
 </body>
