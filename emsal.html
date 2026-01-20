@@ -147,10 +147,10 @@
   <div class="card">
     <div class="section-title">2. Değerleme ve Birim Analizi (SEÇİLİ BB İÇİN)</div>
     <div class="grid-form">
-      <div class="input-group"><label>Bölge Alt Sınır</label>
+      <div class="input-group"><label>Bölge Alt Sınır (MANUEL)</label>
         <input type="text" id="inp_dusuk_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_dusuk">
       </div>
-      <div class="input-group"><label>Bölge Üst Sınır</label>
+      <div class="input-group"><label>Bölge Üst Sınır (MANUEL)</label>
         <input type="text" id="inp_yuksek_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_yuksek">
       </div>
       <div class="input-group"><label>Uygulanan Yasal Birim</label>
@@ -293,7 +293,12 @@
   function formatLira(num) {
     return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num || 0);
   }
+  // Küsüratsız
+  function formatLira0(num) {
+    return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num || 0);
+  }
 
+  /* ========= Active BB ========= */
   function getActive(){
     const { arr, i, r } = getLatestData();
     if (!r || i < 0) return { arr, i, r, bb:null };
@@ -338,40 +343,41 @@
     listele();
   }
 
+  function setMoneyPair(hiddenId, maskId, val){
+    const h = document.getElementById(hiddenId);
+    const m = document.getElementById(maskId);
+    const v = (val ?? "").toString().replace(/\D/g,"");
+    if (h) h.value = v;
+    if (m) m.value = v ? new Intl.NumberFormat('tr-TR').format(v) : "";
+  }
+
   function loadBBSettings(bb){
     const d = bb.degerlemeOzet || {};
 
-    // mask alanları doldur
     setMoneyPair('inp_dusuk', 'inp_dusuk_mask', d.dusukBirim);
     setMoneyPair('inp_yuksek', 'inp_yuksek_mask', d.yuksekBirim);
     setMoneyPair('inp_uygulanan', 'inp_uygulanan_mask', d.uygulananBirim);
     setMoneyPair('inp_proje_birim', 'inp_proje_birim_mask', d.projeDisiBirim);
 
     document.getElementById('inp_proje_disi').value = (d.projeDisiAlan ?? "");
+
     document.getElementById('chk_insaat').checked = (d.insaatAktif === "1");
     toggleInsaat();
+
     document.getElementById('inp_seviye').value = (d.insaatSeviye ?? 81);
     setMoneyPair('inp_eksik', 'inp_eksik_mask', d.eksikImalat);
   }
 
-  function setMoneyPair(hiddenId, maskId, val){
-    const h = document.getElementById(hiddenId);
-    const m = document.getElementById(maskId);
-    const v = (val ?? "").toString().replace(/\D/g,""); // sadece sayı
-    if (h) h.value = v;
-    if (m) m.value = v ? new Intl.NumberFormat('tr-TR').format(v) : "";
-  }
-
   function saveBBSettingsToObject(bb){
     if (!bb.degerlemeOzet) bb.degerlemeOzet = {};
-    bb.degerlemeOzet.uygulananBirim = document.getElementById('inp_uygulanan').value || "";
-    bb.degerlemeOzet.dusukBirim = document.getElementById('inp_dusuk').value || "";
-    bb.degerlemeOzet.yuksekBirim = document.getElementById('inp_yuksek').value || "";
-    bb.degerlemeOzet.projeDisiAlan = document.getElementById('inp_proje_disi').value || "";
-    bb.degerlemeOzet.projeDisiBirim = document.getElementById('inp_proje_birim').value || "";
-    bb.degerlemeOzet.insaatAktif = document.getElementById('chk_insaat').checked ? "1" : "0";
-    bb.degerlemeOzet.insaatSeviye = document.getElementById('inp_seviye').value || "";
-    bb.degerlemeOzet.eksikImalat = document.getElementById('inp_eksik').value || "";
+    bb.degerlemeOzet.uygulananBirim = document.getElementById('inp_uygulanan')?.value || "";
+    bb.degerlemeOzet.dusukBirim = document.getElementById('inp_dusuk')?.value || "";
+    bb.degerlemeOzet.yuksekBirim = document.getElementById('inp_yuksek')?.value || "";
+    bb.degerlemeOzet.projeDisiAlan = document.getElementById('inp_proje_disi')?.value || "";
+    bb.degerlemeOzet.projeDisiBirim = document.getElementById('inp_proje_birim')?.value || "";
+    bb.degerlemeOzet.insaatAktif = document.getElementById('chk_insaat')?.checked ? "1" : "0";
+    bb.degerlemeOzet.insaatSeviye = document.getElementById('inp_seviye')?.value || "";
+    bb.degerlemeOzet.eksikImalat = document.getElementById('inp_eksik')?.value || "";
   }
 
   /* ========= Emsal hesap ========= */
@@ -383,19 +389,6 @@
     const serefiyeEksi = parseFloat(document.getElementById('f13').value) || 0;
     const birim = (fiyat * (1 - pazarlik/100) / alan) * (1 + (serefiyeArti - serefiyeEksi)/100);
     document.getElementById('f17').value = formatLira(birim);
-  }
-
-  function emsalMinMax(emsaller){
-    const vals = (emsaller || [])
-      .map(e => {
-        const raw = (e.f17 || "").toString().replace(/\./g,"").replace(",", ".");
-        const v = parseFloat(raw);
-        return Number.isFinite(v) ? v : 0;
-      })
-      .filter(v => v > 0);
-
-    if (vals.length === 0) return { min: 0, max: 0 };
-    return { min: Math.min(...vals), max: Math.max(...vals) };
   }
 
   function emsalOzetSatiri(e, idx){
@@ -410,10 +403,10 @@
       duz = formatLira(birim);
     }
 
-    let s = `Emsal ${idx+1}: (${formatLira(hamBirim)} TL/m²`;
-    if (paz > 0) s += `, -%${paz} pazarlık`;
-    if (art > 0) s += `, +%${art} şerefiye`;
-    if (eks > 0) s += `, -%${eks} şerefiye`;
+    let s = `Emsal ${idx+1}: (${formatLira0(hamBirim)} TL/m²`;
+    if (paz > 0) s += `, -%${formatLira0(paz)} pazarlık`;
+    if (art > 0) s += `, +%${formatLira0(art)} şerefiye`;
+    if (eks > 0) s += `, -%${formatLira0(eks)} şerefiye`;
     s += ` : ${duz} TL/m²)`;
     return s;
   }
@@ -437,7 +430,7 @@
     e.f17 = document.getElementById('f17').value;
 
     const hamBirim = (parseFloat(e.f10) || 0) / (parseFloat(e.f8) || 1);
-    e.hesapSatiri = `(${formatLira(hamBirim)} TL/m², -% ${e.f14 || 0} pazarlık : ${e.f17} TL/m²)`;
+    e.hesapSatiri = `(${formatLira0(hamBirim)} TL/m², -% ${formatLira0(e.f14 || 0)} pazarlık : ${e.f17} TL/m²)`;
     e.anaMetin =
       `${(e.f1 || "BELİRTİLMEMİŞ").toUpperCase()} (${e.f2 || "..."}) Konu taşınmazla ${e.f3 || "..."} konumlu, ` +
       `${e.f4 || "..."} katlı binanın ${e.f5 || "..."} katında, ${e.f6 || "..."} tipindeki, ${e.f8 || "..."} m² alanlı ` +
@@ -495,7 +488,7 @@
     finalHesapla();
   }
 
-  /* ========= Final metin (senin örnek) ========= */
+  /* ========= Final metin (MANUEL ALT/ÜST + İNŞAAT DETAYLI) ========= */
   function finalHesapla() {
     const { arr, i, r } = getLatestData();
     if(!r || i < 0) return;
@@ -508,18 +501,20 @@
     saveBBSettingsToObject(activeBB);
 
     const emsaller = r.emsalHavuzu || [];
-    const mm = emsalMinMax(emsaller);
+
+    // Alt/Üst sınır metinde MANUEL
+    const dusuk = parseFloat((document.getElementById('inp_dusuk')?.value || "0")) || 0;
+    const yuksek = parseFloat((document.getElementById('inp_yuksek')?.value || "0")) || 0;
 
     let metin = `Emsallerin Yorumu : Taşınmazın değer tespitinde "Emsal Karşılaştırma Yöntemi" kullanılmıştır. `;
     metin += `Değerlemeye konu mülk ile emsal mülkler benzer özelliklerde ve birbirlerine baz alınabilecek niteliktedir. `;
 
-    if (mm.min > 0 && mm.max > 0) {
-      metin += `Emsal mülklerin m² birim fiyatları ${formatLira(mm.min)} - ${formatLira(mm.max)} TL arasındadır. `;
+    if (dusuk > 0 && yuksek > 0) {
+      metin += `Emsal mülklerin m² birim fiyatları ${formatLira0(dusuk)} - ${formatLira0(yuksek)} TL arasındadır. `;
     }
 
     metin += `Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurularak;\n\n`;
 
-    // BB satırları
     r.bbDetayList.forEach((bbWrap, idx) => {
       const bbDet = bbWrap.bbDetay || {};
       const bbNo = (bbDet.bbNo || "").toString().trim();
@@ -530,23 +525,30 @@
       const pDisiAlan = parseFloat(oz.projeDisiAlan) || 0;
       const pDisiBirim = parseFloat(oz.projeDisiBirim) || 0;
 
+      // Bitmiş değer
       const yasalDeger = Math.round(uygulanan * alan);
       const pDisiDeger = Math.round(pDisiAlan * pDisiBirim);
-      let toplamDeger = yasalDeger + pDisiDeger;
+      const bitmisDeger = yasalDeger + pDisiDeger;
 
-      // İnşaat seviyeli
+      const bbLabel = bbNo ? `${bbNo} BB Nolu Taşınmaza` : `${idx+1}. BB Nolu Taşınmaza`;
+
       if (oz.insaatAktif === "1") {
         const seviye = parseFloat(oz.insaatSeviye) || 0;
         const eksik = parseFloat(oz.eksikImalat) || 0;
-        toplamDeger = Math.round((toplamDeger * (seviye/100)) - eksik);
-        if (toplamDeger < 0) toplamDeger = 0;
-      }
 
-      const bbLabel = bbNo ? `${bbNo} BB Nolu Taşınmaza` : `${idx+1}. BB Nolu Taşınmaza`;
-      metin += `${bbLabel}: ${formatLira(uygulanan)} TL/m² x ${formatLira(alan)} m² = (~${formatLira(toplamDeger)} TL) yasal ve mevcut değer takdir edilmiştir.\n`;
+        const seviyeUygulanmis = Math.round(bitmisDeger * (seviye/100));
+        let sonDeger = Math.round(seviyeUygulanmis - eksik);
+        if (sonDeger < 0) sonDeger = 0;
+
+        // İstenen format:
+        metin += `${bbLabel}: ${formatLira0(uygulanan)} TL/m² x ${formatLira0(alan)} m² = (~${formatLira0(bitmisDeger)} TL) (bitmiş değer)\n`;
+        metin += `Mevcut İnşaat Seviyesi: %${formatLira0(seviye)} -> (~${formatLira0(seviyeUygulanmis)} TL)\n`;
+        metin += `Eksik İmalat Değeri: (~${formatLira0(eksik)} TL) - Son Değer: (~${formatLira0(sonDeger)} TL)\n\n`;
+      } else {
+        metin += `${bbLabel}: ${formatLira0(uygulanan)} TL/m² x ${formatLira0(alan)} m² = (~${formatLira0(bitmisDeger)} TL) yasal ve mevcut değer takdir edilmiştir.\n`;
+      }
     });
 
-    // Emsal özetleri
     metin += `\n`;
     if (emsaller.length > 0) {
       emsaller.forEach((e, idx) => {
@@ -558,9 +560,7 @@
 
     document.getElementById('yorumMetni').innerText = metin;
 
-    // aktif BB içine metni sakla
     activeBB.degerlemeOzet.emsalFinalMetni = metin;
-
     persist(arr, i, r);
   }
 
@@ -571,7 +571,6 @@
     const { arr, i, r } = getLatestData();
     if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
 
-    // buluta
     const user = auth.currentUser;
     if (user) {
       try {
@@ -650,7 +649,6 @@
     renderBBTabs();
     refreshActiveBBUI();
 
-    // ilk load’da kaydet
     persist(arr, i, r);
   });
 </script>
