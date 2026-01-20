@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -14,106 +14,21 @@
     body { font-family: Arial; background: linear-gradient(135deg,#4a148c,#7c4dff); margin:0; color:white; min-height:100vh; display:flex; flex-direction:column; }
     .header { padding:20px; text-align:center; font-size:28px; font-weight:bold; position: relative; }
     .back { position:absolute; left:15px; top:20px; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:30px; text-decoration:none; color:white; font-weight:bold; }
-
-    /* Cüzdan + Kilit panel */
-    .top-panels { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
-    .panel {
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 16px;
-      padding: 14px 16px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-      margin-bottom: 14px;
-      backdrop-filter: blur(6px);
-    }
-    .panel h3 { margin: 0 0 10px 0; font-size: 16px; letter-spacing: .5px; }
-    .wallet-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-    .wallet-item { background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 10px; }
-    .wallet-item .k { font-size: 12px; opacity: .85; }
-    .wallet-item .v { font-size: 18px; font-weight: 900; margin-top: 4px; }
-    .wallet-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-    .mini-btn {
-      background: rgba(255,255,255,0.18);
-      border: 1px solid rgba(255,255,255,0.22);
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 800;
-      transition: .2s;
-    }
-    .mini-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.25); }
-    .danger { background: rgba(255,87,34,0.28); border-color: rgba(255,87,34,0.45); }
-    .danger:hover { background: rgba(255,87,34,0.38); }
-    .ok { background: rgba(0,200,83,0.22); border-color: rgba(0,200,83,0.35); }
-    .ok:hover { background: rgba(0,200,83,0.30); }
-
-    .lock-banner {
-      border-left: 6px solid #ff5252;
-      background: rgba(255, 82, 82, 0.15);
-    }
-    .lock-banner b { color: #ffd4d4; }
-
-    /* Menü */
     .menu { flex:1; display:flex; flex-wrap:wrap; gap:20px; padding:30px; justify-content:center; align-content:flex-start; }
-    .btn {
-      flex:1 1 350px;
-      background:#6a1b9a;
-      padding:30px 35px;
-      font-size:22px;
-      font-weight:bold;
-      border:none;
-      border-radius:20px;
-      color:white;
-      cursor:pointer;
-      box-shadow:0 8px 20px rgba(0,0,0,0.4);
-      transition: 0.3s;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-    }
-    .btn:hover { background:#8e24aa; transform:scale(1.03); }
+    .btn { flex:1 1 350px; background:#6a1b9a; padding:35px; font-size:24px; font-weight:bold; border:none; border-radius:20px; color:white; cursor:pointer; box-shadow:0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; display:flex; align-items:center; justify-content:center; gap:10px; }
+    .btn:hover { background:#8e24aa; transform:scale(1.05); }
     .btn-main-feature { background: #4527a0; border: 2px solid #b39ddb; }
+    .footer-btn { background:#ff5722; padding:25px; font-size:28px; width:90%; max-width:600px; margin:20px auto; border-radius:20px; border:none; color:white; font-weight:bold; cursor: pointer; text-align: center; }
 
-    /* Durum Rozetleri */
-    .badge {
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 900;
-      border: 1px solid rgba(255,255,255,0.28);
-      background: rgba(0,0,0,0.25);
-      min-width: 110px;
-      text-align:center;
-      user-select:none;
-    }
-    .st0 { background: rgba(198,40,40,0.35); }   /* Eksik */
-    .st1 { background: rgba(255,193,7,0.30); }   /* Kısmi */
-    .st2 { background: rgba(0,200,83,0.30); }    /* Tamam */
-
-    .footer-btn {
-      background:#ff5722;
-      padding:25px;
-      font-size:28px;
+    #durumOzet{
       width:90%;
       max-width:600px;
-      margin:20px auto;
-      border-radius:20px;
-      border:none;
-      color:white;
-      font-weight:bold;
-      cursor: pointer;
-      text-align: center;
-      box-shadow:0 10px 25px rgba(0,0,0,0.35);
-      transition:.25s;
-    }
-    .footer-btn:hover{ transform: translateY(-2px); background:#ff6f3d; }
-
-    .footer-btn[disabled]{
-      opacity: .6;
-      cursor: not-allowed;
-      transform: none !important;
+      margin:10px auto 0;
+      background:rgba(255,255,255,0.15);
+      padding:12px 16px;
+      border-radius:14px;
+      text-align:center;
+      box-shadow:0 6px 18px rgba(0,0,0,0.25);
     }
   </style>
 </head>
@@ -122,60 +37,27 @@
   <div class="header">
     <a href="index.html" class="back">Ana Sayfa</a>
     <div id="baslik">Gayrimenkul Raporu</div>
-  </div>
-
-  <!-- CÜZDAN + KİLİT + BİLGİ -->
-  <div class="top-panels">
-    <div id="lockBanner" class="panel lock-banner" style="display:none;"></div>
-    <div id="walletPanel" class="panel" style="display:none;"></div>
+    <div id="durumOzet">Rapor Doluluk: %0</div>
   </div>
 
   <div class="menu">
-    <button class="btn btn-main-feature" id="btn_konum" onclick="go('konum_cevre.html','konum')">
-      <span>KONUM VE ÇEVRE ÖZELLİKLERİ</span>
-      <span class="badge" id="st_konum">Eksik</span>
-    </button>
-
-    <button class="btn" id="btn_tapu" onclick="go('tapu_kayit.html','tapu')">
-      <span>TAPU KAYIT BİLGİLERİ</span>
-      <span class="badge" id="st_tapu">Eksik</span>
-    </button>
-
-    <button class="btn" id="btn_imar" onclick="go('imar.html','imar')">
-      <span>İMAR DURUMU</span>
-      <span class="badge" id="st_imar">Eksik</span>
-    </button>
-
-    <button class="btn" id="btn_belgeler" onclick="go('belgeler.html','belgeler')">
-      <span>İNCELENEN BELGELER</span>
-      <span class="badge" id="st_belgeler">Eksik</span>
-    </button>
-
-    <button class="btn" id="btn_bina" onclick="go('bina.html','bina')">
-      <span>BİNA BİLGİLERİ</span>
-      <span class="badge" id="st_bina">Eksik</span>
-    </button>
-
-    <button class="btn" id="btn_bb" onclick="go('bagimsiz-bolum-detay.html','bb')">
-      <span>BAĞIMSIZ BÖLÜM DETAY</span>
-      <span class="badge" id="st_bb">Eksik</span>
-    </button>
-
-    <button class="btn" id="btn_emsal" onclick="go('emsal.html','emsal')">
-      <span>EMSAL KARŞILAŞTIRMA</span>
-      <span class="badge" id="st_emsal">Eksik</span>
-    </button>
+    <button class="btn btn-main-feature" data-modul="konum" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
+    <button class="btn" data-modul="tapu" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
+    <button class="btn" data-modul="imar" onclick="go('imar.html')">İMAR DURUMU</button>
+    <button class="btn" data-modul="belgeler" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
+    <button class="btn" data-modul="bina" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
+    <button class="btn" data-modul="bb" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+    <button class="btn" data-modul="emsal" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
   </div>
 
-  <!-- BURASI SADECE RAPOR-OLUSTUR'A GIDER. KILITLIYSE GİTMEZ. -->
-  <button class="footer-btn" id="btnRaporOlustur" onclick="goRaporOlustur()">TAM RAPOR OLUŞTUR</button>
+  <button class="footer-btn" onclick="go('rapor-olustur.html')">TAM RAPOR OLUŞTUR</button>
 
   <script>
     // ✅ Firebase auth/db garanti
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    /* ========= RID helpers (geriye dönük uyumluluk + migration) ========= */
+    // ✅ RID helpers (geriye dönük uyumluluk + migration)
     function genRid(){
       try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
       return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
@@ -191,18 +73,17 @@
       return (arr || []).findIndex(r => r && r.rid === rid);
     }
 
-    /* ========= URL Params: rid öncelikli ========= */
+    // ✅ URL Params: rid öncelikli, id varsa onu da rid'ye çevirip devam et
     const urlParams = new URLSearchParams(window.location.search);
     let rid = urlParams.get('rid');
-    const legacyId = urlParams.get('id'); // eski linkler için
+    const legacyId = urlParams.get('id');
 
     let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
     if (ensureRidMigration(reports)) {
       localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-      reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
     }
 
-    // Eski ?id= ile gelmişse rid'ye çevir
+    // Eski ?id= ile gelmişse rid’ye çevir
     if (!rid && legacyId !== null && legacyId !== "") {
       const idx = Number(legacyId);
       if (!Number.isNaN(idx) && reports[idx] && reports[idx].rid) {
@@ -211,219 +92,173 @@
       }
     }
 
-    function getReportIndexByRid(rid){
-      return findIndexByRid(reports, rid);
-    }
     function getReportByRid(rid){
-      const idx = getReportIndexByRid(rid);
+      const idx = findIndexByRid(reports, rid);
       if (idx < 0) return null;
       return reports[idx];
     }
-    function persistReport(rid, report){
-      const idx = getReportIndexByRid(rid);
-      if (idx < 0) return;
-      reports[idx] = report;
-      localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-    }
 
-    /* ========= Wallet + Lock ========= */
-    function ensureWallet(report){
-      report.wallet = report.wallet || {};
-      if (typeof report.wallet.freeUsed !== "number") report.wallet.freeUsed = 0;
-      if (typeof report.wallet.balanceTl !== "number") report.wallet.balanceTl = 0;
-      if (typeof report.wallet.locked !== "boolean") report.wallet.locked = false;
-      if (!report.wallet.lockedAt) report.wallet.lockedAt = null;
-      if (typeof report.wallet.lastChargeTl !== "number") report.wallet.lastChargeTl = 0;
-
-      report.modulesStatus = report.modulesStatus || {};
-      const keys = ["imar","belgeler","bina","bb","konum","tapu","emsal"];
-      keys.forEach(k => {
-        if (![0,1,2].includes(report.modulesStatus[k])) report.modulesStatus[k] = 0;
-      });
-    }
-
-    function calcUnitPriceByBalance(balance){
-      if (balance >= 500) return 20;
-      if (balance >= 200) return 25;
-      return 30;
-    }
-
-    function renderWalletPanel(report){
-      const el = document.getElementById("walletPanel");
-      if (!el) return;
-
-      const freeLeft = Math.max(0, 5 - (report.wallet.freeUsed || 0));
-      const balance = Math.max(0, Number(report.wallet.balanceTl || 0));
-      const unit = calcUnitPriceByBalance(balance);
-
-      el.style.display = "block";
-      el.innerHTML = `
-        <h3>💳 Cüzdan</h3>
-        <div class="wallet-grid">
-          <div class="wallet-item">
-            <div class="k">Ücretsiz Hak</div>
-            <div class="v">${freeLeft} / 5</div>
-          </div>
-          <div class="wallet-item">
-            <div class="k">Bakiye</div>
-            <div class="v">${balance.toLocaleString("tr-TR")} TL</div>
-          </div>
-          <div class="wallet-item">
-            <div class="k">Rapor Ücreti (bakiyeye göre)</div>
-            <div class="v">${unit} TL</div>
-          </div>
-        </div>
-        <div class="wallet-actions">
-          <button class="mini-btn ok" onclick="openTopUp()">Para Yükle</button>
-          <button class="mini-btn" onclick="showPricing()">Fiyatlandırma</button>
-        </div>
-        <div class="mini-note">Not: Rapor oluşturulup kilitlenince bu kayda ait modüller tekrar açılmaz.</div>
-      `;
-    }
-
-    function renderLockBanner(report){
-      const el = document.getElementById("lockBanner");
-      if (!el) return;
-
-      if (report.wallet.locked) {
-        el.style.display = "block";
-        el.innerHTML = `
-          <h3>🔒 Bu rapor kilitlenmiştir</h3>
-          <div><b>Rapor oluşturulduktan sonra veri girişi kapatılır.</b> Bu kayda ait modüller tekrar açılamaz.</div>
-        `;
-        // rapor oluştur butonu kilitli
-        const btn = document.getElementById("btnRaporOlustur");
-        if (btn) btn.setAttribute("disabled","disabled");
-      } else {
-        el.style.display = "none";
-        const btn = document.getElementById("btnRaporOlustur");
-        if (btn) btn.removeAttribute("disabled");
-      }
-    }
-
-    // Burada PayTR entegrasyonu yok — sadece placeholder
-    function openTopUp(){
-      alert("💳 Para yükleme ekranı: PayTR entegrasyonu gelince buradan açacağız.\nŞimdilik test için bakiyeyi panelden/console’dan da yazabiliriz.");
-    }
-    function showPricing(){
-      alert("Fiyatlandırma:\n- İlk 5 rapor ücretsiz\n- Bakiye < 200 TL: 30 TL/rapor\n- 200–499 TL: 25 TL/rapor\n- 500 TL ve üzeri: 20 TL/rapor");
-    }
-
-    /* ========= Status badges (Eksik/Kısmi/Tamam) ========= */
-    function statusText(s){
-      if (s === 2) return "Tamamlandı";
-      if (s === 1) return "Kısmi";
-      return "Eksik";
-    }
-    function applyBadge(elId, status){
-      const el = document.getElementById(elId);
-      if (!el) return;
-      el.classList.remove("st0","st1","st2");
-      if (status === 2) el.classList.add("st2");
-      else if (status === 1) el.classList.add("st1");
-      else el.classList.add("st0");
-      el.textContent = statusText(status);
-    }
-
-    function renderAllBadges(report){
-      ensureWallet(report);
-      applyBadge("st_konum", report.modulesStatus.konum);
-      applyBadge("st_tapu", report.modulesStatus.tapu);
-      applyBadge("st_imar", report.modulesStatus.imar);
-      applyBadge("st_belgeler", report.modulesStatus.belgeler);
-      applyBadge("st_bina", report.modulesStatus.bina);
-      applyBadge("st_bb", report.modulesStatus.bb);
-      applyBadge("st_emsal", report.modulesStatus.emsal);
-    }
-
-    // URL ile status update: ?update=konum&status=2
-    function handleStatusUpdateFromUrl(report){
-      const u = new URLSearchParams(window.location.search);
-      const update = u.get("update");
-      const statusRaw = u.get("status");
-      if (!update || statusRaw === null) return false;
-
-      const s = Number(statusRaw);
-      if (!["imar","belgeler","bina","bb","konum","tapu","emsal"].includes(update)) return false;
-      if (![0,1,2].includes(s)) return false;
-
-      ensureWallet(report);
-      report.modulesStatus[update] = s;
-      persistReport(rid, report);
-
-      // URL’i temizle (tekrar tekrar işlenmesin)
-      u.delete("update"); u.delete("status");
-      const clean = location.pathname + "?rid=" + encodeURIComponent(rid);
-      window.history.replaceState({}, "", clean);
-      return true;
-    }
-
-    /* ========= Navigation guards ========= */
-    function go(page, moduleKey){
+    // ✅ Yönlendirme Fonksiyonu (RID’yi koruyarak geçer)
+    function go(page) {
       if (!rid) { window.location.href = "index.html"; return; }
-
-      const report = getReportByRid(rid);
-      if (!report) { window.location.href = "index.html"; return; }
-
-      ensureWallet(report);
-
-      // Kilitliyse modül açma
-      if (report.wallet.locked) {
-        alert("🔒 Bu rapor kilitli. Rapor oluşturulduktan sonra bu kayda tekrar veri girişi yapılamaz.");
-        return;
-      }
-
-      // normal geç
       window.location.href = page + "?rid=" + encodeURIComponent(rid);
     }
 
-    function goRaporOlustur(){
-      if (!rid) { window.location.href = "index.html"; return; }
-      const report = getReportByRid(rid);
-      if (!report) { window.location.href = "index.html"; return; }
-      ensureWallet(report);
+    /* ===============================
+       MODUL DURUM MOTORU
+       0: Bos | 1: Kismi | 2: Tam
+    ================================ */
+    function _normStr(x){
+      if (x === null || x === undefined) return "";
+      if (typeof x === "string") return x;
+      try { return JSON.stringify(x); } catch(e){ return String(x); }
+    }
+    function _bestText(){
+      for (let i=0;i<arguments.length;i++){
+        const s = _normStr(arguments[i]).trim();
+        if (s) return s;
+      }
+      return "";
+    }
+    function _scoreByLen(text, min0=20, min2=150){
+      const t = _normStr(text).trim();
+      if (t.length < min0) return 0;
+      if (t.length < min2) return 1;
+      return 2;
+    }
+    function _mergeTexts(arr){
+      return (arr || []).map(_normStr).join("\n").trim();
+    }
 
-      if (report.wallet.locked) {
-        alert("🔒 Bu rapor kilitli. Yeni rapor için yeni kayıt oluşturmalısın.");
+    function getModuleTexts(report){
+      const konum = _bestText(
+        report?.konumCevre?.tamMetin,
+        report?.konumCevre?.metin,
+        report?.konumCevreMetni,
+        report?.konumMetin
+      );
+
+      const imar = _bestText(
+        report?.imarMetni,
+        report?.imar?.tamMetin,
+        report?.imar?.metin,
+        report?.imarDurumu?.tamMetin,
+        report?.imarDurumu?.metin,
+        report?.imarDurumu // bazen objenin içinde olur
+      );
+
+      const belgeler = _bestText(
+        report?.belgelerMetni,
+        report?.belgeler?.tamMetin,
+        report?.belgeler?.metin
+      );
+
+      const bina = _bestText(
+        report?.bina?.metin,
+        report?.binaMetni,
+        report?.anaBinaMetni
+      );
+
+      const bb = _bestText(
+        report?.bbDetay?.tamMetin,
+        report?.bbDetay?.metin,
+        _mergeTexts((report?.bbDetayList || []).map(x => x?.bbDetay?.tamMetin || x?.bbDetay?.metin || ""))
+      );
+
+      const tapuAll = _mergeTexts([
+        report?.tapuMetniB1, report?.tapuMetniB2,
+        report?.tapu?.metinB1, report?.tapu?.metinB2,
+        report?.tapuKayit?.metinB1, report?.tapuKayit?.metinB2,
+        report?.tapuB1, report?.tapuB2
+      ]);
+
+      const emsalAll = _mergeTexts([
+        report?.degerlemeOzet?.emsalFinalMetni,
+        report?.emsalFinalMetni,
+        _mergeTexts((report?.bbDetayList || []).map(x => x?.degerlemeOzet?.emsalFinalMetni || ""))
+      ]);
+
+      return { konum, imar, belgeler, bina, bb, tapuAll, emsalAll };
+    }
+
+    function computeModuleStatuses(report){
+      const t = getModuleTexts(report);
+
+      const status = {
+        konum: _scoreByLen(t.konum, 20, 250),
+        imar:  _scoreByLen(t.imar, 20, 180),
+        belgeler: _scoreByLen(t.belgeler, 10, 120),
+        bina: _scoreByLen(t.bina, 20, 220),
+        bb: _scoreByLen(t.bb, 20, 220),
+        tapu: _scoreByLen(t.tapuAll, 20, 180),
+        emsal: _scoreByLen(t.emsalAll, 40, 300)
+      };
+
+      const keys = Object.keys(status);
+      const total = keys.reduce((s,k)=>s+status[k],0);
+      const max = keys.length * 2;
+      const pct = Math.round((total / max) * 100);
+
+      return { status, pct };
+    }
+
+    function statusLabel(n){
+      if (n === 2) return { icon:"✅", text:"Tamamlandı" };
+      if (n === 1) return { icon:"⚠️", text:"Kısmen Dolu" };
+      return { icon:"❌", text:"Veri Girilmedi" };
+    }
+
+    function renderStatusesToUI(report){
+      const out = computeModuleStatuses(report);
+      const status = out.status;
+      const pct = out.pct;
+
+      const box = document.getElementById("durumOzet");
+      if (box){
+        box.innerHTML = `<div style="font-weight:bold; font-size:16px;">Rapor Doluluk: %${pct}</div>
+          <div style="opacity:.9; font-size:13px; margin-top:6px;">✅ Tamamlandı • ⚠️ Kısmi • ❌ Boş</div>`;
+      }
+
+      document.querySelectorAll("[data-modul]").forEach(btn=>{
+        const key = btn.getAttribute("data-modul");
+        if (!key || !(key in status)) return;
+        const s = statusLabel(status[key]);
+
+        let badge = btn.querySelector(".modBadge");
+        if (!badge){
+          badge = document.createElement("span");
+          badge.className = "modBadge";
+          badge.style.fontSize = "18px";
+          badge.style.filter = "drop-shadow(0 2px 4px rgba(0,0,0,0.35))";
+          btn.appendChild(badge);
+        }
+        badge.textContent = s.icon;
+        badge.title = s.text;
+      });
+
+      return out;
+    }
+
+    /* ========= AUTH + BOOT ========= */
+    auth.onAuthStateChanged((user) => {
+      if (!user || !rid) {
+        window.location.href = 'index.html';
         return;
       }
 
-      // burada raporu oluşturmayız, sadece sayfaya gideriz
-      window.location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
-    }
-
-    /* ========= Boot ========= */
-    auth.onAuthStateChanged((user) => {
-      if (!user || !rid) { window.location.href = 'index.html'; return; }
-
+      // en güncel storage çek
+      reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
       const report = getReportByRid(rid);
-      if (!report) { window.location.href = 'index.html'; return; }
 
-      // Başlık
-      document.getElementById('baslik').textContent = report.propertyName || "İsimsiz Gayrimenkul";
-
-      // Wallet + status init
-      ensureWallet(report);
-      const changedByUrl = handleStatusUpdateFromUrl(report);
-
-      // Render
-      renderWalletPanel(report);
-      renderLockBanner(report);
-      renderAllBadges(report);
-
-      // Eğer URL ile update olduysa da tekrar render zaten yaptık
-      if (changedByUrl) {
-        const refreshed = getReportByRid(rid);
-        if (refreshed) {
-          ensureWallet(refreshed);
-          renderWalletPanel(refreshed);
-          renderLockBanner(refreshed);
-          renderAllBadges(refreshed);
-        }
+      if (!report) {
+        window.location.href = 'index.html';
+        return;
       }
 
-      // kaydet (wallet alanları yoksa yaz)
-      persistReport(rid, report);
+      document.getElementById('baslik').textContent = report.propertyName || "İsimsiz Gayrimenkul";
+
+      // ✅ DURUM BAS
+      renderStatusesToUI(report);
     });
   </script>
 </body>
