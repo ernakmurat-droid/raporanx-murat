@@ -1,148 +1,162 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 
-  <title>Final Raporu Oluşturucu - Profesyonel Panel</title>
+  <title>Final Raporu Oluşturucu - Raporan X</title>
+
   <style>
-    :root { --primary:#1a237e; --secondary:#3949ab; --accent:#ffd600; --bg:#f4f7f9; }
-    body { font-family:'Segoe UI', Tahoma, sans-serif; background:var(--bg); margin:0; color:#2c3e50; scroll-behavior:smooth; }
-    .header { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; padding:30px 20px; text-align:center; position:relative; z-index:10; }
-    .back { position:absolute; left:20px; top:25px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:30px; color:white; text-decoration:none; font-weight:bold; cursor:pointer; border:none; font-size:13px; }
-    .main-wrapper { max-width:1300px; margin:20px auto; display:grid; grid-template-columns:280px 1fr; gap:30px; padding:0 20px; }
-    .toc-container { position:sticky; top:20px; height:fit-content; }
-    .toc { background:white; padding:20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border-left:6px solid var(--primary); }
-    .toc-title { font-size:1.1em; font-weight:bold; color:var(--primary); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px; }
-    .toc-list { list-style:none; padding:0; margin:0; }
-    .toc-list li { margin-bottom:8px; }
-    .toc-list a { color:#555; text-decoration:none; font-size:.9em; font-weight:500; transition:.2s; display:block; padding:5px; border-radius:4px; }
-    .toc-list a:hover { background:#f0f2ff; color:var(--primary); padding-left:10px; }
+    :root { --primary: #1a237e; --secondary: #3949ab; --accent: #ffd600; --bg: #f4f7f9; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; color: #2c3e50; scroll-behavior: smooth; }
 
-    .container { background:white; padding:40px; border-radius:12px; box-shadow:0 0 40px rgba(0,0,0,0.05); }
-    .section { margin-bottom:50px; padding-bottom:20px; border-bottom:1px solid #f0f0f0; page-break-inside:avoid; }
-    .section-title { font-size:1.4em; font-weight:bold; color:var(--primary); margin-bottom:20px; display:flex; align-items:center; }
-    .section-title::after { content:""; flex:1; height:1px; background:#eee; margin-left:15px; }
-    .text-block { font-size:14.5px; line-height:1.7; white-space:pre-wrap; color:#34495e; text-align:justify; }
-    .info-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:15px; margin-bottom:25px; }
-    .info-item { background:#fcfcfc; border:1px solid #f0f0f0; padding:12px; border-radius:6px; }
-    .info-item strong { display:block; color:#888; font-size:.75em; text-transform:uppercase; margin-bottom:3px; }
-    .info-item span { font-weight:600; font-size:.95em; color:#2c3e50; }
+    .header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 30px 20px; text-align: center; position: relative; z-index: 10; }
+    .back { position: absolute; left: 20px; top: 25px; background: rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 30px; color: white; text-decoration: none; font-weight: bold; cursor: pointer; border: none; font-size: 13px; }
 
-    #imarTablo table { width:100%!important; border-collapse:collapse; margin:15px 0; font-size:12px!important; }
-    #imarTablo table th, #imarTablo table td { border:1px solid #dcdde1; padding:6px 10px!important; line-height:1.2; }
-    #imarTablo table th { background:#f8f9fa; color:#444; width:30%; }
+    .main-wrapper { max-width: 1300px; margin: 20px auto; display: grid; grid-template-columns: 280px 1fr; gap: 30px; padding: 0 20px; }
+    .toc-container { position: sticky; top: 20px; height: fit-content; }
+    .toc { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid var(--primary); }
+    .toc-title { font-size: 1.1em; font-weight: bold; color: var(--primary); margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .toc-list { list-style: none; padding: 0; margin: 0; }
+    .toc-list li { margin-bottom: 8px; }
+    .toc-list a { color: #555; text-decoration: none; font-size: 0.9em; font-weight: 500; transition: 0.2s; display: block; padding: 5px; border-radius: 4px; }
+    .toc-list a:hover { background: #f0f2ff; color: var(--primary); padding-left: 10px; }
 
-    .print-btn { background:#27ae60; color:white; padding:15px 30px; font-size:18px; border:none; border-radius:50px; cursor:pointer; margin:40px auto; display:block; font-weight:bold; box-shadow:0 6px 15px rgba(39,174,96,0.3); transition:.3s; }
-    .print-btn:hover { background:#219150; transform:translateY(-2px); }
+    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 0 40px rgba(0,0,0,0.05); }
+    .section { margin-bottom: 50px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; page-break-inside: avoid; }
+    .section-title { font-size: 1.4em; font-weight: bold; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; }
+    .section-title::after { content: ""; flex: 1; height: 1px; background: #eee; margin-left: 15px; }
+
+    #imarTablo table { width: 100% !important; border-collapse: collapse; margin: 15px 0; font-size: 12px !important; }
+    #imarTablo table th, #imarTablo table td { border: 1px solid #dcdde1; padding: 6px 10px !important; line-height: 1.2; }
+    #imarTablo table th { background: #f8f9fa; color: #444; width: 30%; }
+
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .info-item { background: #fcfcfc; border: 1px solid #f0f0f0; padding: 12px; border-radius: 6px; }
+    .info-item strong { display: block; color: #888; font-size: 0.75em; text-transform: uppercase; margin-bottom: 3px; }
+    .info-item span { font-weight: 600; font-size: 0.95em; color: #2c3e50; }
+
+    .text-block { font-size: 14.5px; line-height: 1.7; white-space: pre-wrap; color: #34495e; text-align: justify; }
+    .format-badge { background: #546e7a; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; margin-bottom: 10px; display: inline-block; }
+
+    .print-btn { background: #27ae60; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 50px; cursor: pointer; margin: 40px auto; display: block; font-weight: bold; box-shadow: 0 6px 15px rgba(39,174,96,0.3); transition: 0.3s; }
+    .print-btn:hover { background: #219150; transform: translateY(-2px); }
+
+    .muted { color:#888; font-size: 13px; }
 
     @media print {
-      body { background:white; }
-      .header, .back, .print-btn, .toc-container { display:none!important; }
-      .main-wrapper { display:block; max-width:100%; margin:0; padding:0; }
-      .container { box-shadow:none; padding:0; margin:0; width:100%; }
-      .section-title { color:black; border-bottom:2px solid black; }
-      #imarTablo table { font-size:10px!important; }
+      body { background: white; }
+      .header, .back, .print-btn, .toc-container { display: none !important; }
+      .main-wrapper { display: block; max-width: 100%; margin: 0; padding: 0; }
+      .container { box-shadow: none; padding: 0; margin: 0; width: 100%; }
+      .section-title { color: black; border-bottom: 2px solid black; }
+      #imarTablo table { font-size: 10px !important; }
     }
-    @media (max-width:992px) {
-      .main-wrapper { grid-template-columns:1fr; }
-      .toc-container { position:relative; top:0; margin-bottom:20px; }
+
+    @media (max-width: 992px) {
+      .main-wrapper { grid-template-columns: 1fr; }
+      .toc-container { position: relative; top: 0; margin-bottom: 20px; }
     }
   </style>
 </head>
 
 <body>
-<div class="header">
-  <button onclick="geriDon()" class="back">← Yönetim Paneli</button>
-  <h1 style="margin:0; font-size:1.8em; letter-spacing:1px;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
-  <div id="raporTarih" style="margin-top:8px; opacity:.8; font-size:13px;"></div>
-</div>
+  <div class="header">
+    <button id="btnBack" class="back">← Yönetim Paneli</button>
+    <h1 style="margin:0; font-size: 1.8em; letter-spacing: 1px;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
+    <div id="raporTarih" style="margin-top: 8px; opacity: 0.8; font-size: 13px;"></div>
+  </div>
 
-<div class="main-wrapper">
-  <aside class="toc-container">
-    <div class="toc">
-      <div class="toc-title">RAPOR BÖLÜMLERİ</div>
-      <ul class="toc-list">
-        <li><a href="#genel">1. Genel Bilgiler</a></li>
-        <li><a href="#imar">2. İmar Durumu</a></li>
-        <li><a href="#belgeler">3. İncelenen Belgeler</a></li>
-        <li><a href="#bina">4. Ana Bina Bilgileri</a></li>
-        <li><a href="#bb">5. Bağımsız Bölüm</a></li>
-        <li><a href="#konum">6. Konum Analizi</a></li>
-        <li><a href="#tapu">7. Tapu Kayıtları</a></li>
-        <li><a href="#emsal">8. Değerleme Sonucu</a></li>
-      </ul>
-    </div>
-  </aside>
+  <div class="main-wrapper">
+    <aside class="toc-container">
+      <div class="toc">
+        <div class="toc-title">RAPOR BÖLÜMLERİ</div>
+        <ul class="toc-list">
+          <li><a href="#genel">1. Genel Bilgiler</a></li>
+          <li><a href="#imar">2. İmar Durumu</a></li>
+          <li><a href="#belgeler">3. İncelenen Belgeler</a></li>
+          <li><a href="#bina">4. Ana Bina Bilgileri</a></li>
+          <li><a href="#bb">5. Bağımsız Bölüm</a></li>
+          <li><a href="#konum">6. Konum ve Çevre</a></li>
+          <li><a href="#tapu">7. Tapu ve Takyidat</a></li>
+          <li><a href="#emsal">8. Değerleme ve Sonuç</a></li>
+        </ul>
+        <div class="muted" style="margin-top:12px;">
+          Not: Birden fazla BB varsa metinler alt alta yazılır.
+        </div>
+      </div>
+    </aside>
 
-  <main class="container">
-    <div class="section" id="genel">
-      <div class="section-title">1. Gayrimenkul Genel Bilgileri</div>
-      <div class="info-grid" id="genelBilgi"></div>
-    </div>
+    <main class="container">
+      <div class="section" id="genel">
+        <div class="section-title">1. Gayrimenkul Genel Bilgileri</div>
+        <div class="info-grid" id="genelBilgi"></div>
+      </div>
 
-    <div class="section" id="imar">
-      <div class="section-title">2. İmar Durumu Verileri</div>
-      <div id="imarTablo"></div>
-      <div class="text-block" id="imarMetin"></div>
-    </div>
+      <div class="section" id="imar">
+        <div class="section-title">2. İmar Durumu Verileri</div>
+        <div id="imarTablo"></div>
+        <div class="text-block" id="imarMetin"></div>
+      </div>
 
-    <div class="section" id="belgeler">
-      <div class="section-title">3. İncelenen Belgeler</div>
-      <div class="text-block" id="belgelerMetin"></div>
-    </div>
+      <div class="section" id="belgeler">
+        <div class="section-title">3. İncelenen Belgeler</div>
+        <div class="text-block" id="belgelerMetin"></div>
+      </div>
 
-    <div class="section" id="bina">
-      <div class="section-title">4. Ana Gayrimenkul Bilgileri</div>
-      <div class="text-block" id="binaMetin"></div>
-    </div>
+      <div class="section" id="bina">
+        <div class="section-title">4. Ana Gayrimenkul Bilgileri</div>
+        <div class="text-block" id="binaMetin"></div>
+      </div>
 
-    <div class="section" id="bb">
-      <div class="section-title">5. Bağımsız Bölüm Analizi</div>
-      <div class="text-block" id="bbMetin"></div>
-    </div>
+      <div class="section" id="bb">
+        <div class="section-title">5. Bağımsız Bölüm Analizi</div>
+        <div class="text-block" id="bbMetin"></div>
+      </div>
 
-    <div class="section" id="konum">
-      <div class="section-title">6. Konum ve Çevre Analizi</div>
-      <div class="text-block" id="konumMetin"></div>
-    </div>
+      <div class="section" id="konum">
+        <div class="section-title">6. Konum ve Çevre Analizi</div>
+        <div class="text-block" id="konumMetin"></div>
+      </div>
 
-    <div class="section" id="tapu">
-      <div class="section-title">7. Tapu ve Takyidat Kayıtları</div>
-      <div class="text-block" id="tapuMetinB1" style="margin-bottom:25px;"></div>
-      <div class="text-block" id="tapuMetinB2"></div>
-    </div>
+      <div class="section" id="tapu">
+        <div class="section-title">7. Tapu ve Takyidat Kayıtları</div>
+        <div class="format-badge">BANKA FORMATI B1</div>
+        <div class="text-block" id="tapuMetinB1" style="margin-bottom: 25px;"></div>
+        <div class="format-badge">BANKA FORMATI B2</div>
+        <div class="text-block" id="tapuMetinB2"></div>
+      </div>
 
-    <div class="section" id="emsal">
-      <div class="section-title">8. Değerleme ve Sonuç Analizi</div>
-      <div class="text-block" id="emsalMetin"></div>
-    </div>
+      <div class="section" id="emsal">
+        <div class="section-title">8. Değerleme ve Sonuç Analizi</div>
+        <div class="text-block" id="emsalMetin"></div>
+      </div>
 
-    <button class="print-btn" onclick="window.print()">📑 RAPORU YAZDIR / PDF OLARAK KAYDET</button>
-  </main>
-</div>
+      <button class="print-btn" onclick="window.print()">📑 RAPORU YAZDIR / PDF OLARAK KAYDET</button>
+    </main>
+  </div>
 
 <script>
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+  // Firebase config.js senin projende window.auth / window.db çıkarıyordu.
+  const auth = window.auth || firebase.auth();
 
-  /* ========= RID + legacy id desteği ========= */
+  /* ===== RID + legacy id desteği (emsal sayfanla uyumlu) ===== */
   const params = new URLSearchParams(window.location.search);
   let rid = params.get('rid');
   const legacyId = params.get('id');
 
   function genRid(){
-    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    try { if (crypto && crypto.randomUUID) return crypto.randomUUID(); } catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
   }
   function ensureRidMigration(arr){
     let changed=false;
-    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
+    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; } });
     return changed;
   }
   function findIndexByRid(arr, rid){
@@ -152,130 +166,137 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
+  // legacy id -> rid yönlendirme (varsa)
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
       rid = reports[idxLegacy].rid;
-      window.location.replace("rapor-olustur.html?rid=" + encodeURIComponent(rid));
+      const file = (location.pathname.split("/").pop() || "rapor-olustur.html");
+      window.location.replace(file + "?rid=" + encodeURIComponent(rid));
     }
   }
 
-  function getLatestData(){
+  function getReport(){
     const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    const i = rid ? findIndexByRid(arr, rid) : -1;
-    const r = (i >= 0) ? (arr[i] || null) : null;
-    return { arr, i, r };
+    const idx = rid ? findIndexByRid(arr, rid) : (legacyId !== null ? Number(legacyId) : -1);
+    const r = (idx >= 0 && arr[idx]) ? arr[idx] : null;
+    return { arr, idx, r };
   }
 
-  function geriDon(){
-    window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+  /* ===== Yardımcılar ===== */
+  function safeText(x, fallback){
+    if (typeof x !== "string") return fallback || "";
+    const t = x.trim();
+    return t ? t : (fallback || "");
   }
 
-  function pickText(...candidates){
-    for (const c of candidates){
-      if (c != null && String(c).trim() !== "") return String(c);
-    }
+  // Çoklu BB metin birleştirici (bbDetayList varsa)
+  function birlestirBBMetin(report, selectorFn, baslikPrefix){
+    if (!Array.isArray(report?.bbDetayList) || report.bbDetayList.length === 0) return "";
+    const out = [];
+    report.bbDetayList.forEach((bb, i) => {
+      const baslik = bb?.baslik || `${i+1}. BB`;
+      const m = selectorFn(bb);
+      if (m && String(m).trim()) {
+        out.push(`${baslikPrefix ? baslikPrefix + " - " : ""}${baslik}\n${String(m).trim()}`);
+      }
+    });
+    return out.join("\n\n");
+  }
+
+  // Emsal metni: hem eski hem BB'li her şeyi yakala
+  function emsalMetniBul(report){
+    // 1) Eski tekli
+    const eski = report?.degerlemeOzet?.emsalFinalMetni;
+    if (eski && String(eski).trim()) return String(eski).trim();
+
+    // 2) BB’li (senin yeni emsal sayfan böyle kaydediyor)
+    const bbli = birlestirBBMetin(
+      report,
+      (bb) => bb?.degerleme?.degerlemeOzet?.emsalFinalMetni,
+      "" // başlık yeter
+    );
+    if (bbli && bbli.trim()) return bbli.trim();
+
+    // 3) Bazı sürümlerde direkt bb.degerleme.emsalFinalMetni gibi hatalı kaydedilmiş olabiliyor
+    const bbli2 = birlestirBBMetin(
+      report,
+      (bb) => bb?.degerleme?.emsalFinalMetni,
+      ""
+    );
+    if (bbli2 && bbli2.trim()) return bbli2.trim();
+
     return "";
   }
 
-  function getEmsalMetni(r){
-    // 1) Eski yer
-    const legacy = r?.degerlemeOzet?.emsalFinalMetni;
-    if (legacy && String(legacy).trim() !== "") return String(legacy);
+  function bbMetniBul(report){
+    // 1) Eski tekli
+    const tek = report?.bbDetay?.tamMetin;
+    if (tek && String(tek).trim()) return String(tek).trim();
 
-    // 2) Yeni yer: bbDetayList[*].degerleme.degerlemeOzet.emsalFinalMetni
-    const list = Array.isArray(r?.bbDetayList) ? r.bbDetayList : [];
-    const chunks = [];
-
-    list.forEach((bb, idx) => {
-      const t = bb?.degerleme?.degerlemeOzet?.emsalFinalMetni;
-      if (t && String(t).trim() !== "") {
-        const baslik = bb?.bbDetay?.bbNo ? `${bb.bbDetay.bbNo} BB Nolu Taşınmaz` : `${idx+1}. Bağımsız Bölüm`;
-        chunks.push(`${baslik}\n${String(t).trim()}`);
-      }
-    });
-
-    return chunks.join("\n\n");
+    // 2) BB listesi: tüm BB’leri alt alta yaz
+    const bbli = birlestirBBMetin(report, (bb) => bb?.bbDetay?.tamMetin, "");
+    return bbli || "";
   }
 
-  function raporOlustur(r) {
+  function konumMetniBul(report){
+    const tek = report?.konumCevre?.tamMetin;
+    if (tek && String(tek).trim()) return String(tek).trim();
+    // BB’li kaydetmiş olma ihtimali (ileride)
+    const bbli = birlestirBBMetin(report, (bb) => bb?.konumCevre?.tamMetin, "");
+    return bbli || "";
+  }
+
+  function raporOlustur(report){
     const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
     document.getElementById('raporTarih').textContent = `Rapor Oluşturma: ${today}`;
 
+    // Back butonu doğru query ile dönsün
+    const backBtn = document.getElementById("btnBack");
+    backBtn.onclick = () => {
+      const q = rid ? `rid=${encodeURIComponent(rid)}` : `id=${encodeURIComponent(legacyId || 0)}`;
+      window.location.href = `rapor-detay.html?${q}`;
+    };
+
+    // 1) Genel
     document.getElementById('genelBilgi').innerHTML = `
-      <div class="info-item"><strong>Taşınmaz Adı</strong><span>${r.propertyName || "..."}</span></div>
-      <div class="info-item"><strong>İl / İlçe</strong><span>${r.il || '-'} / ${r.ilce || '-'}</span></div>
-      <div class="info-item"><strong>Ada / Parsel</strong><span>${r.ada || '...'} / ${r.parsel || '...'}</span></div>
-      <div class="info-item"><strong>Arsa Alanı</strong><span>${r.bina?.arsaAlani || '...'} m²</span></div>
+      <div class="info-item"><strong>Taşınmaz Adı</strong><span>${safeText(report.propertyName, "...")}</span></div>
+      <div class="info-item"><strong>İl / İlçe</strong><span>${safeText(report.il, "-")} / ${safeText(report.ilce, "-")}</span></div>
+      <div class="info-item"><strong>Ada / Parsel</strong><span>${safeText(report.ada, "...")} / ${safeText(report.parsel, "...")}</span></div>
+      <div class="info-item"><strong>Arsa Alanı</strong><span>${safeText(String(report?.bina?.arsaAlani || ""), "...")} ${report?.bina?.arsaAlani ? "m²" : ""}</span></div>
     `;
 
-    // İmar
-    document.getElementById('imarTablo').innerHTML = r.imarTablo || '<p>Veri yok.</p>';
-    document.getElementById('imarMetin').textContent = pickText(r.imarMetni, r.imarDurumuMetni, r.imar?.tamMetin);
+    // 2) İmar
+    document.getElementById('imarTablo').innerHTML = report.imarTablo || '<p class="muted">Veri yok.</p>';
+    document.getElementById('imarMetin').textContent = safeText(report.imarMetni, "");
 
-    // Belgeler
-    document.getElementById('belgelerMetin').textContent = pickText(r.belgelerMetni, r.belgeler?.metin);
+    // 3) Belgeler
+    document.getElementById('belgelerMetin').textContent = safeText(report.belgelerMetni, "Veri girilmedi.");
 
-    // Bina
-    document.getElementById('binaMetin').textContent = pickText(r.bina?.metin, r.binaMetin, r.bina?.tamMetin);
+    // 4) Bina
+    document.getElementById('binaMetin').textContent = safeText(report?.bina?.metin, "Veri girilmedi.");
 
-    // BB (eski tek bb + yeni çoklu bb)
-    const bbLegacy = r.bbDetay?.tamMetin;
-    if (bbLegacy && String(bbLegacy).trim() !== "") {
-      document.getElementById('bbMetin').textContent = bbLegacy;
-    } else {
-      const list = Array.isArray(r.bbDetayList) ? r.bbDetayList : [];
-      const bbText = list
-        .map((bb, idx) => {
-          const t = bb?.bbDetay?.tamMetin;
-          if (!t || String(t).trim() === "") return "";
-          const baslik = bb?.bbDetay?.bbNo ? `${bb.bbDetay.bbNo} BB` : `${idx+1}. BB`;
-          return `${baslik}\n${String(t).trim()}`;
-        })
-        .filter(Boolean)
-        .join("\n\n");
-      document.getElementById('bbMetin').textContent = bbText || 'Veri girilmedi.';
-    }
+    // 5) BB (tek + çoklu)
+    const bbMetin = bbMetniBul(report);
+    document.getElementById('bbMetin').textContent = bbMetin ? bbMetin : "Veri girilmedi.";
 
-    // Konum/Çevre
-    document.getElementById('konumMetin').textContent = pickText(r.konumCevre?.tamMetin, r.konumMetni, r.konumCevreMetni);
+    // 6) Konum/Çevre
+    const konumMetin = konumMetniBul(report);
+    document.getElementById('konumMetin').textContent = konumMetin ? konumMetin : "Veri girilmedi.";
 
-    // Tapu
-    document.getElementById('tapuMetinB1').textContent = pickText(r.tapuMetniB1, r.tapu?.metinB1, r.tapuB1);
-    document.getElementById('tapuMetinB2').textContent = pickText(r.tapuMetniB2, r.tapu?.metinB2, r.tapuB2);
+    // 7) Tapu
+    document.getElementById('tapuMetinB1').textContent = safeText(report.tapuMetniB1, "Veri girilmedi.");
+    document.getElementById('tapuMetinB2').textContent = safeText(report.tapuMetniB2, "Veri girilmedi.");
 
-    // Emsal/Değerleme
-    function emsalMetniBul(report){
-  // 1) Eski tekli yapı
-  const eski = report?.degerlemeOzet?.emsalFinalMetni;
-  if (eski && eski.trim()) return eski;
-
-  // 2) Yeni çoklu BB yapısı: hepsini birleştir
-  if (Array.isArray(report?.bbDetayList) && report.bbDetayList.length){
-    const bloklar = report.bbDetayList.map((bb, idx) => {
-      const baslik = bb?.baslik || `${idx+1}. BB`;
-      const m = bb?.degerleme?.degerlemeOzet?.emsalFinalMetni;
-      if (m && m.trim()){
-        return `${baslik}\n${m.trim()}`;
-      }
-      return null;
-    }).filter(Boolean);
-
-    if (bloklar.length) return bloklar.join("\n\n");
+    // 8) EMSAL (İŞTE BURASI)
+    const emsal = emsalMetniBul(report);
+    document.getElementById('emsalMetin').textContent = emsal ? emsal : "Analiz tamamlanmadı.";
   }
 
-  // 3) Olmazsa boş
-  return "";
-}
-
-document.getElementById('emsalMetin').textContent =
-  emsalMetniBul(report) || "Analiz tamamlanmadı.";
-
-  }
-
+  // ===== Güvenlik + oturum =====
   auth.onAuthStateChanged((user) => {
-    const { r } = getLatestData();
-    if (!user || !rid || !r) {
+    const { r } = getReport();
+    if (!user || !r) {
       window.location.href = 'index.html';
       return;
     }
@@ -284,4 +305,3 @@ document.getElementById('emsalMetin').textContent =
 </script>
 </body>
 </html>
-
