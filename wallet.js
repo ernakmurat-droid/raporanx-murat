@@ -1,29 +1,52 @@
 /**
- * wallet.js
+ * wallet.js (sağlam sürüm)
  * Firestore: users/{uid}/wallet/main
  * UI: #walletBar varsa doldurur
  */
 
 (function () {
+  const { FieldValue } = firebase.firestore;
+
   function tl(n) {
     const num = Number(n || 0);
     return new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(num);
   }
 
+  function walletRef(uid) {
+    return db.collection("users").doc(uid).collection("wallet").doc("main");
+  }
+
   async function ensureWallet(uid) {
-    const ref = db.collection("users").doc(uid).collection("wallet").doc("main");
-    const snap = await ref.get();
-    if (!snap.exists) {
-      const init = {
-        balance: 0,
-        freeReportsLeft: 5,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      await ref.set(init, { merge: true });
-      return init;
-    }
-    return snap.data();
+    const ref = walletRef(uid);
+
+    // Transaction ile "tek sefer" oluşturma
+    const result = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) {
+        const init = {
+          balance: 0,
+          freeReportsLeft: 5,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        tx.set(ref, init, { merge: true });
+        return init;
+      } else {
+        const data = snap.data() || {};
+        // Eksik alanlar varsa tamamla (opsiyonel ama güzel)
+        const patch = {};
+        if (typeof data.balance !== "number") patch.balance = Number(data.balance || 0);
+        if (typeof data.freeReportsLeft !== "number") patch.freeReportsLeft = Number(data.freeReportsLeft || 0);
+        if (Object.keys(patch).length) {
+          patch.updatedAt = FieldValue.serverTimestamp();
+          tx.set(ref, patch, { merge: true });
+          return { ...data, ...patch };
+        }
+        return data;
+      }
+    });
+
+    return result;
   }
 
   function updateWalletUI(w) {
@@ -50,7 +73,8 @@
     const btn = document.getElementById("btnWalletTopup");
     if (btn) {
       btn.onclick = () => {
-        alert("Yükleme ekranını birazdan PayTR ile bağlayacağız. Şimdilik demo.");
+        // Burada doğru akış: backend'den PayTR linki al → redirect
+        alert("Yükleme ekranını PayTR ile bağlayacağız. Şimdilik demo.");
       };
     }
   }
@@ -58,15 +82,40 @@
   async function loadWallet(uid) {
     const w = await ensureWallet(uid);
     updateWalletUI(w);
-    window.WALLET = w;
+
+    // Globalde tutacaksan "kopya" tut (UI için)
+    window.WALLET = { balance: Number(w.balance || 0), freeReportsLeft: Number(w.freeReportsLeft || 0) };
     return w;
   }
 
-  window.Wallet = { load: loadWallet, ensure: ensureWallet, ui: updateWalletUI };
+  // İstersen canlı takip (önerilir): bakiye değişince UI otomatik güncellenir
+  function listenWallet(uid) {
+    const ref = walletRef(uid);
+    return ref.onSnapshot((snap) => {
+      if (!snap.exists) return;
+      const w = snap.data() || {};
+      updateWalletUI(w);
+      window.WALLET = { balance: Number(w.balance || 0), freeReportsLeft: Number(w.freeReportsLeft || 0) };
+    });
+  }
 
-  // Oturum varsa otomatik yükle
+  window.Wallet = {
+    load: loadWallet,
+    ensure: ensureWallet,
+    ui: updateWalletUI,
+    listen: listenWallet,
+    ref: walletRef,
+  };
+
   auth.onAuthStateChanged(async (user) => {
     if (!user) return;
-    try { await loadWallet(user.uid); } catch (e) { console.log("wallet error:", e); }
+    try {
+      await loadWallet(user.uid);
+      // canlı takip istersen aç:
+      // window.__WALLET_UNSUB && window.__WALLET_UNSUB();
+      // window.__WALLET_UNSUB = listenWallet(user.uid);
+    } catch (e) {
+      console.log("wallet error:", e);
+    }
   });
 })();
