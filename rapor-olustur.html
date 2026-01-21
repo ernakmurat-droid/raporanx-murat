@@ -1,179 +1,121 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Gayrimenkul Değerleme Raporu</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Rapor Oluşturuluyor…</title>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="wallet.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
 
-<style>
-:root{--primary:#1a237e;--secondary:#3949ab;--bg:#f4f7f9;}
-body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e50;}
-.header{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;padding:30px 20px;text-align:center;position:relative;}
-.back{position:absolute;left:20px;top:25px;background:rgba(255,255,255,.2);padding:8px 15px;border-radius:30px;color:#fff;border:none;cursor:pointer;}
-.main-wrapper{max-width:1300px;margin:30px auto;display:grid;grid-template-columns:270px 1fr;gap:25px;padding:0 20px;}
-.toc-container{position:sticky;top:20px;height:fit-content;}
-.toc{background:#fff;padding:18px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.05);border-left:6px solid var(--primary);}
-.toc-title{font-weight:bold;color:var(--primary);margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:6px;}
-.toc ul{list-style:none;padding:0;margin:0;}
-.toc li{margin:6px 0;}
-.toc a{color:#444;text-decoration:none;font-size:.9em;display:block;padding:4px 6px;border-radius:4px;}
-.toc a:hover{background:#f0f2ff;color:var(--primary);}
-.container{background:#fff;padding:35px;border-radius:12px;box-shadow:0 0 25px rgba(0,0,0,.05);}
-.section{margin-bottom:45px;}
-.section h2{color:var(--primary);border-bottom:2px solid #eee;padding-bottom:8px;font-size:1.2em;}
-.text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;color:#34495e;}
-.warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
-.print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto;display:block;cursor:pointer;font-weight:bold;max-width:420px;width:100%;}
-.print-btn:hover{opacity:.92;}
-@media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
-@media print{.header,.toc-container,.print-btn,#statusBar{display:none!important;}.container{box-shadow:none;padding:0;}}
-#statusBar{
-  max-width:1300px;margin:12px auto 0;padding:10px 14px;border-radius:12px;
-  background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.06);
-  border-left:6px solid var(--secondary);
-  color:#2c3e50;font-weight:800;
-}
-#statusBar small{display:block;font-weight:500;opacity:.85;margin-top:4px}
-</style>
+  <!-- Wallet -->
+  <script src="wallet.js"></script>
+
+  <style>
+    :root{--primary:#1a237e;--secondary:#3949ab;--bg:#f4f7f9;}
+    body{
+      margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+      font-family:Segoe UI, Arial, sans-serif; background:linear-gradient(135deg,var(--primary),var(--secondary));
+      color:#fff;
+    }
+    .card{
+      width:min(720px, calc(100% - 32px));
+      background:rgba(255,255,255,0.12);
+      border:1px solid rgba(255,255,255,0.2);
+      border-radius:18px;
+      padding:18px 16px;
+      box-shadow:0 18px 50px rgba(0,0,0,0.25);
+      backdrop-filter: blur(6px);
+    }
+    h1{font-size:20px; margin:0 0 8px; letter-spacing:.3px;}
+    .sub{opacity:.9; line-height:1.4;}
+    .status{
+      margin-top:14px;
+      background:rgba(0,0,0,0.18);
+      border:1px solid rgba(255,255,255,0.18);
+      border-radius:14px;
+      padding:12px 12px;
+      font-weight:800;
+      line-height:1.35;
+    }
+    .status small{display:block; font-weight:600; opacity:.9; margin-top:4px;}
+    .btnRow{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
+    button{
+      border:none; border-radius:12px; padding:10px 14px; cursor:pointer; font-weight:900;
+    }
+    .btnBack{background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.25);}
+    .btnRetry{background:#00c853; color:#fff;}
+    .muted{opacity:.85; font-size:12px; margin-top:10px; line-height:1.35;}
+    .spinner{
+      margin-top:12px;
+      width:34px; height:34px; border-radius:50%;
+      border:4px solid rgba(255,255,255,0.25);
+      border-top-color:#fff;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg);} }
+  </style>
 </head>
 
 <body>
-<div class="header">
-  <button class="back" id="btnBack">← Geri</button>
-  <h1>GAYRİMENKUL DEĞERLEME RAPORU</h1>
-  <div id="raporTarih"></div>
-</div>
+  <div class="card">
+    <h1>Rapor Oluşturuluyor…</h1>
+    <div class="sub">Lütfen sayfayı kapatma. İşlem bitince otomatik olarak rapor ekranına geçeceğiz.</div>
 
-<div id="statusBar">Hazır. <small>Rapor oluşturma menüden tetiklenirse burada otomatik çalışır.</small></div>
+    <div class="spinner" id="spinner"></div>
 
-<div class="main-wrapper">
-  <aside class="toc-container">
-    <div class="toc">
-      <div class="toc-title">📋 RAPOR BÖLÜMLERİ</div>
-      <ul>
-        <li><a href="#genel">1. Genel Bilgiler</a></li>
-        <li><a href="#imar">2. İmar Durumu</a></li>
-        <li><a href="#belgeler">3. Belgeler</a></li>
-        <li><a href="#bina">4. Ana Bina Bilgileri</a></li>
-        <li><a href="#bb">5. Bağımsız Bölüm</a></li>
-        <li><a href="#konum">6. Konum Analizi</a></li>
-        <li><a href="#tapu">7. Tapu Bilgileri</a></li>
-        <li><a href="#emsal">8. Değerleme / Emsal</a></li>
-      </ul>
+    <div class="status" id="status">
+      Başlatılıyor…
+      <small id="statusSub">Giriş ve rapor kontrol ediliyor.</small>
     </div>
-  </aside>
 
-  <main class="container">
+    <div class="btnRow" id="btnRow" style="display:none;">
+      <button class="btnBack" id="btnBack">← Geri Dön</button>
+      <button class="btnRetry" id="btnRetry">Tekrar Dene</button>
+    </div>
 
-    <button class="print-btn" id="btnManualCreate" style="background:#ff5722">🧾 Rapor Oluştur</button>
-    <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
-
-    <section id="genel" class="section">
-      <h2>1. Genel Bilgiler</h2>
-      <div id="genelBilgi"></div>
-    </section>
-
-    <section id="imar" class="section">
-      <h2>2. İmar Durumu</h2>
-      <div id="imarTablo"></div>
-      <div class="text-block" id="imarMetin"></div>
-    </section>
-
-    <section id="belgeler" class="section">
-      <h2>3. Belgeler</h2>
-      <div class="text-block" id="belgelerMetin"></div>
-    </section>
-
-    <section id="bina" class="section">
-      <h2>4. Ana Bina Bilgileri</h2>
-      <div class="text-block" id="binaMetin"></div>
-    </section>
-
-    <section id="bb" class="section">
-      <h2>5. Bağımsız Bölüm</h2>
-      <div class="text-block" id="bbMetin"></div>
-    </section>
-
-    <section id="konum" class="section">
-      <h2>6. Konum Analizi</h2>
-      <div class="text-block" id="konumMetin"></div>
-    </section>
-
-    <section id="tapu" class="section">
-      <h2>7. Tapu Bilgileri</h2>
-      <div class="text-block" id="tapuMetinB1"></div>
-      <div class="text-block" id="tapuMetinB2"></div>
-    </section>
-
-    <section id="emsal" class="section">
-      <h2>8. Değerleme / Emsal</h2>
-      <div class="text-block" id="emsalMetin"></div>
-    </section>
-
-  </main>
-</div>
+    <div class="muted" id="muted">
+      Not: Ücret/ücretsiz hak düşümü rapor oluşturma başladığında yapılır. Aynı rid için ikinci kez düşmez.
+    </div>
+  </div>
 
 <script>
 (function(){
   const auth = (window.auth) ? window.auth : firebase.auth();
   const db   = (window.db)   ? window.db   : firebase.firestore();
+  const FieldValue = firebase.firestore.FieldValue;
 
   const $ = (id) => document.getElementById(id);
 
-  function setStatus(title, detail){
-    const el = $("statusBar");
-    el.textContent = title;
-    const sm = document.createElement("small");
-    sm.textContent = detail || "";
-    el.appendChild(sm);
+  function setStatus(title, sub){
+    $("status").firstChild.nodeValue = title;
+    $("statusSub").textContent = sub || "";
   }
 
-  function getRid(){
+  function showFailUI(msg){
+    $("spinner").style.display = "none";
+    $("btnRow").style.display = "flex";
+    setStatus("❌ İşlem başarısız.", msg || "Bilinmeyen hata");
+  }
+
+  function getParams(){
     const p = new URLSearchParams(location.search);
-    return (p.get("rid") || p.get("id") || "").toString().trim();
+    return {
+      rid: (p.get("rid") || p.get("id") || "").toString().trim(),
+      confirm: p.get("confirm") === "1",
+    };
   }
 
-  function shouldAutoCreate(){
-    const p = new URLSearchParams(location.search);
-    return p.get("create") === "1";
+  function goBack(rid){
+    if (rid) location.href = "rapor-ana-menu.html?rid=" + encodeURIComponent(rid);
+    else location.href = "index.html";
   }
 
-  function clearAutoCreateParam(){
-    const p = new URLSearchParams(location.search);
-    if (p.get("create") !== "1") return;
-    p.delete("create");
-    const rid = getRid();
-    const next = "rapor-detay.html?rid=" + encodeURIComponent(rid) + (p.toString() ? "&" + p.toString() : "");
-    history.replaceState({}, "", next);
-  }
-
-  function isLockedLocal(rid){
-    return localStorage.getItem("report_locked_" + rid) === "1";
-  }
-
-  function formatMetin(t){
-    if (t === null || t === undefined) return "";
-    const s = String(t);
-    return s.replace(/\r\n/g, "\n")
-      .replace(/[ \t]+\n/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-  }
-
-  function pick(obj, ...paths){
-    for (const p of paths){
-      try{
-        const val = p.split(".").reduce((acc,k)=> (acc && acc[k] !== undefined ? acc[k] : undefined), obj);
-        if (val !== undefined && val !== null && String(val).trim() !== "") return val;
-      }catch{}
-    }
-    return "";
+  function gotoReport(rid){
+    location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
   }
 
   function loadReports(){
@@ -190,6 +132,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
     return { reports, i, report: i >= 0 ? reports[i] : null };
   }
 
+  // rid parçalarını localStorage’dan topla (modüllere dokunmadan)
   function collectModulePiecesByRid(rid){
     const out = {};
     const ridStr = String(rid);
@@ -217,6 +160,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
     return out;
   }
 
+  // rapor objesine “zararsız” merge (boş olanı doldurur)
   function mergePiecesIntoReport(report, pieces){
     const r = report || {};
 
@@ -265,180 +209,188 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
       safeSet("degerlemeOzet", pieces.emsal?.degerlemeOzet || pieces.emsal);
       safeSet("emsalFinalMetni", pieces.emsal?.emsalFinalMetni || pieces.emsal?.finalMetin || "");
     }
+
     return r;
   }
 
-  function bbYazdir(list){
-    if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
-    return list.map((bb,i)=>{
-      const baslik = bb?.baslik || bb?.title || "Bağımsız Bölüm";
-      const metin = pick(bb, "bbDetay.tamMetin", "bbDetay.metin", "tamMetin", "metin");
-      return `(${i+1}) ${baslik}:\n${formatMetin(metin)}`.trim();
-    }).join("\n\n");
-  }
-
-  function emsalMetni(rep){
-    const direct = pick(rep, "emsalFinalMetni", "degerlemeOzet.emsalFinalMetni", "degerleme.emsalFinalMetni");
-    if (direct) return formatMetin(direct);
-
-    const list = rep?.bbDetayList;
-    if (Array.isArray(list) && list.length){
-      const uniq = new Set();
-      const arr = [];
-      for (const bb of list){
-        const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni", "degerleme.emsalFinalMetni");
-        const ft = formatMetin(t);
-        if (!ft) continue;
-        if (uniq.has(ft)) continue;
-        uniq.add(ft);
-        arr.push(ft);
-      }
-      return arr.length ? arr.join("\n\n") : "Emsal analizi bulunamadı";
-    }
-    return "Emsal verisi yok";
-  }
-
-  function renderReportFromLocal(rid){
-    $("raporTarih").textContent = "Tarih: " + new Date().toLocaleDateString("tr-TR");
-
-    let raporlar = [];
-    try { raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); } catch { raporlar = []; }
-
-    const report =
-      raporlar.find(r => String(r?.rid ?? "").trim() === rid) ||
-      raporlar.find(r => String(r?.rid ?? "").trim() === String(Number(rid))) ||
-      null;
-
-    let report2 = null;
-    if (!report && rid){
-      try {
-        const maybe = localStorage.getItem("rapor_" + rid);
-        if (maybe) report2 = JSON.parse(maybe);
-      } catch {}
-    }
-
-    const r = report || report2;
-    if (!r) throw new Error("Rapor bulunamadı! (rid/id: " + rid + ")");
-
-    $("genelBilgi").innerHTML = `
-      <div><b>İl / İlçe:</b> ${pick(r,"il") || "-"} / ${pick(r,"ilce") || "-"}</div>
-      <div><b>Ada / Parsel:</b> ${pick(r,"ada") || "-"} / ${pick(r,"parsel") || "-"}</div>
-      <div><b>Taşınmaz:</b> ${pick(r,"propertyName","tasınmazAdi","tasinmazAdi","baslik") || "Tanımsız"}</div>
-    `;
-
-    const imarTablo = pick(r,"imarTablo");
-    $("imarTablo").innerHTML = imarTablo || "<div class='warning'>İmar tablosu bulunamadı</div>";
-
-    $("imarMetin").textContent = formatMetin(pick(r, "imarMetni", "imar.metin", "imar.tamMetin"));
-    $("belgelerMetin").textContent = formatMetin(pick(r, "belgelerMetni", "belgeler.metin", "belgeler.tamMetin"));
-    $("binaMetin").textContent = formatMetin(pick(r, "bina.metin", "bina.tamMetin", "binaMetni", "binaMetin"));
-    $("bbMetin").textContent = bbYazdir(r.bbDetayList || r.bbList || r.bagimsizBolumler);
-    $("konumMetin").textContent = formatMetin(pick(r, "konumCevre.tamMetin", "konumCevre.metin", "konumMetni", "konumMetin"));
-    $("tapuMetinB1").textContent = formatMetin(pick(r, "tapuMetniB1", "tapu.b1", "tapuMetinB1"));
-    $("tapuMetinB2").textContent = formatMetin(pick(r, "tapuMetniB2", "tapu.b2", "tapuMetinB2"));
-    $("emsalMetin").textContent = emsalMetni(r);
-  }
-
+  // 🔒 local + firestore kilit
   async function lockFinal(rid, uid){
     await db.collection("reports").doc(rid).set({
       ownerUid: uid,
       status: "final",
       locked: true,
-      lockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      lockedAt: FieldValue.serverTimestamp(),
       lockedBy: uid
     }, { merge:true });
+
     localStorage.setItem("report_locked_" + rid, "1");
   }
 
-  let busy = false;
+  // 💳 Cüzdan düşümü (idempotent)
+  // wallet.js içinde Wallet.consumeReport varsa onu kullanır.
+  // Yoksa burada kendi transaction’ı ile düşer.
+  function walletMainRef(uid){
+    return db.collection("users").doc(uid).collection("wallet").doc("main");
+  }
+  function walletUseRef(uid, rid){
+    // her rapor için tek seferlik “kullanım” kaydı
+    return db.collection("users").doc(uid).collection("wallet").doc("main")
+      .collection("uses").doc(String(rid));
+  }
 
-  async function createFinalReportFlow(){
-    if (busy) return;
-    busy = true;
+  async function ensureWallet(uid){
+    const ref = walletMainRef(uid);
+    return db.runTransaction(async (tx)=>{
+      const snap = await tx.get(ref);
+      if (!snap.exists){
+        const init = { balance: 0, freeReportsLeft: 5, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+        tx.set(ref, init, { merge:true });
+        return init;
+      }
+      const data = snap.data() || {};
+      const patch = {};
+      if (typeof data.balance !== "number") patch.balance = Number(data.balance || 0);
+      if (typeof data.freeReportsLeft !== "number") patch.freeReportsLeft = Number(data.freeReportsLeft || 0);
+      if (Object.keys(patch).length){
+        patch.updatedAt = FieldValue.serverTimestamp();
+        tx.set(ref, patch, { merge:true });
+        return { ...data, ...patch };
+      }
+      return data;
+    });
+  }
 
-    const rid = getRid();
-    if (!rid){ alert("rid yok"); busy=false; return; }
+  async function consumeReport(uid, rid){
+    // 1) varsa hazır fonksiyon
+    if (window.Wallet && typeof Wallet.consumeReport === "function"){
+      return await Wallet.consumeReport(uid, rid);
+    }
 
-    if (isLockedLocal(rid)){
-      setStatus("🔒 Kilitli.", "Bu rapor daha önce final oluşturulmuş.");
-      busy=false;
+    // 2) yoksa burada güvenli düşüm (1 rapor = 1 hak; hak yoksa balance düşer; yetmezse false)
+    await ensureWallet(uid);
+
+    const mainRef = walletMainRef(uid);
+    const useRef  = walletUseRef(uid, rid);
+
+    return db.runTransaction(async (tx)=>{
+      const useSnap = await tx.get(useRef);
+      if (useSnap.exists){
+        // daha önce düşmüş
+        return true;
+      }
+
+      const mainSnap = await tx.get(mainRef);
+      if (!mainSnap.exists) throw new Error("Cüzdan bulunamadı.");
+      const w = mainSnap.data() || {};
+
+      let balance = Number(w.balance || 0);
+      let freeLeft = Number(w.freeReportsLeft || 0);
+
+      // fiyat: burada istersen sabitleyebilirsin (ör: 100 TL)
+      // ama sen “hak düşsün” dediğin için: önce ücretsizden düş, yoksa 0 TL ise engelle
+      const priceTL = Number(w.pricePerReportTL || 0) || 0;
+
+      if (freeLeft > 0){
+        freeLeft -= 1;
+        tx.set(mainRef, { freeReportsLeft: freeLeft, updatedAt: FieldValue.serverTimestamp() }, { merge:true });
+        tx.set(useRef, { usedAt: FieldValue.serverTimestamp(), kind:"free" }, { merge:true });
+        return true;
+      }
+
+      // ücretsiz yoksa ücretli
+      if (priceTL <= 0){
+        // fiyat tanımlı değilse, güvenlik için engelle
+        return false;
+      }
+
+      if (balance < priceTL){
+        return false;
+      }
+
+      balance -= priceTL;
+      tx.set(mainRef, { balance: balance, updatedAt: FieldValue.serverTimestamp() }, { merge:true });
+      tx.set(useRef, { usedAt: FieldValue.serverTimestamp(), kind:"paid", priceTL }, { merge:true });
+      return true;
+    });
+  }
+
+  async function run(){
+    const { rid, confirm } = getParams();
+    if (!rid){
+      showFailUI("rid parametresi yok. (Örn: rapor-olustur.html?rid=xxxx)");
       return;
     }
 
-    const user = auth.currentUser;
-    if (!user){ busy=false; return; }
+    $("btnBack").onclick = () => goBack(rid);
+    $("btnRetry").onclick = () => location.reload();
 
-    try{
-      if (!window.Wallet || typeof Wallet.consumeReport !== "function"){
-        throw new Error("Wallet.consumeReport yok.");
-      }
+    // uyarı burada da garanti olsun (menüden confirm=1 gelmediyse)
+    if (!confirm){
+      const msg =
+`UYARI! (ÖNEMLİ)
+Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
 
-      setStatus("💳 Cüzdan…", "Ücret/ücretsiz hak düşümü yapılıyor.");
-      const ok = await Wallet.consumeReport(user.uid, rid);
-      if (!ok) throw new Error("Yetersiz bakiye / ücretsiz hak yok.");
+Lütfen zaman ve para kaybı olmaması için tüm modülleri tekrar kontrol edin.
+Devam ederseniz rapor bankaya uygun taslak formatında üretilecektir.
 
-      setStatus("🧾 Rapor hazırlanıyor…", "Metinler toplanıyor ve rapora yazılıyor.");
-      let { reports, i, report } = findReportByRid(rid);
-      report = report || { rid };
-
-      const pieces = collectModulePiecesByRid(rid);
-      report = mergePiecesIntoReport(report, pieces);
-
-      if (i >= 0) reports[i] = report; else reports.push(report);
-      saveReports(reports);
-
-      setStatus("🔒 Kilit…", "Final rapor kilitleniyor.");
-      await lockFinal(rid, user.uid);
-
-      setStatus("✅ Hazır.", "Final rapor oluşturuldu ve kilitlendi.");
-      renderReportFromLocal(rid);
-
-      // ✅ create=1 parametresini temizle (sayfa yenilenirse tekrar düşmesin)
-      clearAutoCreateParam();
-
-    }catch(e){
-      console.error(e);
-      setStatus("❌ Başarısız.", e?.message || String(e));
-      alert(e?.message || "Hata oluştu");
-    }finally{
-      busy = false;
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const rid = getRid();
-    $("btnBack").onclick = () => {
-      if (!rid) location.href = "index.html";
-      else location.href = "rapor-ana-menu.html?rid=" + encodeURIComponent(rid);
-    };
-
-    $("btnManualCreate").onclick = () => {
-      // burada uyarı menüde verildiği için tekrar uyarı yok
-      createFinalReportFlow();
-    };
-
-    auth.onAuthStateChanged((user)=>{
-      if (!user){
-        setStatus("❌ Giriş yok.", "Ana sayfaya yönlendiriliyor…");
-        setTimeout(()=>location.href="index.html", 400);
+Devam etmek istiyor musunuz?`;
+      if (!window.confirm(msg)){
+        goBack(rid);
         return;
       }
-      try{
-        const rid = getRid();
-        renderReportFromLocal(rid);
-      }catch{}
+    }
 
-      // ✅ menüden create=1 ile geldiyse otomatik üret
-      if (shouldAutoCreate()){
-        createFinalReportFlow();
-      } else {
-        const rid = getRid();
-        if (isLockedLocal(rid)){
-          setStatus("🔒 Kilitli.", "Bu rapor daha önce final oluşturulmuş.");
-        } else {
-          setStatus("Hazır.", "Menüden ‘TAM RAPOR OLUŞTUR’ ile otomatik oluşturabilirsin.");
-        }
-      }
+    setStatus("🔐 Giriş kontrolü…", "Hesabın doğrulanıyor.");
+
+    const user = auth.currentUser;
+    if (!user){
+      showFailUI("Giriş bulunamadı. Lütfen tekrar giriş yap.");
+      return;
+    }
+
+    // zaten kilitliyse direkt rapora geç
+    if (localStorage.getItem("report_locked_" + rid) === "1"){
+      setStatus("🔒 Rapor kilitli.", "Final rapor zaten oluşturulmuş. Rapor ekranına geçiliyor…");
+      setTimeout(()=>gotoReport(rid), 600);
+      return;
+    }
+
+    setStatus("💳 Cüzdan/hak düşümü…", "Bu rapor için işlem yapılıyor.");
+
+    const ok = await consumeReport(user.uid, rid);
+    if (!ok){
+      showFailUI("Yetersiz ücretsiz hak/bakiye. (Fiyat tanımlı değilse ücretli düşüm kapalı olabilir)");
+      return;
+    }
+
+    setStatus("🧾 Veriler toparlanıyor…", "Modüllerden gelen metinler rapora işleniyor.");
+
+    // raporu bul/oluştur ve merge et
+    let { reports, i, report } = findReportByRid(rid);
+    report = report || { rid };
+
+    const pieces = collectModulePiecesByRid(rid);
+    report = mergePiecesIntoReport(report, pieces);
+
+    if (i >= 0) reports[i] = report;
+    else reports.push(report);
+    saveReports(reports);
+
+    setStatus("🔒 Kilit basılıyor…", "Final rapor kilitleniyor.");
+
+    await lockFinal(rid, user.uid);
+
+    setStatus("✅ Tamamlandı!", "Rapor ekranına yönlendiriliyorsun…");
+    setTimeout(()=>gotoReport(rid), 700);
+  }
+
+  document.addEventListener("DOMContentLoaded", ()=>{
+    auth.onAuthStateChanged(()=>{
+      // auth hazır olunca koş
+      run().catch((e)=>{
+        console.error(e);
+        showFailUI(e?.message || "Beklenmeyen hata");
+      });
     });
   });
 })();
