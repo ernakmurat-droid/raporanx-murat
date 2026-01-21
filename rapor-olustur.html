@@ -189,30 +189,48 @@
     return t.trim();
   }
 
-  /* ========= EMSAL METNİ BULUCU (asıl fix burada) ========= */
+  /* ========= EMSAL METNİ BULUCU (emsal sayfasındakiyle aynı kaynaktan) ========= */
   function emsalMetniBul(report){
-    // 1) eski alan (tek metin)
-    const eski = report?.degerlemeOzet?.emsalFinalMetni;
-    if (eski && String(eski).trim()) return trDuzelt(eski);
+    // 0) Bazı projelerde üstte de tutuluyor: rapor.emsalFinalMetni
+    const direct1 = report?.emsalFinalMetni;
+    if (direct1 && String(direct1).trim()) return trDuzelt(direct1);
 
-    // 2) bbDetayList içinden SENİN KAYDETTİĞİN YER ✅
+    // 1) Tek metin: report.degerlemeOzet.emsalFinalMetni (senin eski kullanımın)
+    const single = report?.degerlemeOzet?.emsalFinalMetni;
+    if (single && String(single).trim()) return trDuzelt(single);
+
+    // 2) Çoklu BB: emsal sayfasının kaydettiği yer
     if (Array.isArray(report?.bbDetayList) && report.bbDetayList.length) {
-      let out = "";
-      report.bbDetayList.forEach((bb, i) => {
-        const baslik = bb?.baslik || `${i+1}. BB`;
+      const blocks = [];
 
-        const m1 = bb?.degerlemeOzet?.emsalFinalMetni;            // ✅ senin emsal sayfası
+      report.bbDetayList.forEach((bb, i) => {
+        // Başlık üret: emsal sayfasında nasıl görüyorsan ona yakın olsun
+        const title =
+          bb?.baslik ||
+          bb?.bbDetay?.bbNo ||
+          bb?.bbDetay?.bagimsizNo ||
+          bb?.bbDetay?.kapiNo ||
+          `${i+1}. BB`;
+
+        // Metin kaynakları (en güçlüden zayıfa)
+        const m1 = bb?.degerlemeOzet?.emsalFinalMetni;            // ✅ emsal sayfanın ana kaydı
         const m2 = bb?.degerleme?.degerlemeOzet?.emsalFinalMetni; // yedek
         const m3 = bb?.degerleme?.emsalFinalMetni;                // yedek
+        const m4 = bb?.emsalFinalMetni;                           // yedek
 
-        const metin = (m1 || m2 || m3);
+        const metin = (m1 || m2 || m3 || m4);
         if (metin && String(metin).trim()) {
-          out += `${baslik}\n${trDuzelt(metin)}\n\n`;
+          blocks.push(`${title}\n${trDuzelt(metin)}`);
         }
       });
-      if (out.trim()) return out.trim();
+
+      if (blocks.length) {
+        // Emsal sayfasında alt alta gibi göster: blok arası bir satır boşluk
+        return blocks.join("\n\n");
+      }
     }
 
+    // 3) Hiç yoksa
     return "Analiz tamamlanmadı.";
   }
 
@@ -240,7 +258,6 @@
     document.getElementById('binaMetin').textContent = trDuzelt(report.bina?.metin || "Veri girilmedi.");
 
     // BB
-    // bbDetayList varsa alt alta yaz, yoksa tek bbDetay
     let bbText = "";
     if (Array.isArray(report.bbDetayList) && report.bbDetayList.length) {
       report.bbDetayList.forEach((bb, i) => {
@@ -261,7 +278,7 @@
     document.getElementById('tapuMetinB1').textContent = trDuzelt(report.tapuMetniB1 || "Veri girilmedi.");
     document.getElementById('tapuMetinB2').textContent = trDuzelt(report.tapuMetniB2 || "Veri girilmedi.");
 
-    // EMSAL ✅
+    // EMSAL ✅ (emsal.html’de gördüğün metni aynen basar)
     document.getElementById('emsalMetin').textContent = emsalMetniBul(report);
   }
 
