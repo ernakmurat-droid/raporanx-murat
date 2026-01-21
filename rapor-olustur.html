@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Gayrimenkul Değerleme Raporu</title>
 
-<!-- Firebase + wallet -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -35,15 +34,10 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 @media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
 @media print{.header,.toc-container,.print-btn,#statusBar{display:none!important;}.container{box-shadow:none;padding:0;}}
 #statusBar{
-  max-width:1300px;
-  margin:12px auto 0;
-  padding:10px 14px;
-  border-radius:12px;
-  background:#fff;
-  box-shadow:0 4px 14px rgba(0,0,0,.06);
+  max-width:1300px;margin:12px auto 0;padding:10px 14px;border-radius:12px;
+  background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.06);
   border-left:6px solid var(--secondary);
-  color:#2c3e50;
-  font-weight:800;
+  color:#2c3e50;font-weight:800;
 }
 #statusBar small{display:block;font-weight:500;opacity:.85;margin-top:4px}
 </style>
@@ -56,7 +50,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   <div id="raporTarih"></div>
 </div>
 
-<div id="statusBar">Hazır. <small>Raporu oluşturmak/güncellemek için butonu kullanabilirsin.</small></div>
+<div id="statusBar">Hazır. <small>Rapor oluşturma menüden tetiklenirse burada otomatik çalışır.</small></div>
 
 <div class="main-wrapper">
   <aside class="toc-container">
@@ -77,9 +71,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 
   <main class="container">
 
-    <!-- ✅ TEK NOKTADAN RAPOR OLUŞTUR / KİLİT -->
-    <button class="print-btn" id="btnBuild" style="background:#ff5722">🧾 Rapor Oluştur / Güncelle</button>
-    <button class="print-btn" id="btnLock" style="background:#e53935">🔒 Raporu Kilitle (Final)</button>
+    <button class="print-btn" id="btnManualCreate" style="background:#ff5722">🧾 Rapor Oluştur</button>
     <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
 
     <section id="genel" class="section">
@@ -147,6 +139,24 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
     return (p.get("rid") || p.get("id") || "").toString().trim();
   }
 
+  function shouldAutoCreate(){
+    const p = new URLSearchParams(location.search);
+    return p.get("create") === "1";
+  }
+
+  function clearAutoCreateParam(){
+    const p = new URLSearchParams(location.search);
+    if (p.get("create") !== "1") return;
+    p.delete("create");
+    const rid = getRid();
+    const next = "rapor-detay.html?rid=" + encodeURIComponent(rid) + (p.toString() ? "&" + p.toString() : "");
+    history.replaceState({}, "", next);
+  }
+
+  function isLockedLocal(rid){
+    return localStorage.getItem("report_locked_" + rid) === "1";
+  }
+
   function formatMetin(t){
     if (t === null || t === undefined) return "";
     const s = String(t);
@@ -203,10 +213,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
       else if (k.includes("bina")) out.bina = val;
       else if (k.includes("bagimsiz") || k.includes("bb")) out.bb = val;
       else if (k.includes("emsal") || k.includes("degerleme")) out.emsal = val;
-      else {
-        out._others = out._others || [];
-        out._others.push({ key, val });
-      }
     }
     return out;
   }
@@ -259,10 +265,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
       safeSet("degerlemeOzet", pieces.emsal?.degerlemeOzet || pieces.emsal);
       safeSet("emsalFinalMetni", pieces.emsal?.emsalFinalMetni || pieces.emsal?.finalMetin || "");
     }
-    if (pieces._others?.length){
-      safeSet("_collectedPieces", pieces._others);
-    }
-
     return r;
   }
 
@@ -337,29 +339,45 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
+  async function lockFinal(rid, uid){
+    await db.collection("reports").doc(rid).set({
+      ownerUid: uid,
+      status: "final",
+      locked: true,
+      lockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      lockedBy: uid
+    }, { merge:true });
+    localStorage.setItem("report_locked_" + rid, "1");
+  }
+
   let busy = false;
 
-  async function raporuOlusturVeGoster(){
+  async function createFinalReportFlow(){
     if (busy) return;
     busy = true;
 
     const rid = getRid();
     if (!rid){ alert("rid yok"); busy=false; return; }
 
+    if (isLockedLocal(rid)){
+      setStatus("🔒 Kilitli.", "Bu rapor daha önce final oluşturulmuş.");
+      busy=false;
+      return;
+    }
+
     const user = auth.currentUser;
-    if (!user){ alert("Giriş yok"); busy=false; return; }
+    if (!user){ busy=false; return; }
 
     try{
       if (!window.Wallet || typeof Wallet.consumeReport !== "function"){
-        throw new Error("Wallet.consumeReport yok. (wallet.js güncel değil)");
+        throw new Error("Wallet.consumeReport yok.");
       }
 
-      setStatus("💳 Cüzdan kontrolü…", "Ücret/ücretsiz hak rapordan önce düşer.");
+      setStatus("💳 Cüzdan…", "Ücret/ücretsiz hak düşümü yapılıyor.");
       const ok = await Wallet.consumeReport(user.uid, rid);
       if (!ok) throw new Error("Yetersiz bakiye / ücretsiz hak yok.");
 
-      setStatus("🧾 Rapor toparlanıyor…", "Metinler boşsa localStorage parçalarından rid ile toplanır.");
-
+      setStatus("🧾 Rapor hazırlanıyor…", "Metinler toplanıyor ve rapora yazılıyor.");
       let { reports, i, report } = findReportByRid(rid);
       report = report || { rid };
 
@@ -369,56 +387,18 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
       if (i >= 0) reports[i] = report; else reports.push(report);
       saveReports(reports);
 
-      setStatus("✅ Rapor güncellendi.", "Şimdi ekrana basılıyor.");
+      setStatus("🔒 Kilit…", "Final rapor kilitleniyor.");
+      await lockFinal(rid, user.uid);
+
+      setStatus("✅ Hazır.", "Final rapor oluşturuldu ve kilitlendi.");
       renderReportFromLocal(rid);
+
+      // ✅ create=1 parametresini temizle (sayfa yenilenirse tekrar düşmesin)
+      clearAutoCreateParam();
+
     }catch(e){
       console.error(e);
-      setStatus("❌ İşlem başarısız.", (e?.message || e));
-      alert(e?.message || "Hata oluştu");
-    }finally{
-      busy = false;
-    }
-  }
-
-  async function kilitleFinal(){
-    if (busy) return;
-    busy = true;
-
-    const rid = getRid();
-    if (!rid){ alert("rid yok"); busy=false; return; }
-
-    const user = auth.currentUser;
-    if (!user){ alert("Giriş yok"); busy=false; return; }
-
-    if (!confirm("Rapor kilitlenecek. Sonrasında modüller düzenlenemez. Devam?")){
-      busy=false; return;
-    }
-
-    try{
-      if (!window.Wallet || typeof Wallet.consumeReport !== "function"){
-        throw new Error("Wallet.consumeReport yok. (wallet.js güncel değil)");
-      }
-
-      setStatus("💳 Cüzdan kontrolü…", "Kilit öncesi kontrol edilir. (Tekrar düşüm yok: rid bazlı idempotent)");
-      const ok = await Wallet.consumeReport(user.uid, rid);
-      if (!ok) throw new Error("Yetersiz bakiye / ücretsiz hak yok.");
-
-      setStatus("🔒 Kilit basılıyor…", "Kilit sonrası ana menü modülleri açmaz.");
-      await db.collection("reports").doc(rid).set({
-        ownerUid: user.uid,
-        status: "final",
-        locked: true,
-        lockedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        lockedBy: user.uid
-      }, { merge:true });
-
-      localStorage.setItem("report_locked_" + rid, "1");
-
-      setStatus("✅ Kilitlendi.", "Ana menüde modüllere giriş engellenecek.");
-      alert("✅ Rapor kilitlendi.");
-    }catch(e){
-      console.error(e);
-      setStatus("❌ Kilitleme başarısız.", (e?.message || e));
+      setStatus("❌ Başarısız.", e?.message || String(e));
       alert(e?.message || "Hata oluştu");
     }finally{
       busy = false;
@@ -432,10 +412,11 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
       else location.href = "rapor-ana-menu.html?rid=" + encodeURIComponent(rid);
     };
 
-    $("btnBuild").onclick = raporuOlusturVeGoster;
-    $("btnLock").onclick  = kilitleFinal;
+    $("btnManualCreate").onclick = () => {
+      // burada uyarı menüde verildiği için tekrar uyarı yok
+      createFinalReportFlow();
+    };
 
-    // auth hazır olunca raporu bas (varsa)
     auth.onAuthStateChanged((user)=>{
       if (!user){
         setStatus("❌ Giriş yok.", "Ana sayfaya yönlendiriliyor…");
@@ -443,12 +424,20 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
         return;
       }
       try{
-        setStatus("Hazır.", "Raporu oluştur/güncelle butonuna basabilirsin.");
-        // sayfa açılınca varsa raporu göster
         const rid = getRid();
-        if (rid) renderReportFromLocal(rid);
-      }catch(e){
-        console.log(e);
+        renderReportFromLocal(rid);
+      }catch{}
+
+      // ✅ menüden create=1 ile geldiyse otomatik üret
+      if (shouldAutoCreate()){
+        createFinalReportFlow();
+      } else {
+        const rid = getRid();
+        if (isLockedLocal(rid)){
+          setStatus("🔒 Kilitli.", "Bu rapor daha önce final oluşturulmuş.");
+        } else {
+          setStatus("Hazır.", "Menüden ‘TAM RAPOR OLUŞTUR’ ile otomatik oluşturabilirsin.");
+        }
       }
     });
   });
