@@ -1,135 +1,145 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gayrimenkul Değerleme Raporu - Testli Versiyon</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Gayrimenkul Değerleme Raporu</title>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="wallet.js"></script>
+<!-- FİREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="wallet.js"></script>
 
-  <style>
-    :root { --primary:#1a237e; --secondary:#3949ab; --accent:#ffd600; --bg:#f4f7f9; }
-    body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);margin:0;color:#2c3e50}
-    .header{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;padding:30px 20px;text-align:center;position:relative}
-    .back{position:absolute;left:20px;top:25px;background:rgba(255,255,255,0.2);padding:8px 15px;border-radius:30px;color:#fff;text-decoration:none;font-weight:bold;cursor:pointer;border:none;font-size:13px}
-    .main-wrapper{max-width:1300px;margin:20px auto;display:grid;grid-template-columns:280px 1fr;gap:30px;padding:0 20px}
-    .toc-container{position:sticky;top:20px;height:fit-content}
-    .toc{background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.05);border-left:6px solid var(--primary)}
-    .toc-title{font-size:1.1em;font-weight:bold;color:var(--primary);margin-bottom:15px;border-bottom:1px solid #eee;padding-bottom:10px}
-    .toc-list{list-style:none;padding:0;margin:0}
-    .toc-list li{margin-bottom:8px}
-    .toc-list a{color:#555;text-decoration:none;font-size:.9em;font-weight:500;transition:.2s;display:block;padding:5px;border-radius:4px}
-    .toc-list a:hover{background:#f0f2ff;color:var(--primary);padding-left:10px}
-    .container{background:#fff;padding:40px;border-radius:12px;box-shadow:0 0 40px rgba(0,0,0,0.05)}
-    .section{margin-bottom:50px;padding-bottom:20px;border-bottom:1px solid #f0f0f0}
-    .section-title{font-size:1.4em;font-weight:bold;color:var(--primary);margin-bottom:20px;display:flex;align-items:center}
-    .section-title::after{content:"";flex:1;height:1px;background:#eee;margin-left:15px}
-    .text-block{font-size:14.5px;line-height:1.7;white-space:pre-wrap;color:#34495e;text-align:justify}
-    .print-btn{background:#27ae60;color:#fff;padding:15px 30px;font-size:18px;border:none;border-radius:50px;cursor:pointer;margin:40px auto;display:block;font-weight:bold;box-shadow:0 6px 15px rgba(39,174,96,.3);transition:.3s}
-    .print-btn:hover{background:#219150;transform:translateY(-2px)}
-    #lockBadge{padding:8px 12px;border-radius:8px;background:#0002;color:#000;font-weight:bold}
-  </style>
+<style>
+body{font-family:'Segoe UI',sans-serif;background:#f4f7f9;margin:0;color:#333;}
+.header{background:#1a237e;color:#fff;padding:25px 20px;text-align:center;position:relative;}
+.back{position:absolute;left:20px;top:20px;background:#fff2;border:none;padding:6px 14px;color:#fff;border-radius:20px;cursor:pointer;}
+.container{max-width:1200px;margin:30px auto;background:#fff;padding:40px;border-radius:8px;box-shadow:0 0 15px #0001;}
+.section{margin-bottom:40px;}
+.section h2{border-bottom:2px solid #eee;padding-bottom:10px;color:#1a237e;}
+.text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;}
+.warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
+.print-btn{background:#27ae60;color:#fff;padding:14px 25px;border:none;border-radius:6px;cursor:pointer;}
+.print-btn:hover{background:#1e874e;}
+</style>
 </head>
-
 <body>
-  <div class="header">
-    <button id="btnBack" class="back">← Yönetim Paneli</button>
-    <h1>GAYRİMENKUL DEĞERLEME RAPORU</h1>
-    <div id="raporTarih"></div>
-  </div>
 
-  <div style="max-width:1200px;margin:20px auto;text-align:right;">
-    <span id="lockBadge">🟡 Taslak (Kilit yok)</span>
-  </div>
+<div class="header">
+ <button class="back" onclick="window.location.href='index.html'">← Geri</button>
+ <h1>Gayrimenkul Değerleme Raporu</h1>
+ <div id="raporTarih"></div>
+</div>
 
-  <main class="container">
-    <div class="section" id="genel">
-      <div class="section-title">1. Genel Bilgiler</div>
-      <div class="text-block" id="genelBilgi"></div>
-    </div>
+<div class="container">
 
-    <div class="section" id="emsal">
-      <div class="section-title">2. Değerleme ve Sonuç Analizi</div>
-      <div class="text-block" id="emsalMetin"></div>
-    </div>
+<div class="section">
+ <h2>1. Genel Bilgiler</h2>
+ <div id="genelBilgi"></div>
+</div>
 
-    <button class="print-btn" id="lockAndPrint">📑 RAPORU YAZDIR / KİLİTLE</button>
-  </main>
+<div class="section">
+ <h2>2. İmar Durumu</h2>
+ <div id="imarTablo"></div>
+ <div class="text-block" id="imarMetin"></div>
+</div>
+
+<div class="section">
+ <h2>3. Belgeler</h2>
+ <div class="text-block" id="belgelerMetin"></div>
+</div>
+
+<div class="section">
+ <h2>4. Ana Bina Bilgileri</h2>
+ <div class="text-block" id="binaMetin"></div>
+</div>
+
+<div class="section">
+ <h2>5. Bağımsız Bölüm Bilgileri</h2>
+ <div class="text-block" id="bbMetin"></div>
+</div>
+
+<div class="section">
+ <h2>6. Konum Analizi</h2>
+ <div class="text-block" id="konumMetin"></div>
+</div>
+
+<div class="section">
+ <h2>7. Tapu Bilgileri</h2>
+ <div class="text-block" id="tapuMetinB1"></div>
+ <div class="text-block" id="tapuMetinB2"></div>
+</div>
+
+<div class="section">
+ <h2>8. Emsal / Değerleme</h2>
+ <div class="text-block" id="emsalMetin"></div>
+</div>
+
+<button class="print-btn" onclick="window.print()">Yazdır / PDF Kaydet</button>
+
+</div>
 
 <script>
-  const TEST_MODE = true; // 👈 TEST MODU: TRUE = HAK/PARA DÜŞMEZ!
+document.addEventListener("DOMContentLoaded",async()=>{
+ const auth=firebase.auth();
+ const urlParams=new URLSearchParams(window.location.search);
+ const rid=urlParams.get("rid")||urlParams.get("id");
+ if(!rid){alert("Rapor bulunamadı");return;}
 
-  const auth = firebase.auth();
+ // ---------- VERİ OKUMA ----------
+ const allReports=JSON.parse(localStorage.getItem("gayrimenkul_reports")||"[]");
+ const report=allReports.find(r=>r.rid===rid);
+ if(!report){alert("Rapor verisi bulunamadı");return;}
 
-  // 🔹 Mock test data
-  const report = {
-    rid: "12345",
-    emsalFinalMetni: "Bu taşınmaz için piyasa analizi sonucunda emsal değerleme yapılmıştır.",
-    propertyName: "Test Gayrimenkul",
-    isLocked: false
-  };
+ // ---------- GENEL METİN DÜZENLEYİCİ ----------
+ const formatMetin=(t)=>(t||"").toString()
+   .replace(/\s+\n/g,"\n")
+   .replace(/\n{3,}/g,"\n\n")
+   .replace(/\s{2,}/g," ")
+   .trim();
 
-  // 🔹 Metin biçimlendirici
-  const formatMetin = (t) => (t || "").trim();
+ // ---------- BB METİNLERİ ----------
+ const bbYazdir=(list)=>{
+   if(!list||!list.length)return "Bağımsız bölüm bilgisi yok";
+   return list.map((bb,i)=>`(${i+1}) ${bb.baslik||"Bağımsız Bölüm"}:\n${formatMetin(bb.bbDetay?.tamMetin||bb.bbDetay?.metin)}`).join("\n\n");
+ };
 
-  // 🔹 Hak düşme işlemi
-  const decreaseUserRight = async (uid, rid) => {
-    if (TEST_MODE) {
-      console.log("🧪 Test Modu: Hak düşme yapılmadı.");
-      return;
-    }
+ // ---------- EMSAL METNİ (TEKRAR ÖNLEYİCİ) ----------
+ const emsalMetniOlustur=(r)=>{
+   if(r?.emsalFinalMetni)return formatMetin(r.emsalFinalMetni);
+   if(r?.degerlemeOzet?.emsalFinalMetni)return formatMetin(r.degerlemeOzet.emsalFinalMetni);
+   if(r.bbDetayList?.length){
+     const tekil=new Set();
+     const arr=r.bbDetayList.map(bb=>{
+       const m=bb.degerlemeOzet?.emsalFinalMetni;
+       if(!m||tekil.has(m))return null;
+       tekil.add(m);
+       return formatMetin(m);
+     }).filter(Boolean);
+     return arr.length?arr.join("\n\n"):"Değerleme metni yok";
+   }
+   return "Emsal verisi bulunamadı";
+ };
 
-    const key = `rapor_locked_${rid}`;
-    if (localStorage.getItem(key)) return;
-
-    try {
-      await Wallet.load(uid);
-      const info = Wallet.getSummary();
-
-      if (info.freeLeft > 0) {
-        await Wallet.decreaseFree(1);
-        alert("🎟️ Ücretsiz hak kullanıldı. Kalan: " + (info.freeLeft - 1));
-      } else {
-        const cost = 5;
-        await Wallet.decreaseBalance(cost);
-        alert(`💰 ${cost} TL düşüldü.`);
-      }
-      localStorage.setItem(key, "used");
-    } catch (err) {
-      console.error("Hak düşme hatası:", err);
-    }
-  };
-
-  // 🔹 Rapor Kilitle
-  const lockReport = (rid) => {
-    report.isLocked = true;
-    localStorage.setItem(`report_${rid}`, JSON.stringify(report));
-    document.getElementById("lockBadge").textContent = "🔒 Kilitli (Artık düzenlenemez)";
-    alert("🔒 Rapor kilitlendi ve değiştirilemez hale geldi!");
-  };
-
-  // 🔹 Rapor göster
-  const renderRapor = () => {
-    document.getElementById("raporTarih").textContent =
-      "Rapor Tarihi: " + new Date().toLocaleDateString("tr-TR");
-    document.getElementById("genelBilgi").textContent =
-      `${report.propertyName}\nRID: ${report.rid}`;
-    document.getElementById("emsalMetin").textContent = formatMetin(report.emsalFinalMetni);
-  };
-
-  // 🔹 Yazdırma ve kilitleme butonu
-  document.getElementById("lockAndPrint").addEventListener("click", async () => {
-    const user = auth.currentUser || { uid: "test_user" };
-    await decreaseUserRight(user.uid, report.rid);
-    lockReport(report.rid);
-    window.print();
-  });
-
-  renderRapor();
+ // ---------- RAPOR EKRANA BAS ----------
+ document.getElementById("raporTarih").textContent="Tarih: "+new Date().toLocaleDateString("tr-TR");
+ document.getElementById("genelBilgi").innerHTML=`
+  <div><strong>İl / İlçe:</strong> ${report.il||"-"} / ${report.ilce||"-"}</div>
+  <div><strong>Ada / Parsel:</strong> ${report.ada||"-"} / ${report.parsel||"-"}</div>
+  <div><strong>Taşınmaz:</strong> ${report.propertyName||"Tanımsız"}</div>
+ `;
+ document.getElementById("imarTablo").innerHTML=report.imarTablo||"<div class='warning'>İmar tablosu yok</div>";
+ document.getElementById("imarMetin").textContent=formatMetin(report.imarMetni);
+ document.getElementById("belgelerMetin").textContent=formatMetin(report.belgelerMetni);
+ document.getElementById("binaMetin").textContent=formatMetin(report.bina?.metin);
+ document.getElementById("bbMetin").textContent=bbYazdir(report.bbDetayList);
+ document.getElementById("konumMetin").textContent=formatMetin(report.konumCevre?.tamMetin||report.konumCevre?.metin);
+ document.getElementById("tapuMetinB1").textContent=formatMetin(report.tapuMetniB1);
+ document.getElementById("tapuMetinB2").textContent=formatMetin(report.tapuMetniB2);
+ document.getElementById("emsalMetin").textContent=emsalMetniOlustur(report);
+});
 </script>
 </body>
 </html>
