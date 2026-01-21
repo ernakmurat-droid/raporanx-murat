@@ -137,11 +137,12 @@
   </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', function() {
+    // Firebase bağlantısı
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // DOM elementlerini topla
+    // Tüm DOM elementleri
     const elements = {
       raporTarih: document.getElementById('raporTarih'),
       genelBilgi: document.getElementById('genelBilgi'),
@@ -159,12 +160,12 @@
       btnBack: document.getElementById('btnBack')
     };
 
-    // URL parametrelerini al
+    // URL parametreleri
     const urlParams = new URLSearchParams(window.location.search);
     const rid = urlParams.get('rid') || urlParams.get('id');
     const confirmed = urlParams.get("confirm") === "1";
 
-    // Rapor verisini localStorage'dan yükle
+    // Rapor verisini yükle
     const loadReportData = () => {
       const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
       return reports.find(r => r.rid === rid) || null;
@@ -193,26 +194,38 @@
       }).join("\n\n");
     };
 
-    // Emsal metnini oluştur
+    // ÇÖZÜM: Emsal metni oluştur (çoklu gayrimenkul düzeltmeli)
     const generateEmsalMetni = (report) => {
+      // 1. Ana raporda emsal metni var mı?
       if (report?.emsalFinalMetni) return formatMetin(report.emsalFinalMetni);
-      if (report?.degerlemeOzet?.emsalFinalMetni) return formatMetin(report.degerlemeOzet.emsalFinalMetni);
       
-      if (report.bbDetayList?.length) {
-        return report.bbDetayList.map((bb, index) => {
-          const baslik = bb.baslik || `${index + 1}. BB`;
-          const metin = bb.degerlemeOzet?.emsalFinalMetni || "Değerleme analizi tamamlanmadı";
-          return `### ${baslik}\n${formatMetin(metin)}`;
-        }).join("\n\n");
+      // 2. Değerleme özetinde emsal metni var mı?
+      if (report?.degerlemeOzet?.emsalFinalMetni) {
+        return formatMetin(report.degerlemeOzet.emsalFinalMetni);
       }
       
-      return "Değerleme analizi henüz yapılmadı";
+      // 3. ÇOKLU GAYRİMENKUL DÜZELTMESİ (TEKRAR ÖNLEYİCİ)
+      if (report.bbDetayList?.length) {
+        const uniqueMetinler = new Set(); // Tekrar önleyici
+        
+        const metinler = report.bbDetayList.map(bb => {
+          const metin = bb.degerlemeOzet?.emsalFinalMetni;
+          if (!metin || uniqueMetinler.has(metin)) return null;
+          
+          uniqueMetinler.add(metin);
+          return metin;
+        }).filter(metin => metin !== null);
+        
+        return metinler.map(formatMetin).join("\n\n");
+      }
+      
+      return "Değerleme analizi henüz tamamlanmadı";
     };
 
-    // Raporu ekrana render et
+    // Raporu ekranda göster
     const renderRapor = (report) => {
       if (!report) {
-        alert("Rapor verisi bulunamadı!");
+        alert("Rapor bulunamadı! Ana sayfaya yönlendiriliyorsunuz.");
         window.location.href = "index.html";
         return;
       }
@@ -253,11 +266,10 @@
         elements.walletBar.textContent = `Cüzdan: ${summary.balanceTL} TL | Ücretsiz Hak: ${summary.freeLeft}`;
       } catch (error) {
         elements.walletBar.textContent = "Cüzdan bilgileri yüklenirken hata oluştu";
-        console.error("Cüzdan hatası:", error);
       }
     };
 
-    // Geri butonu eventi
+    // Geri butonu
     elements.btnBack.addEventListener('click', () => {
       window.location.href = `rapor-detay.html?rid=${rid}`;
     });
@@ -269,7 +281,7 @@
         : "🟡 Taslak (Kilit yok)";
     };
 
-    // Auth state listener
+    // Kimlik doğrulama durumunu izle
     auth.onAuthStateChanged(async (user) => {
       if (!user || !rid) {
         window.location.href = "index.html";
@@ -277,15 +289,9 @@
       }
       
       const report = loadReportData();
-      if (!report) {
-        alert("Rapor bulunamadı! Ana sayfaya yönlendiriliyorsunuz.");
-        window.location.href = "index.html";
-        return;
-      }
-      
       renderRapor(report);
       await updateWalletInfo(user.uid);
-      updateLockStatus(report.isLocked);
+      updateLockStatus(report?.isLocked || false);
     });
   });
 </script>
