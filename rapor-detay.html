@@ -20,15 +20,12 @@
     .btn-main-feature { background: #4527a0; border: 2px solid #b39ddb; }
     .footer-btn { background:#ff5722; padding:25px; font-size:28px; width:90%; max-width:600px; margin:20px auto; border-radius:20px; border:none; color:white; font-weight:bold; cursor: pointer; text-align: center; }
 
-    #durumOzet{
+    /* ✅ Cüzdan bar görünümü (header içinde) */
+    #walletBar{
       width:90%;
-      max-width:600px;
-      margin:10px auto 0;
-      background:rgba(255,255,255,0.15);
-      padding:12px 16px;
-      border-radius:14px;
-      text-align:center;
-      box-shadow:0 6px 18px rgba(0,0,0,0.25);
+      max-width:820px;
+      margin:12px auto 0;
+      font-size:14px;
     }
   </style>
 </head>
@@ -37,7 +34,9 @@
   <div class="header">
     <a href="index.html" class="back">Ana Sayfa</a>
     <div id="baslik">Gayrimenkul Raporu</div>
-    <div id="durumOzet">Rapor Doluluk: %0</div>
+
+    <!-- ✅ Cüzdan (gizli göster) -->
+    <div id="walletBar"></div>
   </div>
 
   <div class="menu">
@@ -105,142 +104,96 @@
     }
 
     /* ===============================
-       MODUL DURUM MOTORU
-       0: Bos | 1: Kismi | 2: Tam
+       ✅ GİZLİ CÜZDAN BAR (başkası bakınca tutarlar görünmez)
     ================================ */
-    function _normStr(x){
-      if (x === null || x === undefined) return "";
-      if (typeof x === "string") return x;
-      try { return JSON.stringify(x); } catch(e){ return String(x); }
-    }
-    function _bestText(){
-      for (let i=0;i<arguments.length;i++){
-        const s = _normStr(arguments[i]).trim();
-        if (s) return s;
-      }
-      return "";
-    }
-    function _scoreByLen(text, min0=20, min2=150){
-      const t = _normStr(text).trim();
-      if (t.length < min0) return 0;
-      if (t.length < min2) return 1;
-      return 2;
-    }
-    function _mergeTexts(arr){
-      return (arr || []).map(_normStr).join("\n").trim();
-    }
+    function renderPrivateWalletBar(w){
+      const bar = document.getElementById("walletBar");
+      if (!bar) return;
 
-    function getModuleTexts(report){
-      const konum = _bestText(
-        report?.konumCevre?.tamMetin,
-        report?.konumCevre?.metin,
-        report?.konumCevreMetni,
-        report?.konumMetin
-      );
+      const freeLeft = Number(w?.freeReportsLeft ?? 0);
+      const balance = Number(w?.balance ?? 0);
 
-      const imar = _bestText(
-        report?.imarMetni,
-        report?.imar?.tamMetin,
-        report?.imar?.metin,
-        report?.imarDurumu?.tamMetin,
-        report?.imarDurumu?.metin,
-        report?.imarDurumu // bazen objenin içinde olur
-      );
+      bar.innerHTML = `
+        <div style="background:rgba(255,255,255,0.15);padding:10px 14px;border-radius:14px;
+                    box-shadow:0 6px 18px rgba(0,0,0,0.25);">
+          <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <div style="font-weight:800;">Cüzdan</div>
+              <div>🎁 Ücretsiz: <b id="wFree">••</b> rapor</div>
+              <div>💰 Bakiye: <b id="wBal">••• TL</b></div>
+            </div>
 
-      const belgeler = _bestText(
-        report?.belgelerMetni,
-        report?.belgeler?.tamMetin,
-        report?.belgeler?.metin
-      );
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button id="btnWalletReveal"
+                style="padding:8px 12px;border:none;border-radius:10px;cursor:pointer;font-weight:800;background:rgba(255,255,255,0.25);color:#fff;">
+                👁 Göster
+              </button>
+              <button id="btnWalletTopup"
+                style="padding:8px 12px;border:none;border-radius:10px;cursor:pointer;font-weight:800;background:#00c853;color:#fff;">
+                + Yükle
+              </button>
+            </div>
+          </div>
 
-      const bina = _bestText(
-        report?.bina?.metin,
-        report?.binaMetni,
-        report?.anaBinaMetni
-      );
+          <div style="opacity:.85;font-size:12px;margin-top:6px;font-weight:400;">
+            Başkası bakıyorsa tutarlar gizlenir. “Göster” ile açabilirsin.
+          </div>
+        </div>
+      `;
 
-      const bb = _bestText(
-        report?.bbDetay?.tamMetin,
-        report?.bbDetay?.metin,
-        _mergeTexts((report?.bbDetayList || []).map(x => x?.bbDetay?.tamMetin || x?.bbDetay?.metin || ""))
-      );
+      const wFree = document.getElementById("wFree");
+      const wBal  = document.getElementById("wBal");
 
-      const tapuAll = _mergeTexts([
-        report?.tapuMetniB1, report?.tapuMetniB2,
-        report?.tapu?.metinB1, report?.tapu?.metinB2,
-        report?.tapuKayit?.metinB1, report?.tapuKayit?.metinB2,
-        report?.tapuB1, report?.tapuB2
-      ]);
+      const btnReveal = document.getElementById("btnWalletReveal");
+      if (btnReveal){
+        let revealed = false;
 
-      const emsalAll = _mergeTexts([
-        report?.degerlemeOzet?.emsalFinalMetni,
-        report?.emsalFinalMetni,
-        _mergeTexts((report?.bbDetayList || []).map(x => x?.degerlemeOzet?.emsalFinalMetni || ""))
-      ]);
-
-      return { konum, imar, belgeler, bina, bb, tapuAll, emsalAll };
-    }
-
-    function computeModuleStatuses(report){
-      const t = getModuleTexts(report);
-
-      const status = {
-        konum: _scoreByLen(t.konum, 20, 250),
-        imar:  _scoreByLen(t.imar, 20, 180),
-        belgeler: _scoreByLen(t.belgeler, 10, 120),
-        bina: _scoreByLen(t.bina, 20, 220),
-        bb: _scoreByLen(t.bb, 20, 220),
-        tapu: _scoreByLen(t.tapuAll, 20, 180),
-        emsal: _scoreByLen(t.emsalAll, 40, 300)
-      };
-
-      const keys = Object.keys(status);
-      const total = keys.reduce((s,k)=>s+status[k],0);
-      const max = keys.length * 2;
-      const pct = Math.round((total / max) * 100);
-
-      return { status, pct };
-    }
-
-    function statusLabel(n){
-      if (n === 2) return { icon:"✅", text:"Tamamlandı" };
-      if (n === 1) return { icon:"⚠️", text:"Kısmen Dolu" };
-      return { icon:"❌", text:"Veri Girilmedi" };
-    }
-
-    function renderStatusesToUI(report){
-      const out = computeModuleStatuses(report);
-      const status = out.status;
-      const pct = out.pct;
-
-      const box = document.getElementById("durumOzet");
-      if (box){
-        box.innerHTML = `<div style="font-weight:bold; font-size:16px;">Rapor Doluluk: %${pct}</div>
-          <div style="opacity:.9; font-size:13px; margin-top:6px;">✅ Tamamlandı • ⚠️ Kısmi • ❌ Boş</div>`;
-      }
-
-      document.querySelectorAll("[data-modul]").forEach(btn=>{
-        const key = btn.getAttribute("data-modul");
-        if (!key || !(key in status)) return;
-        const s = statusLabel(status[key]);
-
-        let badge = btn.querySelector(".modBadge");
-        if (!badge){
-          badge = document.createElement("span");
-          badge.className = "modBadge";
-          badge.style.fontSize = "18px";
-          badge.style.filter = "drop-shadow(0 2px 4px rgba(0,0,0,0.35))";
-          btn.appendChild(badge);
+        function formatTL(n){
+          return new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(Number(n||0)) + " TL";
         }
-        badge.textContent = s.icon;
-        badge.title = s.text;
-      });
 
-      return out;
+        btnReveal.onclick = () => {
+          revealed = !revealed;
+          if (revealed){
+            wFree.textContent = String(freeLeft);
+            wBal.textContent = formatTL(balance);
+            btnReveal.textContent = "🙈 Gizle";
+          } else {
+            wFree.textContent = "••";
+            wBal.textContent = "••• TL";
+            btnReveal.textContent = "👁 Göster";
+          }
+        };
+      }
+
+      const btnTopup = document.getElementById("btnWalletTopup");
+      if (btnTopup){
+        btnTopup.onclick = () => {
+          alert("Yükleme ekranını birazdan PayTR ile bağlayacağız. Şimdilik demo.");
+        };
+      }
+    }
+
+    async function loadOrCreateWallet(uid){
+      const wRef = db.collection("users").doc(uid).collection("wallet").doc("main");
+      const wSnap = await wRef.get();
+
+      if (!wSnap.exists) {
+        await wRef.set({
+          balance: 0,
+          freeReportsLeft: 5,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        return { balance: 0, freeReportsLeft: 5 };
+      }
+
+      return (wSnap.data() || {});
     }
 
     /* ========= AUTH + BOOT ========= */
-    auth.onAuthStateChanged((user) => {
+    auth.onAuthStateChanged(async (user) => {
       if (!user || !rid) {
         window.location.href = 'index.html';
         return;
@@ -257,8 +210,13 @@
 
       document.getElementById('baslik').textContent = report.propertyName || "İsimsiz Gayrimenkul";
 
-      // ✅ DURUM BAS
-      renderStatusesToUI(report);
+      // ✅ Cüzdanı yükle (gizli göster)
+      try {
+        const w = await loadOrCreateWallet(user.uid);
+        renderPrivateWalletBar(w);
+      } catch (e) {
+        console.log("wallet load error:", e);
+      }
     });
   </script>
 </body>
