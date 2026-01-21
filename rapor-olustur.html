@@ -4,63 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 
-  <!-- Wallet (senin dosyan) -->
+  <!-- ✅ Wallet -->
   <script src="wallet.js"></script>
 
   <title>Final Raporu Oluşturucu - Raporan X</title>
 
   <style>
-    :root { --primary:#1a237e; --secondary:#3949ab; --accent:#ffd600; --bg:#f4f7f9; --danger:#c62828; --ok:#2e7d32; }
+    :root { --primary:#1a237e; --secondary:#3949ab; --accent:#ffd600; --bg:#f4f7f9; }
     body { font-family:'Segoe UI',Tahoma,sans-serif; background:var(--bg); margin:0; color:#2c3e50; scroll-behavior:smooth; }
 
     .header { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; padding:30px 20px; text-align:center; position:relative; z-index:10; }
     .back { position:absolute; left:20px; top:25px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:30px; color:#fff; text-decoration:none; font-weight:bold; cursor:pointer; border:none; font-size:13px; }
-
-    .topbar2{
-      max-width:1300px; margin:12px auto 0; padding:0 20px;
-      display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
-    }
-    #walletBar{
-      flex:1 1 520px;
-      background:rgba(255,255,255,0.16);
-      color:#fff;
-      border:1px solid rgba(255,255,255,0.18);
-      border-radius:14px;
-      padding:10px 12px;
-      box-shadow:0 8px 20px rgba(0,0,0,0.18);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      cursor:pointer;
-      user-select:none;
-    }
-    #walletBar small{ opacity:.85; }
-    #walletDetails{
-      margin-top:8px;
-      display:none;
-      background:rgba(0,0,0,0.18);
-      border:1px solid rgba(255,255,255,0.18);
-      border-radius:12px;
-      padding:10px 12px;
-      line-height:1.4;
-    }
-
-    #lockBadge{
-      flex:0 0 auto;
-      padding:10px 12px;
-      border-radius:14px;
-      background:rgba(0,0,0,0.18);
-      border:1px solid rgba(255,255,255,0.18);
-      color:#fff;
-      font-weight:900;
-      box-shadow:0 8px 20px rgba(0,0,0,0.18);
-      user-select:none;
-    }
 
     .main-wrapper { max-width:1300px; margin:20px auto; display:grid; grid-template-columns:280px 1fr; gap:30px; padding:0 20px; }
 
@@ -89,23 +48,46 @@
     .text-block { font-size:14.5px; line-height:1.7; white-space:pre-wrap; color:#34495e; text-align:justify; }
     .format-badge { background:#546e7a; color:#fff; padding:3px 10px; border-radius:4px; font-size:11px; margin-bottom:10px; display:inline-block; }
 
-    .print-btn { background:#27ae60; color:#fff; padding:15px 30px; font-size:18px; border:none; border-radius:50px; cursor:pointer; margin:40px auto 10px; display:block; font-weight:bold; box-shadow:0 6px 15px rgba(39,174,96,.3); transition:.3s; }
+    .print-btn { background:#27ae60; color:#fff; padding:15px 30px; font-size:18px; border:none; border-radius:50px; cursor:pointer; margin:40px auto; display:block; font-weight:bold; box-shadow:0 6px 15px rgba(39,174,96,.3); transition:.3s; }
     .print-btn:hover { background:#219150; transform:translateY(-2px); }
 
-    .warn-btn{
-      background:var(--danger);
+    .topbar2{
+      max-width:1300px;
+      margin:12px auto 0;
+      padding:0 20px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    #walletBar{
+      flex:1 1 420px;
+      background:rgba(255,255,255,0.16);
       color:#fff;
-      padding:12px 18px;
-      font-weight:900;
-      border:none;
+      border:1px solid rgba(255,255,255,0.18);
       border-radius:14px;
+      padding:10px 12px;
+      box-shadow:0 8px 20px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       cursor:pointer;
-      box-shadow:0 6px 15px rgba(198,40,40,.28);
+      user-select:none;
+    }
+    #lockBadge{
+      flex:0 0 auto;
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(0,0,0,0.18);
+      border:1px solid rgba(255,255,255,0.18);
+      color:#fff;
+      font-weight:900;
+      box-shadow:0 8px 20px rgba(0,0,0,0.18);
     }
 
     @media print {
       body { background:#fff; }
-      .header, .back, .print-btn, .toc-container, .topbar2, .warn-btn { display:none !important; }
+      .header, .back, .print-btn, .toc-container, .topbar2 { display:none !important; }
       .main-wrapper { display:block; max-width:100%; margin:0; padding:0; }
       .container { box-shadow:none; padding:0; margin:0; width:100%; }
       .section-title { color:#000; border-bottom:2px solid #000; }
@@ -127,15 +109,8 @@
   </div>
 
   <div class="topbar2">
-    <div id="walletBar" title="Cüzdan detayını görmek için tıkla">
-      Cüzdan yükleniyor...
-      <div id="walletDetails"></div>
-    </div>
-
-    <div style="display:flex; gap:10px; align-items:center;">
-      <button class="warn-btn" id="btnWarn">⚠️ Uyarı</button>
-      <div id="lockBadge">🔒 Banka Taslağı</div>
-    </div>
+    <div id="walletBar">Cüzdan yükleniyor...</div>
+    <div id="lockBadge">🔒 Banka Taslağı</div>
   </div>
 
   <div class="main-wrapper">
@@ -205,11 +180,12 @@
   </div>
 
 <script>
-  // Firebase
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  // URL Params
+  // demo fiyat (wallet.js içinde sen dinamik yapacaksın)
+  const REPORT_PRICE_TL = 1;
+
   const urlParams = new URLSearchParams(window.location.search);
   let rid = urlParams.get('rid');
   const legacyId = urlParams.get('id');
@@ -217,9 +193,6 @@
   // ✅ Onay parametresi: sadece rapor-detay üzerinden “evet” denince gelir
   const confirmed = (urlParams.get("confirm") === "1");
 
-  // =========================
-  // RID Helpers
-  // =========================
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
@@ -236,7 +209,6 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // legacy ?id= -> rid
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -257,9 +229,6 @@
     localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
   }
 
-  // =========================
-  // Text cleanup
-  // =========================
   function trDuzelt(txt){
     let t = (txt || "").toString();
     if (!t.trim()) return "";
@@ -270,7 +239,7 @@
     return t.trim();
   }
 
-  // ✅ EMSAL: SADECE TEK METİN (BB gezmek YOK!)
+  // ✅ ÇOKLU MOD: BB’lerin emsal metinlerini ALT ALTA GÖSTERİR
   function emsalMetniBul(report){
     const direct1 = report?.emsalFinalMetni;
     if (direct1 && String(direct1).trim()) return trDuzelt(direct1);
@@ -278,12 +247,19 @@
     const direct2 = report?.degerlemeOzet?.emsalFinalMetni;
     if (direct2 && String(direct2).trim()) return trDuzelt(direct2);
 
+    if (Array.isArray(report?.bbDetayList) && report.bbDetayList.length) {
+      const blocks = [];
+      report.bbDetayList.forEach((bb, i) => {
+        const t = trDuzelt(bb?.degerlemeOzet?.emsalFinalMetni || "");
+        if (!t) return;
+        const title = bb?.baslik || bb?.bbDetay?.bbNo || bb?.bbDetay?.bagimsizNo || bb?.bbDetay?.kapiNo || `${i+1}. BB`;
+        blocks.push(`${title}\n${t}`);
+      });
+      if (blocks.length) return blocks.join("\n\n");
+    }
     return "Analiz tamamlanmadı.";
   }
 
-  // =========================
-  // Render report
-  // =========================
   function raporOlustur(report){
     const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
     document.getElementById('raporTarih').textContent = `Rapor Oluşturma: ${today}`;
@@ -322,104 +298,69 @@
     document.getElementById('emsalMetin').textContent = emsalMetniBul(report);
   }
 
-  // =========================
-  // Wallet UI (gizli / tıkla aç)
-  // =========================
-  function setWalletBar(summaryText, detailsHtml){
-    const bar = document.getElementById("walletBar");
-    const det = document.getElementById("walletDetails");
-    bar.firstChild.textContent = summaryText;
-    det.innerHTML = detailsHtml || "";
-  }
+  // ✅ Kilitle + cüzdan düş (SADECE onayla gelince)
+  async function lockAndChargeIfNeeded(user, arr, i, report){
+    if (!report) return;
 
-  function attachWalletToggle(){
-    const bar = document.getElementById("walletBar");
-    const det = document.getElementById("walletDetails");
-    bar.addEventListener("click", () => {
-      det.style.display = (det.style.display === "block") ? "none" : "block";
-    });
-  }
-
-  async function loadWalletUI(user){
-    // Default (wallet yoksa)
-    if (!window.Wallet) {
-      setWalletBar("Cüzdan: Modül bulunamadı.", `<small>wallet.js yüklenmedi.</small>`);
-      return;
-    }
-    try{
-      const w = await Wallet.load(user.uid);
-      // Wallet.load kendi içinde nasıl dönüyor bilmiyorum; güvenli gösterim yapıyorum:
-      const balance = (w && (w.balance ?? w.bakiye ?? w.tl ?? "")) || "";
-      const free = (w && (w.freeReports ?? w.free ?? w.free_left ?? "")) || "";
-      const summary = `Cüzdan: gizli (tıkla aç)`;
-      const details =
-        `<div><b>Bakiye:</b> ${balance !== "" ? balance : "?"}</div>
-         <div><b>Ücretsiz Hak:</b> ${free !== "" ? free : "?"}</div>
-         <small>Not: Detaylar sadece tıklayınca görünür.</small>`;
-      setWalletBar(summary, details);
-    }catch(e){
-      setWalletBar("Cüzdan: okunamadı (tıkla aç)", `<small>${(e && e.message) ? e.message : "Bilinmeyen hata"}</small>`);
-    }
-  }
-
-  // =========================
-  // WARNING button
-  // =========================
-  function showPreWarning(){
-    alert(
-      "⚠️ ÖNEMLİ UYARI\n\n" +
-      "Rapor oluşturma işlemi sonrası veri girişi kilitlenebilir.\n" +
-      "Zaman ve para kaybı olmaması için lütfen tüm modülleri tekrar kontrol ediniz.\n\n" +
-      "Eminseniz rapor menüsünden 'Tam Rapor Oluştur' ile devam edin."
-    );
-  }
-
-  // =========================
-  // LOCK after create (only if confirmed)
-  // =========================
-  async function lockIfNeeded(user, arr, i, report){
-    // zaten kilitliyse
+    // zaten kilitliyse işlem yok
     if (report.isLocked === true) return;
 
-    // onay yoksa: sadece uyarı ver, geri dön
+    // onay yoksa para düşme
     if (!confirmed) {
-      showPreWarning();
+      alert("Bu sayfa banka taslağı üretir ve ücret/ücretsiz hak düşürür.\nDevam etmek için rapor menüsünden “Tam Rapor Oluştur” butonunu kullanın.");
       window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
       return;
     }
 
-    // onay varsa: sadece kilitle (burada ÜCRET DÜŞMEYİ şimdilik kaldırdık)
-    report.isLocked = true;
-    report.lockedAt = new Date().toISOString();
-    report.lockedBy = user.uid;
+    // onay var → düşebilir
+    try { if (window.Wallet) await Wallet.load(user.uid); } catch(e){}
 
-    persist(arr, i, report);
+    try {
+      const res = await Wallet.chargeReport(user.uid, REPORT_PRICE_TL);
 
-    // buluta yaz
-    try{
+      report.isLocked = true;
+      report.lockedAt = new Date().toISOString();
+      report.lockedBy = user.uid;
+
+      report.billing = {
+        charged: true,
+        used: res.used,
+        priceTL: REPORT_PRICE_TL,
+        chargedAt: new Date().toISOString()
+      };
+
+      persist(arr, i, report);
+
       await db.collection("users").doc(user.uid).set({
         gayrimenkul_reports: arr,
         lastUpdate: new Date().toISOString()
       }, { merge: true });
-    }catch(e){
-      // cloud patlarsa sorun değil, local kilit var
+
+    } catch (e) {
+      if (String(e && e.message) === "YETERSIZ_BAKIYE") {
+        alert("Ücretsiz hakkınız bitmiş ve bakiye yetersiz. Lütfen cüzdana yükleme yapın.");
+      } else {
+        alert("Cüzdan işlemi sırasında hata oldu. Yerel rapor korunuyor.\n" + (e?.message || ""));
+      }
+      window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
     }
   }
 
-  // =========================
-  // Back button
-  // =========================
   document.getElementById('btnBack').onclick = () => {
     if (rid) window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
     else if (legacyId !== null) window.location.href = "rapor-detay.html?id=" + encodeURIComponent(legacyId);
     else window.location.href = "rapor-detay.html";
   };
 
-  document.getElementById("btnWarn").onclick = showPreWarning;
+  // Cüzdan barına tıklayınca detay göster (açık görünmesin)
+  document.getElementById("walletBar").onclick = () => {
+    const el = document.getElementById("walletBar");
+    const full = el.getAttribute("data-full");
+    if (full) {
+      alert(full);
+    }
+  };
 
-  // =========================
-  // Boot
-  // =========================
   auth.onAuthStateChanged(async (user) => {
     const { arr, i, r } = getLatestData();
 
@@ -428,20 +369,42 @@
       return;
     }
 
-    // Wallet UI
-    attachWalletToggle();
-    await loadWalletUI(user);
+    // önce onay + ücret/kilit
+    await lockAndChargeIfNeeded(user, arr, i, r);
 
-    // Raporu bas
-    raporOlustur(r);
+    // tekrar en güncel halini çek (kilit yazıldıysa)
+    const latest = getLatestData();
+    const report = latest.r;
 
-    // Kilit (sadece confirm=1 ile gelince)
-    await lockIfNeeded(user, arr, i, r);
+    // raporu bas
+    raporOlustur(report);
 
-    // Lock badge
-    document.getElementById("lockBadge").textContent = (r.isLocked ? "🔒 Kilitlendi" : "🔓 Taslak");
+    // wallet bar yaz (wallet.js varsa)
+    try{
+      if (window.Wallet){
+        await Wallet.load(user.uid);
+        const s = Wallet.getSummary ? Wallet.getSummary() : null;
+        if (s){
+          const shortText = `Cüzdan: ${s.balanceTL ?? 0} TL • Ücretsiz: ${s.freeLeft ?? 0}`;
+          const fullText  = `Cüzdan Detay\n\nBakiye: ${s.balanceTL ?? 0} TL\nÜcretsiz Hak: ${s.freeLeft ?? 0}\nToplam Harcanan: ${s.totalSpentTL ?? 0} TL`;
+          const w = document.getElementById("walletBar");
+          w.textContent = shortText + " (Detay için tıkla)";
+          w.setAttribute("data-full", fullText);
+        }else{
+          document.getElementById("walletBar").textContent = "Cüzdan hazır (detay yok)";
+        }
+      }else{
+        document.getElementById("walletBar").textContent = "Cüzdan modülü yok (wallet.js bulunamadı)";
+      }
+    }catch(e){
+      document.getElementById("walletBar").textContent = "Cüzdan okunamadı";
+    }
+
+    // kilit badge güncelle
+    const badge = document.getElementById("lockBadge");
+    if (report?.isLocked === true) badge.textContent = "🔒 Kilitli (Banka Taslağı)";
+    else badge.textContent = "🟡 Taslak (Kilit yok)";
   });
 </script>
-
 </body>
 </html>
