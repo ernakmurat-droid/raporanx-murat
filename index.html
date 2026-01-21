@@ -27,6 +27,113 @@
     .view-btn { background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.25); padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; }
 
     #statusInfo { margin: 20px 0; font-weight: bold; color: #ffd600; }
+
+    /* =========================
+       ✅ NASIL KULLANILIR (YENİ)
+       ========================= */
+    .howto-wrap{
+      max-width: 800px;
+      margin: 18px auto 22px;
+      padding: 0 0;
+      text-align:left;
+    }
+    .howto-card{
+      background: rgba(255,255,255,0.18);
+      border-radius: 16px;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.18);
+      overflow: hidden;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .howto-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 16px;
+      cursor:pointer;
+      user-select:none;
+      background: rgba(0,0,0,0.12);
+    }
+    .howto-head h2{
+      margin:0;
+      font-size: 16px;
+      font-weight: 900;
+      color:#fff;
+      letter-spacing: .2px;
+      line-height: 1.3;
+    }
+    .howto-toggle{
+      font-weight: 900;
+      border:none;
+      background: rgba(255,255,255,0.18);
+      color:#fff;
+      padding: 9px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .howto-body{
+      padding: 14px 16px 16px;
+      display:none;
+    }
+    .howto-body.open{ display:block; }
+
+    .howto-alert{
+      background: rgba(255, 214, 0, 0.14);
+      border: 1px solid rgba(255, 214, 0, 0.25);
+      border-left: 6px solid #ffd600;
+      padding: 12px 12px;
+      border-radius: 12px;
+      color:#fff;
+      line-height: 1.55;
+      margin-bottom: 12px;
+    }
+
+    .howto-steps{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+      margin: 0;
+      padding: 0;
+      list-style:none;
+    }
+    .howto-step{
+      background: rgba(255,255,255,0.10);
+      border:1px solid rgba(255,255,255,0.16);
+      border-radius: 12px;
+      padding: 12px;
+      line-height: 1.55;
+      color:#fff;
+    }
+    .howto-step b{ color:#fff; }
+
+    .howto-checklist{
+      margin-top: 12px;
+      background: rgba(0, 200, 83, 0.10);
+      border: 1px solid rgba(0, 200, 83, 0.22);
+      border-radius: 12px;
+      padding: 12px;
+      color:#fff;
+    }
+    .howto-checklist h3{
+      margin:0 0 8px;
+      font-size: 13px;
+      font-weight: 900;
+      color:#fff;
+    }
+    .howto-checklist ul{
+      margin:0;
+      padding-left: 18px;
+      line-height:1.55;
+    }
+    .howto-mini{
+      margin-top: 10px;
+      font-size: 12px;
+      opacity: .92;
+      line-height: 1.5;
+    }
   </style>
 </head>
 
@@ -44,6 +151,59 @@
       <p>“Abuzittin ile raporun abuzittik olsun!”</p>
       <div id="statusInfo">Yükleniyor...</div>
 
+      <!-- ✅ NASIL KULLANILIR (YENİ) -->
+      <div class="howto-wrap">
+        <div class="howto-card">
+          <div class="howto-head" onclick="toggleHowTo()">
+            <h2>📌 Nasıl Kullanılır? (Banka Formatına Hazır Rapor)</h2>
+            <button type="button" class="howto-toggle" id="howtoBtn">Aç</button>
+          </div>
+
+          <div class="howto-body" id="howtoBody">
+            <div class="howto-alert">
+              <b>Önemli:</b> Modüllerde metinler otomatik oluşur. <b>Kaydetmeden önce mutlaka oku.</b>
+              Uygunsuz verileri veya gereksiz ek/tekrarları kaldır. Amaç: <b>ideal ve temiz rapor taslağı</b> oluşturmak.
+              Son aşamada “Tam Rapor Oluştur” ile çıktın <b>banka sistemine uygun</b> hale gelir.
+            </div>
+
+            <ul class="howto-steps">
+              <li class="howto-step">
+                <b>1) Yeni rapor oluştur:</b> “YENİ RAPOR OLUŞTUR” butonu ile dosyayı başlat.
+              </li>
+              <li class="howto-step">
+                <b>2) Modülleri sırayla doldur:</b> Konum, Tapu, İmar, Belgeler, Bina, Bağımsız Bölüm ve Emsal bölümlerine gir.
+              </li>
+              <li class="howto-step">
+                <b>3) Oluşan metni oku & düzelt:</b> Sistem metni üretir. <b>Okuyup düzenle</b>:
+                Uygunsuz ifade/yanlış bilgi varsa düzelt, gereksiz ekleri kaldır.
+              </li>
+              <li class="howto-step">
+                <b>4) İdeal metin olunca kaydet:</b> Her modülde “Kaydet” ile bilgileri sabitle.
+              </li>
+              <li class="howto-step">
+                <b>5) En son “Tam Rapor Oluştur”:</b> Rapor tek sayfada birleşir.
+                <b>Yazdır / PDF</b> ile bankaya uygun formatta çıktı al.
+              </li>
+            </ul>
+
+            <div class="howto-checklist">
+              <h3>✅ Kaydetmeden Önce Kontrol Listesi</h3>
+              <ul>
+                <li>Metinde <b>yanlış/eksik bilgi</b> var mı?</li>
+                <li>Gereksiz tekrarlar veya uygunsuz ifadeler var mı?</li>
+                <li>Rakamlar (m², TL, ada-parsel) doğru mu?</li>
+                <li>Tapu (B1/B2) formatı okunur mu?</li>
+                <li>Emsal analiz metni “tam” ve anlaşılır mı?</li>
+              </ul>
+              <div class="howto-mini">
+                Not: Amaç “hızlı” değil, “doğru ve banka uyumlu” rapor üretmek. 2 dakika kontrol, 2 gün geri dönüş derdini önler.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ✅ NASIL KULLANILIR (BİTTİ) -->
+
       <a href="yeni_kayit.html" class="btn-new">YENİ RAPOR OLUŞTUR</a>
 
       <div id="reportsList">
@@ -56,6 +216,15 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     let reports = [];
+
+    // ✅ Nasıl Kullanılır toggle
+    function toggleHowTo(){
+      const body = document.getElementById("howtoBody");
+      const btn  = document.getElementById("howtoBtn");
+      if (!body || !btn) return;
+      const open = body.classList.toggle("open");
+      btn.textContent = open ? "Kapat" : "Aç";
+    }
 
     // Google Login
     const provider = new firebase.auth.GoogleAuthProvider();
