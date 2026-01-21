@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Gayrimenkul Değerleme Raporu</title>
 
-<!-- FİREBASE -->
+<!-- FİREBASE VE CÜZDAN -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -13,132 +13,154 @@
 <script src="wallet.js"></script>
 
 <style>
-body{font-family:'Segoe UI',sans-serif;background:#f4f7f9;margin:0;color:#333;}
-.header{background:#1a237e;color:#fff;padding:25px 20px;text-align:center;position:relative;}
-.back{position:absolute;left:20px;top:20px;background:#fff2;border:none;padding:6px 14px;color:#fff;border-radius:20px;cursor:pointer;}
-.container{max-width:1200px;margin:30px auto;background:#fff;padding:40px;border-radius:8px;box-shadow:0 0 15px #0001;}
-.section{margin-bottom:40px;}
-.section h2{border-bottom:2px solid #eee;padding-bottom:10px;color:#1a237e;}
-.text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;}
+:root{--primary:#1a237e;--secondary:#3949ab;--bg:#f4f7f9;}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e50;}
+.header{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;padding:30px 20px;text-align:center;position:relative;}
+.back{position:absolute;left:20px;top:25px;background:rgba(255,255,255,.2);padding:8px 15px;border-radius:30px;color:#fff;border:none;cursor:pointer;}
+.main-wrapper{max-width:1300px;margin:30px auto;display:grid;grid-template-columns:270px 1fr;gap:25px;padding:0 20px;}
+.toc-container{position:sticky;top:20px;height:fit-content;}
+.toc{background:#fff;padding:18px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.05);border-left:6px solid var(--primary);}
+.toc-title{font-weight:bold;color:var(--primary);margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:6px;}
+.toc ul{list-style:none;padding:0;margin:0;}
+.toc li{margin:6px 0;}
+.toc a{color:#444;text-decoration:none;font-size:.9em;display:block;padding:4px 6px;border-radius:4px;}
+.toc a:hover{background:#f0f2ff;color:var(--primary);}
+.container{background:#fff;padding:35px;border-radius:12px;box-shadow:0 0 25px rgba(0,0,0,.05);}
+.section{margin-bottom:45px;}
+.section h2{color:var(--primary);border-bottom:2px solid #eee;padding-bottom:8px;font-size:1.2em;}
+.text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;color:#34495e;}
 .warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
-.print-btn{background:#27ae60;color:#fff;padding:14px 25px;border:none;border-radius:6px;cursor:pointer;}
+.print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:30px auto;display:block;cursor:pointer;font-weight:bold;}
 .print-btn:hover{background:#1e874e;}
+@media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
+@media print{.header,.toc-container,.print-btn{display:none!important;}.container{box-shadow:none;padding:0;}}
 </style>
 </head>
 <body>
 
 <div class="header">
  <button class="back" onclick="window.location.href='index.html'">← Geri</button>
- <h1>Gayrimenkul Değerleme Raporu</h1>
+ <h1>GAYRİMENKUL DEĞERLEME RAPORU</h1>
  <div id="raporTarih"></div>
 </div>
 
-<div class="container">
+<div class="main-wrapper">
 
-<div class="section">
- <h2>1. Genel Bilgiler</h2>
- <div id="genelBilgi"></div>
-</div>
+  <!-- === SOL KOLAY ULAŞIM MENÜSÜ === -->
+  <aside class="toc-container">
+    <div class="toc">
+      <div class="toc-title">📋 RAPOR BÖLÜMLERİ</div>
+      <ul>
+        <li><a href="#genel">1. Genel Bilgiler</a></li>
+        <li><a href="#imar">2. İmar Durumu</a></li>
+        <li><a href="#belgeler">3. Belgeler</a></li>
+        <li><a href="#bina">4. Ana Bina Bilgileri</a></li>
+        <li><a href="#bb">5. Bağımsız Bölüm</a></li>
+        <li><a href="#konum">6. Konum Analizi</a></li>
+        <li><a href="#tapu">7. Tapu Bilgileri</a></li>
+        <li><a href="#emsal">8. Değerleme / Emsal</a></li>
+      </ul>
+    </div>
+  </aside>
 
-<div class="section">
- <h2>2. İmar Durumu</h2>
- <div id="imarTablo"></div>
- <div class="text-block" id="imarMetin"></div>
-</div>
+  <!-- === ANA RAPOR === -->
+  <main class="container">
+    <section id="genel" class="section">
+      <h2>1. Genel Bilgiler</h2>
+      <div id="genelBilgi"></div>
+    </section>
 
-<div class="section">
- <h2>3. Belgeler</h2>
- <div class="text-block" id="belgelerMetin"></div>
-</div>
+    <section id="imar" class="section">
+      <h2>2. İmar Durumu</h2>
+      <div id="imarTablo"></div>
+      <div class="text-block" id="imarMetin"></div>
+    </section>
 
-<div class="section">
- <h2>4. Ana Bina Bilgileri</h2>
- <div class="text-block" id="binaMetin"></div>
-</div>
+    <section id="belgeler" class="section">
+      <h2>3. Belgeler</h2>
+      <div class="text-block" id="belgelerMetin"></div>
+    </section>
 
-<div class="section">
- <h2>5. Bağımsız Bölüm Bilgileri</h2>
- <div class="text-block" id="bbMetin"></div>
-</div>
+    <section id="bina" class="section">
+      <h2>4. Ana Bina Bilgileri</h2>
+      <div class="text-block" id="binaMetin"></div>
+    </section>
 
-<div class="section">
- <h2>6. Konum Analizi</h2>
- <div class="text-block" id="konumMetin"></div>
-</div>
+    <section id="bb" class="section">
+      <h2>5. Bağımsız Bölüm</h2>
+      <div class="text-block" id="bbMetin"></div>
+    </section>
 
-<div class="section">
- <h2>7. Tapu Bilgileri</h2>
- <div class="text-block" id="tapuMetinB1"></div>
- <div class="text-block" id="tapuMetinB2"></div>
-</div>
+    <section id="konum" class="section">
+      <h2>6. Konum Analizi</h2>
+      <div class="text-block" id="konumMetin"></div>
+    </section>
 
-<div class="section">
- <h2>8. Emsal / Değerleme</h2>
- <div class="text-block" id="emsalMetin"></div>
-</div>
+    <section id="tapu" class="section">
+      <h2>7. Tapu Bilgileri</h2>
+      <div class="text-block" id="tapuMetinB1"></div>
+      <div class="text-block" id="tapuMetinB2"></div>
+    </section>
 
-<button class="print-btn" onclick="window.print()">Yazdır / PDF Kaydet</button>
+    <section id="emsal" class="section">
+      <h2>8. Değerleme / Emsal</h2>
+      <div class="text-block" id="emsalMetin"></div>
+    </section>
+
+    <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
+  </main>
 
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded",async()=>{
- const auth=firebase.auth();
- const urlParams=new URLSearchParams(window.location.search);
- const rid=urlParams.get("rid")||urlParams.get("id");
- if(!rid){alert("Rapor bulunamadı");return;}
+document.addEventListener("DOMContentLoaded",()=>{
+  const params=new URLSearchParams(window.location.search);
+  const rid=params.get("rid")||params.get("id");
+  const raporlar=JSON.parse(localStorage.getItem("gayrimenkul_reports")||"[]");
+  const report=raporlar.find(r=>r.rid===rid);
+  if(!report){alert("Rapor bulunamadı!");return;}
 
- // ---------- VERİ OKUMA ----------
- const allReports=JSON.parse(localStorage.getItem("gayrimenkul_reports")||"[]");
- const report=allReports.find(r=>r.rid===rid);
- if(!report){alert("Rapor verisi bulunamadı");return;}
+  const formatMetin=(t)=>(t||"").toString()
+    .replace(/\s+\n/g,"\n").replace(/\n{3,}/g,"\n\n")
+    .replace(/\s{2,}/g," ").trim();
 
- // ---------- GENEL METİN DÜZENLEYİCİ ----------
- const formatMetin=(t)=>(t||"").toString()
-   .replace(/\s+\n/g,"\n")
-   .replace(/\n{3,}/g,"\n\n")
-   .replace(/\s{2,}/g," ")
-   .trim();
+  const bbYazdir=(list)=>{
+    if(!list||!list.length)return "Bağımsız bölüm verisi yok";
+    return list.map((bb,i)=>`(${i+1}) ${bb.baslik||"Bağımsız Bölüm"}:\n${formatMetin(bb.bbDetay?.tamMetin||bb.bbDetay?.metin)}`).join("\n\n");
+  };
 
- // ---------- BB METİNLERİ ----------
- const bbYazdir=(list)=>{
-   if(!list||!list.length)return "Bağımsız bölüm bilgisi yok";
-   return list.map((bb,i)=>`(${i+1}) ${bb.baslik||"Bağımsız Bölüm"}:\n${formatMetin(bb.bbDetay?.tamMetin||bb.bbDetay?.metin)}`).join("\n\n");
- };
+  const emsalMetni=(r)=>{
+    if(r?.emsalFinalMetni)return formatMetin(r.emsalFinalMetni);
+    if(r?.degerlemeOzet?.emsalFinalMetni)return formatMetin(r.degerlemeOzet.emsalFinalMetni);
+    if(r.bbDetayList?.length){
+      const tekil=new Set();
+      const arr=r.bbDetayList.map(bb=>{
+        const t=bb.degerlemeOzet?.emsalFinalMetni;
+        if(!t||tekil.has(t))return null;
+        tekil.add(t);
+        return formatMetin(t);
+      }).filter(Boolean);
+      return arr.length?arr.join("\n\n"):"Emsal analizi bulunamadı";
+    }
+    return "Emsal verisi yok";
+  };
 
- // ---------- EMSAL METNİ (TEKRAR ÖNLEYİCİ) ----------
- const emsalMetniOlustur=(r)=>{
-   if(r?.emsalFinalMetni)return formatMetin(r.emsalFinalMetni);
-   if(r?.degerlemeOzet?.emsalFinalMetni)return formatMetin(r.degerlemeOzet.emsalFinalMetni);
-   if(r.bbDetayList?.length){
-     const tekil=new Set();
-     const arr=r.bbDetayList.map(bb=>{
-       const m=bb.degerlemeOzet?.emsalFinalMetni;
-       if(!m||tekil.has(m))return null;
-       tekil.add(m);
-       return formatMetin(m);
-     }).filter(Boolean);
-     return arr.length?arr.join("\n\n"):"Değerleme metni yok";
-   }
-   return "Emsal verisi bulunamadı";
- };
-
- // ---------- RAPOR EKRANA BAS ----------
- document.getElementById("raporTarih").textContent="Tarih: "+new Date().toLocaleDateString("tr-TR");
- document.getElementById("genelBilgi").innerHTML=`
-  <div><strong>İl / İlçe:</strong> ${report.il||"-"} / ${report.ilce||"-"}</div>
-  <div><strong>Ada / Parsel:</strong> ${report.ada||"-"} / ${report.parsel||"-"}</div>
-  <div><strong>Taşınmaz:</strong> ${report.propertyName||"Tanımsız"}</div>
- `;
- document.getElementById("imarTablo").innerHTML=report.imarTablo||"<div class='warning'>İmar tablosu yok</div>";
- document.getElementById("imarMetin").textContent=formatMetin(report.imarMetni);
- document.getElementById("belgelerMetin").textContent=formatMetin(report.belgelerMetni);
- document.getElementById("binaMetin").textContent=formatMetin(report.bina?.metin);
- document.getElementById("bbMetin").textContent=bbYazdir(report.bbDetayList);
- document.getElementById("konumMetin").textContent=formatMetin(report.konumCevre?.tamMetin||report.konumCevre?.metin);
- document.getElementById("tapuMetinB1").textContent=formatMetin(report.tapuMetniB1);
- document.getElementById("tapuMetinB2").textContent=formatMetin(report.tapuMetniB2);
- document.getElementById("emsalMetin").textContent=emsalMetniOlustur(report);
+  // ==== EKRANA DOLDURMA ====
+  document.getElementById("raporTarih").textContent="Tarih: "+new Date().toLocaleDateString("tr-TR");
+  document.getElementById("genelBilgi").innerHTML=`
+   <div><b>İl / İlçe:</b> ${report.il||"-"} / ${report.ilce||"-"}</div>
+   <div><b>Ada / Parsel:</b> ${report.ada||"-"} / ${report.parsel||"-"}</div>
+   <div><b>Taşınmaz:</b> ${report.propertyName||"Tanımsız"}</div>
+  `;
+  document.getElementById("imarTablo").innerHTML=report.imarTablo||"<div class='warning'>İmar tablosu bulunamadı</div>";
+  document.getElementById("imarMetin").textContent=formatMetin(report.imarMetni);
+  document.getElementById("belgelerMetin").textContent=formatMetin(report.belgelerMetni);
+  document.getElementById("binaMetin").textContent=formatMetin(report.bina?.metin);
+  document.getElementById("bbMetin").textContent=bbYazdir(report.bbDetayList);
+  document.getElementById("konumMetin").textContent=formatMetin(report.konumCevre?.tamMetin||report.konumCevre?.metin);
+  document.getElementById("tapuMetinB1").textContent=formatMetin(report.tapuMetniB1);
+  document.getElementById("tapuMetinB2").textContent=formatMetin(report.tapuMetniB2);
+  document.getElementById("emsalMetin").textContent=emsalMetni(report);
 });
 </script>
 </body>
