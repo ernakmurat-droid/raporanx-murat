@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Gayrimenkul Değerleme Raporu</title>
 
-<!-- Firebase + Wallet (Wallet çalışmazsa da rapor gösterilecek) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -49,7 +48,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   margin:10px auto 0;display:block;cursor:pointer;font-weight:900;
 }
 .action-btn:hover{opacity:.92;}
-
 #statusBar{
   max-width:1300px;
   margin:12px auto 0;
@@ -62,7 +60,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   font-weight:900;
 }
 #statusBar small{display:block;font-weight:700;opacity:.88;margin-top:4px}
-
 @media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
 @media print{.header,.toc-container,.print-btn,.action-btn,#statusBar{display:none!important;}.container{box-shadow:none;padding:0;}}
 </style>
@@ -82,7 +79,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 </div>
 
 <div class="main-wrapper">
-
   <aside class="toc-container">
     <div class="toc">
       <div class="toc-title">📋 RAPOR BÖLÜMLERİ</div>
@@ -101,7 +97,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 
   <main class="container">
     <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
-    <button class="action-btn" id="btnFinalCreate">🧾 Final Rapor Oluştur (Kilit)</button>
+    <button class="action-btn" id="btnFinalCreate">🧾 Final Rapor Oluştur (Hak Düş + Kilitle)</button>
 
     <section id="genel" class="section">
       <h2>1. Genel Bilgiler</h2>
@@ -145,13 +141,11 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
       <div class="text-block" id="emsalMetin"></div>
     </section>
   </main>
-
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const auth = (window.auth) ? window.auth : firebase.auth();
-
+  const auth = firebase.auth();
   const $ = (id) => document.getElementById(id);
 
   function setStatus(title, sub){
@@ -167,8 +161,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmParam = params.get("confirm") === "1";
 
   $("btnBack").onclick = () => {
-    if (!rid) location.href = "index.html";
-    else location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
+    if (!rid) location.href="index.html";
+    else location.href="rapor-detay.html?rid=" + encodeURIComponent(rid);
   };
 
   if (!rid){
@@ -177,9 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  function isLockedLocal(){
-    return localStorage.getItem("report_locked_" + rid) === "1";
-  }
+  function isLockedLocal(){ return localStorage.getItem("report_locked_" + rid) === "1"; }
   function setLockedLocal(){
     localStorage.setItem("report_locked_" + rid, "1");
     $("finalBadge").style.display = "block";
@@ -189,11 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function formatMetin(t){
     if (t === null || t === undefined) return "";
     const s = String(t);
-    return s
-      .replace(/\r\n/g, "\n")
-      .replace(/[ \t]+\n/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
+    return s.replace(/\r\n/g,"\n").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
   }
 
   function pick(obj, ...paths){
@@ -222,7 +210,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (maybe) report2 = JSON.parse(maybe);
       }catch{}
     }
-
     return report || report2;
   }
 
@@ -230,21 +217,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
     return list.map((bb,i)=>{
       const baslik = bb?.baslik || bb?.title || "Bağımsız Bölüm";
-      const metin = pick(bb, "bbDetay.tamMetin", "bbDetay.metin", "tamMetin", "metin");
+      const metin = pick(bb,"bbDetay.tamMetin","bbDetay.metin","tamMetin","metin");
       return `(${i+1}) ${baslik}:\n${formatMetin(metin)}`.trim();
     }).join("\n\n");
   }
 
   function emsalMetni(rep){
-    const direct = pick(rep, "emsalFinalMetni", "degerlemeOzet.emsalFinalMetni", "degerleme.emsalFinalMetni");
+    const direct = pick(rep,"emsalFinalMetni","degerlemeOzet.emsalFinalMetni","degerleme.emsalFinalMetni");
     if (direct) return formatMetin(direct);
-
     const list = rep?.bbDetayList;
     if (Array.isArray(list) && list.length){
       const uniq = new Set();
       const arr = [];
       for (const bb of list){
-        const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni", "degerleme.emsalFinalMetni");
+        const t = pick(bb,"degerlemeOzet.emsalFinalMetni","emsalFinalMetni","degerleme.emsalFinalMetni");
         const ft = formatMetin(t);
         if (!ft) continue;
         if (uniq.has(ft)) continue;
@@ -259,11 +245,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function render(r){
     $("raporTarih").textContent = "Tarih: " + new Date().toLocaleDateString("tr-TR");
 
-    const il = pick(r, "il");
-    const ilce = pick(r, "ilce");
-    const ada = pick(r, "ada");
-    const parsel = pick(r, "parsel");
-    const propertyName = pick(r, "propertyName", "tasınmazAdi", "tasinmazAdi", "baslik");
+    const il = pick(r,"il");
+    const ilce = pick(r,"ilce");
+    const ada = pick(r,"ada");
+    const parsel = pick(r,"parsel");
+    const propertyName = pick(r,"propertyName","tasınmazAdi","tasinmazAdi","baslik");
 
     $("genelBilgi").innerHTML = `
       <div><b>İl / İlçe:</b> ${il || "-"} / ${ilce || "-"}</div>
@@ -271,53 +257,45 @@ document.addEventListener("DOMContentLoaded", () => {
       <div><b>Taşınmaz:</b> ${propertyName || "Tanımsız"}</div>
     `;
 
-    const imarTablo = pick(r, "imarTablo");
+    const imarTablo = pick(r,"imarTablo");
     $("imarTablo").innerHTML = imarTablo || "<div class='warning'>İmar tablosu bulunamadı</div>";
 
-    $("imarMetin").textContent = formatMetin(pick(r, "imarMetni", "imar.metin", "imar.tamMetin"));
-    $("belgelerMetin").textContent = formatMetin(pick(r, "belgelerMetni", "belgeler.metin", "belgeler.tamMetin"));
-    $("binaMetin").textContent = formatMetin(pick(r, "bina.metin", "bina.tamMetin", "binaMetni", "binaMetin"));
+    $("imarMetin").textContent = formatMetin(pick(r,"imarMetni","imar.metin","imar.tamMetin"));
+    $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin","belgeler.tamMetin"));
+    $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","bina.tamMetin","binaMetni","binaMetin"));
     $("bbMetin").textContent = bbYazdir(r.bbDetayList || r.bbList || r.bagimsizBolumler);
-    $("konumMetin").textContent = formatMetin(pick(r, "konumCevre.tamMetin", "konumCevre.metin", "konumMetni", "konumMetin"));
-    $("tapuMetinB1").textContent = formatMetin(pick(r, "tapuMetniB1", "tapu.b1", "tapuMetinB1"));
-    $("tapuMetinB2").textContent = formatMetin(pick(r, "tapuMetniB2", "tapu.b2", "tapuMetinB2"));
+    $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumCevre.metin","konumMetni","konumMetin"));
+    $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1","tapuMetinB1"));
+    $("tapuMetinB2").textContent = formatMetin(pick(r,"tapuMetniB2","tapu.b2","tapuMetinB2"));
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
-  async function tryConsumeWallet(){
-    // Wallet izin hatası verse bile raporu göstereceğiz.
-    if (!window.Wallet || typeof Wallet.consumeReport !== "function") return { ok:false, msg:"Wallet.consumeReport yok" };
-
+  async function consumeWalletOrExplain(){
+    // Bu fonksiyon sonucu STATUS'a sebebiyle yazacak
     const user = auth.currentUser;
-    if (!user) return { ok:false, msg:"Giriş yok" };
+    if (!user) return { ok:false, why:"Giriş yok (auth null)" };
+    if (!window.Wallet || typeof Wallet.consumeReport !== "function") return { ok:false, why:"Wallet.consumeReport yok" };
 
     try{
+      const before = await Wallet.load(user.uid);
+      const bFree = Number(before?.freeReportsLeft ?? 0);
+
       const ok = await Wallet.consumeReport(user.uid, rid);
-      return ok ? { ok:true, msg:"Cüzdan/hak düşümü OK" } : { ok:false, msg:"Yetersiz hak/bakiye" };
+
+      const after = await Wallet.load(user.uid);
+      const aFree = Number(after?.freeReportsLeft ?? 0);
+
+      if (!ok) return { ok:false, why:`Yetersiz hak/bakiye (before: ${bFree} → after: ${aFree})` };
+
+      // burada mutlaka azalması lazım (free>0 ise)
+      return { ok:true, why:`OK (before: ${bFree} → after: ${aFree})` };
+
     }catch(e){
-      return { ok:false, msg: (e && e.message) ? e.message : String(e) };
+      return { ok:false, why:(e?.message || String(e)) };
     }
   }
 
   async function finalizeFlow(showAlerts){
-    if (isLockedLocal()){
-      setStatus("🔒 Zaten kilitli.", "Bu rapor daha önce final yapılmış.");
-      setLockedLocal();
-      return;
-    }
-
-    // UYARI
-    if (!confirmParam){
-      const msg =
-`UYARI! (ÖNEMLİ)
-Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
-Devam etmek istiyor musunuz?`;
-      if (!confirm(msg)) return;
-    }
-
-    setStatus("🧾 Final oluşturuluyor…", "Önce rapor ekrana hazırlanacak, sonra kilit basılacak.");
-
-    // 1) raporu her koşulda göster
     const rep = loadReport();
     if (!rep){
       setStatus("❌ Rapor bulunamadı.", "localStorage içinde bu rid yok.");
@@ -326,27 +304,37 @@ Devam etmek istiyor musunuz?`;
     }
     render(rep);
 
-    // 2) wallet dene (patlarsa da rapor gösterilmeye devam)
-    setStatus("💳 Cüzdan kontrol…", "İzin hatası olsa bile rapor gösterilecek.");
-    const w = await tryConsumeWallet();
-
-    // 3) kilidi local bas (Firestore’a yazmayacağız → permissions hatası bitecek)
-    setLockedLocal();
-
-    if (w.ok){
-      setStatus("✅ Final tamam.", "Hak/bakiye düşüldü. Rapor kilitlendi (local).");
-    } else {
-      // burada en kritik: permissions hatası artık projeyi bozmaz
-      setStatus("✅ Final tamam (Local).", "Rapor kilitlendi ama cüzdan işlemi yapılamadı: " + w.msg);
-      if (showAlerts) alert("Rapor kilitlendi (local). Cüzdan işlemi yapılamadı:\n" + w.msg);
+    if (isLockedLocal()){
+      setLockedLocal();
+      setStatus("🔒 Zaten kilitli.", "Bu rapor daha önce final yapılmış.");
+      return;
     }
+
+    if (!confirmParam){
+      const msg =
+`UYARI! (ÖNEMLİ)
+Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
+Devam etmek istiyor musunuz?`;
+      if (!confirm(msg)) return;
+    }
+
+    setStatus("💳 Hak düşürülüyor…", "Cüzdandan düşüm denenecek. Başarısızsa kilit atılmayacak.");
+
+    const res = await consumeWalletOrExplain();
+
+    if (!res.ok){
+      setStatus("❌ Hak düşürülemedi!", res.why);
+      if (showAlerts) alert("Hak düşürülemedi:\n" + res.why + "\n\nFirestore rules/izin sorunu olabilir.");
+      return; // ✅ hak düşmeden kilitleme YOK
+    }
+
+    // ✅ hak düştü → kilitle
+    setLockedLocal();
+    setStatus("✅ Hak düşürüldü ve kilitlendi.", res.why);
+    if (showAlerts) alert("✅ Hak düşürüldü. Rapor kilitlendi.\n" + res.why);
   }
 
-  // Buton
-  $("btnFinalCreate").onclick = () => finalizeFlow(true);
-
-  // Sayfa açılış
-  setStatus("⏳ Yükleniyor…", "Rapor metinleri getiriliyor.");
+  // İlk yükleme
   const rep = loadReport();
   if (!rep){
     setStatus("❌ Rapor yok.", "rid: " + rid);
@@ -359,12 +347,22 @@ Devam etmek istiyor musunuz?`;
     setLockedLocal();
     setStatus("🔒 Kilitli.", "Bu rapor final yapılmış (local).");
   } else {
-    setStatus("✅ Hazır.", "İstersen “Final Rapor Oluştur (Kilit)” ile kilitleyebilirsin.");
+    setStatus("✅ Hazır.", "Final yapmak için alttaki butonu kullan.");
   }
 
-  // Eğer confirm=1 ile geldiyse otomatik finalize çalıştır
+  $("btnFinalCreate").onclick = () => finalizeFlow(true);
+
+  // confirm=1 ile geldiyse otomatik dene
   if (confirmParam){
-    finalizeFlow(false);
+    // auth hazır olana kadar kısa bekleyelim (popup gecikmesi)
+    let tries = 0;
+    const t = setInterval(async ()=>{
+      tries++;
+      if (auth.currentUser || tries >= 15){
+        clearInterval(t);
+        await finalizeFlow(false);
+      }
+    }, 200);
   }
 });
 </script>
