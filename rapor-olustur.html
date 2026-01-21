@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Gayrimenkul Değerleme Raporu</title>
 
-<!-- FİREBASE VE CÜZDAN -->
+<!-- FİREBASE VE CÜZDAN (burada kullanılmıyor ama kalsın) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -46,7 +46,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 
 <div class="main-wrapper">
 
-  <!-- === SOL KOLAY ULAŞIM MENÜSÜ === -->
   <aside class="toc-container">
     <div class="toc">
       <div class="toc-title">📋 RAPOR BÖLÜMLERİ</div>
@@ -63,7 +62,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
     </div>
   </aside>
 
-  <!-- === ANA RAPOR === -->
   <main class="container">
     <section id="genel" class="section">
       <h2>1. Genel Bilgiler</h2>
@@ -113,54 +111,126 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded",()=>{
-  const params=new URLSearchParams(window.location.search);
-  const rid=params.get("rid")||params.get("id");
-  const raporlar=JSON.parse(localStorage.getItem("gayrimenkul_reports")||"[]");
-  const report=raporlar.find(r=>r.rid===rid);
-  if(!report){alert("Rapor bulunamadı!");return;}
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (id) => document.getElementById(id);
 
-  const formatMetin=(t)=>(t||"").toString()
-    .replace(/\s+\n/g,"\n").replace(/\n{3,}/g,"\n\n")
-    .replace(/\s{2,}/g," ").trim();
+  const params = new URLSearchParams(window.location.search);
+  const ridRaw = params.get("rid") || params.get("id") || "";
+  const rid = ridRaw.toString().trim();
 
-  const bbYazdir=(list)=>{
-    if(!list||!list.length)return "Bağımsız bölüm verisi yok";
-    return list.map((bb,i)=>`(${i+1}) ${bb.baslik||"Bağımsız Bölüm"}:\n${formatMetin(bb.bbDetay?.tamMetin||bb.bbDetay?.metin)}`).join("\n\n");
+  const formatMetin = (t) => {
+    if (t === null || t === undefined) return "";
+    const s = String(t);
+    return s
+      .replace(/\r\n/g, "\n")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
   };
 
-  const emsalMetni=(r)=>{
-    if(r?.emsalFinalMetni)return formatMetin(r.emsalFinalMetni);
-    if(r?.degerlemeOzet?.emsalFinalMetni)return formatMetin(r.degerlemeOzet.emsalFinalMetni);
-    if(r.bbDetayList?.length){
-      const tekil=new Set();
-      const arr=r.bbDetayList.map(bb=>{
-        const t=bb.degerlemeOzet?.emsalFinalMetni;
-        if(!t||tekil.has(t))return null;
-        tekil.add(t);
-        return formatMetin(t);
-      }).filter(Boolean);
-      return arr.length?arr.join("\n\n"):"Emsal analizi bulunamadı";
+  // Güvenli "birden çok olası alan" okuma
+  const pick = (obj, ...paths) => {
+    for (const p of paths) {
+      try {
+        const val = p.split(".").reduce((acc, k) => (acc && acc[k] !== undefined ? acc[k] : undefined), obj);
+        if (val !== undefined && val !== null && String(val).trim() !== "") return val;
+      } catch {}
     }
+    return "";
+  };
+
+  // 1) raporları listeden bul
+  let raporlar = [];
+  try { raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); } catch { raporlar = []; }
+
+  // rid number/string uyumsuzluğunu çöz
+  const report =
+    raporlar.find(r => String(r?.rid ?? "").trim() === rid) ||
+    raporlar.find(r => String(r?.rid ?? "").trim() === String(Number(rid))) ||
+    null;
+
+  // 2) listede yoksa tekil kayda da bak (bazı sistemlerde rapor_<id> olur)
+  let report2 = null;
+  if (!report && rid) {
+    try {
+      const maybe = localStorage.getItem("rapor_" + rid);
+      if (maybe) report2 = JSON.parse(maybe);
+    } catch {}
+  }
+
+  const r = report || report2;
+
+  if (!r) {
+    alert("Rapor bulunamadı! (rid/id: " + rid + ")");
+    return;
+  }
+
+  const bbYazdir = (list) => {
+    if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
+    return list.map((bb, i) => {
+      const baslik = bb?.baslik || bb?.title || "Bağımsız Bölüm";
+      const metin = pick(bb, "bbDetay.tamMetin", "bbDetay.metin", "tamMetin", "metin");
+      return `(${i+1}) ${baslik}:\n${formatMetin(metin)}`.trim();
+    }).join("\n\n");
+  };
+
+  const emsalMetni = (rep) => {
+    // 1) direkt final metin
+    const direct = pick(rep, "emsalFinalMetni", "degerlemeOzet.emsalFinalMetni", "degerleme.emsalFinalMetni");
+    if (direct) return formatMetin(direct);
+
+    // 2) BB'lerden tekilleştir
+    const list = rep?.bbDetayList;
+    if (Array.isArray(list) && list.length) {
+      const uniq = new Set();
+      const arr = [];
+      for (const bb of list) {
+        const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni", "degerleme.emsalFinalMetni");
+        const ft = formatMetin(t);
+        if (!ft) continue;
+        if (uniq.has(ft)) continue;
+        uniq.add(ft);
+        arr.push(ft);
+      }
+      return arr.length ? arr.join("\n\n") : "Emsal analizi bulunamadı";
+    }
+
     return "Emsal verisi yok";
   };
 
   // ==== EKRANA DOLDURMA ====
-  document.getElementById("raporTarih").textContent="Tarih: "+new Date().toLocaleDateString("tr-TR");
-  document.getElementById("genelBilgi").innerHTML=`
-   <div><b>İl / İlçe:</b> ${report.il||"-"} / ${report.ilce||"-"}</div>
-   <div><b>Ada / Parsel:</b> ${report.ada||"-"} / ${report.parsel||"-"}</div>
-   <div><b>Taşınmaz:</b> ${report.propertyName||"Tanımsız"}</div>
+  $("raporTarih").textContent = "Tarih: " + new Date().toLocaleDateString("tr-TR");
+
+  const il = pick(r, "il");
+  const ilce = pick(r, "ilce");
+  const ada = pick(r, "ada");
+  const parsel = pick(r, "parsel");
+  const propertyName = pick(r, "propertyName", "tasınmazAdi", "tasinmazAdi", "baslik");
+
+  $("genelBilgi").innerHTML = `
+    <div><b>İl / İlçe:</b> ${il || "-"} / ${ilce || "-"}</div>
+    <div><b>Ada / Parsel:</b> ${ada || "-"} / ${parsel || "-"}</div>
+    <div><b>Taşınmaz:</b> ${propertyName || "Tanımsız"}</div>
   `;
-  document.getElementById("imarTablo").innerHTML=report.imarTablo||"<div class='warning'>İmar tablosu bulunamadı</div>";
-  document.getElementById("imarMetin").textContent=formatMetin(report.imarMetni);
-  document.getElementById("belgelerMetin").textContent=formatMetin(report.belgelerMetni);
-  document.getElementById("binaMetin").textContent=formatMetin(report.bina?.metin);
-  document.getElementById("bbMetin").textContent=bbYazdir(report.bbDetayList);
-  document.getElementById("konumMetin").textContent=formatMetin(report.konumCevre?.tamMetin||report.konumCevre?.metin);
-  document.getElementById("tapuMetinB1").textContent=formatMetin(report.tapuMetniB1);
-  document.getElementById("tapuMetinB2").textContent=formatMetin(report.tapuMetniB2);
-  document.getElementById("emsalMetin").textContent=emsalMetni(report);
+
+  const imarTablo = pick(r, "imarTablo");
+  $("imarTablo").innerHTML = imarTablo || "<div class='warning'>İmar tablosu bulunamadı</div>";
+
+  $("imarMetin").textContent = formatMetin(pick(r, "imarMetni", "imar.metin", "imar.tamMetin"));
+  $("belgelerMetin").textContent = formatMetin(pick(r, "belgelerMetni", "belgeler.metin", "belgeler.tamMetin"));
+
+  // bina bazen "bina.metin" bazen "binaMetin" diye tutuluyor
+  $("binaMetin").textContent = formatMetin(pick(r, "bina.metin", "bina.tamMetin", "binaMetni", "binaMetin"));
+
+  $("bbMetin").textContent = bbYazdir(r.bbDetayList || r.bbList || r.bagimsizBolumler);
+
+  // konum bazen konumCevre içinde, bazen düz metin
+  $("konumMetin").textContent = formatMetin(pick(r, "konumCevre.tamMetin", "konumCevre.metin", "konumMetni", "konumMetin"));
+
+  $("tapuMetinB1").textContent = formatMetin(pick(r, "tapuMetniB1", "tapu.b1", "tapuMetinB1"));
+  $("tapuMetinB2").textContent = formatMetin(pick(r, "tapuMetniB2", "tapu.b2", "tapuMetinB2"));
+
+  $("emsalMetin").textContent = emsalMetni(r);
 });
 </script>
 </body>
