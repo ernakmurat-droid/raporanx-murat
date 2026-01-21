@@ -3,297 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gayrimenkul Değerleme Raporu - Raporan X</title>
-  
-  <!-- Firebase -->
+  <title>Gayrimenkul Değerleme Raporu - Testli Versiyon</title>
+
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  
-  <!-- Wallet -->
   <script src="wallet.js"></script>
 
   <style>
     :root { --primary:#1a237e; --secondary:#3949ab; --accent:#ffd600; --bg:#f4f7f9; }
-    body { font-family:'Segoe UI',Tahoma,sans-serif; background:var(--bg); margin:0; color:#2c3e50; }
-    .header { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; padding:30px 20px; text-align:center; position:relative; }
-    .back { position:absolute; left:20px; top:25px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:30px; color:#fff; text-decoration:none; font-weight:bold; cursor:pointer; border:none; font-size:13px; }
-    .main-wrapper { max-width:1300px; margin:20px auto; display:grid; grid-template-columns:280px 1fr; gap:30px; padding:0 20px; }
-    .toc-container { position:sticky; top:20px; height:fit-content; }
-    .toc { background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border-left:6px solid var(--primary); }
-    .toc-title { font-size:1.1em; font-weight:bold; color:var(--primary); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px; }
-    .toc-list { list-style:none; padding:0; margin:0; }
-    .toc-list li { margin-bottom:8px; }
-    .toc-list a { color:#555; text-decoration:none; font-size:.9em; font-weight:500; transition:.2s; display:block; padding:5px; border-radius:4px; }
-    .toc-list a:hover { background:#f0f2ff; color:var(--primary); padding-left:10px; }
-    .container { background:#fff; padding:40px; border-radius:12px; box-shadow:0 0 40px rgba(0,0,0,0.05); }
-    .section { margin-bottom:50px; padding-bottom:20px; border-bottom:1px solid #f0f0f0; }
-    .section-title { font-size:1.4em; font-weight:bold; color:var(--primary); margin-bottom:20px; display:flex; align-items:center; }
-    .section-title::after { content:""; flex:1; height:1px; background:#eee; margin-left:15px; }
-    .info-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:15px; margin-bottom:25px; }
-    .info-item { background:#fcfcfc; border:1px solid #f0f0f0; padding:12px; border-radius:6px; }
-    .info-item strong { display:block; color:#888; font-size:.75em; text-transform:uppercase; margin-bottom:3px; }
-    .info-item span { font-weight:600; font-size:.95em; color:#2c3e50; }
-    .text-block { font-size:14.5px; line-height:1.7; white-space:pre-wrap; color:#34495e; text-align:justify; }
-    .format-badge { background:#546e7a; color:#fff; padding:3px 10px; border-radius:4px; font-size:11px; margin-bottom:10px; display:inline-block; }
-    .print-btn { background:#27ae60; color:#fff; padding:15px 30px; font-size:18px; border:none; border-radius:50px; cursor:pointer; margin:40px auto; display:block; font-weight:bold; box-shadow:0 6px 15px rgba(39,174,96,.3); transition:.3s; }
-    .print-btn:hover { background:#219150; transform:translateY(-2px); }
-    .topbar2{ max-width:1300px; margin:12px auto 0; padding:0 20px; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-    #walletBar{ flex:1 1 420px; background:rgba(255,255,255,0.16); color:#fff; border:1px solid rgba(255,255,255,0.18); border-radius:14px; padding:10px 12px; box-shadow:0 8px 20px rgba(0,0,0,0.18); backdrop-filter: blur(6px); cursor:pointer; }
-    #lockBadge{ flex:0 0 auto; padding:10px 12px; border-radius:14px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.18); color:#fff; font-weight:900; box-shadow:0 8px 20px rgba(0,0,0,0.18); }
-    .warning { background: #fff8e1; padding: 10px; border-left: 4px solid #ffc107; margin: 10px 0; }
-    
-    @media (max-width: 992px) {
-      .main-wrapper { grid-template-columns:1fr; }
-      .toc-container { position:relative; top:0; margin-bottom:20px; }
-    }
-    @media print {
-      .header, .back, .print-btn, .toc-container, .topbar2 { display:none !important; }
-      body { background:#fff; }
-      .main-wrapper { display:block; max-width:100%; margin:0; padding:0; }
-      .container { box-shadow:none; padding:0; margin:0; width:100%; }
-      .section-title { color:#000; border-bottom:2px solid #000; }
-    }
+    body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);margin:0;color:#2c3e50}
+    .header{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;padding:30px 20px;text-align:center;position:relative}
+    .back{position:absolute;left:20px;top:25px;background:rgba(255,255,255,0.2);padding:8px 15px;border-radius:30px;color:#fff;text-decoration:none;font-weight:bold;cursor:pointer;border:none;font-size:13px}
+    .main-wrapper{max-width:1300px;margin:20px auto;display:grid;grid-template-columns:280px 1fr;gap:30px;padding:0 20px}
+    .toc-container{position:sticky;top:20px;height:fit-content}
+    .toc{background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.05);border-left:6px solid var(--primary)}
+    .toc-title{font-size:1.1em;font-weight:bold;color:var(--primary);margin-bottom:15px;border-bottom:1px solid #eee;padding-bottom:10px}
+    .toc-list{list-style:none;padding:0;margin:0}
+    .toc-list li{margin-bottom:8px}
+    .toc-list a{color:#555;text-decoration:none;font-size:.9em;font-weight:500;transition:.2s;display:block;padding:5px;border-radius:4px}
+    .toc-list a:hover{background:#f0f2ff;color:var(--primary);padding-left:10px}
+    .container{background:#fff;padding:40px;border-radius:12px;box-shadow:0 0 40px rgba(0,0,0,0.05)}
+    .section{margin-bottom:50px;padding-bottom:20px;border-bottom:1px solid #f0f0f0}
+    .section-title{font-size:1.4em;font-weight:bold;color:var(--primary);margin-bottom:20px;display:flex;align-items:center}
+    .section-title::after{content:"";flex:1;height:1px;background:#eee;margin-left:15px}
+    .text-block{font-size:14.5px;line-height:1.7;white-space:pre-wrap;color:#34495e;text-align:justify}
+    .print-btn{background:#27ae60;color:#fff;padding:15px 30px;font-size:18px;border:none;border-radius:50px;cursor:pointer;margin:40px auto;display:block;font-weight:bold;box-shadow:0 6px 15px rgba(39,174,96,.3);transition:.3s}
+    .print-btn:hover{background:#219150;transform:translateY(-2px)}
+    #lockBadge{padding:8px 12px;border-radius:8px;background:#0002;color:#000;font-weight:bold}
   </style>
 </head>
 
 <body>
   <div class="header">
     <button id="btnBack" class="back">← Yönetim Paneli</button>
-    <h1 style="margin:0; font-size:1.8em; letter-spacing:1px;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
-    <div id="raporTarih" style="margin-top:8px; opacity:.8; font-size:13px;"></div>
+    <h1>GAYRİMENKUL DEĞERLEME RAPORU</h1>
+    <div id="raporTarih"></div>
   </div>
 
-  <div class="topbar2">
-    <div id="walletBar">Cüzdan durumu yükleniyor...</div>
-    <div id="lockBadge">🔒 Banka Taslağı</div>
+  <div style="max-width:1200px;margin:20px auto;text-align:right;">
+    <span id="lockBadge">🟡 Taslak (Kilit yok)</span>
   </div>
 
-  <div class="main-wrapper">
-    <aside class="toc-container">
-      <div class="toc">
-        <div class="toc-title">RAPOR BÖLÜMLERİ</div>
-        <ul class="toc-list">
-          <li><a href="#genel">1. Genel Bilgiler</a></li>
-          <li><a href="#imar">2. İmar Durumu</a></li>
-          <li><a href="#belgeler">3. İncelenen Belgeler</a></li>
-          <li><a href="#bina">4. Ana Bina Bilgileri</a></li>
-          <li><a href="#bb">5. Bağımsız Bölüm</a></li>
-          <li><a href="#konum">6. Konum Analizi</a></li>
-          <li><a href="#tapu">7. Tapu Kayıtları</a></li>
-          <li><a href="#emsal">8. Değerleme Sonucu</a></li>
-        </ul>
-      </div>
-    </aside>
+  <main class="container">
+    <div class="section" id="genel">
+      <div class="section-title">1. Genel Bilgiler</div>
+      <div class="text-block" id="genelBilgi"></div>
+    </div>
 
-    <main class="container">
-      <div class="section" id="genel">
-        <div class="section-title">1. Gayrimenkul Genel Bilgileri</div>
-        <div class="info-grid" id="genelBilgi"></div>
-      </div>
+    <div class="section" id="emsal">
+      <div class="section-title">2. Değerleme ve Sonuç Analizi</div>
+      <div class="text-block" id="emsalMetin"></div>
+    </div>
 
-      <div class="section" id="imar">
-        <div class="section-title">2. İmar Durumu Verileri</div>
-        <div id="imarTablo"></div>
-        <div class="text-block" id="imarMetin"></div>
-      </div>
-
-      <div class="section" id="belgeler">
-        <div class="section-title">3. İncelenen Belgeler</div>
-        <div class="text-block" id="belgelerMetin"></div>
-      </div>
-
-      <div class="section" id="bina">
-        <div class="section-title">4. Ana Gayrimenkul Bilgileri</div>
-        <div class="text-block" id="binaMetin"></div>
-      </div>
-
-      <div class="section" id="bb">
-        <div class="section-title">5. Bağımsız Bölüm Analizi</div>
-        <div class="text-block" id="bbMetin"></div>
-      </div>
-
-      <div class="section" id="konum">
-        <div class="section-title">6. Konum ve Çevre Analizi</div>
-        <div class="text-block" id="konumMetin"></div>
-      </div>
-
-      <div class="section" id="tapu">
-        <div class="section-title">7. Tapu ve Takyidat Kayıtları</div>
-        <div class="format-badge">BANKA FORMATI B1</div>
-        <div class="text-block" id="tapuMetinB1" style="margin-bottom:25px;"></div>
-        <div class="format-badge">BANKA FORMATI B2</div>
-        <div class="text-block" id="tapuMetinB2"></div>
-      </div>
-
-      <div class="section" id="emsal">
-        <div class="section-title">8. Değerleme ve Sonuç Analizi</div>
-        <div class="text-block" id="emsalMetin"></div>
-      </div>
-
-      <button class="print-btn" onclick="window.print()">📑 RAPORU YAZDIR / PDF OLARAK KAYDET</button>
-    </main>
-  </div>
+    <button class="print-btn" id="lockAndPrint">📑 RAPORU YAZDIR / KİLİTLE</button>
+  </main>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Firebase bağlantısı
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+  const TEST_MODE = true; // 👈 TEST MODU: TRUE = HAK/PARA DÜŞMEZ!
 
-    // Tüm DOM elementleri
-    const elements = {
-      raporTarih: document.getElementById('raporTarih'),
-      genelBilgi: document.getElementById('genelBilgi'),
-      imarTablo: document.getElementById('imarTablo'),
-      imarMetin: document.getElementById('imarMetin'),
-      belgelerMetin: document.getElementById('belgelerMetin'),
-      binaMetin: document.getElementById('binaMetin'),
-      bbMetin: document.getElementById('bbMetin'),
-      konumMetin: document.getElementById('konumMetin'),
-      tapuMetinB1: document.getElementById('tapuMetinB1'),
-      tapuMetinB2: document.getElementById('tapuMetinB2'),
-      emsalMetin: document.getElementById('emsalMetin'),
-      walletBar: document.getElementById('walletBar'),
-      lockBadge: document.getElementById('lockBadge'),
-      btnBack: document.getElementById('btnBack')
-    };
+  const auth = firebase.auth();
 
-    // URL parametreleri
-    const urlParams = new URLSearchParams(window.location.search);
-    const rid = urlParams.get('rid') || urlParams.get('id');
-    const confirmed = urlParams.get("confirm") === "1";
+  // 🔹 Mock test data
+  const report = {
+    rid: "12345",
+    emsalFinalMetni: "Bu taşınmaz için piyasa analizi sonucunda emsal değerleme yapılmıştır.",
+    propertyName: "Test Gayrimenkul",
+    isLocked: false
+  };
 
-    // Rapor verisini yükle
-    const loadReportData = () => {
-      const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-      return reports.find(r => r.rid === rid) || null;
-    };
+  // 🔹 Metin biçimlendirici
+  const formatMetin = (t) => (t || "").trim();
 
-    // Metin formatlama
-    const formatMetin = (text) => {
-      if (!text || typeof text !== 'string') return '';
-      return text
-        .replace(/\s+\n/g, "\n")
-        .replace(/\n{3,}/g, "\n\n")
-        .replace(/\s{2,}/g, " ")
-        .replace(/\s+\./g, ".")
-        .replace(/\s+,/g, ",")
-        .trim();
-    };
+  // 🔹 Hak düşme işlemi
+  const decreaseUserRight = async (uid, rid) => {
+    if (TEST_MODE) {
+      console.log("🧪 Test Modu: Hak düşme yapılmadı.");
+      return;
+    }
 
-    // BB metinlerini birleştir
-    const combineBBMetinleri = (bbList) => {
-      if (!bbList || !bbList.length) return "Bağımsız bölüm verisi bulunamadı";
-      
-      return bbList.map((bb, index) => {
-        const baslik = bb.baslik || `${index + 1}. Bağımsız Bölüm`;
-        const metin = bb.bbDetay?.tamMetin || bb.bbDetay?.metin || "İçerik eklenmemiş";
-        return `## ${baslik}\n${formatMetin(metin)}`;
-      }).join("\n\n");
-    };
+    const key = `rapor_locked_${rid}`;
+    if (localStorage.getItem(key)) return;
 
-    // ÇÖZÜM: Emsal metni oluştur (çoklu gayrimenkul düzeltmeli)
-    const generateEmsalMetni = (report) => {
-      // 1. Ana raporda emsal metni var mı?
-      if (report?.emsalFinalMetni) return formatMetin(report.emsalFinalMetni);
-      
-      // 2. Değerleme özetinde emsal metni var mı?
-      if (report?.degerlemeOzet?.emsalFinalMetni) {
-        return formatMetin(report.degerlemeOzet.emsalFinalMetni);
+    try {
+      await Wallet.load(uid);
+      const info = Wallet.getSummary();
+
+      if (info.freeLeft > 0) {
+        await Wallet.decreaseFree(1);
+        alert("🎟️ Ücretsiz hak kullanıldı. Kalan: " + (info.freeLeft - 1));
+      } else {
+        const cost = 5;
+        await Wallet.decreaseBalance(cost);
+        alert(`💰 ${cost} TL düşüldü.`);
       }
-      
-      // 3. ÇOKLU GAYRİMENKUL DÜZELTMESİ (TEKRAR ÖNLEYİCİ)
-      if (report.bbDetayList?.length) {
-        const uniqueMetinler = new Set(); // Tekrar önleyici
-        
-        const metinler = report.bbDetayList.map(bb => {
-          const metin = bb.degerlemeOzet?.emsalFinalMetni;
-          if (!metin || uniqueMetinler.has(metin)) return null;
-          
-          uniqueMetinler.add(metin);
-          return metin;
-        }).filter(metin => metin !== null);
-        
-        return metinler.map(formatMetin).join("\n\n");
-      }
-      
-      return "Değerleme analizi henüz tamamlanmadı";
-    };
+      localStorage.setItem(key, "used");
+    } catch (err) {
+      console.error("Hak düşme hatası:", err);
+    }
+  };
 
-    // Raporu ekranda göster
-    const renderRapor = (report) => {
-      if (!report) {
-        alert("Rapor bulunamadı! Ana sayfaya yönlendiriliyorsunuz.");
-        window.location.href = "index.html";
-        return;
-      }
-      
-      // Tarih bilgisi
-      elements.raporTarih.textContent = `Rapor Oluşturma: ${new Date().toLocaleDateString('tr-TR')}`;
-      
-      // Genel bilgiler
-      elements.genelBilgi.innerHTML = `
-        <div class="info-item"><strong>Taşınmaz Adı</strong><span>${report.propertyName || "Tanımsız"}</span></div>
-        <div class="info-item"><strong>İl / İlçe</strong><span>${report.il || "-"} / ${report.ilce || "-"}</span></div>
-        <div class="info-item"><strong>Ada / Parsel</strong><span>${report.ada || "-"} / ${report.parsel || "-"}</span></div>
-        <div class="info-item"><strong>Arsa Alanı</strong><span>${report.bina?.arsaAlani || "0"} m²</span></div>
-      `;
-      
-      // Diğer bölümler
-      elements.imarTablo.innerHTML = report.imarTablo || "<div class='warning'>⚠️ İmar tablo verisi bulunamadı</div>";
-      elements.imarMetin.textContent = formatMetin(report.imarMetni);
-      elements.belgelerMetin.textContent = formatMetin(report.belgelerMetni);
-      elements.binaMetin.textContent = formatMetin(report.bina?.metin);
-      elements.bbMetin.textContent = combineBBMetinleri(report.bbDetayList);
-      elements.konumMetin.textContent = formatMetin(report.konumCevre?.tamMetin || report.konumCevre?.metin);
-      elements.tapuMetinB1.textContent = formatMetin(report.tapuMetniB1);
-      elements.tapuMetinB2.textContent = formatMetin(report.tapuMetniB2);
-      elements.emsalMetin.textContent = generateEmsalMetni(report);
-    };
+  // 🔹 Rapor Kilitle
+  const lockReport = (rid) => {
+    report.isLocked = true;
+    localStorage.setItem(`report_${rid}`, JSON.stringify(report));
+    document.getElementById("lockBadge").textContent = "🔒 Kilitli (Artık düzenlenemez)";
+    alert("🔒 Rapor kilitlendi ve değiştirilemez hale geldi!");
+  };
 
-    // Cüzdan bilgilerini güncelle
-    const updateWalletInfo = async (userId) => {
-      if (typeof Wallet === 'undefined') {
-        elements.walletBar.textContent = "Cüzdan modülü yüklenemedi";
-        return;
-      }
-      
-      try {
-        await Wallet.load(userId);
-        const summary = Wallet.getSummary();
-        elements.walletBar.textContent = `Cüzdan: ${summary.balanceTL} TL | Ücretsiz Hak: ${summary.freeLeft}`;
-      } catch (error) {
-        elements.walletBar.textContent = "Cüzdan bilgileri yüklenirken hata oluştu";
-      }
-    };
+  // 🔹 Rapor göster
+  const renderRapor = () => {
+    document.getElementById("raporTarih").textContent =
+      "Rapor Tarihi: " + new Date().toLocaleDateString("tr-TR");
+    document.getElementById("genelBilgi").textContent =
+      `${report.propertyName}\nRID: ${report.rid}`;
+    document.getElementById("emsalMetin").textContent = formatMetin(report.emsalFinalMetni);
+  };
 
-    // Geri butonu
-    elements.btnBack.addEventListener('click', () => {
-      window.location.href = `rapor-detay.html?rid=${rid}`;
-    });
-
-    // Kilit durumu güncelleme
-    const updateLockStatus = (isLocked) => {
-      elements.lockBadge.textContent = isLocked 
-        ? "🔒 Kilitli (Banka Taslağı)" 
-        : "🟡 Taslak (Kilit yok)";
-    };
-
-    // Kimlik doğrulama durumunu izle
-    auth.onAuthStateChanged(async (user) => {
-      if (!user || !rid) {
-        window.location.href = "index.html";
-        return;
-      }
-      
-      const report = loadReportData();
-      renderRapor(report);
-      await updateWalletInfo(user.uid);
-      updateLockStatus(report?.isLocked || false);
-    });
+  // 🔹 Yazdırma ve kilitleme butonu
+  document.getElementById("lockAndPrint").addEventListener("click", async () => {
+    const user = auth.currentUser || { uid: "test_user" };
+    await decreaseUserRight(user.uid, report.rid);
+    lockReport(report.rid);
+    window.print();
   });
+
+  renderRapor();
 </script>
 </body>
 </html>
