@@ -9,7 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 
-  <!-- Wallet -->
   <script src="wallet.js"></script>
 
   <title>Rapor Detay - Raporan X</title>
@@ -25,7 +24,6 @@
     .lockBadge{
       display:none;
       margin-left:10px;
-      display:inline-flex;
       align-items:center;
       gap:8px;
       font-size:13px;
@@ -78,7 +76,7 @@
       user-select:none;
     }
     .wallet-title{ font-weight:900; letter-spacing:.4px; display:flex; align-items:center; gap:10px; }
-    .wallet-sub{ font-size:12px; opacity:.9; margin-top:6px; line-height:1.35; }
+    .wallet-sub{ font-size:12px; opacity:.95; margin-top:6px; line-height:1.35; }
     .wallet-amount{
       font-size:20px;
       font-weight:900;
@@ -126,10 +124,10 @@
       box-shadow:0 10px 25px rgba(0,0,0,0.25);
       transition: .25s ease;
     }
+    .footer-btn:hover{opacity:.94}
 
-    /* ✅ sadece bu paneldeki “iş” butonları kilitlenir */
-    .workLocked .menu .btn,
-    .workLocked #btnFinalCreate{
+    /* ✅ Kilitliyken SADECE modül butonlarını kilitle */
+    .modulesLocked .menu .btn{
       opacity:.45;
       filter: grayscale(60%);
       transform:none !important;
@@ -137,9 +135,10 @@
       pointer-events:none;
     }
 
-    /* ama cüzdan ve geri çalışsın */
-    .workLocked .wallet-card,
-    .workLocked .back{
+    /* geri + cüzdan + rapor butonu açık kalsın */
+    .modulesLocked .wallet-card,
+    .modulesLocked .back,
+    .modulesLocked #btnFinalCreate{
       pointer-events:auto !important;
       opacity:1 !important;
       filter:none !important;
@@ -158,7 +157,7 @@
 
   <div id="statusBar" class="statusBar">
     Hazır.
-    <small>Modüllere girip veri girişi yap, sonra “TAM RAPOR OLUŞTUR” ile final raporu üret.</small>
+    <small>Modüllere girip veri girişi yap, sonra raporu oluştur.</small>
   </div>
 
   <!-- Cüzdan -->
@@ -168,7 +167,7 @@
         💳 Cüzdan
         <span id="walletAmount" class="wallet-amount wallet-hidden">yükleniyor...</span>
       </div>
-      <div id="walletSub" class="wallet-sub">Bakiye gizlidir. Görmek için karta tıkla.</div>
+      <div id="walletSub" class="wallet-sub">Yükleniyor…</div>
     </div>
   </div>
 
@@ -183,14 +182,12 @@
     <button class="btn" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
   </div>
 
-  <!-- Final oluştur -->
-  <button id="btnFinalCreate" class="footer-btn" onclick="raporOlusturUyari()">TAM RAPOR OLUŞTUR</button>
+  <button id="btnFinalCreate" class="footer-btn">TAM RAPOR OLUŞTUR</button>
 
 <script>
 (function(){
   const auth = firebase.auth();
   const db = firebase.firestore();
-
   const $ = (id) => document.getElementById(id);
 
   function setStatus(title, sub){
@@ -201,27 +198,13 @@
     bar.appendChild(sm);
   }
 
-  // RID
   const urlParams = new URLSearchParams(window.location.search);
-  let rid = (urlParams.get("rid") || urlParams.get("id") || "").toString().trim();
+  const rid = (urlParams.get("rid") || urlParams.get("id") || "").toString().trim();
 
-  function genRid(){
-    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
-    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
-  }
-  function ensureRidMigration(arr){
-    let changed=false;
-    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
-    return changed;
-  }
-  function findIndexByRid(arr, rid){
-    return (arr||[]).findIndex(r => r && String(r.rid) === String(rid));
-  }
   function getReportByRid(){
     let reports = [];
     try{ reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ reports=[]; }
-    if (ensureRidMigration(reports)) localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
-    const i = rid ? findIndexByRid(reports, rid) : -1;
+    const i = reports.findIndex(r => r && String(r.rid||"").trim() === String(rid));
     return i >= 0 ? reports[i] : null;
   }
 
@@ -229,69 +212,60 @@
     return localStorage.getItem("report_locked_" + rid) === "1";
   }
 
-  function setWorkLockedUI(locked){
+  function setModulesLockedUI(locked){
     const badge = $("lockBadge");
     const header = $("header");
     const btn = $("btnFinalCreate");
 
     if (locked){
-      document.body.classList.add("workLocked");
+      document.body.classList.add("modulesLocked");
       header.classList.add("locked");
       badge.style.display = "inline-flex";
-      if (btn) btn.textContent = "✅ RAPOR OLUŞTU (KİLİTLİ)";
-      setStatus("🔒 Bu rapor FINAL oluşturuldu ve kilitlendi.",
-                "Bu raporun modülleri artık düzenlenemez. Yeni rapor için yeni kayıt açmalısın.");
+
+      // ✅ kilitliyken buton açık: rapora gir / pdf al
+      btn.textContent = "📄 RAPORU AÇ / PDF";
+      btn.onclick = () => {
+        // rapor ekranın zaten rapor-olustur.html (çıktı sayfan)
+        location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
+      };
+
+      setStatus("🔒 Bu rapor FINAL ve modüller kilitli.",
+        "Yanlışlıkla geri döndüysen sorun yok: alttaki “RAPORU AÇ / PDF” ile rapora gir.");
     } else {
-      document.body.classList.remove("workLocked");
+      document.body.classList.remove("modulesLocked");
       header.classList.remove("locked");
       badge.style.display = "none";
-      if (btn) btn.textContent = "TAM RAPOR OLUŞTUR";
+
+      // ✅ kilit değilken buton: raporu oluştur (uyarı + confirm)
+      btn.textContent = "TAM RAPOR OLUŞTUR";
+      btn.onclick = () => raporOlusturUyari();
+
       setStatus("Hazır.",
-                "Modüllere girip veri girişi yap, sonra “TAM RAPOR OLUŞTUR” ile final raporu üret.");
+        "Modüllere girip veri girişi yap, sonra “TAM RAPOR OLUŞTUR” ile final raporu üret.");
     }
   }
 
-  function watchLockFromFirestore(){
-    if (!rid) return;
-    db.collection("reports").doc(rid).onSnapshot((snap)=>{
-      const data = snap.exists ? (snap.data() || {}) : {};
-      const locked = (data.locked === true || data.status === "final");
-      if (locked) localStorage.setItem("report_locked_" + rid, "1");
-      setWorkLockedUI(locked || isLockedLocal());
-    }, ()=>{
-      setWorkLockedUI(isLockedLocal());
-    });
-  }
-
-  // Sayfa yönlendirme
+  // modül sayfalarına rid ile git
   window.go = function(page){
     if (!rid) { location.href="index.html"; return; }
     location.href = page + "?rid=" + encodeURIComponent(rid);
   };
 
-  // Final oluştur uyarısı
-  window.raporOlusturUyari = function(){
+  // uyarı + rapor ekranına git (confirm=1)
+  function raporOlusturUyari(){
     if (!rid) { location.href="index.html"; return; }
-
-    if (isLockedLocal()){
-      alert("🔒 Bu rapor zaten final oluşturulmuş ve kilitli. Yeni rapor açmalısın.");
-      return;
-    }
 
     const msg =
 `UYARI! (ÖNEMLİ)
 Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
 
 Lütfen zaman ve para kaybı olmaması için tüm modülleri tekrar kontrol edin.
-Devam ederseniz rapor bankaya uygun taslak formatında üretilecektir.
-
 Devam etmek istiyor musunuz?`;
 
     if (!confirm(msg)) return;
 
-    // ✅ raporu oluşturan sayfaya git
     location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
-  };
+  }
 
   /* WALLET UI */
   let walletRevealed = false;
@@ -301,33 +275,50 @@ Devam etmek istiyor musunuz?`;
     $("walletSub").textContent = subText;
   }
 
-  function toggleWalletReveal(){
+  $("walletCard").addEventListener("click", ()=>{
     walletRevealed = !walletRevealed;
-    const card = $("walletCard");
-    if (walletRevealed) card.classList.add("reveal");
-    else card.classList.remove("reveal");
-  }
-
-  $("walletCard").addEventListener("click", toggleWalletReveal);
+    if (walletRevealed) $("walletCard").classList.add("reveal");
+    else $("walletCard").classList.remove("reveal");
+  });
 
   async function loadWallet(user){
     if (!window.Wallet || !user) {
       setWalletUI("—", "Cüzdan modülü yüklenemedi.");
       return;
     }
+
     try{
       const w = await Wallet.load(user.uid);
+
       const balance = Number(w?.balanceTL ?? w?.balance ?? w?.tl ?? 0) || 0;
       const freeLeft = Number(w?.freeLeft ?? w?.freeReportsLeft ?? w?.free ?? 0);
 
       const tlText = new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(balance) + " TL";
-      const info = (freeLeft > 0)
-        ? `Ücretsiz rapor hakkı: ${freeLeft} • Bakiye: (gizli)`
-        : `Ücretsiz hak bitti • Bakiye: (gizli)`;
+
+      // ✅ en önemli: hak sayısı görünür olsun
+      const info =
+        `🎁 Ücretsiz rapor hakkın: ${freeLeft} • 💰 Bakiye: (gizli, tıkla gör)`;
 
       setWalletUI(tlText, info);
+
     }catch(e){
       setWalletUI("—", "Cüzdan okunamadı. İnternet / izin kontrol et.");
+    }
+  }
+
+  // (Opsiyonel) Firestore’dan kilit okumaya çalış: izin yoksa local ile devam
+  function watchLockFromFirestore(){
+    try{
+      db.collection("reports").doc(rid).onSnapshot((snap)=>{
+        const data = snap.exists ? (snap.data() || {}) : {};
+        const locked = (data.locked === true || data.status === "final");
+        if (locked) localStorage.setItem("report_locked_" + rid, "1");
+        setModulesLockedUI(locked || isLockedLocal());
+      }, ()=>{
+        setModulesLockedUI(isLockedLocal());
+      });
+    }catch(e){
+      setModulesLockedUI(isLockedLocal());
     }
   }
 
@@ -356,10 +347,10 @@ Devam etmek istiyor musunuz?`;
 
     await loadWallet(user);
 
-    // önce local kilit uygula
-    setWorkLockedUI(isLockedLocal());
+    // önce local kilit
+    setModulesLockedUI(isLockedLocal());
 
-    // sonra firestore’dan dinle
+    // sonra firestore kilit (izin varsa)
     watchLockFromFirestore();
   });
 })();
