@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Gayrimenkul Değerleme Raporu</title>
+<title>Rapor Oluştur (Final) - Gayrimenkul Değerleme</title>
 
-<!-- FİREBASE VE CÜZDAN (burada kullanılmıyor ama kalsın) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -34,18 +33,28 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 .print-btn:hover{background:#1e874e;}
 @media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
 @media print{.header,.toc-container,.print-btn{display:none!important;}.container{box-shadow:none;padding:0;}}
+
+/* üstte durum şeridi */
+#statusBar{
+  max-width:1300px;margin:10px auto 0;padding:10px 16px;
+  background:#fff;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.06);
+  border-left:6px solid var(--secondary);
+  color:#2c3e50;font-weight:700;
+}
+#statusBar small{display:block;font-weight:500;opacity:.9;margin-top:4px}
 </style>
 </head>
-<body>
 
+<body>
 <div class="header">
- <button class="back" onclick="window.location.href='index.html'">← Geri</button>
- <h1>GAYRİMENKUL DEĞERLEME RAPORU</h1>
- <div id="raporTarih"></div>
+  <button class="back" onclick="window.location.href='rapor-ana-menu.html?rid='+encodeURIComponent(getRid())">← Geri</button>
+  <h1>GAYRİMENKUL DEĞERLEME RAPORU (FİNAL)</h1>
+  <div id="raporTarih"></div>
 </div>
 
-<div class="main-wrapper">
+<div id="statusBar">⏳ Final rapor hazırlanıyor… <small>Ücret/ücretsiz hak kontrolü yapılıyor ve rapor kilitleniyor.</small></div>
 
+<div class="main-wrapper">
   <aside class="toc-container">
     <div class="toc">
       <div class="toc-title">📋 RAPOR BÖLÜMLERİ</div>
@@ -107,131 +116,232 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 
     <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
   </main>
-
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const $ = (id) => document.getElementById(id);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-  const params = new URLSearchParams(window.location.search);
-  const ridRaw = params.get("rid") || params.get("id") || "";
-  const rid = ridRaw.toString().trim();
+  function getRid(){
+    const p = new URLSearchParams(location.search);
+    return (p.get("rid") || p.get("id") || "").toString().trim();
+  }
+  function hasConfirm(){
+    const p = new URLSearchParams(location.search);
+    return p.get("confirm") === "1";
+  }
+  function setStatus(title, detail){
+    const el = document.getElementById("statusBar");
+    el.textContent = title;
+    const sm = document.createElement("small");
+    sm.textContent = detail || "";
+    el.appendChild(sm);
+  }
 
-  const formatMetin = (t) => {
-    if (t === null || t === undefined) return "";
-    const s = String(t);
-    return s
-      .replace(/\r\n/g, "\n")
-      .replace(/[ \t]+\n/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-  };
+  let finalizeRunning = false;
 
-  // Güvenli "birden çok olası alan" okuma
-  const pick = (obj, ...paths) => {
-    for (const p of paths) {
+  // ====== WALLET ADAPTÖRÜ (senin wallet.js'e 1 satır bağlanacak) ======
+  async function walletPrecheckAndCharge(uid, rid){
+    // Eğer wallet modülü yoksa güvenli tarafta kal: rapor üretme
+    if (!window.Wallet) throw new Error("Cüzdan modülü bulunamadı (wallet.js).");
+
+    // ✅ BURAYI SENİN WALLET.JS'İNE GÖRE 1 SATIRDA BAĞLAYACAĞIZ
+    // Aşağıdaki çağrı örnektir:
+    // - ücretli düşüm / ücretsiz hak düşüm / hold ne yapıyorsan burada yapılmalı.
+    //
+    // ÖRNEK 1: return await Wallet.consumeReport(uid, rid);
+    // ÖRNEK 2: return await Wallet.useFreeOrCharge(uid, rid);
+    //
+    // Şimdilik: eğer böyle bir fonksiyon yoksa hata verelim ki boşa kilitlemesin:
+    if (typeof Wallet.consumeReport !== "function" && typeof Wallet.useFreeOrCharge !== "function") {
+      throw new Error("wallet.js içinde consumeReport() veya useFreeOrCharge() fonksiyonu bulunamadı.");
+    }
+
+    if (typeof Wallet.consumeReport === "function") {
+      return await Wallet.consumeReport(uid, rid); // true/false dönsün
+    }
+    return await Wallet.useFreeOrCharge(uid, rid); // true/false dönsün
+  }
+
+  // ====== FIRESTORE KİLİT (atomik) ======
+  async function finalizeLockReport(rid, uid){
+    if (finalizeRunning) return;
+    finalizeRunning = true;
+
+    const reportRef = db.collection("reports").doc(rid);
+
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(reportRef);
+
+      if (!snap.exists) {
+        tx.set(reportRef, {
+          ownerUid: uid,
+          status: "draft",
+          locked: false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      } else {
+        const data = snap.data() || {};
+        // başka kullanıcının raporuysa (opsiyonel güvenlik)
+        if (data.ownerUid && data.ownerUid !== uid) {
+          throw new Error("Bu rapor başka kullanıcıya ait görünüyor.");
+        }
+        if (data.locked === true || data.status === "final") {
+          // zaten kilitliyse tekrar işlem yapma
+          return;
+        }
+      }
+
+      tx.set(reportRef, {
+        ownerUid: uid,
+        status: "final",
+        locked: true,
+        lockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lockedBy: uid
+      }, { merge: true });
+    });
+
+    // UI kilit için local flag (modüller bunu okuyabilir)
+    localStorage.setItem("report_locked_" + rid, "1");
+
+    finalizeRunning = false;
+  }
+
+  // ====== RAPORU LOCALSTORAGE'DAN OKU & EKRANA BAS (senin mevcut kodun) ======
+  function renderReportFromLocalStorage(rid){
+    const $ = (id) => document.getElementById(id);
+
+    const formatMetin = (t) => {
+      if (t === null || t === undefined) return "";
+      const s = String(t);
+      return s.replace(/\r\n/g, "\n")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    };
+
+    const pick = (obj, ...paths) => {
+      for (const p of paths) {
+        try {
+          const val = p.split(".").reduce((acc, k) => (acc && acc[k] !== undefined ? acc[k] : undefined), obj);
+          if (val !== undefined && val !== null && String(val).trim() !== "") return val;
+        } catch {}
+      }
+      return "";
+    };
+
+    let raporlar = [];
+    try { raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); } catch { raporlar = []; }
+
+    const report =
+      raporlar.find(r => String(r?.rid ?? "").trim() === rid) ||
+      raporlar.find(r => String(r?.rid ?? "").trim() === String(Number(rid))) ||
+      null;
+
+    let report2 = null;
+    if (!report && rid) {
       try {
-        const val = p.split(".").reduce((acc, k) => (acc && acc[k] !== undefined ? acc[k] : undefined), obj);
-        if (val !== undefined && val !== null && String(val).trim() !== "") return val;
+        const maybe = localStorage.getItem("rapor_" + rid);
+        if (maybe) report2 = JSON.parse(maybe);
       } catch {}
     }
-    return "";
-  };
 
-  // 1) raporları listeden bul
-  let raporlar = [];
-  try { raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); } catch { raporlar = []; }
+    const r = report || report2;
+    if (!r) throw new Error("Rapor bulunamadı! (rid/id: " + rid + ")");
 
-  // rid number/string uyumsuzluğunu çöz
-  const report =
-    raporlar.find(r => String(r?.rid ?? "").trim() === rid) ||
-    raporlar.find(r => String(r?.rid ?? "").trim() === String(Number(rid))) ||
-    null;
+    const bbYazdir = (list) => {
+      if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
+      return list.map((bb, i) => {
+        const baslik = bb?.baslik || bb?.title || "Bağımsız Bölüm";
+        const metin = pick(bb, "bbDetay.tamMetin", "bbDetay.metin", "tamMetin", "metin");
+        return `(${i+1}) ${baslik}:\n${formatMetin(metin)}`.trim();
+      }).join("\n\n");
+    };
 
-  // 2) listede yoksa tekil kayda da bak (bazı sistemlerde rapor_<id> olur)
-  let report2 = null;
-  if (!report && rid) {
-    try {
-      const maybe = localStorage.getItem("rapor_" + rid);
-      if (maybe) report2 = JSON.parse(maybe);
-    } catch {}
-  }
+    const emsalMetni = (rep) => {
+      const direct = pick(rep, "emsalFinalMetni", "degerlemeOzet.emsalFinalMetni", "degerleme.emsalFinalMetni");
+      if (direct) return formatMetin(direct);
 
-  const r = report || report2;
-
-  if (!r) {
-    alert("Rapor bulunamadı! (rid/id: " + rid + ")");
-    return;
-  }
-
-  const bbYazdir = (list) => {
-    if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
-    return list.map((bb, i) => {
-      const baslik = bb?.baslik || bb?.title || "Bağımsız Bölüm";
-      const metin = pick(bb, "bbDetay.tamMetin", "bbDetay.metin", "tamMetin", "metin");
-      return `(${i+1}) ${baslik}:\n${formatMetin(metin)}`.trim();
-    }).join("\n\n");
-  };
-
-  const emsalMetni = (rep) => {
-    // 1) direkt final metin
-    const direct = pick(rep, "emsalFinalMetni", "degerlemeOzet.emsalFinalMetni", "degerleme.emsalFinalMetni");
-    if (direct) return formatMetin(direct);
-
-    // 2) BB'lerden tekilleştir
-    const list = rep?.bbDetayList;
-    if (Array.isArray(list) && list.length) {
-      const uniq = new Set();
-      const arr = [];
-      for (const bb of list) {
-        const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni", "degerleme.emsalFinalMetni");
-        const ft = formatMetin(t);
-        if (!ft) continue;
-        if (uniq.has(ft)) continue;
-        uniq.add(ft);
-        arr.push(ft);
+      const list = rep?.bbDetayList;
+      if (Array.isArray(list) && list.length) {
+        const uniq = new Set();
+        const arr = [];
+        for (const bb of list) {
+          const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni", "degerleme.emsalFinalMetni");
+          const ft = formatMetin(t);
+          if (!ft) continue;
+          if (uniq.has(ft)) continue;
+          uniq.add(ft);
+          arr.push(ft);
+        }
+        return arr.length ? arr.join("\n\n") : "Emsal analizi bulunamadı";
       }
-      return arr.length ? arr.join("\n\n") : "Emsal analizi bulunamadı";
-    }
+      return "Emsal verisi yok";
+    };
 
-    return "Emsal verisi yok";
-  };
+    $("raporTarih").textContent = "Tarih: " + new Date().toLocaleDateString("tr-TR");
 
-  // ==== EKRANA DOLDURMA ====
-  $("raporTarih").textContent = "Tarih: " + new Date().toLocaleDateString("tr-TR");
+    const il = pick(r, "il");
+    const ilce = pick(r, "ilce");
+    const ada = pick(r, "ada");
+    const parsel = pick(r, "parsel");
+    const propertyName = pick(r, "propertyName", "tasınmazAdi", "tasinmazAdi", "baslik");
 
-  const il = pick(r, "il");
-  const ilce = pick(r, "ilce");
-  const ada = pick(r, "ada");
-  const parsel = pick(r, "parsel");
-  const propertyName = pick(r, "propertyName", "tasınmazAdi", "tasinmazAdi", "baslik");
+    $("genelBilgi").innerHTML = `
+      <div><b>İl / İlçe:</b> ${il || "-"} / ${ilce || "-"}</div>
+      <div><b>Ada / Parsel:</b> ${ada || "-"} / ${parsel || "-"}</div>
+      <div><b>Taşınmaz:</b> ${propertyName || "Tanımsız"}</div>
+    `;
 
-  $("genelBilgi").innerHTML = `
-    <div><b>İl / İlçe:</b> ${il || "-"} / ${ilce || "-"}</div>
-    <div><b>Ada / Parsel:</b> ${ada || "-"} / ${parsel || "-"}</div>
-    <div><b>Taşınmaz:</b> ${propertyName || "Tanımsız"}</div>
-  `;
+    const imarTablo = pick(r, "imarTablo");
+    $("imarTablo").innerHTML = imarTablo || "<div class='warning'>İmar tablosu bulunamadı</div>";
 
-  const imarTablo = pick(r, "imarTablo");
-  $("imarTablo").innerHTML = imarTablo || "<div class='warning'>İmar tablosu bulunamadı</div>";
+    $("imarMetin").textContent = formatMetin(pick(r, "imarMetni", "imar.metin", "imar.tamMetin"));
+    $("belgelerMetin").textContent = formatMetin(pick(r, "belgelerMetni", "belgeler.metin", "belgeler.tamMetin"));
+    $("binaMetin").textContent = formatMetin(pick(r, "bina.metin", "bina.tamMetin", "binaMetni", "binaMetin"));
+    $("bbMetin").textContent = bbYazdir(r.bbDetayList || r.bbList || r.bagimsizBolumler);
+    $("konumMetin").textContent = formatMetin(pick(r, "konumCevre.tamMetin", "konumCevre.metin", "konumMetni", "konumMetin"));
+    $("tapuMetinB1").textContent = formatMetin(pick(r, "tapuMetniB1", "tapu.b1", "tapuMetinB1"));
+    $("tapuMetinB2").textContent = formatMetin(pick(r, "tapuMetniB2", "tapu.b2", "tapuMetinB2"));
+    $("emsalMetin").textContent = emsalMetni(r);
+  }
 
-  $("imarMetin").textContent = formatMetin(pick(r, "imarMetni", "imar.metin", "imar.tamMetin"));
-  $("belgelerMetin").textContent = formatMetin(pick(r, "belgelerMetni", "belgeler.metin", "belgeler.tamMetin"));
+  // ====== BOOT ======
+  document.addEventListener("DOMContentLoaded", async () => {
+    const rid = getRid();
+    if (!rid) { alert("rid yok!"); location.href="index.html"; return; }
+    if (!hasConfirm()) { alert("Onay yok (confirm=1)."); location.href="rapor-ana-menu.html?rid="+encodeURIComponent(rid); return; }
 
-  // bina bazen "bina.metin" bazen "binaMetin" diye tutuluyor
-  $("binaMetin").textContent = formatMetin(pick(r, "bina.metin", "bina.tamMetin", "binaMetni", "binaMetin"));
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) { location.href="index.html"; return; }
 
-  $("bbMetin").textContent = bbYazdir(r.bbDetayList || r.bbList || r.bagimsizBolumler);
+      try{
+        setStatus("💳 Cüzdan kontrolü…", "Ücret/ücretsiz hak düşümü rapor kilitlenmeden önce yapılır.");
 
-  // konum bazen konumCevre içinde, bazen düz metin
-  $("konumMetin").textContent = formatMetin(pick(r, "konumCevre.tamMetin", "konumCevre.metin", "konumMetni", "konumMetin"));
+        // 1) CÜZDAN (ÖNCE!)
+        const ok = await walletPrecheckAndCharge(user.uid, rid);
+        if (!ok) {
+          throw new Error("Yetersiz bakiye / ücretsiz hak yok. Rapor oluşturulmadı.");
+        }
 
-  $("tapuMetinB1").textContent = formatMetin(pick(r, "tapuMetniB1", "tapu.b1", "tapuMetinB1"));
-  $("tapuMetinB2").textContent = formatMetin(pick(r, "tapuMetniB2", "tapu.b2", "tapuMetinB2"));
+        // 2) KİLİT BAS
+        setStatus("🔒 Rapor kilitleniyor…", "Kilit sonrası modüller düzenlenemez.");
+        await finalizeLockReport(rid, user.uid);
 
-  $("emsalMetin").textContent = emsalMetni(r);
-});
+        // 3) RAPORU GÖSTER
+        setStatus("✅ Final rapor hazır.", "Rapor kilitlendi. Artık sadece okunabilir / yazdırılabilir.");
+        renderReportFromLocalStorage(rid);
+
+        // İstersen otomatik detaya yönlendirebilirsin (şart değil)
+        // location.replace("rapor-detay.html?rid="+encodeURIComponent(rid));
+
+      }catch(e){
+        console.error(e);
+        setStatus("❌ İşlem başarısız.", (e?.message || e));
+        alert(e?.message || "Hata oluştu");
+      }
+    });
+  });
 </script>
 </body>
 </html>
