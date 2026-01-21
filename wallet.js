@@ -1,10 +1,10 @@
 /**
- * wallet.js (sağlam sürüm)
+ * wallet.js (düzeltilmiş & entegre sürüm)
  * Firestore: users/{uid}/wallet/main
  * UI: #walletBar varsa doldurur
  */
-
 (function () {
+  const db = firebase.firestore(); // 🔹 Eksik olan satır eklendi
   const { FieldValue } = firebase.firestore;
 
   function tl(n) {
@@ -18,8 +18,6 @@
 
   async function ensureWallet(uid) {
     const ref = walletRef(uid);
-
-    // Transaction ile "tek sefer" oluşturma
     const result = await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
       if (!snap.exists) {
@@ -33,7 +31,6 @@
         return init;
       } else {
         const data = snap.data() || {};
-        // Eksik alanlar varsa tamamla (opsiyonel ama güzel)
         const patch = {};
         if (typeof data.balance !== "number") patch.balance = Number(data.balance || 0);
         if (typeof data.freeReportsLeft !== "number") patch.freeReportsLeft = Number(data.freeReportsLeft || 0);
@@ -45,7 +42,6 @@
         return data;
       }
     });
-
     return result;
   }
 
@@ -73,7 +69,7 @@
     const btn = document.getElementById("btnWalletTopup");
     if (btn) {
       btn.onclick = () => {
-        // Burada doğru akış: backend'den PayTR linki al → redirect
+        // buraya PayTR veya ödeme yönlendirme API'sini bağlayabilirsin
         alert("Yükleme ekranını PayTR ile bağlayacağız. Şimdilik demo.");
       };
     }
@@ -82,13 +78,10 @@
   async function loadWallet(uid) {
     const w = await ensureWallet(uid);
     updateWalletUI(w);
-
-    // Globalde tutacaksan "kopya" tut (UI için)
     window.WALLET = { balance: Number(w.balance || 0), freeReportsLeft: Number(w.freeReportsLeft || 0) };
     return w;
   }
 
-  // İstersen canlı takip (önerilir): bakiye değişince UI otomatik güncellenir
   function listenWallet(uid) {
     const ref = walletRef(uid);
     return ref.onSnapshot((snap) => {
@@ -111,7 +104,7 @@
     if (!user) return;
     try {
       await loadWallet(user.uid);
-      // canlı takip istersen aç:
+      // İstersen anlık dinlemeyi aç:
       // window.__WALLET_UNSUB && window.__WALLET_UNSUB();
       // window.__WALLET_UNSUB = listenWallet(user.uid);
     } catch (e) {
