@@ -1,11 +1,18 @@
 /**
- * wallet.js (düzeltilmiş & entegre sürüm)
- * Firestore: users/{uid}/wallet/main
- * UI: #walletBar varsa doldurur
+ * wallet.js (stabil + rapor düşüm entegre)
+ * Firestore:
+ *  - users/{uid}/wallet/main
+ *  - users/{uid}/wallet/charges/{rid}   (idempotent ücret/ücretsiz düşüm kaydı)
  */
 (function () {
-  const db = firebase.firestore(); // 🔹 Eksik olan satır eklendi
+  // ✅ Güvenli global erişim
+  const auth = window.auth || firebase.auth();
+  const db = window.db || firebase.firestore();
   const { FieldValue } = firebase.firestore;
+
+  // ✅ Rapor fiyatı (ücretsiz biterse buradan düşer)
+  // İstersen 0 yap (şimdilik demo)
+  const REPORT_PRICE_TL = 0; // ör: 250
 
   function tl(n) {
     const num = Number(n || 0);
@@ -14,6 +21,12 @@
 
   function walletRef(uid) {
     return db.collection("users").doc(uid).collection("wallet").doc("main");
+  }
+
+  function chargeRef(uid, rid) {
+    return db.collection("users").doc(uid).collection("wallet").doc("charges").collection("items").doc(String(rid));
+    // Alternatif daha sade path istersen:
+    // return db.collection("users").doc(uid).collection("walletCharges").doc(String(rid));
   }
 
   async function ensureWallet(uid) {
@@ -68,10 +81,7 @@
 
     const btn = document.getElementById("btnWalletTopup");
     if (btn) {
-      btn.onclick = () => {
-        // buraya PayTR veya ödeme yönlendirme API'sini bağlayabilirsin
-        alert("Yükleme ekranını PayTR ile bağlayacağız. Şimdilik demo.");
-      };
+      btn.onclick = () => alert("Yükleme ekranını PayTR ile bağlayacağız. Şimdilik demo.");
     }
   }
 
@@ -92,23 +102,113 @@
     });
   }
 
+  /**
+   * ✅ Rapor düşüm fonksiyonu (idempotent)
+   * - Aynı rid için 2 kere düşmez
+   * - Önce ücretsizden düşer
+   * - Ücretsiz biterse bakiye kontrol eder
+   * Return: true/false
+   */
+  async function consumeReport(uid, rid, priceTL = REPORT_PRICE_TL) {
+    if (!uid) throw new Error("consumeReport: uid yok");
+    if (!rid) throw new Error("consumeReport: rid yok");
+
+    const wRef = walletRef(uid);
+    const cRef = chargeRef(uid, rid);
+
+    const ok = await db.runTransaction(async (tx) => {
+      const cSnap = await tx.get(cRef);
+      if (cSnap.exists) {
+        // ✅ daha önce düşülmüş → tekrar düşme
+        return true;
+      }
+
+      const wSnap = await tx.get(wRef);
+      const w = wSnap.exists ? (wSnap.data() || {}) : { balance: 0, freeReportsLeft: 0 };
+
+      let balance = Number(w.balance || 0);
+      let freeLeft = Number(w.freeReportsLeft || 0);
+
+      // ücretsiz varsa ücretsizden düş
+      if (freeLeft > 0) {
+        freeLeft -= 1;
+
+        tx.set(wRef, {
+          balance,
+          freeReportsLeft: freeLeft,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        tx.set(cRef, {
+          rid: String(rid),
+          type: "free",
+          amountTL: 0,
+          createdAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        return true;
+      }
+
+      // ücretsiz yoksa para
+      const cost = Number(priceTL || 0);
+      if (cost <= 0) {
+        // fiyat 0 ise yine de idempotent kayıt açalım (kilit + tekrar önler)
+        tx.set(cRef, {
+          rid: String(rid),
+          type: "free-price0",
+          amountTL: 0,
+          createdAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+        return true;
+      }
+
+      if (balance < cost) return false;
+
+      balance -= cost;
+
+      tx.set(wRef, {
+        balance,
+        freeReportsLeft: freeLeft,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      tx.set(cRef, {
+        rid: String(rid),
+        type: "paid",
+        amountTL: cost,
+        createdAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      return true;
+    });
+
+    // UI'yi tazele (opsiyonel)
+    try { await loadWallet(uid); } catch {}
+
+    return ok;
+  }
+
+  // Global API
   window.Wallet = {
     load: loadWallet,
     ensure: ensureWallet,
     ui: updateWalletUI,
     listen: listenWallet,
     ref: walletRef,
+    consumeReport, // ✅ yeni
   };
 
-  auth.onAuthStateChanged(async (user) => {
-    if (!user) return;
-    try {
-      await loadWallet(user.uid);
-      // İstersen anlık dinlemeyi aç:
-      // window.__WALLET_UNSUB && window.__WALLET_UNSUB();
-      // window.__WALLET_UNSUB = listenWallet(user.uid);
-    } catch (e) {
-      console.log("wallet error:", e);
-    }
-  });
+  // ✅ Auth güvenli dinleme (hata verse bile sayfayı çökertmesin)
+  try {
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) return;
+      try {
+        await loadWallet(user.uid);
+      } catch (e) {
+        console.log("wallet error:", e);
+      }
+    });
+  } catch (e) {
+    console.log("wallet auth hook error:", e);
+  }
 })();
