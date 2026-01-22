@@ -12,36 +12,169 @@
   <script src="firebase-config.js"></script>
 
   <style>
-    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #7c4dff); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; text-align: center; }
-    .container { max-width: 800px; margin: 0 auto; }
-    h1 { font-size: 36px; margin-bottom: 20px; }
-    .btn-new { display: block; width: 400px; max-width: 90%; margin: 50px auto; background: #00c853; color: white; padding: 25px; font-size: 28px; font-weight: bold; text-decoration: none; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
-    .login-container { background: white; color: #333; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 400px; margin: 100px auto; }
-    .login-btn { padding: 15px 30px; font-size: 18px; background: #4285f4; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    :root{
+      --bg1:#4a148c;
+      --bg2:#7c4dff;
+      --glass: rgba(255,255,255,0.14);
+      --glass2: rgba(255,255,255,0.18);
+      --stroke: rgba(255,255,255,0.20);
+      --text: #ffffff;
+      --muted: rgba(255,255,255,0.85);
+      --accent:#00c853;
+      --warn:#ffd600;
+      --danger:#d32f2f;
+      --orange:#ff9800;
+      --shadow: 0 14px 36px rgba(0,0,0,0.25);
+    }
 
-    .report-card { background: rgba(255,255,255,0.25); padding: 22px; border-radius: 15px; position: relative; margin-bottom: 20px; cursor: pointer; text-align: left; }
-    .actions { position:absolute; top: 12px; right: 12px; display:flex; gap:10px; flex-wrap:wrap; }
+    body{
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, var(--bg1), var(--bg2));
+      margin: 0;
+      padding: 28px 16px 60px;
+      color: var(--text);
+      min-height: 100vh;
+      text-align: center;
+    }
 
-    .delete-btn { background: #d32f2f; color: white; border: none; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
-    .edit-btn { background: #ff9800; color: #111; border: none; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; }
-    .view-btn { background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.25); padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+    .container{ max-width: 980px; margin: 0 auto; }
 
-    #statusInfo { margin: 20px 0; font-weight: bold; color: #ffd600; }
+    /* ---------- Login Card ---------- */
+    .login-container{
+      background: #fff;
+      color: #333;
+      padding: 38px 28px;
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+      max-width: 420px;
+      margin: 70px auto;
+      text-align: left;
+    }
+    .login-container h2{ margin: 0 0 8px; font-size: 22px; }
+    .login-container p{ margin: 0 0 18px; color:#444; line-height:1.45; }
+    .login-btn{
+      padding: 14px 18px;
+      font-size: 16px;
+      background: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: 800;
+      box-shadow: 0 10px 22px rgba(66,133,244,0.35);
+    }
+    .login-meta{ margin-top: 12px; font-weight: 800; color:#6b7280; }
 
-    /* =========================
-       ✅ NASIL KULLANILIR (YENİ)
-       ========================= */
-    .howto-wrap{
-      max-width: 800px;
-      margin: 18px auto 22px;
-      padding: 0 0;
+    /* ---------- Hero / Brand ---------- */
+    .hero{
+      text-align:left;
+      margin: 10px auto 18px;
+      padding: 18px 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .brand-row{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 16px;
+      flex-wrap:wrap;
+    }
+
+    .brand-title{
+      margin: 0;
+      font-size: 32px;
+      font-weight: 1000;
+      letter-spacing: .2px;
+      line-height: 1.12;
+      position: relative;
+      display:inline-block;
+      padding-right: 56px; /* speed lines space */
+    }
+
+    /* Speed lines effect (no image) */
+    .brand-title::after{
+      content:"";
+      position:absolute;
+      right: 2px;
+      top: 50%;
+      width: 48px;
+      height: 18px;
+      transform: translateY(-50%);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.0), rgba(255,255,255,0.85)) 0 2px/48px 3px no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.0), rgba(255,255,255,0.65)) 0 8px/42px 3px no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.0), rgba(255,255,255,0.45)) 0 14px/34px 3px no-repeat;
+      border-radius: 12px;
+      opacity: .95;
+    }
+
+    .brand-sub{
+      margin: 8px 0 0;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 720px;
+    }
+
+    .pill-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 12px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.16);
+      font-weight: 900;
+      font-size: 12px;
+      color:#fff;
+      user-select:none;
+    }
+
+    .status{
+      margin-top: 10px;
+      font-weight: 900;
+      color: var(--warn);
       text-align:left;
     }
+
+    /* ---------- Primary CTA ---------- */
+    .btn-new{
+      display:block;
+      width: 420px;
+      max-width: 100%;
+      margin: 16px auto 8px;
+      background: var(--accent);
+      color: white;
+      padding: 18px 18px;
+      font-size: 20px;
+      font-weight: 1000;
+      text-decoration: none;
+      border-radius: 18px;
+      box-shadow: 0 12px 26px rgba(0,0,0,0.28);
+      transition: 0.18s ease;
+    }
+    .btn-new:hover{ transform: translateY(-1px); opacity: .96; }
+
+    /* ---------- How-to card (seninki, ufak polish) ---------- */
+    .howto-wrap{ max-width: 980px; margin: 14px auto 14px; text-align:left; }
     .howto-card{
-      background: rgba(255,255,255,0.18);
-      border-radius: 16px;
-      box-shadow: 0 10px 26px rgba(0,0,0,0.18);
-      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.12);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.16);
       overflow: hidden;
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
@@ -56,83 +189,158 @@
       user-select:none;
       background: rgba(0,0,0,0.12);
     }
-    .howto-head h2{
-      margin:0;
-      font-size: 16px;
-      font-weight: 900;
-      color:#fff;
-      letter-spacing: .2px;
-      line-height: 1.3;
-    }
+    .howto-head h2{ margin:0; font-size: 15px; font-weight: 1000; color:#fff; letter-spacing: .2px; line-height: 1.3; }
     .howto-toggle{
-      font-weight: 900;
+      font-weight: 1000;
       border:none;
-      background: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.16);
       color:#fff;
       padding: 9px 12px;
       border-radius: 12px;
       cursor:pointer;
       white-space:nowrap;
     }
-    .howto-body{
-      padding: 14px 16px 16px;
-      display:none;
-    }
+    .howto-body{ padding: 14px 16px 16px; display:none; }
     .howto-body.open{ display:block; }
-
     .howto-alert{
       background: rgba(255, 214, 0, 0.14);
       border: 1px solid rgba(255, 214, 0, 0.25);
       border-left: 6px solid #ffd600;
       padding: 12px 12px;
-      border-radius: 12px;
+      border-radius: 14px;
       color:#fff;
       line-height: 1.55;
       margin-bottom: 12px;
     }
-
-    .howto-steps{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:10px;
-      margin: 0;
-      padding: 0;
-      list-style:none;
-    }
+    .howto-steps{ display:grid; grid-template-columns: 1fr; gap:10px; margin: 0; padding: 0; list-style:none; }
     .howto-step{
       background: rgba(255,255,255,0.10);
       border:1px solid rgba(255,255,255,0.16);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 12px;
       line-height: 1.55;
       color:#fff;
     }
-    .howto-step b{ color:#fff; }
-
     .howto-checklist{
       margin-top: 12px;
       background: rgba(0, 200, 83, 0.10);
       border: 1px solid rgba(0, 200, 83, 0.22);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 12px;
       color:#fff;
     }
-    .howto-checklist h3{
-      margin:0 0 8px;
-      font-size: 13px;
-      font-weight: 900;
+    .howto-checklist h3{ margin:0 0 8px; font-size: 13px; font-weight: 1000; color:#fff; }
+    .howto-checklist ul{ margin:0; padding-left: 18px; line-height:1.55; }
+    .howto-mini{ margin-top: 10px; font-size: 12px; opacity: .92; line-height: 1.5; }
+
+    /* ---------- Reports list ---------- */
+    #reportsList{
+      margin-top: 14px;
+      text-align:left;
+    }
+
+    .section-title{
+      margin: 18px 0 10px;
+      font-size: 14px;
+      font-weight: 1000;
+      opacity: .95;
+      letter-spacing: .2px;
+    }
+
+    .report-card{
+      background: rgba(255,255,255,0.18);
+      padding: 16px 16px 14px;
+      border-radius: 18px;
+      position: relative;
+      margin-bottom: 12px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .report-title{
+      font-size: 18px;
+      font-weight: 1000;
+      margin: 0 0 6px;
+      padding-right: 44px; /* for ⋮ */
+      line-height: 1.25;
+    }
+    .report-meta{ font-size: 13px; opacity: .95; line-height: 1.4; }
+    .report-meta small{ opacity: .95; }
+
+    /* --- Mobile-safe action: 3-dot button --- */
+    .kebab{
+      position:absolute;
+      top: 10px;
+      right: 10px;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.18);
       color:#fff;
+      font-size: 20px;
+      font-weight: 1000;
+      cursor: pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
     }
-    .howto-checklist ul{
-      margin:0;
-      padding-left: 18px;
-      line-height:1.55;
+    .kebab:active{ transform: scale(0.98); }
+
+    /* Bottom Action Sheet */
+    .sheet-backdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      z-index: 9999;
+      padding: 12px;
     }
-    .howto-mini{
-      margin-top: 10px;
-      font-size: 12px;
-      opacity: .92;
-      line-height: 1.5;
+    .sheet{
+      width: 100%;
+      max-width: 520px;
+      background: rgba(20,16,36,0.92);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .sheet-head{
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+    }
+    .sheet-head .name{ font-weight: 1000; font-size: 15px; line-height: 1.25; }
+    .sheet-head .sub{ margin-top: 6px; font-size: 12px; opacity: .9; line-height: 1.35; }
+    .sheet-actions{ padding: 10px; display:grid; gap:10px; }
+    .sheet-btn{
+      border:none;
+      border-radius: 16px;
+      padding: 14px 14px;
+      font-weight: 1000;
+      cursor:pointer;
+      text-align:left;
+      color:#fff;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+    .sheet-btn.primary{ background: rgba(0,200,83,0.20); border-color: rgba(0,200,83,0.26); }
+    .sheet-btn.edit{ background: rgba(255,152,0,0.18); border-color: rgba(255,152,0,0.26); }
+    .sheet-btn.danger{ background: rgba(211,47,47,0.22); border-color: rgba(211,47,47,0.30); }
+    .sheet-btn.cancel{ background: rgba(255,255,255,0.08); }
+
+    /* responsive */
+    @media (max-width: 520px){
+      body{ padding: 22px 12px 60px; }
+      .brand-title{ font-size: 28px; }
+      .btn-new{ font-size: 18px; padding: 16px; border-radius: 16px; }
+      .login-container{ margin: 60px auto; padding: 30px 20px; }
     }
   </style>
 </head>
@@ -140,18 +348,35 @@
 <body>
   <div class="container">
     <div id="loginSection" class="login-container">
-      <h2>RaporanX'e Hoş Geldin</h2>
-      <p>Gayrimenkul ekspertiz raporlarını hızlıca oluştur.</p>
+      <h2>RaporanX’e Hoş Geldin</h2>
+      <p>Değerleme sürecini hızlandıran, sahada ve ofiste senkron çalışan rapor taslağı oluşturma sistemi.</p>
       <button id="googleBtn" class="login-btn">Google ile Giriş Yap</button>
-      <div id="statusInfoLogin">Bağlantı kuruluyor...</div>
+      <div id="statusInfoLogin" class="login-meta">Bağlantı kuruluyor...</div>
     </div>
 
     <div id="mainSection" style="display:none;">
-      <h1>ABUZİTTİN EKSPERTİZ SİSTEMİ</h1>
-      <p>“Abuzittin ile raporun abuzittik olsun!”</p>
-      <div id="statusInfo">Yükleniyor...</div>
+      <div class="hero">
+        <div class="brand-row">
+          <div>
+            <h1 class="brand-title">RaporanX</h1>
+            <div class="brand-sub">
+              <b>Hızlı Ekspertiz Sistemi</b> — Kat mülkiyeti / kat irtifakı taşınmazlarda, modüller üzerinden veri girerek
+              banka formatına yakın <b>rapor taslağı</b> oluşturmanı kolaylaştırır.
+            </div>
 
-      <!-- ✅ NASIL KULLANILIR (YENİ) -->
+            <div class="pill-row">
+              <div class="pill">⚡ Saha + Ofis Senkron</div>
+              <div class="pill">🔒 Final Kilitleme</div>
+              <div class="pill">📄 PDF / Yazdır</div>
+              <div class="pill">🎁 5 Ücretsiz Taslak</div>
+            </div>
+
+            <div id="statusInfo" class="status">Yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ NASIL KULLANILIR (SENİN BLOK - KORUNDU) -->
       <div class="howto-wrap">
         <div class="howto-card">
           <div class="howto-head" onclick="toggleHowTo()">
@@ -167,23 +392,11 @@
             </div>
 
             <ul class="howto-steps">
-              <li class="howto-step">
-                <b>1) Yeni rapor oluştur:</b> “YENİ RAPOR OLUŞTUR” butonu ile dosyayı başlat.
-              </li>
-              <li class="howto-step">
-                <b>2) Modülleri sırayla doldur:</b> Konum, Tapu, İmar, Belgeler, Bina, Bağımsız Bölüm ve Emsal bölümlerine gir.
-              </li>
-              <li class="howto-step">
-                <b>3) Oluşan metni oku & düzelt:</b> Sistem metni üretir. <b>Okuyup düzenle</b>:
-                Uygunsuz ifade/yanlış bilgi varsa düzelt, gereksiz ekleri kaldır.
-              </li>
-              <li class="howto-step">
-                <b>4) İdeal metin olunca kaydet:</b> Her modülde “Kaydet” ile bilgileri sabitle.
-              </li>
-              <li class="howto-step">
-                <b>5) En son “Tam Rapor Oluştur”:</b> Rapor tek sayfada birleşir.
-                <b>Yazdır / PDF</b> ile bankaya uygun formatta çıktı al.
-              </li>
+              <li class="howto-step"><b>1) Yeni rapor oluştur:</b> “YENİ RAPOR OLUŞTUR” ile dosyayı başlat.</li>
+              <li class="howto-step"><b>2) Modülleri sırayla doldur:</b> Konum, Tapu, İmar, Belgeler, Bina, Bağımsız Bölüm, Emsal.</li>
+              <li class="howto-step"><b>3) Oluşan metni oku & düzelt:</b> Uygunsuz/yanlış bilgi varsa düzelt, gereksiz ekleri kaldır.</li>
+              <li class="howto-step"><b>4) İdeal metin olunca kaydet:</b> Her modülde “Kaydet” ile bilgileri sabitle.</li>
+              <li class="howto-step"><b>5) En son “Tam Rapor Oluştur”:</b> Yazdır / PDF ile bankaya uygun çıktı al.</li>
             </ul>
 
             <div class="howto-checklist">
@@ -202,12 +415,28 @@
           </div>
         </div>
       </div>
-      <!-- ✅ NASIL KULLANILIR (BİTTİ) -->
 
-      <a href="yeni_kayit.html" class="btn-new">YENİ RAPOR OLUŞTUR</a>
+      <a href="yeni_kayit.html" class="btn-new">➕ YENİ RAPOR OLUŞTUR</a>
 
+      <div class="section-title">📁 Rapor Kayıtların</div>
       <div id="reportsList">
-        <div style="opacity: 0.8; margin-top: 40px;">Kayıtlar yükleniyor...</div>
+        <div style="opacity: 0.85; margin-top: 18px;">Kayıtlar yükleniyor...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Sheet (Mobil profesyonel menü) -->
+  <div id="sheetBackdrop" class="sheet-backdrop" role="dialog" aria-modal="true">
+    <div class="sheet">
+      <div class="sheet-head">
+        <div class="name" id="sheetName">Rapor</div>
+        <div class="sub" id="sheetSub">İşlem seç</div>
+      </div>
+      <div class="sheet-actions">
+        <button class="sheet-btn primary" id="sheetOpenBtn">📂 Aç</button>
+        <button class="sheet-btn edit" id="sheetEditBtn">✏️ Düzenle</button>
+        <button class="sheet-btn danger" id="sheetDeleteBtn">🗑️ Sil</button>
+        <button class="sheet-btn cancel" id="sheetCancelBtn">İptal</button>
       </div>
     </div>
   </div>
@@ -255,7 +484,7 @@
     }
 
     /* ======================
-       VERİ KAYBINI ENGELLEME: MERGE KATMANI (senin sağlam sürüm)
+       VERİ KAYBINI ENGELLEME: MERGE KATMANI (SENİN SAĞLAM SÜRÜM - DOKUNMADIM)
        ====================== */
     function safeArray(x){ return Array.isArray(x) ? x : []; }
 
@@ -286,7 +515,6 @@
             ...l,
             ...c,
 
-            // rid asla kaybolmasın
             rid: c.rid || l.rid || undefined,
 
             bina: (c.bina && Object.keys(c.bina).length) ? c.bina : (l.bina || {}),
@@ -308,6 +536,55 @@
       return out.filter(Boolean);
     }
 
+    /* ---------- Action Sheet (mobil çözüm) ---------- */
+    const sheetBackdrop = document.getElementById("sheetBackdrop");
+    const sheetName = document.getElementById("sheetName");
+    const sheetSub = document.getElementById("sheetSub");
+    const sheetOpenBtn = document.getElementById("sheetOpenBtn");
+    const sheetEditBtn = document.getElementById("sheetEditBtn");
+    const sheetDeleteBtn = document.getElementById("sheetDeleteBtn");
+    const sheetCancelBtn = document.getElementById("sheetCancelBtn");
+
+    let activeRid = null;
+
+    function openSheet(rid, report){
+      activeRid = rid;
+      sheetName.textContent = report?.propertyName || "İsimsiz Rapor";
+      sheetSub.textContent = `${report?.il || ""}${report?.ilce ? " / " + report.ilce : ""} • Ada:${report?.ada || "-"} Parsel:${report?.parsel || "-"}`;
+
+      sheetBackdrop.style.display = "flex";
+      document.body.style.overflow = "hidden";
+    }
+    function closeSheet(){
+      sheetBackdrop.style.display = "none";
+      document.body.style.overflow = "";
+      activeRid = null;
+    }
+
+    sheetBackdrop.addEventListener("click", (e)=>{
+      if (e.target === sheetBackdrop) closeSheet();
+    });
+    sheetCancelBtn.addEventListener("click", closeSheet);
+
+    sheetOpenBtn.addEventListener("click", ()=>{
+      if (!activeRid) return;
+      closeSheet();
+      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(activeRid)}`;
+    });
+    sheetEditBtn.addEventListener("click", ()=>{
+      if (!activeRid) return;
+      closeSheet();
+      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(activeRid)}&mode=edit`;
+    });
+    sheetDeleteBtn.addEventListener("click", async ()=>{
+      if (!activeRid) return;
+      const rid = activeRid;
+      closeSheet();
+      // event yok burada; direkt sil
+      await deleteReport(rid, null);
+    });
+
+    /* ---------- Auth + Data ---------- */
     auth.onAuthStateChanged((user) => {
       if (!user) {
         document.getElementById("loginSection").style.display = "block";
@@ -322,7 +599,6 @@
 
       // önce local göster
       reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-      // RID migrasyon (local)
       if (ensureRidMigration(reports)) {
         localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
       }
@@ -337,7 +613,6 @@
           cloudReports = doc.data().gayrimenkul_reports;
         }
 
-        // RID migrasyon (cloud kopyası) — merge sonrası zaten düzelecek
         ensureRidMigration(localReports);
         ensureRidMigration(cloudReports);
 
@@ -346,7 +621,6 @@
 
         const merged = mergeReportsPreferMoreComplete(localReports, cloudReports);
 
-        // merged RID garantisi
         if (ensureRidMigration(merged)) {}
 
         reports = merged;
@@ -354,7 +628,6 @@
         loadReports();
 
         try{
-          // bulut zayıfsa güçlendir + RID’leri de buluta yaz
           if (cloudScore < localScore || ensureRidMigration(cloudReports)) {
             await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
           }
@@ -377,7 +650,7 @@
       list.innerHTML = '';
 
       if (!reports || reports.length === 0) {
-        list.innerHTML = '<div style="margin-top:40px;">Henüz rapor yok.</div>';
+        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
         return;
       }
 
@@ -386,35 +659,44 @@
         const card = document.createElement("div");
         card.className = "report-card";
 
-        card.innerHTML = `
-          <div class="actions">
-            <button class="edit-btn" onclick="editReport('${rid}', event)">DÜZENLE</button>
-            <button class="view-btn" onclick="viewReport('${rid}', event)">AÇ</button>
-            <button class="delete-btn" onclick="deleteReport('${rid}', event)">SİL</button>
-          </div>
+        const title = (report.propertyName || 'İsimsiz');
+        const il = (report.il || '');
+        const ilce = (report.ilce || '');
+        const ada = (report.ada || '');
+        const parsel = (report.parsel || '');
 
-          <div style="font-size:22px; font-weight:bold; padding-right:160px;">
-            ${report.propertyName || 'İsimsiz'}
-          </div>
-          <div>
-            ${report.il || ''} / ${report.ilce || ''} <br>
-            <small>Ada: ${report.ada || ''} Parsel: ${report.parsel || ''}</small>
+        card.innerHTML = `
+          <button class="kebab" type="button" aria-label="Menü">⋮</button>
+          <div class="report-title">${escapeHtml(title)}</div>
+          <div class="report-meta">
+            ${escapeHtml(il)}${ilce ? ' / ' + escapeHtml(ilce) : ''}<br>
+            <small>Ada: ${escapeHtml(ada)} • Parsel: ${escapeHtml(parsel)}</small>
           </div>
         `;
 
-        card.onclick = () => window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+        // kart tıkla → aç
+        card.addEventListener("click", () => {
+          window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+        });
+
+        // ⋮ tıkla → sheet aç (kart click’i tetiklemesin)
+        const kebab = card.querySelector(".kebab");
+        kebab.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          openSheet(rid, report);
+        });
+
         list.appendChild(card);
       });
     }
 
-    function viewReport(rid, event){
-      event.stopPropagation();
-      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-    }
-
-    function editReport(rid, event){
-      event.stopPropagation();
-      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
 
     function findIndexByRid(rid){
@@ -422,7 +704,7 @@
     }
 
     async function deleteReport(rid, event) {
-      event.stopPropagation();
+      if (event) event.stopPropagation();
       if (!confirm("Silmek istediğine emin misin?")) return;
 
       const idx = findIndexByRid(rid);
