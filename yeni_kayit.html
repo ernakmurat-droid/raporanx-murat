@@ -30,6 +30,7 @@
     .geri-btn:hover { background: #5a6268; }
     .referans-btn { background: #2196f3; margin-top: 15px; }
     .referans-btn:hover { background: #1976d2; }
+
     .status{
       margin: 12px 0 0;
       padding: 10px 12px;
@@ -99,15 +100,29 @@
     }
     function safeText(v){ return (v ?? '').toString().trim(); }
 
+    /* ========= Local Storage (HATA İMMÜN) ========= */
     function getReports(){
-      try{ return JSON.parse(localStorage.getItem('gayrimenkul_reports')) || []; }
-      catch(e){ return []; }
+      const raw = localStorage.getItem('gayrimenkul_reports');
+      if (!raw) return [];
+      try{
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+          console.warn("gayrimenkul_reports array değil, sıfırlanıyor:", parsed);
+          localStorage.removeItem('gayrimenkul_reports');
+          return [];
+        }
+        return parsed;
+      }catch(e){
+        console.warn("gayrimenkul_reports bozuk JSON, sıfırlanıyor:", e);
+        localStorage.removeItem('gayrimenkul_reports');
+        return [];
+      }
     }
     function setReports(arr){
-      localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr || []));
+      localStorage.setItem('gayrimenkul_reports', JSON.stringify(Array.isArray(arr) ? arr : []));
     }
     function findIndexByRid(arr, rid){
-      return (arr || []).findIndex(r => r && r.rid === rid);
+      return (Array.isArray(arr) ? arr : []).findIndex(r => r && r.rid === rid);
     }
 
     /* ========= URL params ========= */
@@ -130,7 +145,7 @@
         window.location.href = "index.html";
         return;
       }
-      const r = reports[idx];
+      const r = reports[idx] || {};
       $("propertyName").value = r.propertyName || "";
       $("il").value = r.il || "";
       $("ilce").value = r.ilce || "";
@@ -140,14 +155,18 @@
     }
 
     /* ========= Cloud Sync =========
-       Bu fonksiyon telefonda “aynı veriler yok” problemini bitirir.
-       1) users/{uid} içindeki gayrimenkul_reports (eski yöntem) varsa çeker
-       2) users/{uid}/reports (yeni yöntem) varsa çeker
-       Sonra localStorage’ı doldurur/merge eder.
+       Telefonda verilerin gelmesi için şart: buluttan çek → localStorage’a yaz.
     */
     async function syncReportsFromCloud(uid){
       let merged = getReports();
-      const map = new Map((merged || []).filter(Boolean).map(r => [r.rid, r]));
+      if (!Array.isArray(merged)) merged = [];
+
+      const map = new Map();
+      for (const r of merged){
+        if (!r) continue;
+        if (!r.rid) continue;
+        map.set(r.rid, r);
+      }
 
       // (A) Yeni yöntem: users/{uid}/reports subcollection
       try{
@@ -156,36 +175,34 @@
           const data = doc.data() || {};
           const rrid = data.rid || doc.id;
           if (!rrid) return;
-          map.set(rrid, { ...map.get(rrid), ...data, rid: rrid });
+          map.set(rrid, { ...(map.get(rrid) || {}), ...data, rid: rrid });
         });
       }catch(e){
-        // sessiz
+        console.warn("users/{uid}/reports okunamadı:", e?.message || e);
       }
 
-      // (B) Eski yöntem: users/{uid} doc içinde gayrimenkul_reports array
+      // (B) Eski yöntem: users/{uid} doc içi gayrimenkul_reports array
       try{
         const userDoc = await db.collection("users").doc(uid).get();
         if (userDoc.exists){
           const arr = userDoc.data()?.gayrimenkul_reports;
           if (Array.isArray(arr)){
             arr.forEach(r => {
-              if (!r) return;
-              const rrid = r.rid;
-              if (!rrid) return;
-              map.set(rrid, { ...map.get(rrid), ...r, rid: rrid });
+              if (!r || !r.rid) return;
+              map.set(r.rid, { ...(map.get(r.rid) || {}), ...r, rid: r.rid });
             });
           }
         }
       }catch(e){
-        // sessiz
+        console.warn("users/{uid} doc okunamadı:", e?.message || e);
       }
 
-      merged = Array.from(map.values()).filter(Boolean);
+      merged = Array.from(map.values()).filter(r => r && r.rid);
       setReports(merged);
       return merged.length;
     }
 
-    // İstersen bunu kapatırız; şimdilik geriye uyumluluk için açık:
+    // Geriye uyumluluk için eski yedek (istersen sonra kapatırız)
     async function backupArrayToUserDoc(uid){
       const reports = getReports();
       await db.collection("users").doc(uid).set({
@@ -195,7 +212,6 @@
     }
 
     async function saveSingleReport(uid, report){
-      // Asıl doğru kayıt: tek rapor = tek doc
       const rrid = report.rid;
       await db.collection("users").doc(uid).collection("reports").doc(rrid).set({
         ...report,
@@ -212,13 +228,11 @@
     function anaSayfayaDon(){ window.location.href = 'index.html'; }
 
     async function raporKaydet(user){
-      // Zorunlu alan kontrol
       if (!safeText($("propertyName").value) || !safeText($("il").value)) {
         alert("Gayrimenkul Adı ve İl zorunlu!");
         return;
       }
 
-      // Local reports
       let reports = getReports();
 
       if (isEditMode) {
@@ -248,12 +262,11 @@
         setStatus("⏳ Güncelleniyor…", "Buluta kaydediliyor…");
         await saveSingleReport(user.uid, existing);
 
-        alert("✅ Rapor güncellendi (cihazlar arası senkron)!");
+        alert("✅ Rapor güncellendi (PC/Telefon aynı)!");
         window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(existing.rid);
         return;
       }
 
-      // yeni rapor
       const newRid = genRid();
       const report = {
         rid: newRid,
@@ -286,13 +299,14 @@
 
     /* ========= BOOT ========= */
     async function boot(){
-      // Buton eventleri (inline onclick yerine sağlam)
+      // local bozuksa daha baştan düzelt
+      setReports(getReports());
+
       $("btnRef").addEventListener("click", referansAc, { passive:true });
       $("btnBack").addEventListener("click", anaSayfayaDon, { passive:true });
 
       setStatus("⏳ Giriş bekleniyor…", "Auth hazır olunca bulut senkronu yapılacak.");
 
-      // firebase-config.js içindeki waitForAuth varsa onu kullan
       const user = (typeof window.waitForAuth === "function")
         ? await window.waitForAuth()
         : await new Promise((resolve) => auth.onAuthStateChanged(u => u && resolve(u)));
@@ -305,19 +319,17 @@
 
       setStatus("⏳ Bulut senkronu…", "Telefonda verilerin gelmesi için şart.");
       const count = await syncReportsFromCloud(user.uid);
-      setStatus("✅ Hazır.", `Senkron tamam: ${count} rapor (localStorage güncellendi).`);
+      setStatus("✅ Hazır.", `Senkron tamam: ${count} rapor.`);
 
       if (isEditMode) {
         setupEditUI();
         loadReportToFormByRid(rid);
       }
 
-      // Butonları aç
       $("btnSave").disabled = false;
       $("btnRef").disabled = false;
       $("btnBack").disabled = false;
 
-      // Kaydet event (click + touchstart)
       const handler = () => raporKaydet(user).catch((e)=>{
         console.error(e);
         alert("Hata:\n" + (e?.message || String(e)));
