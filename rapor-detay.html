@@ -186,8 +186,8 @@
 
 <script>
 (function(){
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+  const auth = window.auth || firebase.auth();
+  const db   = window.db   || firebase.firestore();
   const $ = (id) => document.getElementById(id);
 
   function setStatus(title, sub){
@@ -201,13 +201,42 @@
   const urlParams = new URLSearchParams(window.location.search);
   const rid = (urlParams.get("rid") || urlParams.get("id") || "").toString().trim();
 
-  function getReportByRid(){
-    let reports = [];
-    try{ reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ reports=[]; }
+  // ----- Local reports (hata immün)
+  function getReports(){
+    const raw = localStorage.getItem("gayrimenkul_reports");
+    if (!raw) return [];
+    try{
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        localStorage.removeItem("gayrimenkul_reports");
+        return [];
+      }
+      return parsed;
+    }catch(e){
+      localStorage.removeItem("gayrimenkul_reports");
+      return [];
+    }
+  }
+  function setReports(arr){
+    localStorage.setItem("gayrimenkul_reports", JSON.stringify(Array.isArray(arr) ? arr : []));
+  }
+
+  function getReportByRidLocal(){
+    const reports = getReports();
     const i = reports.findIndex(r => r && String(r.rid||"").trim() === String(rid));
     return i >= 0 ? reports[i] : null;
   }
 
+  async function getReportByRidRemote(user){
+    // Asıl kaynak: users/{uid}/reports/{rid}
+    try{
+      const d = await db.collection("users").doc(user.uid).collection("reports").doc(rid).get();
+      if (d.exists) return d.data();
+    }catch(e){}
+    return null;
+  }
+
+  // ---- Lock (local cache + Firestore gerçek)
   function isLockedLocal(){
     return localStorage.getItem("report_locked_" + rid) === "1";
   }
@@ -225,18 +254,16 @@
       // ✅ kilitliyken buton açık: rapora gir / pdf al
       btn.textContent = "📄 RAPORU AÇ / PDF";
       btn.onclick = () => {
-        // rapor ekranın zaten rapor-olustur.html (çıktı sayfan)
         location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
       };
 
       setStatus("🔒 Bu rapor FINAL ve modüller kilitli.",
-        "Yanlışlıkla geri döndüysen sorun yok: alttaki “RAPORU AÇ / PDF” ile rapora gir.");
+        "Alttaki “RAPORU AÇ / PDF” ile rapora girip yazdır/PDF alabilirsin.");
     } else {
       document.body.classList.remove("modulesLocked");
       header.classList.remove("locked");
       badge.style.display = "none";
 
-      // ✅ kilit değilken buton: raporu oluştur (uyarı + confirm)
       btn.textContent = "TAM RAPOR OLUŞTUR";
       btn.onclick = () => raporOlusturUyari();
 
@@ -245,13 +272,6 @@
     }
   }
 
-  // modül sayfalarına rid ile git
-  window.go = function(page){
-    if (!rid) { location.href="index.html"; return; }
-    location.href = page + "?rid=" + encodeURIComponent(rid);
-  };
-
-  // uyarı + rapor ekranına git (confirm=1)
   function raporOlusturUyari(){
     if (!rid) { location.href="index.html"; return; }
 
@@ -263,18 +283,21 @@ Lütfen zaman ve para kaybı olmaması için tüm modülleri tekrar kontrol edin
 Devam etmek istiyor musunuz?`;
 
     if (!confirm(msg)) return;
-
     location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
   }
 
+  // modül sayfalarına rid ile git
+  window.go = function(page){
+    if (!rid) { location.href="index.html"; return; }
+    location.href = page + "?rid=" + encodeURIComponent(rid);
+  };
+
   /* WALLET UI */
   let walletRevealed = false;
-
   function setWalletUI(textAmount, subText){
     $("walletAmount").textContent = textAmount;
     $("walletSub").textContent = subText;
   }
-
   $("walletCard").addEventListener("click", ()=>{
     walletRevealed = !walletRevealed;
     if (walletRevealed) $("walletCard").classList.add("reveal");
@@ -286,39 +309,43 @@ Devam etmek istiyor musunuz?`;
       setWalletUI("—", "Cüzdan modülü yüklenemedi.");
       return;
     }
-
     try{
       const w = await Wallet.load(user.uid);
-
       const balance = Number(w?.balanceTL ?? w?.balance ?? w?.tl ?? 0) || 0;
       const freeLeft = Number(w?.freeLeft ?? w?.freeReportsLeft ?? w?.free ?? 0);
 
       const tlText = new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(balance) + " TL";
-
-      // ✅ en önemli: hak sayısı görünür olsun
-      const info =
-        `🎁 Ücretsiz rapor hakkın: ${freeLeft} • 💰 Bakiye: (gizli, tıkla gör)`;
+      const info = `🎁 Ücretsiz rapor hakkın: ${freeLeft} • 💰 Bakiye: (gizli, tıkla gör)`;
 
       setWalletUI(tlText, info);
-
     }catch(e){
       setWalletUI("—", "Cüzdan okunamadı. İnternet / izin kontrol et.");
     }
   }
 
-  // (Opsiyonel) Firestore’dan kilit okumaya çalış: izin yoksa local ile devam
-  function watchLockFromFirestore(){
+  function watchLockFromFirestore(user){
+    // ✅ GERÇEK KAYNAK: users/{uid}/reports/{rid}.locked
     try{
-      db.collection("reports").doc(rid).onSnapshot((snap)=>{
-        const data = snap.exists ? (snap.data() || {}) : {};
-        const locked = (data.locked === true || data.status === "final");
-        if (locked) localStorage.setItem("report_locked_" + rid, "1");
-        setModulesLockedUI(locked || isLockedLocal());
-      }, ()=>{
-        setModulesLockedUI(isLockedLocal());
-      });
+      return db
+        .collection("users")
+        .doc(user.uid)
+        .collection("reports")
+        .doc(rid)
+        .onSnapshot((snap)=>{
+          const data = snap.exists ? (snap.data() || {}) : {};
+          const locked = (data.locked === true || data.isLocked === true || data.status === "final");
+
+          if (locked) localStorage.setItem("report_locked_" + rid, "1");
+
+          setModulesLockedUI(locked || isLockedLocal());
+        }, (err)=>{
+          console.warn("lock watch error:", err?.message || err);
+          setModulesLockedUI(isLockedLocal());
+        });
     }catch(e){
+      console.warn("watchLockFromFirestore fail:", e?.message || e);
       setModulesLockedUI(isLockedLocal());
+      return null;
     }
   }
 
@@ -336,22 +363,36 @@ Devam etmek istiyor musunuz?`;
       return;
     }
 
-    const report = getReportByRid();
+    // raporu önce local, yoksa bulut
+    let report = getReportByRidLocal();
+    if (!report) report = await getReportByRidRemote(user);
+
     if (!report){
-      setStatus("❌ Rapor bulunamadı.", "Bu rid ile kayıt yok. Ana sayfaya dön.");
+      setStatus("❌ Rapor bulunamadı.", "Bu rid ile kayıt yok (local + bulut). Ana sayfaya dön.");
       setTimeout(()=>location.href="index.html", 600);
       return;
     }
 
+    // Başlık
     $("baslik").textContent = report.propertyName || "İsimsiz Gayrimenkul";
 
+    // Wallet
     await loadWallet(user);
 
-    // önce local kilit
+    // önce local cache
     setModulesLockedUI(isLockedLocal());
 
-    // sonra firestore kilit (izin varsa)
-    watchLockFromFirestore();
+    // sonra bulut izleme (asıl kilit)
+    watchLockFromFirestore(user);
+
+    // opsiyonel: local’a raporu cache’le (telefon hızlansın)
+    try{
+      const reports = getReports();
+      const idx = reports.findIndex(r => r && r.rid === report.rid);
+      if (idx >= 0) reports[idx] = { ...reports[idx], ...report };
+      else reports.push(report);
+      setReports(reports);
+    }catch(e){}
   });
 })();
 </script>
