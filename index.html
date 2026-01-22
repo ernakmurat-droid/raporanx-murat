@@ -13,36 +13,26 @@
 
   <style>
     :root{
-      --bg1:#4a148c;
-      --bg2:#7c4dff;
+      --bg1:#4a148c; --bg2:#7c4dff;
       --glass: rgba(255,255,255,0.14);
-      --glass2: rgba(255,255,255,0.18);
       --stroke: rgba(255,255,255,0.20);
-      --text: #ffffff;
-      --muted: rgba(255,255,255,0.85);
       --accent:#00c853;
       --warn:#ffd600;
-      --danger:#d32f2f;
-      --orange:#ff9800;
       --shadow: 0 14px 36px rgba(0,0,0,0.25);
     }
-
     body{
       font-family: Arial, sans-serif;
       background: linear-gradient(to bottom, var(--bg1), var(--bg2));
       margin: 0;
       padding: 28px 16px 60px;
-      color: var(--text);
+      color: #fff;
       min-height: 100vh;
       text-align: center;
     }
-
     .container{ max-width: 980px; margin: 0 auto; }
 
-    /* ---------- Login Card ---------- */
     .login-container{
-      background: #fff;
-      color: #333;
+      background: #fff; color: #333;
       padding: 38px 28px;
       border-radius: 16px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.18);
@@ -66,7 +56,6 @@
     }
     .login-meta{ margin-top: 12px; font-weight: 800; color:#6b7280; }
 
-    /* ---------- Hero / Brand ---------- */
     .hero{
       text-align:left;
       margin: 10px auto 18px;
@@ -78,26 +67,15 @@
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
     }
-    .brand-row{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap: 16px;
-      flex-wrap:wrap;
-    }
-
     .brand-title{
       margin: 0;
       font-size: 32px;
       font-weight: 1000;
-      letter-spacing: .2px;
       line-height: 1.12;
       position: relative;
       display:inline-block;
-      padding-right: 56px; /* speed lines space */
+      padding-right: 56px;
     }
-
-    /* Speed lines effect (no image) */
     .brand-title::after{
       content:"";
       position:absolute;
@@ -113,44 +91,25 @@
       border-radius: 12px;
       opacity: .95;
     }
-
     .brand-sub{
       margin: 8px 0 0;
       font-size: 14px;
       font-weight: 800;
-      color: var(--muted);
+      opacity: .92;
       line-height: 1.45;
       max-width: 720px;
     }
-
-    .pill-row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top: 12px;
-    }
+    .pill-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; }
     .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 10px;
-      border-radius: 999px;
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 8px 10px; border-radius: 999px;
       background: rgba(0,0,0,0.18);
       border: 1px solid rgba(255,255,255,0.16);
-      font-weight: 900;
-      font-size: 12px;
-      color:#fff;
+      font-weight: 900; font-size: 12px;
       user-select:none;
     }
+    .status{ margin-top: 10px; font-weight: 900; color: var(--warn); text-align:left; }
 
-    .status{
-      margin-top: 10px;
-      font-weight: 900;
-      color: var(--warn);
-      text-align:left;
-    }
-
-    /* ---------- Primary CTA ---------- */
     .btn-new{
       display:block;
       width: 420px;
@@ -168,84 +127,16 @@
     }
     .btn-new:hover{ transform: translateY(-1px); opacity: .96; }
 
-    /* ---------- How-to card (seninki, ufak polish) ---------- */
-    .howto-wrap{ max-width: 980px; margin: 14px auto 14px; text-align:left; }
-    .howto-card{
-      background: rgba(255,255,255,0.12);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(255,255,255,0.16);
-      overflow: hidden;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
-    .howto-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 14px 16px;
-      cursor:pointer;
-      user-select:none;
-      background: rgba(0,0,0,0.12);
-    }
-    .howto-head h2{ margin:0; font-size: 15px; font-weight: 1000; color:#fff; letter-spacing: .2px; line-height: 1.3; }
-    .howto-toggle{
-      font-weight: 1000;
-      border:none;
-      background: rgba(255,255,255,0.16);
-      color:#fff;
-      padding: 9px 12px;
-      border-radius: 12px;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .howto-body{ padding: 14px 16px 16px; display:none; }
-    .howto-body.open{ display:block; }
-    .howto-alert{
-      background: rgba(255, 214, 0, 0.14);
-      border: 1px solid rgba(255, 214, 0, 0.25);
-      border-left: 6px solid #ffd600;
-      padding: 12px 12px;
-      border-radius: 14px;
-      color:#fff;
-      line-height: 1.55;
-      margin-bottom: 12px;
-    }
-    .howto-steps{ display:grid; grid-template-columns: 1fr; gap:10px; margin: 0; padding: 0; list-style:none; }
-    .howto-step{
-      background: rgba(255,255,255,0.10);
-      border:1px solid rgba(255,255,255,0.16);
-      border-radius: 14px;
-      padding: 12px;
-      line-height: 1.55;
-      color:#fff;
-    }
-    .howto-checklist{
-      margin-top: 12px;
-      background: rgba(0, 200, 83, 0.10);
-      border: 1px solid rgba(0, 200, 83, 0.22);
-      border-radius: 14px;
-      padding: 12px;
-      color:#fff;
-    }
-    .howto-checklist h3{ margin:0 0 8px; font-size: 13px; font-weight: 1000; color:#fff; }
-    .howto-checklist ul{ margin:0; padding-left: 18px; line-height:1.55; }
-    .howto-mini{ margin-top: 10px; font-size: 12px; opacity: .92; line-height: 1.5; }
-
-    /* ---------- Reports list ---------- */
-    #reportsList{
-      margin-top: 14px;
-      text-align:left;
-    }
-
     .section-title{
       margin: 18px 0 10px;
       font-size: 14px;
       font-weight: 1000;
       opacity: .95;
       letter-spacing: .2px;
+      text-align:left;
     }
+
+    #reportsList{ margin-top: 14px; text-align:left; }
 
     .report-card{
       background: rgba(255,255,255,0.18);
@@ -263,13 +154,11 @@
       font-size: 18px;
       font-weight: 1000;
       margin: 0 0 6px;
-      padding-right: 44px; /* for ⋮ */
+      padding-right: 44px;
       line-height: 1.25;
     }
     .report-meta{ font-size: 13px; opacity: .95; line-height: 1.4; }
-    .report-meta small{ opacity: .95; }
 
-    /* --- Mobile-safe action: 3-dot button --- */
     .kebab{
       position:absolute;
       top: 10px;
@@ -288,9 +177,7 @@
       justify-content:center;
       user-select:none;
     }
-    .kebab:active{ transform: scale(0.98); }
 
-    /* Bottom Action Sheet */
     .sheet-backdrop{
       position: fixed;
       inset: 0;
@@ -335,7 +222,6 @@
     .sheet-btn.danger{ background: rgba(211,47,47,0.22); border-color: rgba(211,47,47,0.30); }
     .sheet-btn.cancel{ background: rgba(255,255,255,0.08); }
 
-    /* responsive */
     @media (max-width: 520px){
       body{ padding: 22px 12px 60px; }
       .brand-title{ font-size: 28px; }
@@ -356,64 +242,19 @@
 
     <div id="mainSection" style="display:none;">
       <div class="hero">
-        <div class="brand-row">
-          <div>
-            <h1 class="brand-title">RaporanX</h1>
-            <div class="brand-sub">
-              <b>Hızlı Ekspertiz Sistemi</b> — Kat mülkiyeti / kat irtifakı taşınmazlarda, modüller üzerinden veri girerek
-              banka formatına yakın <b>rapor taslağı</b> oluşturmanı kolaylaştırır.
-            </div>
-
-            <div class="pill-row">
-              <div class="pill">⚡ Saha + Ofis Senkron</div>
-              <div class="pill">🔒 Final Kilitleme</div>
-              <div class="pill">📄 PDF / Yazdır</div>
-              <div class="pill">🎁 5 Ücretsiz Taslak</div>
-            </div>
-
-            <div id="statusInfo" class="status">Yükleniyor...</div>
-          </div>
+        <h1 class="brand-title">RaporanX</h1>
+        <div class="brand-sub">
+          <b>Hızlı Ekspertiz Sistemi</b> — Modüllerle veri gir, banka formatına yakın <b>rapor taslağını</b> hazırla.
         </div>
-      </div>
 
-      <!-- ✅ NASIL KULLANILIR (SENİN BLOK - KORUNDU) -->
-      <div class="howto-wrap">
-        <div class="howto-card">
-          <div class="howto-head" onclick="toggleHowTo()">
-            <h2>📌 Nasıl Kullanılır? (Banka Formatına Hazır Rapor)</h2>
-            <button type="button" class="howto-toggle" id="howtoBtn">Aç</button>
-          </div>
-
-          <div class="howto-body" id="howtoBody">
-            <div class="howto-alert">
-              <b>Önemli:</b> Modüllerde metinler otomatik oluşur. <b>Kaydetmeden önce mutlaka oku.</b>
-              Uygunsuz verileri veya gereksiz ek/tekrarları kaldır. Amaç: <b>ideal ve temiz rapor taslağı</b> oluşturmak.
-              Son aşamada “Tam Rapor Oluştur” ile çıktın <b>banka sistemine uygun</b> hale gelir.
-            </div>
-
-            <ul class="howto-steps">
-              <li class="howto-step"><b>1) Yeni rapor oluştur:</b> “YENİ RAPOR OLUŞTUR” ile dosyayı başlat.</li>
-              <li class="howto-step"><b>2) Modülleri sırayla doldur:</b> Konum, Tapu, İmar, Belgeler, Bina, Bağımsız Bölüm, Emsal.</li>
-              <li class="howto-step"><b>3) Oluşan metni oku & düzelt:</b> Uygunsuz/yanlış bilgi varsa düzelt, gereksiz ekleri kaldır.</li>
-              <li class="howto-step"><b>4) İdeal metin olunca kaydet:</b> Her modülde “Kaydet” ile bilgileri sabitle.</li>
-              <li class="howto-step"><b>5) En son “Tam Rapor Oluştur”:</b> Yazdır / PDF ile bankaya uygun çıktı al.</li>
-            </ul>
-
-            <div class="howto-checklist">
-              <h3>✅ Kaydetmeden Önce Kontrol Listesi</h3>
-              <ul>
-                <li>Metinde <b>yanlış/eksik bilgi</b> var mı?</li>
-                <li>Gereksiz tekrarlar veya uygunsuz ifadeler var mı?</li>
-                <li>Rakamlar (m², TL, ada-parsel) doğru mu?</li>
-                <li>Tapu (B1/B2) formatı okunur mu?</li>
-                <li>Emsal analiz metni “tam” ve anlaşılır mı?</li>
-              </ul>
-              <div class="howto-mini">
-                Not: Amaç “hızlı” değil, “doğru ve banka uyumlu” rapor üretmek. 2 dakika kontrol, 2 gün geri dönüş derdini önler.
-              </div>
-            </div>
-          </div>
+        <div class="pill-row">
+          <div class="pill">⚡ Saha + Ofis Senkron</div>
+          <div class="pill">🔒 Final Kilitleme</div>
+          <div class="pill">📄 PDF / Yazdır</div>
+          <div class="pill">🎁 5 Ücretsiz Taslak</div>
         </div>
+
+        <div id="statusInfo" class="status">Yükleniyor...</div>
       </div>
 
       <a href="yeni_kayit.html" class="btn-new">➕ YENİ RAPOR OLUŞTUR</a>
@@ -425,7 +266,7 @@
     </div>
   </div>
 
-  <!-- Action Sheet (Mobil profesyonel menü) -->
+  <!-- Action Sheet -->
   <div id="sheetBackdrop" class="sheet-backdrop" role="dialog" aria-modal="true">
     <div class="sheet">
       <div class="sheet-head">
@@ -446,15 +287,6 @@
     const db = firebase.firestore();
     let reports = [];
 
-    // ✅ Nasıl Kullanılır toggle
-    function toggleHowTo(){
-      const body = document.getElementById("howtoBody");
-      const btn  = document.getElementById("howtoBtn");
-      if (!body || !btn) return;
-      const open = body.classList.toggle("open");
-      btn.textContent = open ? "Kapat" : "Aç";
-    }
-
     // Google Login
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
@@ -467,7 +299,7 @@
       });
     };
 
-    /* ========= RID helpers + migration ========= */
+    /* ========= RID helpers ========= */
     function genRid(){
       try{
         if (crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -483,60 +315,115 @@
       return changed;
     }
 
-    /* ======================
-       VERİ KAYBINI ENGELLEME: MERGE KATMANI (SENİN SAĞLAM SÜRÜM - DOKUNMADIM)
-       ====================== */
+    /* ========= Local storage helpers ========= */
     function safeArray(x){ return Array.isArray(x) ? x : []; }
 
-    function countFilledReports(arr){
-      return safeArray(arr).filter(r => r && (
-        r.propertyName || r.il || r.ada || r.parsel ||
-        (r.belgeler && (r.belgeler.belgelerMetni || r.belgelerMetni)) ||
-        (r.tapu && Object.keys(r.tapu||{}).length) ||
-        (r.imar && Object.keys(r.imar||{}).length)
-      )).length;
+    function getLocalReports(){
+      try{
+        const raw = localStorage.getItem("gayrimenkul_reports");
+        const arr = raw ? JSON.parse(raw) : [];
+        return safeArray(arr);
+      }catch(e){
+        return [];
+      }
     }
 
-    function mergeReportsPreferMoreComplete(localArr, cloudArr){
+    function setLocalReports(arr){
+      localStorage.setItem("gayrimenkul_reports", JSON.stringify(safeArray(arr)));
+      localStorage.setItem("gayrimenkul_reports_lastUpdate", new Date().toISOString());
+    }
+
+    function getLocalLastUpdate(){
+      return localStorage.getItem("gayrimenkul_reports_lastUpdate") || "";
+    }
+
+    /* ========= RID bazlı MERGE (en kritik düzeltme) ========= */
+    function parseTime(s){
+      if (!s) return 0;
+      const t = Date.parse(s);
+      return Number.isFinite(t) ? t : 0;
+    }
+
+    function reportUpdatedAt(r){
+      // yeni_kayit.html zaten updatedAt yazıyor, yoksa createdAt kullanırız
+      return parseTime(r?.updatedAt) || parseTime(r?.createdAt) || 0;
+    }
+
+    function completenessScore(r){
+      if (!r) return 0;
+      let s = 0;
+      if (r.propertyName) s += 3;
+      if (r.il) s += 2;
+      if (r.ilce) s += 1;
+      if (r.ada) s += 1;
+      if (r.parsel) s += 1;
+      if (r.belgelerMetni) s += 2;
+      if (r.belgeler && (r.belgeler.belgelerMetni || r.belgeler.tamMetin)) s += 2;
+      if (r.imar && Object.keys(r.imar||{}).length) s += 2;
+      if (r.tapu && Object.keys(r.tapu||{}).length) s += 2;
+      if (r.konumCevre && Object.keys(r.konumCevre||{}).length) s += 2;
+      if (r.bina && Object.keys(r.bina||{}).length) s += 2;
+      if (Array.isArray(r.bbDetayList) && r.bbDetayList.length) s += 2;
+      return s;
+    }
+
+    // RID'ye göre birleşir, daha yeni/komple olan kazanır
+    function mergeByRid(localArr, cloudArr){
       const L = safeArray(localArr);
       const C = safeArray(cloudArr);
-      const maxLen = Math.max(L.length, C.length);
-      const out = [];
+      const map = new Map();
 
-      for(let i=0;i<maxLen;i++){
-        const l = L[i];
-        const c = C[i];
+      // önce cloud koy
+      for (const r of C){
+        if (!r) continue;
+        const rid = String(r.rid || "").trim();
+        if (!rid) continue;
+        map.set(rid, r);
+      }
 
-        if (!c && l) { out[i] = l; continue; }
-        if (c && !l) { out[i] = c; continue; }
+      // sonra local ile kıyasla
+      for (const lr of L){
+        if (!lr) continue;
+        const rid = String(lr.rid || "").trim();
+        if (!rid) continue;
 
-        if (c && l) {
-          out[i] = {
-            ...l,
-            ...c,
+        const cr = map.get(rid);
+        if (!cr){
+          map.set(rid, lr);
+          continue;
+        }
 
-            rid: c.rid || l.rid || undefined,
+        const lt = reportUpdatedAt(lr);
+        const ct = reportUpdatedAt(cr);
 
-            bina: (c.bina && Object.keys(c.bina).length) ? c.bina : (l.bina || {}),
-            bbDetay: (c.bbDetay && Object.keys(c.bbDetay).length) ? c.bbDetay : (l.bbDetay || {}),
-            konumCevre: (c.konumCevre && Object.keys(c.konumCevre).length) ? c.konumCevre : (l.konumCevre || {}),
-            tapu: (c.tapu && Object.keys(c.tapu).length) ? c.tapu : (l.tapu || {}),
-            imar: (c.imar && Object.keys(c.imar).length) ? c.imar : (l.imar || {}),
-            belgeler: (c.belgeler && Object.keys(c.belgeler).length) ? c.belgeler : (l.belgeler || {}),
-            emsaller: (Array.isArray(c.emsaller) && c.emsaller.length) ? c.emsaller : (l.emsaller || []),
-            emsal: (c.emsal && Object.keys(c.emsal).length) ? c.emsal : (l.emsal || {}),
-
-            belgelerMetni: c.belgelerMetni || (c.belgeler && c.belgeler.belgelerMetni) || l.belgelerMetni || (l.belgeler && l.belgeler.belgelerMetni) || ""
-          };
+        if (lt > ct){
+          map.set(rid, { ...cr, ...lr }); // local daha yeni → local baskın
+        } else if (ct > lt){
+          map.set(rid, { ...lr, ...cr }); // cloud daha yeni → cloud baskın
         } else {
-          out[i] = c || l || null;
+          // aynı zaman → daha dolu olan
+          const ls = completenessScore(lr);
+          const cs = completenessScore(cr);
+          map.set(rid, (ls >= cs) ? ({...cr, ...lr}) : ({...lr, ...cr}));
         }
       }
 
-      return out.filter(Boolean);
+      // stabil sıralama: createdAt/updatedAt desc
+      const out = Array.from(map.values());
+      out.sort((a,b)=> (reportUpdatedAt(b) - reportUpdatedAt(a)));
+      return out;
     }
 
-    /* ---------- Action Sheet (mobil çözüm) ---------- */
+    /* ========= Cloud write (silme geri gelmesin diye) ========= */
+    async function writeCloudReports(user, arr){
+      // gayrimenkul_reports alanı net olarak overwrite olur (merge:true olsa bile field overwrite)
+      await db.collection("users").doc(user.uid).set({
+        gayrimenkul_reports: safeArray(arr),
+        lastUpdate: new Date().toISOString()
+      }, { merge: true });
+    }
+
+    /* ========= Action Sheet ========= */
     const sheetBackdrop = document.getElementById("sheetBackdrop");
     const sheetName = document.getElementById("sheetName");
     const sheetSub = document.getElementById("sheetSub");
@@ -550,7 +437,8 @@
     function openSheet(rid, report){
       activeRid = rid;
       sheetName.textContent = report?.propertyName || "İsimsiz Rapor";
-      sheetSub.textContent = `${report?.il || ""}${report?.ilce ? " / " + report.ilce : ""} • Ada:${report?.ada || "-"} Parsel:${report?.parsel || "-"}`;
+      sheetSub.textContent =
+        `${report?.il || ""}${report?.ilce ? " / " + report.ilce : ""} • Ada:${report?.ada || "-"} Parsel:${report?.parsel || "-"}`;
 
       sheetBackdrop.style.display = "flex";
       document.body.style.overflow = "hidden";
@@ -568,25 +456,102 @@
 
     sheetOpenBtn.addEventListener("click", ()=>{
       if (!activeRid) return;
+      const rid = activeRid;
       closeSheet();
-      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(activeRid)}`;
+      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
     });
     sheetEditBtn.addEventListener("click", ()=>{
       if (!activeRid) return;
+      const rid = activeRid;
       closeSheet();
-      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(activeRid)}&mode=edit`;
+      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
     });
     sheetDeleteBtn.addEventListener("click", async ()=>{
       if (!activeRid) return;
       const rid = activeRid;
       closeSheet();
-      // event yok burada; direkt sil
-      await deleteReport(rid, null);
+      await deleteReportByRid(rid);
     });
 
-    /* ---------- Auth + Data ---------- */
-    auth.onAuthStateChanged((user) => {
-      if (!user) {
+    /* ========= UI render ========= */
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function loadReports(){
+      const list = document.getElementById("reportsList");
+      list.innerHTML = "";
+
+      if (!reports || reports.length === 0){
+        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
+        return;
+      }
+
+      reports.forEach((report)=>{
+        const rid = report.rid;
+        const card = document.createElement("div");
+        card.className = "report-card";
+
+        card.innerHTML = `
+          <button class="kebab" type="button" aria-label="Menü">⋮</button>
+          <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}</div>
+          <div class="report-meta">
+            ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
+            <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
+          </div>
+        `;
+
+        card.addEventListener("click", ()=>{
+          window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+        });
+
+        const kebab = card.querySelector(".kebab");
+        kebab.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          openSheet(rid, report);
+        });
+
+        list.appendChild(card);
+      });
+    }
+
+    async function deleteReportByRid(rid){
+      if (!confirm("Silmek istediğine emin misin?")) return;
+
+      const idx = (reports || []).findIndex(r => r && r.rid === rid);
+      if (idx < 0){
+        alert("Rapor bulunamadı!");
+        return;
+      }
+
+      // 1) RAM
+      reports.splice(idx, 1);
+
+      // 2) LOCAL (hemen)
+      setLocalReports(reports);
+
+      // 3) CLOUD (hemen)
+      const user = auth.currentUser;
+      if (user){
+        try{
+          await writeCloudReports(user, reports);
+        }catch(e){
+          console.warn("Cloud silme yazma hatası:", e);
+          alert("⚠️ Silindi ama buluta yazılamadı. İnternet/izin kontrol et.");
+        }
+      }
+
+      loadReports();
+    }
+
+    /* ========= BOOT + SNAPSHOT ========= */
+    auth.onAuthStateChanged((user)=>{
+      if (!user){
         document.getElementById("loginSection").style.display = "block";
         document.getElementById("mainSection").style.display = "none";
         document.getElementById("statusInfoLogin").textContent = "Giriş yapın";
@@ -598,127 +563,77 @@
       document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + user.email;
 
       // önce local göster
-      reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-      if (ensureRidMigration(reports)) {
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-      }
+      let localReports = getLocalReports();
+      if (ensureRidMigration(localReports)) setLocalReports(localReports);
+      reports = localReports;
       loadReports();
 
-      // sonra bulut: merge
-      db.collection("users").doc(user.uid).onSnapshot(async (doc) => {
-        const localReports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+      // sonra cloud izle
+      db.collection("users").doc(user.uid).onSnapshot(async (doc)=>{
         let cloudReports = [];
+        let cloudLastUpdate = "";
 
-        if (doc.exists && doc.data().gayrimenkul_reports) {
-          cloudReports = doc.data().gayrimenkul_reports;
+        if (doc.exists){
+          const d = doc.data() || {};
+          cloudReports = safeArray(d.gayrimenkul_reports);
+          cloudLastUpdate = (d.lastUpdate || "");
         }
 
-        ensureRidMigration(localReports);
+        // RID garantisi
         ensureRidMigration(cloudReports);
 
-        const localScore = countFilledReports(localReports);
-        const cloudScore = countFilledReports(cloudReports);
+        // local tekrar oku (snapshot arası local değişmiş olabilir)
+        localReports = getLocalReports();
+        ensureRidMigration(localReports);
 
-        const merged = mergeReportsPreferMoreComplete(localReports, cloudReports);
+        const localLU = getLocalLastUpdate();
+        const cloudLU = cloudLastUpdate;
 
-        if (ensureRidMigration(merged)) {}
+        // ✅ Karar:
+        // - Cloud boşsa ve local doluysa: local'i buluta bas (ilk kurulum / veri kaybını önle)
+        // - Cloud doluysa: RID bazlı merge yap (ama SON güncelleme daha yeni olan baskın)
+        if ((cloudReports.length === 0) && (localReports.length > 0)){
+          reports = localReports;
+          setLocalReports(reports);
+          loadReports();
 
-        reports = merged;
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-        loadReports();
-
-        try{
-          if (cloudScore < localScore || ensureRidMigration(cloudReports)) {
-            await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
+          try{
+            await writeCloudReports(user, reports);
+          }catch(e){
+            console.warn("Cloud ilk yazım hatası:", e);
           }
-        } catch(e){
-          console.warn("Buluta geri yazma hatası:", e);
+          return;
         }
 
-      }, (error) => {
+        // cloud doluysa: RID merge
+        const merged = mergeByRid(localReports, cloudReports);
+
+        // 🔥 Silinenlerin geri gelmesini engelleyen kural:
+        // Eğer cloud güncellemesi local'den daha yeniyse, cloud baskın kabul edilir.
+        // (Local eskiyse, cloud’daki listeye geri dönmek doğal. Ama cloud’da silinmişse geri dirilmez.)
+        const localT = parseTime(localLU);
+        const cloudT = parseTime(cloudLU);
+
+        if (cloudT > localT){
+          reports = mergeByRid([], cloudReports); // cloud’ı temel al
+        } else {
+          reports = merged; // local daha yeni olabilir → merged
+        }
+
+        // yaz-local (cache)
+        setLocalReports(reports);
+        loadReports();
+
+      }, (error)=>{
         console.error("Bulut hatası:", error);
-        reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        // cloud yoksa local ile devam
+        reports = getLocalReports();
         ensureRidMigration(reports);
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+        setLocalReports(reports);
         loadReports();
         document.getElementById("statusInfo").textContent = "⚠️ Yerel veriler gösteriliyor";
       });
     });
-
-    function loadReports() {
-      const list = document.getElementById("reportsList");
-      list.innerHTML = '';
-
-      if (!reports || reports.length === 0) {
-        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
-        return;
-      }
-
-      reports.forEach((report) => {
-        const rid = report.rid;
-        const card = document.createElement("div");
-        card.className = "report-card";
-
-        const title = (report.propertyName || 'İsimsiz');
-        const il = (report.il || '');
-        const ilce = (report.ilce || '');
-        const ada = (report.ada || '');
-        const parsel = (report.parsel || '');
-
-        card.innerHTML = `
-          <button class="kebab" type="button" aria-label="Menü">⋮</button>
-          <div class="report-title">${escapeHtml(title)}</div>
-          <div class="report-meta">
-            ${escapeHtml(il)}${ilce ? ' / ' + escapeHtml(ilce) : ''}<br>
-            <small>Ada: ${escapeHtml(ada)} • Parsel: ${escapeHtml(parsel)}</small>
-          </div>
-        `;
-
-        // kart tıkla → aç
-        card.addEventListener("click", () => {
-          window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-        });
-
-        // ⋮ tıkla → sheet aç (kart click’i tetiklemesin)
-        const kebab = card.querySelector(".kebab");
-        kebab.addEventListener("click", (e)=>{
-          e.stopPropagation();
-          openSheet(rid, report);
-        });
-
-        list.appendChild(card);
-      });
-    }
-
-    function escapeHtml(str){
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    function findIndexByRid(rid){
-      return (reports || []).findIndex(r => r && r.rid === rid);
-    }
-
-    async function deleteReport(rid, event) {
-      if (event) event.stopPropagation();
-      if (!confirm("Silmek istediğine emin misin?")) return;
-
-      const idx = findIndexByRid(rid);
-      if (idx < 0) { alert("Rapor bulunamadı!"); return; }
-
-      reports.splice(idx, 1);
-      localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-      const user = auth.currentUser;
-      if (user) {
-        await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: reports }, { merge: true });
-      }
-      loadReports();
-    }
   </script>
 </body>
 </html>
