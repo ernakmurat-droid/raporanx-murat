@@ -251,6 +251,43 @@
     if (!Array.isArray(report.emsalHavuzu)) report.emsalHavuzu = [];
   }
 
+  /* ========= EMSAL ID (ÇOK KRİTİK DÜZELTME) ========= */
+  function genEmsalId(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "emsal_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
+
+  function ensureEmsalIdMigration(report){
+    ensureEmsalHavuzu(report);
+    let changed = false;
+    (report.emsalHavuzu || []).forEach(e=>{
+      if (e && !e.emsalId){
+        e.emsalId = genEmsalId();
+        changed = true;
+      }
+    });
+    return changed;
+  }
+
+  function ensureEditEmsalIdField(){
+    // HTML'e eklemen gerekmesin diye otomatik hidden alan oluşturuyoruz
+    if (!document.getElementById("editEmsalId")){
+      const inp = document.createElement("input");
+      inp.type = "hidden";
+      inp.id = "editEmsalId";
+      inp.value = "";
+      document.body.appendChild(inp);
+    }
+  }
+  function setEditEmsalId(v){
+    ensureEditEmsalIdField();
+    document.getElementById("editEmsalId").value = (v || "");
+  }
+  function getEditEmsalId(){
+    ensureEditEmsalIdField();
+    return (document.getElementById("editEmsalId").value || "").trim();
+  }
+
   /* ========= Security ========= */
   document.addEventListener('keydown', function(e) {
     const isInput = e.target.closest('input, textarea, select');
@@ -347,6 +384,7 @@
 
     ensureBBList(r);
     ensureEmsalHavuzu(r);
+    ensureEmsalIdMigration(r);
 
     const bb = r.bbDetayList[activeBBIndex];
     const tasinmazBrut = parseFloat(bb.bbDetay?.alanBrut) || 0;
@@ -375,7 +413,7 @@
     const fiyat     = parseFloat(e.f10) || 0;
     const fiyatYazi = fiyat ? new Intl.NumberFormat('tr-TR').format(fiyat) : "...";
 
-    const durum = (e.f11 || "satılıktır").toString().trim(); // satılıktır / kiralıktır
+    const durum = (e.f11 || "satılıktır").toString().trim();
 
     const baslik = `► ${kaynak.toUpperCase()} (${tel})`;
     return `${baslik} Değerlemeye konu taşınmazla ${yakinlik}, ${binaKat} katlı binanın ${bulKat} katında konumlu ${oda} tipindeki, `
@@ -417,15 +455,17 @@
     return s;
   }
 
-  /* ========= EMSAL CRUD (GLOBAL) ========= */
+  /* ========= EMSAL CRUD (ID BAZLI - DÜZELTİLDİ) ========= */
   function emsalKaydet() {
     const { arr, i, r } = getLatestData();
     if (!r || i < 0) return;
 
     ensureBBList(r);
     ensureEmsalHavuzu(r);
+    ensureEmsalIdMigration(r);
+    ensureEditEmsalIdField();
 
-    const index = parseInt(document.getElementById('editIndex').value);
+    const editId = getEditEmsalId(); // ✅ artık gerçek anahtar bu
 
     let e = {};
     for(let k=1; k<=14; k++) {
@@ -436,25 +476,53 @@
     e.f17 = document.getElementById('f17').value;
 
     e.anaMetin = emsalMetinUret(e);
+    e.updatedAt = new Date().toISOString();
 
-    if(index > -1) r.emsalHavuzu[index] = e;
-    else r.emsalHavuzu.push(e);
+    if (editId){
+      const idx = (r.emsalHavuzu || []).findIndex(x => x && x.emsalId === editId);
+      if (idx >= 0){
+        r.emsalHavuzu[idx] = { ...r.emsalHavuzu[idx], ...e, emsalId: editId };
+      } else {
+        // id var ama bulamadı → güvenli ekle
+        e.emsalId = editId;
+        r.emsalHavuzu.push(e);
+      }
+    } else {
+      e.emsalId = genEmsalId();
+      r.emsalHavuzu.push(e);
+    }
 
     persist(arr, i, r);
     formuKapat();
     listele();
   }
 
-  function emsalSil(index){
+  function emsalSilById(emsalId){
     const { arr, i, r } = getLatestData();
     if (!r || i < 0) return;
 
     ensureEmsalHavuzu(r);
+    ensureEmsalIdMigration(r);
+
     if (!confirm("Bu emsali silmek istiyor musun?")) return;
 
-    r.emsalHavuzu.splice(index, 1);
+    const idx = (r.emsalHavuzu || []).findIndex(x => x && x.emsalId === emsalId);
+    if (idx < 0) return;
+
+    r.emsalHavuzu.splice(idx, 1);
     persist(arr, i, r);
     listele();
+  }
+
+  // (geriye dönük) index ile silme çağrısı varsa bozulmasın
+  function emsalSil(index){
+    const { r } = getLatestData();
+    if (!r) return;
+    ensureEmsalHavuzu(r);
+    ensureEmsalIdMigration(r);
+    const e = r.emsalHavuzu[index];
+    if (!e) return;
+    emsalSilById(e.emsalId);
   }
 
   function listele() {
@@ -463,6 +531,7 @@
 
     ensureBBList(r);
     ensureEmsalHavuzu(r);
+    ensureEmsalIdMigration(r);
 
     const list = document.getElementById('emsalListesi');
     list.innerHTML = "";
@@ -470,15 +539,18 @@
     const emsaller = r.emsalHavuzu || [];
     if (emsaller.length > 0) {
       emsaller.forEach((e, idx) => {
+        const eid = e.emsalId || "";
         list.innerHTML += `
-          <div class="emsal-liste-item">
-            <div style="flex:1;">
+          <div class="emsal-liste-item" style="display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;">
+            <div style="flex:1; min-width:220px;">
               <strong>Emsal ${idx+1}</strong><br>
               <span style="color:#666;">${(emsalBirimOlusumSatiri(e, idx) || "").replaceAll("\n"," ")}</span>
             </div>
-            <div>
-              <button onclick="formuAc(${idx})">Düzenle</button>
-              <button class="del" onclick="emsalSil(${idx})">Sil</button>
+            <div style="display:flex; gap:8px;">
+              <button type="button" style="padding:10px 12px; border-radius:12px; border:none; font-weight:900; cursor:pointer; background:#ff9800; color:#111;"
+                onclick="formuAcById('${eid.replaceAll("'", "\\'")}')">Düzenle</button>
+              <button type="button" style="padding:10px 12px; border-radius:12px; border:none; font-weight:900; cursor:pointer; background:#d32f2f; color:#fff;"
+                onclick="emsalSilById('${eid.replaceAll("'", "\\'")}')">Sil</button>
             </div>
           </div>`;
       });
@@ -496,6 +568,7 @@
 
     ensureBBList(r);
     ensureEmsalHavuzu(r);
+    ensureEmsalIdMigration(r);
 
     // aktif BB ayarlarını kaydet
     const activeBB = r.bbDetayList[activeBBIndex];
@@ -506,7 +579,6 @@
     const dusuk = parseFloat((document.getElementById('inp_dusuk')?.value || "0")) || 0;
     const yuksek = parseFloat((document.getElementById('inp_yuksek')?.value || "0")) || 0;
 
-    // 1) EMSAL METINLERI (üstte)
     let metin = `EMSAL BİLGİLERİ\n`;
     metin += `------------------------------------------\n`;
     if (emsaller.length > 0) {
@@ -517,7 +589,6 @@
       metin += `Emsal kaydı bulunmamaktadır.\n\n`;
     }
 
-    // 2) YORUM
     metin += `EMSALLERİN YORUMU\n`;
     metin += `------------------------------------------\n`;
     metin += `Taşınmazın değer tespitinde "Emsal Karşılaştırma Yöntemi" kullanılmıştır. `;
@@ -527,7 +598,6 @@
     }
     metin += `Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurularak aşağıdaki değerler takdir edilmiştir.\n\n`;
 
-    // 3) BB’LER ALT ALTA (değerleme)
     r.bbDetayList.forEach((bbWrap, idx) => {
       const bbDet = bbWrap.bbDetay || {};
       const bbNo = (bbDet.bbNo || "").toString().trim();
@@ -560,7 +630,6 @@
       }
     });
 
-    // 4) BIRIM FIYAT OLUŞUMU (en altta tablo gibi)
     metin += `EMSALLERİN BİRİM FİYAT OLUŞUMU\n`;
     metin += `------------------------------------------\n`;
     if (emsaller.length > 0) {
@@ -573,9 +642,8 @@
 
     document.getElementById('yorumMetni').innerText = metin;
 
-    // ✅ RAPOR OLUŞTURDA TEK METİN ÇIKSIN DİYE
     activeBB.degerlemeOzet.emsalFinalMetni = metin;
-    r.emsalFinalMetni = metin;              // <— en kritik satır
+    r.emsalFinalMetni = metin;
     persist(arr, i, r);
   }
 
@@ -612,20 +680,26 @@
     document.getElementById('f10_mask').value = "";
     document.getElementById('f17').value = "";
     document.getElementById('editIndex').value = -1;
+
+    // ✅ yeni: ID temizle
+    setEditEmsalId("");
   }
 
-  function formuAc(index = -1) {
+  // ✅ yeni: ID ile aç
+  function formuAcById(emsalId){
     const { r } = getLatestData();
     if (!r) return;
 
     ensureEmsalHavuzu(r);
-    document.getElementById('emsalFormContainer').style.display = 'block';
-    document.getElementById('editIndex').value = index;
+    ensureEmsalIdMigration(r);
 
+    document.getElementById('emsalFormContainer').style.display = 'block';
     clearForm();
 
-    if (index > -1 && r.emsalHavuzu[index]) {
-      const e = r.emsalHavuzu[index];
+    setEditEmsalId(emsalId);
+
+    const e = (r.emsalHavuzu || []).find(x => x && x.emsalId === emsalId);
+    if (e) {
       for(let k=1; k<=14; k++){
         const el = document.getElementById('f'+k);
         if(el && typeof e['f'+k] !== "undefined") el.value = e['f'+k];
@@ -636,11 +710,84 @@
     }
 
     hesapla();
+    ensureMobileSticky();
+  }
+
+  // (geriye dönük) index ile açılırsa id’ye çevir
+  function formuAc(index = -1) {
+    const { r } = getLatestData();
+    if (!r) return;
+
+    ensureEmsalHavuzu(r);
+    ensureEmsalIdMigration(r);
+
+    if (index > -1 && r.emsalHavuzu[index]) {
+      const e = r.emsalHavuzu[index];
+      return formuAcById(e.emsalId);
+    }
+
+    document.getElementById('emsalFormContainer').style.display = 'block';
+    clearForm();
+    setEditEmsalId(""); // yeni emsal
+    hesapla();
+    ensureMobileSticky();
   }
 
   function formuKapat() {
     document.getElementById('emsalFormContainer').style.display = 'none';
     clearForm();
+  }
+
+  /* ========= Mobil Sticky Kaydet/Vazgeç (HTML'e dokunmadan) ========= */
+  function ensureMobileSticky(){
+    const cont = document.getElementById("emsalFormContainer");
+    if (!cont) return;
+
+    if (document.getElementById("emsalStickyBar")) return;
+
+    const bar = document.createElement("div");
+    bar.id = "emsalStickyBar";
+    bar.style.position = "sticky";
+    bar.style.bottom = "0";
+    bar.style.left = "0";
+    bar.style.right = "0";
+    bar.style.background = "#fff";
+    bar.style.borderTop = "1px solid #eee";
+    bar.style.padding = "10px";
+    bar.style.display = "flex";
+    bar.style.gap = "10px";
+    bar.style.zIndex = "10";
+
+    const btnCancel = document.createElement("button");
+    btnCancel.type = "button";
+    btnCancel.textContent = "Vazgeç";
+    btnCancel.style.flex = "1";
+    btnCancel.style.padding = "14px 12px";
+    btnCancel.style.border = "none";
+    btnCancel.style.borderRadius = "14px";
+    btnCancel.style.fontWeight = "900";
+    btnCancel.style.cursor = "pointer";
+    btnCancel.style.background = "#eceff1";
+    btnCancel.style.color = "#111";
+    btnCancel.onclick = formuKapat;
+
+    const btnSave = document.createElement("button");
+    btnSave.type = "button";
+    btnSave.textContent = "Kaydet";
+    btnSave.style.flex = "1";
+    btnSave.style.padding = "14px 12px";
+    btnSave.style.border = "none";
+    btnSave.style.borderRadius = "14px";
+    btnSave.style.fontWeight = "900";
+    btnSave.style.cursor = "pointer";
+    btnSave.style.background = "#00c853";
+    btnSave.style.color = "#fff";
+    btnSave.onclick = emsalKaydet;
+
+    bar.appendChild(btnCancel);
+    bar.appendChild(btnSave);
+
+    cont.appendChild(bar);
   }
 
   /* ========= Menu ========= */
@@ -658,6 +805,7 @@
 
     ensureBBList(r);
     ensureEmsalHavuzu(r);
+    ensureEmsalIdMigration(r);
 
     document.getElementById('raporBilgi').textContent = r.propertyName || "Analiz Dosyası";
 
@@ -667,5 +815,7 @@
     persist(arr, i, r);
   });
 </script>
+
 </body>
 </html>
+
