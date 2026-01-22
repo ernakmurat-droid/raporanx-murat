@@ -25,10 +25,21 @@
     input { width: 100%; padding: 14px; border: none; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
     button { background: #00c853; color: white; padding: 18px; border: none; border-radius: 12px; width: 100%; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 20px; }
     button:hover { background: #00b140; }
+    button:disabled{ opacity:.55; cursor:not-allowed; }
     .geri-btn { background: #6c757d; margin-top: 15px; }
     .geri-btn:hover { background: #5a6268; }
     .referans-btn { background: #2196f3; margin-top: 15px; }
     .referans-btn:hover { background: #1976d2; }
+    .status{
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
+      font-weight: 800;
+      text-align:left;
+    }
+    .status small{display:block; opacity:.9; font-weight:700; margin-top:6px;}
   </style>
 </head>
 
@@ -37,7 +48,12 @@
     <h1 id="pageTitle">YENİ RAPOR OLUŞTUR</h1>
     <div id="modeBadge" class="mode-badge" style="display:none;">Düzenleme Modu (RID)</div>
 
-    <form>
+    <div class="status" id="statusBox">
+      ⏳ Giriş bekleniyor…
+      <small>Mobilde auth gecikebilir. Butonlar birazdan açılacak.</small>
+    </div>
+
+    <form onsubmit="return false;">
       <label>Gayrimenkul Adı (Zorunlu)</label>
       <input type="text" id="propertyName" placeholder="Örn: Deniz Apartmanı Daire 5" required>
 
@@ -56,15 +72,23 @@
       <label>Parsel</label>
       <input type="text" id="parsel" placeholder="Örn: 45">
 
-      <button type="button" id="btnSave" onclick="raporKaydet()">YENİ RAPOR OLUŞTUR</button>
-      <button type="button" class="referans-btn" onclick="referansAc()">REFERANS BİLGİLER AÇ</button>
-      <button type="button" class="geri-btn" onclick="anaSayfayaDon()">ANA SAYFAYA DÖN</button>
+      <button type="button" id="btnSave" disabled>YENİ RAPOR OLUŞTUR</button>
+      <button type="button" class="referans-btn" id="btnRef" disabled>REFERANS BİLGİLER AÇ</button>
+      <button type="button" class="geri-btn" id="btnBack" disabled>ANA SAYFAYA DÖN</button>
     </form>
   </div>
 
   <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    const auth = window.auth || firebase.auth();
+    const db   = window.db   || firebase.firestore();
+
+    function $(id){ return document.getElementById(id); }
+    function setStatus(title, sub){
+      $("statusBox").textContent = title;
+      const sm = document.createElement("small");
+      sm.textContent = sub || "";
+      $("statusBox").appendChild(sm);
+    }
 
     /* ========= RID helpers ========= */
     function genRid(){
@@ -73,35 +97,15 @@
       }catch(e){}
       return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
     }
-
-    function ensureRidMigration(arr){
-      let changed = false;
-      (arr || []).forEach(r => {
-        if (r && !r.rid) { r.rid = genRid(); changed = true; }
-      });
-      return changed;
-    }
-
     function safeText(v){ return (v ?? '').toString().trim(); }
 
     function getReports(){
-      return JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+      try{ return JSON.parse(localStorage.getItem('gayrimenkul_reports')) || []; }
+      catch(e){ return []; }
     }
     function setReports(arr){
       localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr || []));
     }
-
-    async function bulutaGonder() {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const reports = getReports();
-      await db.collection("users").doc(user.uid).set({
-        gayrimenkul_reports: reports,
-        lastUpdate: new Date().toISOString()
-      }, { merge: true });
-    }
-
     function findIndexByRid(arr, rid){
       return (arr || []).findIndex(r => r && r.rid === rid);
     }
@@ -109,20 +113,17 @@
     /* ========= URL params ========= */
     const urlParams = new URLSearchParams(window.location.search);
     const mode = (urlParams.get('mode') || '').toLowerCase();
-    const rid = urlParams.get('rid');          // ✅ RID ile çalışıyoruz
+    const rid  = (urlParams.get('rid') || '').trim();
     const isEditMode = (mode === 'edit' && !!rid);
 
     function setupEditUI(){
-      document.getElementById('pageTitle').textContent = "RAPOR DÜZENLE";
-      document.getElementById('modeBadge').style.display = "inline-block";
-      document.getElementById('btnSave').textContent = "RAPORU GÜNCELLE";
+      $("pageTitle").textContent = "RAPOR DÜZENLE";
+      $("modeBadge").style.display = "inline-block";
+      $("btnSave").textContent = "RAPORU GÜNCELLE";
     }
 
     function loadReportToFormByRid(rid){
       const reports = getReports();
-      ensureRidMigration(reports);
-      setReports(reports);
-
       const idx = findIndexByRid(reports, rid);
       if (idx < 0) {
         alert("⚠️ Düzenlenecek rapor bulunamadı! (RID)");
@@ -130,44 +131,95 @@
         return;
       }
       const r = reports[idx];
-
-      document.getElementById('propertyName').value = r.propertyName || "";
-      document.getElementById('il').value = r.il || "";
-      document.getElementById('ilce').value = r.ilce || "";
-      document.getElementById('mahalle').value = r.mahalle || "";
-      document.getElementById('ada').value = r.ada || "";
-      document.getElementById('parsel').value = r.parsel || "";
+      $("propertyName").value = r.propertyName || "";
+      $("il").value = r.il || "";
+      $("ilce").value = r.ilce || "";
+      $("mahalle").value = r.mahalle || "";
+      $("ada").value = r.ada || "";
+      $("parsel").value = r.parsel || "";
     }
 
-    auth.onAuthStateChanged((user) => {
-      if (!user) {
-        alert("⚠️ Giriş yetkisi yok! Lütfen giriş yapın.");
-        window.location.href = 'index.html';
-        return;
+    /* ========= Cloud Sync =========
+       Bu fonksiyon telefonda “aynı veriler yok” problemini bitirir.
+       1) users/{uid} içindeki gayrimenkul_reports (eski yöntem) varsa çeker
+       2) users/{uid}/reports (yeni yöntem) varsa çeker
+       Sonra localStorage’ı doldurur/merge eder.
+    */
+    async function syncReportsFromCloud(uid){
+      let merged = getReports();
+      const map = new Map((merged || []).filter(Boolean).map(r => [r.rid, r]));
+
+      // (A) Yeni yöntem: users/{uid}/reports subcollection
+      try{
+        const snap = await db.collection("users").doc(uid).collection("reports").get();
+        snap.forEach(doc => {
+          const data = doc.data() || {};
+          const rrid = data.rid || doc.id;
+          if (!rrid) return;
+          map.set(rrid, { ...map.get(rrid), ...data, rid: rrid });
+        });
+      }catch(e){
+        // sessiz
       }
 
-      // edit moduysa doldur
-      if (isEditMode) {
-        setupEditUI();
-        loadReportToFormByRid(rid);
-      } else {
-        // yeni rapor sayfasına girildiğinde var olan raporların rid eksikse ekle (güvenlik)
-        const reports = getReports();
-        if (ensureRidMigration(reports)) {
-          setReports(reports);
-          bulutaGonder().catch(()=>{});
+      // (B) Eski yöntem: users/{uid} doc içinde gayrimenkul_reports array
+      try{
+        const userDoc = await db.collection("users").doc(uid).get();
+        if (userDoc.exists){
+          const arr = userDoc.data()?.gayrimenkul_reports;
+          if (Array.isArray(arr)){
+            arr.forEach(r => {
+              if (!r) return;
+              const rrid = r.rid;
+              if (!rrid) return;
+              map.set(rrid, { ...map.get(rrid), ...r, rid: rrid });
+            });
+          }
         }
+      }catch(e){
+        // sessiz
       }
-    });
 
-    async function raporKaydet() {
-      if (!safeText(document.getElementById('propertyName').value) || !safeText(document.getElementById('il').value)) {
+      merged = Array.from(map.values()).filter(Boolean);
+      setReports(merged);
+      return merged.length;
+    }
+
+    // İstersen bunu kapatırız; şimdilik geriye uyumluluk için açık:
+    async function backupArrayToUserDoc(uid){
+      const reports = getReports();
+      await db.collection("users").doc(uid).set({
+        gayrimenkul_reports: reports,
+        lastUpdate: new Date().toISOString()
+      }, { merge: true });
+    }
+
+    async function saveSingleReport(uid, report){
+      // Asıl doğru kayıt: tek rapor = tek doc
+      const rrid = report.rid;
+      await db.collection("users").doc(uid).collection("reports").doc(rrid).set({
+        ...report,
+        rid: rrid,
+        updatedAtIso: new Date().toISOString(),
+      }, { merge:true });
+
+      // Eski sistem yedeği (istersen kaldırırız)
+      try{ await backupArrayToUserDoc(uid); }catch(e){}
+    }
+
+    /* ========= Actions ========= */
+    function referansAc(){ window.open('referans-bilgiler.html', '_blank'); }
+    function anaSayfayaDon(){ window.location.href = 'index.html'; }
+
+    async function raporKaydet(user){
+      // Zorunlu alan kontrol
+      if (!safeText($("propertyName").value) || !safeText($("il").value)) {
         alert("Gayrimenkul Adı ve İl zorunlu!");
         return;
       }
 
+      // Local reports
       let reports = getReports();
-      ensureRidMigration(reports);
 
       if (isEditMode) {
         const idx = findIndexByRid(reports, rid);
@@ -177,14 +229,15 @@
           return;
         }
 
-        // diğer modülleri silmeden üst bilgileri güncelle
-        const existing = reports[idx];
-        existing.propertyName = safeText(document.getElementById('propertyName').value) || existing.propertyName || "İsimsiz Gayrimenkul";
-        existing.il = safeText(document.getElementById('il').value);
-        existing.ilce = safeText(document.getElementById('ilce').value);
-        existing.mahalle = safeText(document.getElementById('mahalle').value);
-        existing.ada = safeText(document.getElementById('ada').value);
-        existing.parsel = safeText(document.getElementById('parsel').value);
+        const existing = reports[idx] || {};
+        existing.rid = existing.rid || rid;
+
+        existing.propertyName = safeText($("propertyName").value) || existing.propertyName || "İsimsiz Gayrimenkul";
+        existing.il = safeText($("il").value);
+        existing.ilce = safeText($("ilce").value);
+        existing.mahalle = safeText($("mahalle").value);
+        existing.ada = safeText($("ada").value);
+        existing.parsel = safeText($("parsel").value);
 
         existing.createdAt = existing.createdAt || new Date().toLocaleString('tr-TR');
         existing.updatedAt = new Date().toLocaleString('tr-TR');
@@ -192,10 +245,11 @@
         reports[idx] = existing;
         setReports(reports);
 
-        await bulutaGonder();
+        setStatus("⏳ Güncelleniyor…", "Buluta kaydediliyor…");
+        await saveSingleReport(user.uid, existing);
 
-        alert("✅ Rapor güncellendi ve buluta yedeklendi!");
-        window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
+        alert("✅ Rapor güncellendi (cihazlar arası senkron)!");
+        window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(existing.rid);
         return;
       }
 
@@ -203,12 +257,12 @@
       const newRid = genRid();
       const report = {
         rid: newRid,
-        propertyName: safeText(document.getElementById('propertyName').value) || "İsimsiz Gayrimenkul",
-        il: safeText(document.getElementById('il').value),
-        ilce: safeText(document.getElementById('ilce').value),
-        mahalle: safeText(document.getElementById('mahalle').value),
-        ada: safeText(document.getElementById('ada').value),
-        parsel: safeText(document.getElementById('parsel').value),
+        propertyName: safeText($("propertyName").value) || "İsimsiz Gayrimenkul",
+        il: safeText($("il").value),
+        ilce: safeText($("ilce").value),
+        mahalle: safeText($("mahalle").value),
+        ada: safeText($("ada").value),
+        parsel: safeText($("parsel").value),
         createdAt: new Date().toLocaleString('tr-TR'),
 
         bina: {},
@@ -223,14 +277,60 @@
       reports.push(report);
       setReports(reports);
 
-      await bulutaGonder();
+      setStatus("⏳ Kaydediliyor…", "Rapor oluşturuluyor ve buluta yazılıyor…");
+      await saveSingleReport(user.uid, report);
 
-      alert("✅ Rapor oluşturuldu ve buluta yedeklendi!");
+      alert("✅ Rapor oluşturuldu (PC/Telefon aynı)!");
       window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(newRid);
     }
 
-    function referansAc() { window.open('referans-bilgiler.html', '_blank'); }
-    function anaSayfayaDon() { window.location.href = 'index.html'; }
+    /* ========= BOOT ========= */
+    async function boot(){
+      // Buton eventleri (inline onclick yerine sağlam)
+      $("btnRef").addEventListener("click", referansAc, { passive:true });
+      $("btnBack").addEventListener("click", anaSayfayaDon, { passive:true });
+
+      setStatus("⏳ Giriş bekleniyor…", "Auth hazır olunca bulut senkronu yapılacak.");
+
+      // firebase-config.js içindeki waitForAuth varsa onu kullan
+      const user = (typeof window.waitForAuth === "function")
+        ? await window.waitForAuth()
+        : await new Promise((resolve) => auth.onAuthStateChanged(u => u && resolve(u)));
+
+      if (!user){
+        alert("⚠️ Giriş yetkisi yok! Lütfen giriş yapın.");
+        window.location.href = 'index.html';
+        return;
+      }
+
+      setStatus("⏳ Bulut senkronu…", "Telefonda verilerin gelmesi için şart.");
+      const count = await syncReportsFromCloud(user.uid);
+      setStatus("✅ Hazır.", `Senkron tamam: ${count} rapor (localStorage güncellendi).`);
+
+      if (isEditMode) {
+        setupEditUI();
+        loadReportToFormByRid(rid);
+      }
+
+      // Butonları aç
+      $("btnSave").disabled = false;
+      $("btnRef").disabled = false;
+      $("btnBack").disabled = false;
+
+      // Kaydet event (click + touchstart)
+      const handler = () => raporKaydet(user).catch((e)=>{
+        console.error(e);
+        alert("Hata:\n" + (e?.message || String(e)));
+      });
+      $("btnSave").addEventListener("click", handler, { passive:true });
+      $("btnSave").addEventListener("touchstart", handler, { passive:true });
+    }
+
+    boot().catch((e)=>{
+      console.error(e);
+      setStatus("❌ Hata oluştu.", e?.message || String(e));
+      alert("Hata:\n" + (e?.message || String(e)));
+    });
   </script>
 </body>
 </html>
