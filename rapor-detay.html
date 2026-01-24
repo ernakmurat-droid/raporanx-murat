@@ -1,95 +1,333 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rapor Ana Menü</title>
-<style>
-    :root{ --hdrH: 86px; } /* mobilde header yüksekliği */
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    body { font-family: Arial; background: linear-gradient(135deg,#4a148c,#7c4dff); margin:0; color:white; min-height:100vh; display:flex; flex-direction:column; }
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
 
-    /* ✅ Header mobilde kaybolmasın + safe-area */
+  <!-- ✅ Wallet (senin dosyan) -->
+  <script src="wallet.js"></script>
+
+  <title>Rapor Ana Menü - Raporan X</title>
+
+  <style>
+    :root{
+      /* mobilde header yüksekliği (gerekirse 84/96 yaparsın) */
+      --hdrH: 78px;
+    }
+
+    body {
+      font-family: Arial;
+      background: linear-gradient(135deg,#4a148c,#7c4dff);
+      margin:0;
+      color:white;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      overflow-x:hidden;
+    }
+
+    /* ✅ HEADER: mobilde görünür + safe-area */
     .header {
-        padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;
-        text-align:center;
-        font-size:28px;
-        font-weight:bold;
-        position: sticky;
-        top: 0;
-        z-index: 999999;
-        background: linear-gradient(135deg,#4a148c,#7c4dff);
+      padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;
+      text-align:center;
+      font-size:28px;
+      font-weight:bold;
+      position: sticky;
+      top: 0;
+      z-index: 999999;
+      background: linear-gradient(135deg,#4a148c,#7c4dff);
     }
 
-    /* ✅ geri butonu safe-area altında kalsın */
+    /* ✅ Geri butonu safe-area altında */
     .back {
-        position:absolute;
-        left:15px;
-        top: calc(20px + env(safe-area-inset-top, 0px));
-        background:rgba(255,255,255,0.2);
-        padding:10px 20px;
-        border-radius:30px;
-        text-decoration:none;
-        color:white;
-        font-weight:bold;
-        z-index: 1000000;
+      position:absolute;
+      left:15px;
+      top: calc(20px + env(safe-area-inset-top, 0px));
+      background:rgba(255,255,255,0.2);
+      padding:10px 20px;
+      border-radius:30px;
+      text-decoration:none;
+      color:white;
+      font-weight:bold;
+      z-index: 1000000;
     }
 
-    .menu { flex:1; display:flex; flex-wrap:wrap; gap:20px; padding:30px; justify-content:center; align-content:flex-start; }
-    .btn { flex:1 1 350px; background:#6a1b9a; padding:35px; font-size:24px; font-weight:bold; border:none; border-radius:20px; color:white; cursor:pointer; box-shadow:0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
+    .topbar{
+      max-width:1100px;
+      width: calc(100% - 40px);
+      margin: 0 auto 10px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      padding: 0 20px;
+    }
+
+    /* Wallet kartı */
+    .wallet-card{
+      flex: 1 1 420px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      cursor: pointer;
+      user-select:none;
+    }
+    .wallet-title{ font-weight:900; letter-spacing:.4px; display:flex; align-items:center; gap:10px; }
+    .wallet-sub{ font-size:12px; opacity:.9; margin-top:6px; line-height:1.35; }
+    .wallet-amount{
+      font-size:20px;
+      font-weight:900;
+      margin-left:auto;
+      padding:6px 10px;
+      border-radius:12px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .wallet-hidden{
+      filter: blur(6px);
+      transition: filter .2s ease;
+    }
+    .wallet-card.reveal .wallet-hidden{ filter: blur(0); }
+
+    .menu {
+      flex:1;
+      display:flex;
+      flex-wrap:wrap;
+      gap:20px;
+      padding:30px;
+      justify-content:center;
+      align-content:flex-start;
+    }
+    .btn {
+      flex:1 1 350px;
+      background:#6a1b9a;
+      padding:35px;
+      font-size:24px;
+      font-weight:bold;
+      border:none;
+      border-radius:20px;
+      color:white;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,0.4);
+      transition: 0.3s;
+      position:relative;
+    }
     .btn:hover { background:#8e24aa; transform:scale(1.05); }
     .btn-main-feature { background: #4527a0; border: 2px solid #b39ddb; }
-    .footer-btn { background:#ff5722; padding:25px; font-size:28px; width:90%; max-width:600px; margin:20px auto; border-radius:20px; border:none; color:white; font-weight:bold; cursor: pointer; }
 
-    /* ✅ bazı Android'lerde sticky naz yapar → fixed garanti */
-    @media (max-width: 600px){
-        .header{
-            position: fixed;
-            left: 0;
-            right: 0;
-            top: 0;
-        }
-        body{
-            padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px));
-        }
-        .header{ font-size: 22px; } /* mobilde taşmayı azaltır */
-        .btn{ flex:1 1 100%; font-size:20px; padding:28px; }
-        .footer-btn{ font-size:24px; padding:20px; }
+    .footer-btn {
+      background:#ff5722;
+      padding:25px;
+      font-size:28px;
+      width:90%;
+      max-width:600px;
+      margin:20px auto;
+      border-radius:20px;
+      border:none;
+      color:white;
+      font-weight:bold;
+      cursor: pointer;
+      text-align: center;
     }
-</style>
+
+    .modBadge{
+      position:absolute;
+      right:16px;
+      top:16px;
+      font-size:22px;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.35));
+    }
+
+    /* ✅ MOBİL GARANTİ: sticky naz yaparsa fixed + body padding */
+    @media (max-width: 600px){
+      .header{
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        font-size:22px;
+      }
+
+      body{
+        padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px));
+      }
+
+      .menu{ padding: 20px; }
+      .btn{ flex:1 1 100%; padding: 26px; font-size: 20px; }
+      .footer-btn{ font-size: 24px; padding: 20px; }
+    }
+  </style>
 </head>
-<body>
-    <div class="header">
-        <a href="index.html" class="back">Ana Sayfa</a>
-        <div id="baslik">Gayrimenkul Raporu</div>
+
+<body oncontextmenu="return false;">
+  <div class="header">
+    <a href="index.html" class="back">Ana Sayfa</a>
+    <div id="baslik">Gayrimenkul Raporu</div>
+  </div>
+
+  <!-- ✅ Cüzdan barı: tıkla aç/kapat -->
+  <div class="topbar">
+    <div id="walletCard" class="wallet-card" title="Bakiye detayını görmek için tıkla">
+      <div class="wallet-title">
+        💳 Cüzdan
+        <span id="walletAmount" class="wallet-amount wallet-hidden">yükleniyor...</span>
+      </div>
+      <div id="walletSub" class="wallet-sub">
+        Bakiye gizlidir. Görmek için karta tıkla.
+      </div>
     </div>
+  </div>
 
-    <div class="menu">
-        <button class="btn btn-main-feature" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
-        <button class="btn" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
-        <button class="btn" onclick="go('imar.html')">İMAR DURUMU</button>
-        <button class="btn" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
-        <button class="btn" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
-        <button class="btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
-        <button class="btn" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
-    </div>
-   
-    <button class="footer-btn" onclick="go('rapor-olustur.html')">TAM RAPOR OLUŞTUR</button>
+  <div class="menu">
+    <button class="btn btn-main-feature" data-modul="konum" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
+    <button class="btn" data-modul="tapu" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
+    <button class="btn" data-modul="imar" onclick="go('imar.html')">İMAR DURUMU</button>
+    <button class="btn" data-modul="belgeler" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
+    <button class="btn" data-modul="bina" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
+    <button class="btn" data-modul="bb" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+    <button class="btn" data-modul="emsal" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
+  </div>
 
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
+  <!-- ✅ burada uyarı var: rapor-olustur'a onay parametresiyle gider -->
+  <button class="footer-btn" onclick="raporOlusturUyari()">TAM RAPOR OLUŞTUR</button>
 
-        function go(page) {
-            window.location.href = page + '?id=' + id;
-        }
+<script>
+  // ✅ Firebase auth/db
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-        const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-        const report = reports[id];
+  // ✅ RID helpers
+  function genRid(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
+  function ensureRidMigration(arr){
+    let changed=false;
+    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
+    return changed;
+  }
+  function findIndexByRid(arr, rid){
+    return (arr||[]).findIndex(r => r && r.rid === rid);
+  }
 
-        if (report) {
-            document.getElementById('baslik').textContent = report.propertyName || "İsimsiz Gayrimenkul";
-        }
-    </script>
+  // ✅ URL params (rid öncelikli)
+  const urlParams = new URLSearchParams(window.location.search);
+  let rid = urlParams.get('rid');
+  const legacyId = urlParams.get('id');
+
+  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+
+  // Eski ?id= ile geldiyse rid’ye çevir
+  if (!rid && legacyId !== null && legacyId !== "") {
+    const idx = Number(legacyId);
+    if (!Number.isNaN(idx) && reports[idx] && reports[idx].rid) {
+      rid = reports[idx].rid;
+      window.location.replace("rapor-detay.html?rid=" + encodeURIComponent(rid));
+    }
+  }
+
+  function getReportIndexByRid(){
+    reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+    const i = rid ? findIndexByRid(reports, rid) : -1;
+    return i;
+  }
+  function getReportByRid(){
+    const i = getReportIndexByRid();
+    if (i < 0) return null;
+    return reports[i];
+  }
+
+  // ✅ Sayfa yönlendirme (rid koru)
+  function go(page){
+    if (!rid) { window.location.href="index.html"; return; }
+    window.location.href = page + "?rid=" + encodeURIComponent(rid);
+  }
+
+  // ✅ “Rapor Oluştur” uyarısı (para/hak düşmeden önce)
+  function raporOlusturUyari(){
+    if (!rid) { window.location.href="index.html"; return; }
+
+    const msg =
+`UYARI! (ÖNEMLİ)
+Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
+
+Lütfen zaman ve para kaybı olmaması için tüm modülleri tekrar kontrol edin.
+Devam ederseniz rapor bankaya uygun taslak formatında üretilecektir.
+
+Devam etmek istiyor musunuz?`;
+
+    if (!confirm(msg)) return;
+
+    // ✅ onay verildi → rapor-olustur'a confirm=1 ile git
+    window.location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
+  }
+
+  /* =========================
+     WALLET UI (gizli -> tıkla aç)
+  ========================== */
+  let walletRevealed = false;
+
+  function setWalletUI(textAmount, subText){
+    document.getElementById("walletAmount").textContent = textAmount;
+    document.getElementById("walletSub").textContent = subText;
+  }
+
+  function toggleWalletReveal(){
+    walletRevealed = !walletRevealed;
+    const card = document.getElementById("walletCard");
+    if (walletRevealed) card.classList.add("reveal");
+    else card.classList.remove("reveal");
+  }
+
+  document.getElementById("walletCard").addEventListener("click", toggleWalletReveal);
+
+  async function loadWallet(user){
+    // Wallet.js yoksa bile sayfa patlamasın
+    if (!window.Wallet || !user) {
+      setWalletUI("—", "Cüzdan modülü yüklenemedi.");
+      return;
+    }
+
+    try{
+      const w = await Wallet.load(user.uid);
+      const balance = Number(w?.balanceTL ?? w?.balance ?? w?.tl ?? 0) || 0;
+      const freeLeft = Number(w?.freeLeft ?? w?.freeReportsLeft ?? w?.free ?? 0);
+
+      const tlText = new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(balance) + " TL";
+      const info = (freeLeft > 0)
+        ? `Ücretsiz rapor hakkı: ${freeLeft} • Bakiye: (gizli)`
+        : `Ücretsiz hak bitti • Bakiye: (gizli)`;
+
+      setWalletUI(tlText, info);
+
+    }catch(e){
+      setWalletUI("—", "Cüzdan okunamadı. İnternet / izin kontrol et.");
+    }
+  }
+
+  /* =========================
+     BOOT
+  ========================== */
+  auth.onAuthStateChanged(async (user)=>{
+    if (!user || !rid) { window.location.href="index.html"; return; }
+
+    const report = getReportByRid();
+    if (!report) { window.location.href="index.html"; return; }
+
+    document.getElementById("baslik").textContent = report.propertyName || "İsimsiz Gayrimenkul";
+    await loadWallet(user);
+  });
+</script>
 </body>
 </html>
