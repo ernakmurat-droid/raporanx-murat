@@ -11,106 +11,104 @@
 <script src="firebase-config.js"></script>
 
 <style>
-    :root { --primary: #1a237e; --secondary: #3f51b5; --success: #00c853; --bg: #f4f7f6; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin:0; padding-bottom:50px; }
-    .header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color:white; padding:15px; text-align:center; position:sticky; top:0; z-index:1000; }
-    .back { position:absolute; left:10px; top:12px; background:#d32f2f; padding:8px 12px; border-radius:12px; color:white; text-decoration:none; border: none; cursor: pointer; font-weight: bold; }
-    .main-wrapper { display: flex; flex-direction: column; max-width: 1000px; margin: 15px auto; gap: 15px; padding: 0 15px; }
-    .form-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .section-title { grid-column: span 2; border-left: 5px solid var(--primary); margin-top: 20px; padding-left: 10px; color: var(--primary); font-weight: bold; background: #f0f2ff; padding: 8px; border-radius: 0 8px 8px 0; }
-    .input-item { display: flex; flex-direction: column; }
-    .input-item label { font-weight: 600; font-size: 13px; color: #444; margin-bottom: 5px; }
-    input, textarea { padding:12px; border:1px solid #ccc; border-radius:10px; font-size:15px; background: #fff; transition: 0.3s; width: 100%; box-sizing: border-box; }
-    input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(26,35,126,0.1); outline: none; }
-    .radio-group { display: flex; gap: 20px; padding: 10px 0; }
-    .radio-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-    .full-width { grid-column: span 2; }
-    .btn-save { background: var(--success); color: white; padding: 20px; border: none; border-radius: 15px; width: 100%; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 15px rgba(0,200,83,0.3); }
-    .btn-back { background: #6c757d; color: white; padding: 20px; border: none; border-radius: 15px; width: 100%; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 10px; }
-    .preview-box {
-        background: #222; color: #00ff6a; padding: 20px; border-radius: 15px;
-        font-family: 'Courier New', monospace; white-space: pre-wrap; font-size: 13px;
-        margin-top: 20px; border: 2px solid #555;
-    }
-    .disabled-input { background: #eee; cursor: not-allowed; opacity: 0.7; }
-    .locked-note{
-      margin-top:12px;
-      padding:10px 12px;
-      border-radius:14px;
-      background:#fff3cd;
-      border:1px solid #ffe69c;
-      color:#7a5b00;
-      font-weight:800;
-      display:none;
-    }
+  :root { --primary:#1a237e; --secondary:#3f51b5; --success:#00c853; --bg:#f4f7f6; }
+  body { font-family:'Segoe UI',sans-serif; background:var(--bg); margin:0; padding-bottom:50px; }
+  .header { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; padding:15px; text-align:center; position:sticky; top:0; z-index:1000; }
+  .back { position:absolute; left:10px; top:12px; background:#d32f2f; padding:8px 12px; border-radius:12px; color:#fff; border:none; cursor:pointer; font-weight:800; }
+  .main-wrapper { display:flex; flex-direction:column; max-width:1000px; margin:15px auto; gap:15px; padding:0 15px; }
+  .form-container { background:#fff; padding:25px; border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
+  .grid-form { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+  .section-title { grid-column:span 2; border-left:5px solid var(--primary); margin-top:20px; padding-left:10px; color:var(--primary); font-weight:900; background:#f0f2ff; padding:8px; border-radius:0 8px 8px 0; }
+  .input-item { display:flex; flex-direction:column; }
+  .input-item label { font-weight:700; font-size:13px; color:#444; margin-bottom:5px; }
+  input, textarea { padding:12px; border:1px solid #ccc; border-radius:10px; font-size:15px; width:100%; box-sizing:border-box; }
+  input:focus, textarea:focus { border-color:var(--primary); box-shadow:0 0 8px rgba(26,35,126,0.1); outline:none; }
+  .radio-group { display:flex; gap:20px; padding:10px 0; }
+  .radio-item { display:flex; align-items:center; gap:8px; cursor:pointer; }
+  .full-width { grid-column:span 2; }
+  .btn-save { background:var(--success); color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:30px; }
+  .btn-back { background:#6c757d; color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:10px; }
+  .preview-box { background:#222; color:#00ff6a; padding:20px; border-radius:15px; font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px; margin-top:20px; border:2px solid #555; }
+  .disabled-input { background:#eee; cursor:not-allowed; opacity:.7; }
+  .locked-note{ margin-top:12px; padding:10px 12px; border-radius:14px; background:#fff3cd; border:1px solid #ffe69c; color:#7a5b00; font-weight:900; display:none; }
+  .debug-box{ margin-top:14px; padding:12px; border-radius:14px; background:#0b1020; color:#c9d1ff; font:600 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; white-space:pre-wrap; border:1px solid rgba(255,255,255,.12); display:none; }
 </style>
 </head>
 
 <body oncontextmenu="return false;">
 
 <div class="header">
-    <button onclick="anaMenuyeDon()" class="back">← Menüye Dön</button>
-    <h1>KONUM VE ÇEVRESEL ÖZELLİKLER</h1>
-    <div id="raporBilgi" style="font-size: 12px; opacity: 0.8;">Yükleniyor...</div>
+  <button onclick="anaMenuyeDon()" class="back">← Menüye Dön</button>
+  <h1>KONUM VE ÇEVRESEL ÖZELLİKLER</h1>
+  <div id="raporBilgi" style="font-size:12px;opacity:.85;">Yükleniyor...</div>
 </div>
 
 <div class="main-wrapper">
-    <div class="form-container">
-        <div id="lockedNote" class="locked-note">🔒 RAPOR KİLİTLİ — Bu modül düzenlenemez.</div>
+  <div class="form-container">
+    <div id="lockedNote" class="locked-note">🔒 RAPOR KİLİTLİ — Bu modül düzenlenemez.</div>
 
-        <form id="mainForm" onsubmit="return false;">
-            <div class="grid-form">
-                <div class="section-title">📊 TABLO VERİLERİ (1-16)</div>
-                <div class="input-item"><label>(1) UAVT</label><input type="text" id="v1"></div>
-                <div class="input-item"><label>(2) Koordinat X</label><input type="text" id="v2"></div>
-                <div class="input-item"><label>(3) Koordinat Y</label><input type="text" id="v3"></div>
-                <div class="input-item"><label>(4) İli</label><input type="text" id="v4"></div>
-                <div class="input-item"><label>(5) İlçesi</label><input type="text" id="v5"></div>
-                <div class="input-item"><label>(6) Mahallesi</label><input type="text" id="v6"></div>
-                <div class="input-item"><label>(7) Cadde/Sokak</label><input type="text" id="v7"></div>
-                <div class="input-item"><label>(8) Dış Kapı No</label><input type="text" id="v8"></div>
-                <div class="input-item"><label>(9) Bulunduğu Kat</label><input type="text" id="v9"></div>
-                <div class="input-item"><label>(10) Daire No</label><input type="text" id="v10"></div>
-                <div class="input-item"><label>(11) Bölge Gelişimi</label><input type="text" id="v11"></div>
-                <div class="input-item"><label>(12) Bölge Yapılaşması</label><input type="text" id="v12"></div>
-                <div class="input-item"><label>(13) Yapı Tipleri</label><input type="text" id="v13"></div>
-                <div class="input-item"><label>(14) Gelir Düzeyi</label><input type="text" id="v14"></div>
-                <div class="input-item"><label>(15) Yakın Yapı 1</label><input type="text" id="v15"></div>
-                <div class="input-item"><label>(16) Yakın Yapı 2</label><input type="text" id="v16"></div>
+    <form id="mainForm" onsubmit="return false;">
+      <div class="grid-form">
+        <div class="section-title">📊 TABLO VERİLERİ (1-16)</div>
+        <div class="input-item"><label>(1) UAVT</label><input type="text" id="v1"></div>
+        <div class="input-item"><label>(2) Koordinat X</label><input type="text" id="v2"></div>
+        <div class="input-item"><label>(3) Koordinat Y</label><input type="text" id="v3"></div>
+        <div class="input-item"><label>(4) İli</label><input type="text" id="v4"></div>
+        <div class="input-item"><label>(5) İlçesi</label><input type="text" id="v5"></div>
+        <div class="input-item"><label>(6) Mahallesi</label><input type="text" id="v6"></div>
+        <div class="input-item"><label>(7) Cadde/Sokak</label><input type="text" id="v7"></div>
+        <div class="input-item"><label>(8) Dış Kapı No</label><input type="text" id="v8"></div>
+        <div class="input-item"><label>(9) Bulunduğu Kat</label><input type="text" id="v9"></div>
+        <div class="input-item"><label>(10) Daire No</label><input type="text" id="v10"></div>
+        <div class="input-item"><label>(11) Bölge Gelişimi</label><input type="text" id="v11"></div>
+        <div class="input-item"><label>(12) Bölge Yapılaşması</label><input type="text" id="v12"></div>
+        <div class="input-item"><label>(13) Yapı Tipleri</label><input type="text" id="v13"></div>
+        <div class="input-item"><label>(14) Gelir Düzeyi</label><input type="text" id="v14"></div>
+        <div class="input-item"><label>(15) Yakın Yapı 1</label><input type="text" id="v15"></div>
+        <div class="input-item"><label>(16) Yakın Yapı 2</label><input type="text" id="v16"></div>
 
-                <div class="section-title">📝 METİN DEĞİŞKENLERİ</div>
-                <div class="input-item full-width"><label>Ulaşım Tarifi</label><textarea id="ulasimTarifi" rows="3"></textarea></div>
-                <div class="input-item full-width"><label>Ulaşım Olanakları</label><input type="text" id="ulasimOlanaklari"></div>
+        <div class="section-title">📝 METİN DEĞİŞKENLERİ</div>
+        <div class="input-item full-width"><label>Ulaşım Tarifi</label><textarea id="ulasimTarifi" rows="3"></textarea></div>
+        <div class="input-item full-width"><label>Ulaşım Olanakları</label><input type="text" id="ulasimOlanaklari"></div>
 
-                <div class="input-item">
-                    <label>Altyapı Durumu</label>
-                    <div class="radio-group">
-                        <label class="radio-item"><input type="radio" name="altyapi" value="Evet" checked> Evet</label>
-                        <label class="radio-item"><input type="radio" name="altyapi" value="Hayır"> Hayır</label>
-                    </div>
-                </div>
-                <div class="input-item">
-                    <label>Altyapı Açıklaması</label>
-                    <input type="text" id="altyapiAciklama" class="disabled-input" disabled value="Altyapısı tamdır.">
-                </div>
-            </div>
-        </form>
+        <div class="input-item">
+          <label>Altyapı Durumu</label>
+          <div class="radio-group">
+            <label class="radio-item"><input type="radio" name="altyapi" value="Evet" checked> Evet</label>
+            <label class="radio-item"><input type="radio" name="altyapi" value="Hayır"> Hayır</label>
+          </div>
+        </div>
+        <div class="input-item">
+          <label>Altyapı Açıklaması</label>
+          <input type="text" id="altyapiAciklama" class="disabled-input" disabled value="Altyapısı tamdır.">
+        </div>
+      </div>
+    </form>
 
-        <div class="section-title">👀 CANLI ÖNİZLEME</div>
-        <div class="preview-box" id="livePreview">Veri bekleniyor...</div>
+    <div class="section-title">👀 CANLI ÖNİZLEME</div>
+    <div class="preview-box" id="livePreview">Veri bekleniyor...</div>
 
-        <button id="saveBtn" class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET</button>
-        <button class="btn-back" onclick="anaMenuyeDon()">MENÜYE DÖN</button>
-    </div>
+    <button id="saveBtn" class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET</button>
+    <button class="btn-back" onclick="anaMenuyeDon()">MENÜYE DÖN</button>
+
+    <!-- DEBUG: veri nerede duruyor gör -->
+    <div class="section-title">🛠 DEBUG (gerekirse aç)</div>
+    <div id="debugBox" class="debug-box"></div>
+  </div>
 </div>
 
 <script>
-  // ✅ firebase-config.js varsa onu kullan, yoksa default
   const auth = window.auth || firebase.auth();
-  const db   = window.db   || firebase.firestore();
 
-  // ---------- RID / legacy id migration ----------
+  // RID / legacy
+  const params = new URLSearchParams(location.search);
+  let rid = (params.get("rid") || "").toString().trim();
+  const legacyId = (params.get("id") || "").toString().trim();
+
+  function readReports(){
+    try{ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
+    catch(e){ return []; }
+  }
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
@@ -120,18 +118,12 @@
     (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
     return changed;
   }
-
-  const params = new URLSearchParams(location.search);
-  let rid = (params.get("rid") || "").toString().trim();
-  const legacyId = (params.get("id") || "").toString().trim();
-
-  function readReports(){
-    try{ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
-    catch(e){ return []; }
+  function findIndexByRid(arr, rid){
+    return (arr||[]).findIndex(r => r && String(r.rid) === String(rid));
   }
 
-  // rid yoksa id'den rid'ye çevir
-  (function migrateOrRedirect(){
+  // migrate
+  (function(){
     let reports = readReports();
     if (ensureRidMigration(reports)) localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
 
@@ -144,57 +136,50 @@
     }
   })();
 
-  function findIndexByRid(arr, rid){
-    return (arr||[]).findIndex(r => r && String(r.rid) === String(rid));
-  }
-
   function getReportByRid(){
     const reports = readReports();
     const idx = findIndexByRid(reports, rid);
     return { reports, idx, report: (idx >= 0 ? reports[idx] : null) };
   }
 
-  // ---------- Helpers (asıl fix burada) ----------
-  function has(obj, key){
-    return obj && Object.prototype.hasOwnProperty.call(obj, key);
+  // helpers
+  const has = (o,k)=> o && Object.prototype.hasOwnProperty.call(o,k);
+  const deep = (o,p)=> { try{ return p.split(".").reduce((a,k)=> (a && a[k] !== undefined ? a[k] : undefined), o); }catch(e){ return undefined; } };
+
+  function setInput(id, value){
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (value !== undefined && value !== null) el.value = String(value);
   }
 
-  // konumCevre içinde farklı eski yapıları da dene
-  function getKC(report){
-    if (!report) return {};
-    const kc = report.konumCevre || report.konum_cevre || report.konum || {};
-    return kc;
+  function kcOf(report){
+    return report?.konumCevre || report?.konum_cevre || report?.konum || {};
   }
 
-  function getValDeep(obj, path){
-    try{
-      return path.split(".").reduce((a,k)=> (a && a[k] !== undefined ? a[k] : undefined), obj);
-    }catch(e){ return undefined; }
-  }
-
-  // v4 vb. alanları farklı yerdeyse yakala
   function readField(kc, key){
     if (has(kc, key)) return kc[key];
-
-    // eski olası yerler
-    const candidates = [
-      "veriler."+key,
-      "table."+key,
-      "tablo."+key,
-      "fields."+key
-    ];
+    const candidates = ["veriler."+key, "tablo."+key, "table."+key, "fields."+key];
     for (const p of candidates){
-      const v = getValDeep(kc, p);
+      const v = deep(kc, p);
       if (v !== undefined) return v;
     }
     return undefined;
   }
 
-  function setInput(id, value){
-    const el = document.getElementById(id);
-    if (!el) return;
-    // undefined/null değilse yaz (boş string dahil!)
-    if (value !== undefined && value !== null) el.value = String(value);
+  function bestText(report, kc){
+    // “ulasimTarifi” yoksa buradan yakala
+    return (
+      (has(kc,"ulasimTarifi") ? kc.ulasimTarifi : undefined) ??
+      deep(kc,"metin.ulasimTarifi") ??
+      deep(kc,"tamMetin") ??
+      deep(kc,"metin") ??
+      report?.konumMetni ??
+      report?.konumMetin ??
+      report?.konumCevreMetni ??
+      report?.konumCevre?.tamMetin ??
+      report?.konumCevre?.metin ??
+      ""
+    );
   }
 
   function updatePreview(){
@@ -207,7 +192,6 @@
 
   function toggleAltyapi(isEvet){
     const inp = document.getElementById("altyapiAciklama");
-    if (!inp) return;
     if (isEvet) {
       inp.disabled = true;
       inp.classList.add("disabled-input");
@@ -220,17 +204,17 @@
     updatePreview();
   }
 
-  // radio change
-  document.addEventListener("DOMContentLoaded", ()=>{
-    document.querySelectorAll('input[name="altyapi"]').forEach(r=>{
-      r.addEventListener("change", ()=>{
-        const v = document.querySelector('input[name="altyapi"]:checked')?.value || "Evet";
-        toggleAltyapi(v !== "Hayır");
-      });
-    });
-  });
+  function checkLockStatus(report){
+    const locked = report && (report.isLocked === true || report.locked === true || report.final === true);
+    if (!locked) return;
 
-  // ---------- Load ----------
+    document.getElementById("lockedNote").style.display = "block";
+    const saveBtn = document.getElementById("saveBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "RAPOR KİLİTLİ (DÜZENLENEMEZ)";
+    document.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
+  }
+
   function verileriYukle(){
     const { idx, report } = getReportByRid();
     if (!rid || idx < 0 || !report){
@@ -239,25 +223,40 @@
       return;
     }
 
-    const kc = getKC(report);
+    const kc = kcOf(report);
 
     document.getElementById("raporBilgi").textContent =
       `Emlak: ${report.propertyName || "Tanımsız"} | RID: ${rid}`;
 
-    // ✅ 1-16 alanları: anahtar varsa doldur (boş olsa bile)
+    // 1-16 alanları (varsa)
     for (let i = 1; i <= 16; i++) {
       const key = "v" + i;
-      const val = readField(kc, key);
-      setInput(key, val);
+      setInput(key, readField(kc, key));
     }
 
-    // metin alanları
-    setInput("ulasimTarifi",      (has(kc,"ulasimTarifi") ? kc.ulasimTarifi : getValDeep(kc,"metin.ulasimTarifi")));
-    setInput("ulasimOlanaklari",  (has(kc,"ulasimOlanaklari") ? kc.ulasimOlanaklari : getValDeep(kc,"metin.ulasimOlanaklari")));
-    setInput("altyapiAciklama",   (has(kc,"altyapiAciklama") ? kc.altyapiAciklama : getValDeep(kc,"metin.altyapiAciklama")));
+    // ✅ İl/ilçe/mahalle fallback: report kökünden çek
+    if (!document.getElementById("v4").value) setInput("v4", report.il || report.sehir || report.city);
+    if (!document.getElementById("v5").value) setInput("v5", report.ilce || report.ilçe || report.district);
+    if (!document.getElementById("v6").value) setInput("v6", report.mahalle || report.mahallesi || report.neighborhood);
 
-    // altyapi radio
-    const alty = (has(kc,"altyapi") ? kc.altyapi : (getValDeep(kc,"metin.altyapi") || "Evet"));
+    // Metinler fallback
+    const ulasim = bestText(report, kc);
+    if (ulasim && !document.getElementById("ulasimTarifi").value) setInput("ulasimTarifi", ulasim);
+
+    setInput("ulasimOlanaklari",
+      (has(kc,"ulasimOlanaklari") ? kc.ulasimOlanaklari : undefined) ??
+      deep(kc,"metin.ulasimOlanaklari") ??
+      report.ulasimOlanaklari ??
+      ""
+    );
+
+    setInput("altyapiAciklama",
+      (has(kc,"altyapiAciklama") ? kc.altyapiAciklama : undefined) ??
+      deep(kc,"metin.altyapiAciklama") ??
+      ""
+    );
+
+    const alty = (has(kc,"altyapi") ? kc.altyapi : (deep(kc,"metin.altyapi") || "Evet"));
     if (String(alty).toLowerCase() === "hayır" || String(alty).toLowerCase() === "hayir"){
       document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
       toggleAltyapi(false);
@@ -266,13 +265,30 @@
       toggleAltyapi(true);
     }
 
+    // DEBUG (gerekirse aç)
+    const dbg = document.getElementById("debugBox");
+    dbg.style.display = "block";
+    dbg.textContent =
+      "REPORT KEYS: " + Object.keys(report).join(", ") + "\n\n" +
+      "KONUMCEVRE KEYS: " + Object.keys(kc || {}).join(", ") + "\n\n" +
+      "SAMPLE report.il/ilce/mahalle: " + JSON.stringify({il:report.il, ilce:report.ilce, mahalle:report.mahalle}) + "\n\n" +
+      "SAMPLE kc.v4/v5/v6: " + JSON.stringify({v4:readField(kc,"v4"), v5:readField(kc,"v5"), v6:readField(kc,"v6")}) + "\n\n" +
+      "SAMPLE text bestText(): " + (bestText(report,kc) || "(boş)");
+
     updatePreview();
+    checkLockStatus(report);
   }
 
-  // ---------- Save ----------
   function verileriKaydet(){
-    const { reports, idx } = getReportByRid();
-    if (idx < 0) return;
+    const { reports, idx, report } = getReportByRid();
+    if (idx < 0 || !report) return;
+
+    // kilitliyse kaydetme
+    const locked = report && (report.isLocked === true || report.locked === true || report.final === true);
+    if (locked){
+      alert("Rapor kilitli. Düzenleme yapılamaz.");
+      return;
+    }
 
     const konumObj = {
       updatedAt: Date.now(),
@@ -281,34 +297,18 @@
       altyapi: document.querySelector('input[name="altyapi"]:checked').value,
       altyapiAciklama: document.getElementById("altyapiAciklama").value
     };
-
-    for (let i = 1; i <= 16; i++) {
-      konumObj["v" + i] = document.getElementById("v" + i).value;
-    }
+    for (let i = 1; i <= 16; i++) konumObj["v"+i] = document.getElementById("v"+i).value;
 
     reports[idx].konumCevre = konumObj;
+
+    // ayrıca kök il/ilçe/mahalle alanlarını da güncelle (rapor-olustur buradan okuyorsa sorun çıkmasın)
+    reports[idx].il = reports[idx].il || document.getElementById("v4").value;
+    reports[idx].ilce = reports[idx].ilce || document.getElementById("v5").value;
+    reports[idx].mahalle = reports[idx].mahalle || document.getElementById("v6").value;
+
     localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
-
     alert("Başarıyla kaydedildi!");
-    updatePreview();
-  }
-
-  // ---------- Lock control (local) ----------
-  function checkLockStatus(){
-    const { report } = getReportByRid();
-    const locked = report && (report.isLocked === true || report.locked === true || report.final === true);
-
-    if (locked){
-      document.getElementById("lockedNote").style.display = "block";
-      const saveBtn = document.getElementById("saveBtn");
-      saveBtn.disabled = true;
-      saveBtn.textContent = "RAPOR KİLİTLİ (DÜZENLENEMEZ)";
-      document.querySelectorAll("input, textarea, button.btn-save").forEach(el => {
-        if (el.id !== "saveBtn") el.disabled = true;
-      });
-      // Menüye dön butonu kalsın
-      document.querySelectorAll(".btn-back").forEach(b => b.disabled = false);
-    }
+    verileriYukle();
   }
 
   function anaMenuyeDon(){
@@ -318,16 +318,18 @@
   window.anaMenuyeDon = anaMenuyeDon;
   window.verileriKaydet = verileriKaydet;
 
-  // ---------- Boot ----------
-  auth.onAuthStateChanged((user) => {
-    if (!user) { location.href = "index.html"; return; }
-    verileriYukle();
-    checkLockStatus();
+  // listeners
+  document.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', updatePreview));
+  document.querySelectorAll('input[name="altyapi"]').forEach(r=>{
+    r.addEventListener("change", ()=>{
+      const v = document.querySelector('input[name="altyapi"]:checked')?.value || "Evet";
+      toggleAltyapi(v !== "Hayır");
+    });
   });
 
-  // preview listeners
-  document.querySelectorAll('input, textarea').forEach(el => {
-    el.addEventListener('input', updatePreview);
+  auth.onAuthStateChanged((user)=>{
+    if (!user){ location.href="index.html"; return; }
+    verileriYukle();
   });
 </script>
 
