@@ -44,6 +44,7 @@
   .footer { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:800px; padding:20px; background: var(--bg); border-top:1px solid #ddd; z-index:1001; }
   .save-btn { background: var(--success); color:white; padding:18px; width:100%; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 12px rgba(46,125,50,0.3); }
 </style>
+<link rel="stylesheet" href="mobil-fix.css">
 </head>
 
 <body oncontextmenu="return false;">
@@ -61,6 +62,7 @@
 
   <div class="preview-card">
     <h4 style="margin:0 0 10px;">MİMARİ PROJE VE MEVCUT DURUM METNİ</h4>
+    
     <div id="taslakMetin" oncopy="return false">Veri girişi bekleniyor...</div>
   </div>
 
@@ -75,7 +77,6 @@
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  /* ========= RID + legacy id desteği ========= */
   const params = new URLSearchParams(window.location.search);
   let rid = params.get('rid');
   const legacyId = params.get('id');
@@ -96,7 +97,6 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // legacy id -> rid
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -109,12 +109,10 @@
   let currentReport = (idx0 >= 0) ? (reports[idx0] || { bina:{} }) : null;
   let savedKatVerileri = (currentReport && currentReport.katSatirVerileri) ? currentReport.katSatirVerileri : {};
 
-  // sadece print/save/view-source engelle (kopyala yapıştır inputlarda serbest)
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) { e.preventDefault(); }
   });
 
-  // inputlarda sağ tık serbest, diğer yerde kapalı
   document.addEventListener('contextmenu', (e) => {
     const isInput = e.target.closest('input, textarea, select');
     if (isInput) return;
@@ -224,9 +222,6 @@
   function toggleKat(id) { document.getElementById(`content-${id}`).classList.toggle('hidden'); }
   function toggleLogicPanel(id, cb) { document.getElementById(`panel-${id}`).classList.toggle('hidden', !cb.checked); }
 
-  /* =========================
-     SATIR EKLE (qty default 0)
-     ========================= */
   function satirEkle(katId, data = null) {
     const container = document.getElementById(`rows-${katId}`);
     const rowId = Math.random().toString(36).substr(2, 5);
@@ -293,9 +288,6 @@
     renderPreview();
   }
 
-  /* =========================
-     PREVIEW + BB HESABI + "adet" FIX
-     ========================= */
   function renderPreview() {
     let gruplanmisKatlar = [];
     let toplamBB = 0;
@@ -313,16 +305,12 @@
 
         katSatirlari.push({ tip, qty, desc });
 
-        // sadece dolu satirlar metne girer + BB sayilir
         if (desc && qty > 0) {
-
-          // ✅ "adet" kelimesi 1'e donusmesin
           if (desc.toLowerCase() === "adet") {
             icerikList.push("adet");
           } else {
             icerikList.push(`${qty} ${desc}`.trim());
           }
-
           if (tip === "B.B.") toplamBB += qty;
         }
       });
@@ -370,7 +358,6 @@
       arr[i] = r;
       localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
 
-      // buluta da yaz
       const user = auth.currentUser;
       if (user) {
         db.collection("users").doc(user.uid).set({ gayrimenkul_reports: arr }, { merge: true }).catch(()=>{});
@@ -400,17 +387,14 @@
           gayrimenkul_reports: arr,
           lastUpdate: new Date().toISOString()
         }, { merge: true });
-      }catch(e){
-        // bulut gitse bile local kaydımız sağlam
-      }
+      }catch(e){}
     }
 
     window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
   }
 
-  window.onload = function(){
-    // auth callback içinde init() var
-  };
+  window.onload = function(){};
 </script>
+<script src="mobil-fix.js"></script>
 </body>
 </html>
