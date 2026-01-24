@@ -2,470 +2,94 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Gayrimenkul Değerleme Raporu</title>
-
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="wallet.js"></script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapor Ana Menü</title>
 <style>
-:root{
-  --primary:#1a237e;
-  --secondary:#3949ab;
-  --bg:#f4f7f9;
-  --hdrH: 90px;
-}
-body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e50;}
-.header{
-  background:linear-gradient(135deg,var(--primary),var(--secondary));
-  color:#fff;
-  padding: calc(30px + env(safe-area-inset-top,0px)) 20px 20px;
-  text-align:center;
-  position: sticky;
-  top: 0;
-  z-index: 999999;
-}
-.header.locked{background:linear-gradient(135deg,#263238,#455a64);}
-.back{
-  position:absolute;left:20px;
-  top: calc(25px + env(safe-area-inset-top,0px));
-  background:rgba(255,255,255,.2);
-  padding:8px 15px;border-radius:30px;color:#fff;border:none;cursor:pointer;
-  z-index: 1000000;
-}
-.badge{
-  display:none;margin:10px auto 0;width:fit-content;padding:6px 10px;border-radius:999px;
-  font-size:13px;font-weight:900;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.22);
-}
-.main-wrapper{max-width:1300px;margin:14px auto 30px;display:grid;grid-template-columns:270px 1fr;gap:25px;padding:0 20px;}
-.toc-container{position:sticky;top:20px;height:fit-content;}
-.toc{background:#fff;padding:18px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.05);border-left:6px solid var(--primary);}
-.toc-title{font-weight:bold;color:var(--primary);margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:6px;}
-.toc ul{list-style:none;padding:0;margin:0;}
-.toc li{margin:6px 0;}
-.toc a{color:#444;text-decoration:none;font-size:.9em;display:block;padding:4px 6px;border-radius:4px;}
-.toc a:hover{background:#f0f2ff;color:var(--primary);}
-.container{background:#fff;padding:35px;border-radius:12px;box-shadow:0 0 25px rgba(0,0,0,.05);}
-.section{margin-bottom:45px;}
-.section h2{color:var(--primary);border-bottom:2px solid #eee;padding-bottom:8px;font-size:1.2em;}
-.text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;color:#34495e;}
-.warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
-.print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto;display:block;cursor:pointer;font-weight:bold;}
-.print-btn:hover{background:#1e874e;}
-.action-btn{background:#ff5722;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto 0;display:block;cursor:pointer;font-weight:900;}
-.action-btn:hover{opacity:.92;}
-.action-btn:disabled{opacity:.55;cursor:not-allowed;}
-#statusBar{
-  max-width:1300px;margin:12px auto 0;padding:10px 14px;border-radius:12px;background:#fff;
-  box-shadow:0 4px 14px rgba(0,0,0,.06);border-left:6px solid var(--secondary);color:#2c3e50;font-weight:900;
-}
-#statusBar small{display:block;font-weight:700;opacity:.88;margin-top:4px}
-@media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
-@media(max-width:600px){
-  .header{position: fixed;left: 0; right: 0;top: 0;}
-  body{padding-top: calc(var(--hdrH) + env(safe-area-inset-top,0px));}
-}
-@media print{.header,.toc-container,.print-btn,.action-btn,#statusBar{display:none!important;}.container{box-shadow:none;padding:0;}}
+    :root{ --hdrH: 86px; } /* mobilde header yüksekliği */
+
+    body { font-family: Arial; background: linear-gradient(135deg,#4a148c,#7c4dff); margin:0; color:white; min-height:100vh; display:flex; flex-direction:column; }
+
+    /* ✅ Header mobilde kaybolmasın + safe-area */
+    .header {
+        padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;
+        text-align:center;
+        font-size:28px;
+        font-weight:bold;
+        position: sticky;
+        top: 0;
+        z-index: 999999;
+        background: linear-gradient(135deg,#4a148c,#7c4dff);
+    }
+
+    /* ✅ geri butonu safe-area altında kalsın */
+    .back {
+        position:absolute;
+        left:15px;
+        top: calc(20px + env(safe-area-inset-top, 0px));
+        background:rgba(255,255,255,0.2);
+        padding:10px 20px;
+        border-radius:30px;
+        text-decoration:none;
+        color:white;
+        font-weight:bold;
+        z-index: 1000000;
+    }
+
+    .menu { flex:1; display:flex; flex-wrap:wrap; gap:20px; padding:30px; justify-content:center; align-content:flex-start; }
+    .btn { flex:1 1 350px; background:#6a1b9a; padding:35px; font-size:24px; font-weight:bold; border:none; border-radius:20px; color:white; cursor:pointer; box-shadow:0 8px 20px rgba(0,0,0,0.4); transition: 0.3s; }
+    .btn:hover { background:#8e24aa; transform:scale(1.05); }
+    .btn-main-feature { background: #4527a0; border: 2px solid #b39ddb; }
+    .footer-btn { background:#ff5722; padding:25px; font-size:28px; width:90%; max-width:600px; margin:20px auto; border-radius:20px; border:none; color:white; font-weight:bold; cursor: pointer; }
+
+    /* ✅ bazı Android'lerde sticky naz yapar → fixed garanti */
+    @media (max-width: 600px){
+        .header{
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+        }
+        body{
+            padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px));
+        }
+        .header{ font-size: 22px; } /* mobilde taşmayı azaltır */
+        .btn{ flex:1 1 100%; font-size:20px; padding:28px; }
+        .footer-btn{ font-size:24px; padding:20px; }
+    }
 </style>
 </head>
 <body>
-
-<div class="header" id="hdr">
-  <button class="back" id="btnBack">← Geri</button>
-  <h1 style="margin:0;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
-  <div id="raporTarih" style="margin-top:6px;"></div>
-  <div id="finalBadge" class="badge">🔒 FINAL / KİLİTLİ</div>
-</div>
-
-<div id="statusBar">
-  Hazır.
-  <small>Rapor metinleri yükleniyor…</small>
-</div>
-
-<div class="main-wrapper">
-  <aside class="toc-container">
-    <div class="toc">
-      <div class="toc-title">📋 RAPOR BÖLÜMLERİ</div>
-      <ul>
-        <li><a href="#genel">1. Genel Bilgiler</a></li>
-        <li><a href="#imar">2. İmar Durumu</a></li>
-        <li><a href="#belgeler">3. Belgeler</a></li>
-        <li><a href="#bina">4. Ana Bina Bilgileri</a></li>
-        <li><a href="#bb">5. Bağımsız Bölüm</a></li>
-        <li><a href="#konum">6. Konum Analizi</a></li>
-        <li><a href="#tapu">7. Tapu Bilgileri</a></li>
-        <li><a href="#emsal">8. Değerleme / Emsal</a></li>
-      </ul>
+    <div class="header">
+        <a href="index.html" class="back">Ana Sayfa</a>
+        <div id="baslik">Gayrimenkul Raporu</div>
     </div>
-  </aside>
 
-  <main class="container">
-    <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
-    <button class="action-btn" id="btnFinalCreate" disabled>🧾 Final Rapor Oluştur (Hak Düş + Kilitle)</button>
+    <div class="menu">
+        <button class="btn btn-main-feature" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
+        <button class="btn" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
+        <button class="btn" onclick="go('imar.html')">İMAR DURUMU</button>
+        <button class="btn" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
+        <button class="btn" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
+        <button class="btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+        <button class="btn" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
+    </div>
+   
+    <button class="footer-btn" onclick="go('rapor-olustur.html')">TAM RAPOR OLUŞTUR</button>
 
-    <section id="genel" class="section">
-      <h2>1. Genel Bilgiler</h2>
-      <div id="genelBilgi"></div>
-    </section>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
 
-    <section id="imar" class="section">
-      <h2>2. İmar Durumu</h2>
-      <div id="imarTablo"></div>
-      <div class="text-block" id="imarMetin"></div>
-    </section>
+        function go(page) {
+            window.location.href = page + '?id=' + id;
+        }
 
-    <section id="belgeler" class="section">
-      <h2>3. Belgeler</h2>
-      <div class="text-block" id="belgelerMetin"></div>
-    </section>
+        const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+        const report = reports[id];
 
-    <section id="bina" class="section">
-      <h2>4. Ana Bina Bilgileri</h2>
-      <div class="text-block" id="binaMetin"></div>
-    </section>
-
-    <section id="bb" class="section">
-      <h2>5. Bağımsız Bölüm</h2>
-      <div class="text-block" id="bbMetin"></div>
-    </section>
-
-    <section id="konum" class="section">
-      <h2>6. Konum Analizi</h2>
-      <div class="text-block" id="konumMetin"></div>
-    </section>
-
-    <section id="tapu" class="section">
-      <h2>7. Tapu Bilgileri</h2>
-      <div class="text-block" id="tapuMetinB1"></div>
-      <div class="text-block" id="tapuMetinB2"></div>
-    </section>
-
-    <section id="emsal" class="section">
-      <h2>8. Değerleme / Emsal</h2>
-      <div class="text-block" id="emsalMetin"></div>
-    </section>
-  </main>
-</div>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const auth = window.auth || firebase.auth();
-  const db = window.db || firebase.firestore();
-  const $ = (id) => document.getElementById(id);
-
-  function setStatus(title, sub){
-    const el = $("statusBar");
-    el.textContent = title;
-    const sm = document.createElement("small");
-    sm.textContent = sub || "";
-    el.appendChild(sm);
-  }
-
-  const params = new URLSearchParams(location.search);
-  const rid = (params.get("rid") || params.get("id") || "").toString().trim();
-  const confirmParam = params.get("confirm") === "1";
-
-  $("btnBack").onclick = () => {
-    if (!rid) location.href="index.html";
-    else location.href="rapor-detay.html?rid=" + encodeURIComponent(rid);
-  };
-
-  if (!rid){
-    setStatus("❌ rid yok.", "Ana sayfaya dön.");
-    alert("Rapor id (rid) bulunamadı!");
-    return;
-  }
-
-  function isLockedLocal(){ return localStorage.getItem("report_locked_" + rid) === "1"; }
-  function setLockedLocal(){
-    localStorage.setItem("report_locked_" + rid, "1");
-    $("finalBadge").style.display = "block";
-    $("hdr").classList.add("locked");
-  }
-
-  /* ✅ EKSİK OLABİLEN FONKSİYON: isLockedRemote */
-  async function isLockedRemote(uid){
-    try{
-      const lockId = `${uid}_${rid}`;
-      const d = await db.collection("locks").doc(lockId).get();
-      if (d.exists) return true;
-    }catch(e){}
-    try{
-      const d = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
-      if (d.exists) return true;
-    }catch(e){}
-    try{
-      const d = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
-      if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
-    }catch(e){}
-    try{
-      const d = await db.collection("reports").doc(rid).get();
-      if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
-    }catch(e){}
-    return false;
-  }
-
-  async function setLockedRemote(uid){
-    const now = firebase.firestore.FieldValue.serverTimestamp();
-    const payload = { uid, rid, locked:true, createdAt: now };
-    try{ await db.collection("locks").doc(`${uid}_${rid}`).set(payload, { merge:true }); }catch(e){}
-    try{ await db.collection("users").doc(uid).collection("locks").doc(rid).set(payload, { merge:true }); }catch(e){}
-    try{ await db.collection("users").doc(uid).collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true }); }catch(e){}
-    try{ await db.collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true }); }catch(e){}
-  }
-
-  function formatMetin(t){
-    if (t === null || t === undefined) return "";
-    const s = String(t);
-    return s.replace(/\r\n/g,"\n").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
-  }
-
-  function pick(obj, ...paths){
-    for (const p of paths){
-      try{
-        const val = p.split(".").reduce((acc,k)=> (acc && acc[k] !== undefined ? acc[k] : undefined), obj);
-        if (val !== undefined && val !== null && String(val).trim() !== "") return val;
-      }catch{}
-    }
-    return "";
-  }
-
-  function bbYazdir(list){
-    if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
-    return list.map((bb,i)=>{
-      const baslik = bb?.baslik || bb?.title || "Bağımsız Bölüm";
-      const metin = pick(bb,"bbDetay.tamMetin","bbDetay.metin","tamMetin","metin");
-      return `(${i+1}) ${baslik}:\n${formatMetin(metin)}`.trim();
-    }).join("\n\n");
-  }
-
-  function emsalMetni(rep){
-    const direct = pick(rep,"emsalFinalMetni","degerlemeOzet.emsalFinalMetni","degerleme.emsalFinalMetni");
-    if (direct) return formatMetin(direct);
-    const list = rep?.bbDetayList;
-    if (Array.isArray(list) && list.length){
-      const uniq = new Set();
-      const arr = [];
-      for (const bb of list){
-        const t = pick(bb,"degerlemeOzet.emsalFinalMetni","emsalFinalMetni","degerleme.emsalFinalMetni");
-        const ft = formatMetin(t);
-        if (!ft) continue;
-        if (uniq.has(ft)) continue;
-        uniq.add(ft);
-        arr.push(ft);
-      }
-      return arr.length ? arr.join("\n\n") : "Emsal analizi bulunamadı";
-    }
-    return "Emsal verisi yok";
-  }
-
-  function render(r){
-    $("raporTarih").textContent = "Tarih: " + new Date().toLocaleDateString("tr-TR");
-    const il = pick(r,"il");
-    const ilce = pick(r,"ilce");
-    const ada = pick(r,"ada");
-    const parsel = pick(r,"parsel");
-    const propertyName = pick(r,"propertyName","tasınmazAdi","tasinmazAdi","baslik");
-
-    $("genelBilgi").innerHTML = `
-      <div><b>İl / İlçe:</b> ${il || "-"} / ${ilce || "-"}</div>
-      <div><b>Ada / Parsel:</b> ${ada || "-"} / ${parsel || "-"}</div>
-      <div><b>Taşınmaz:</b> ${propertyName || "Tanımsız"}</div>
-    `;
-
-    const imarTablo = pick(r,"imarTablo");
-    $("imarTablo").innerHTML = imarTablo || "<div class='warning'>İmar tablosu bulunamadı</div>";
-
-    $("imarMetin").textContent = formatMetin(pick(r,"imarMetni","imar.metin","imar.tamMetin"));
-    $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin","belgeler.tamMetin"));
-    $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","bina.tamMetin","binaMetni","binaMetin"));
-    $("bbMetin").textContent = bbYazdir(r.bbDetayList || r.bbList || r.bagimsizBolumler);
-    $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumCevre.metin","konumMetni","konumMetin"));
-    $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1","tapuMetinB1"));
-    $("tapuMetinB2").textContent = formatMetin(pick(r,"tapuMetniB2","tapu.b2","tapuMetinB2"));
-    $("emsalMetin").textContent = emsalMetni(r);
-  }
-
-  function loadReportLocal(){
-    let raporlar = [];
-    try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
-
-    const report =
-      raporlar.find(r => String(r?.rid ?? "").trim() === rid) ||
-      raporlar.find(r => String(r?.rid ?? "").trim() === String(Number(rid))) ||
-      null;
-
-    let report2 = null;
-    if (!report){
-      try{
-        const maybe = localStorage.getItem("rapor_" + rid);
-        if (maybe) report2 = JSON.parse(maybe);
-      }catch{}
-    }
-    return report || report2 || null;
-  }
-
-  async function getDocIfExists(path){
-    try{
-      const ref = db.doc(path);
-      const snap = await ref.get();
-      if (snap.exists) return snap.data();
-    }catch(e){}
-    return null;
-  }
-
-  async function loadReportRemote(uid){
-    let data = await getDocIfExists(`users/${uid}/reports/${rid}`);
-    if (data) return data;
-    data = await getDocIfExists(`reports/${rid}`);
-    if (data) return data;
-
-    try{
-      let q = await db.collection("reports")
-        .where("uid","==",uid)
-        .where("rid","==",rid)
-        .limit(1)
-        .get();
-      if (!q.empty) return q.docs[0].data();
-    }catch(e){}
-
-    try{
-      let q2 = await db.collection("reports")
-        .where("uid","==",uid)
-        .where("id","==",rid)
-        .limit(1)
-        .get();
-      if (!q2.empty) return q2.docs[0].data();
-    }catch(e){}
-
-    return null;
-  }
-
-  async function consumeWalletOrExplain(user){
-    if (!user) return { ok:false, why:"Giriş yok (user null)" };
-    if (!window.Wallet || typeof Wallet.consumeReport !== "function") return { ok:false, why:"Wallet.consumeReport yok" };
-
-    try{
-      const before = await Wallet.load(user.uid);
-      const bFree = Number(before?.freeReportsLeft ?? 0);
-
-      const ok = await Wallet.consumeReport(user.uid, rid);
-
-      const after = await Wallet.load(user.uid);
-      const aFree = Number(after?.freeReportsLeft ?? 0);
-
-      if (!ok) return { ok:false, why:`Yetersiz hak/bakiye (before: ${bFree} → after: ${aFree})` };
-      return { ok:true, why:`OK (before: ${bFree} → after: ${aFree})` };
-
-    }catch(e){
-      return { ok:false, why:(e?.message || String(e)) };
-    }
-  }
-
-  async function finalizeFlow(user, showAlerts){
-    let rep = loadReportLocal();
-    if (!rep) rep = await loadReportRemote(user.uid);
-
-    if (!rep){
-      setStatus("❌ Rapor bulunamadı.", "localStorage + Firestore içinde bu rid yok.");
-      if (showAlerts) alert("Rapor bulunamadı (rid: " + rid + ")");
-      return;
-    }
-
-    render(rep);
-
-    const locked = isLockedLocal() || await isLockedRemote(user.uid);
-    if (locked){
-      setLockedLocal();
-      setStatus("🔒 Zaten kilitli.", "Bu rapor daha önce final yapılmış.");
-      return;
-    }
-
-    if (!confirmParam){
-      const msg =
-`UYARI! (ÖNEMLİ)
-Final rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
-Devam etmek istiyor musunuz?`;
-      if (!confirm(msg)) return;
-    }
-
-    setStatus("💳 Hak düşürülüyor…", "Cüzdandan düşüm denenecek. Başarısızsa kilit atılmayacak.");
-
-    const res = await consumeWalletOrExplain(user);
-
-    if (!res.ok){
-      setStatus("❌ Hak düşürülemedi!", res.why);
-      if (showAlerts) alert("Hak düşürülemedi:\n" + res.why + "\n\nFirestore rules/izin sorunu olabilir.");
-      return;
-    }
-
-    setLockedLocal();
-    await setLockedRemote(user.uid);
-
-    setStatus("✅ Hak düşürüldü ve kilitlendi.", res.why);
-    if (showAlerts) alert("✅ Hak düşürüldü. Rapor kilitlendi.\n" + res.why);
-  }
-
-  async function boot(){
-    setStatus("⏳ Giriş kontrol ediliyor…", "Auth bekleniyor (mobilde şart).");
-
-    const user = (typeof window.waitForAuth === "function")
-      ? await window.waitForAuth()
-      : await new Promise((resolve)=> auth.onAuthStateChanged(u=> u && resolve(u)));
-
-    if (!user){
-      setStatus("❌ Giriş yok.", "Lütfen giriş yap.");
-      alert("Giriş bulunamadı. Lütfen tekrar giriş yapın.");
-      return;
-    }
-
-    setStatus("⏳ Rapor yükleniyor…", "Önce cihaz (local), yoksa Firestore.");
-    let rep = loadReportLocal();
-    let source = "localStorage";
-
-    if (!rep){
-      rep = await loadReportRemote(user.uid);
-      source = rep ? "Firestore" : "yok";
-    }
-
-    if (!rep){
-      setStatus("❌ Rapor yok.", `rid: ${rid} (localStorage + Firestore bulunamadı)`);
-      alert("Rapor bulunamadı! (rid: " + rid + ")");
-      return;
-    }
-
-    render(rep);
-
-    const locked = isLockedLocal() || await isLockedRemote(user.uid);
-    if (locked){
-      setLockedLocal();
-      setStatus("🔒 Kilitli.", `Kaynak: ${source}. Bu rapor final yapılmış.`);
-    } else {
-      setStatus("✅ Hazır.", `Kaynak: ${source}. Final yapmak için butonu kullan.`);
-    }
-
-    const btn = $("btnFinalCreate");
-    btn.disabled = false;
-
-    const handler = () => finalizeFlow(user, true);
-    btn.addEventListener("click", handler, { passive:true });
-    btn.addEventListener("touchstart", handler, { passive:true });
-
-    if (confirmParam){
-      setTimeout(()=> finalizeFlow(user, false), 150);
-    }
-  }
-
-  boot().catch((e)=>{
-    console.error(e);
-    setStatus("❌ Hata oluştu.", e?.message || String(e));
-    alert("Hata:\n" + (e?.message || String(e)));
-  });
-});
-</script>
-
+        if (report) {
+            document.getElementById('baslik').textContent = report.propertyName || "İsimsiz Gayrimenkul";
+        }
+    </script>
 </body>
 </html>
