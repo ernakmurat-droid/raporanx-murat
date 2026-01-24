@@ -144,6 +144,7 @@
       font-weight:bold;
       cursor: pointer;
       text-align: center;
+      /* Alt bar güvenli alanı */
       margin-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     }
     .footer-btn.locked{ background:#2196F3; }
@@ -202,7 +203,7 @@ Devam etmek istiyor musunuz?`;
   <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüller görüntüleme modunda.</div>
 
   <div class="topbar">
-    <div id="walletCard" class="wallet-card" title="Bakiye detayını görmek için tıkla">
+    <div id="walletCard" class="wallet-card">
       <div class="wallet-title">
         💳 Cüzdan
         <span id="walletAmount" class="wallet-amount wallet-hidden">yükleniyor...</span>
@@ -217,7 +218,7 @@ Devam etmek istiyor musunuz?`;
     <button class="btn modül-btn" onclick="go('imar.html')">İMAR DURUMU</button>
     <button class="btn modül-btn" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
     <button class="btn modül-btn" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
-    <button class="btn modül-btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+    <button class="btn modül-btn" onclick="go('kat-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
     <button class="btn modül-btn" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
   </div>
 
@@ -240,86 +241,59 @@ Devam etmek istiyor musunuz?`;
     return (arr||[]).find(r => r && String(r.rid) === String(rid)) || null;
   }
 
-  function isLockedFromLocalReport(r){
-    if (!r) return false;
-    return (r.isLocked === true || r.locked === true || r.final === true);
-  }
-
   function applyLockedUI(){
-    const msgBox = document.getElementById("kilitMesaji");
-    if(msgBox) msgBox.style.display = "block";
+    document.getElementById("kilitMesaji").style.display = "block";
     document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
-
     const btn = document.getElementById("btnRaporOlustur");
-    if(btn) {
-      btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
-      btn.classList.add("locked");
-      btn.onclick = () => location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
-    }
+    btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
+    btn.classList.add("locked");
+    btn.onclick = () => location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
   }
 
   async function isLockedRemoteStrict(uid){
     try{
       const lockId = `${uid}_${rid}`;
       const s = await db.collection("locks").doc(lockId).get();
-      if (s.exists){
-        const d = s.data() || {};
-        if (d.locked === true && String(d.uid||uid) === String(uid) && String(d.rid||rid) === String(rid)) return true;
-      }
-    }catch(e){}
-    return false;
+      return s.exists && s.data()?.locked === true;
+    }catch(e){ return false; }
   }
 
   let walletRevealed = false;
-  function setWalletUI(textAmount, subText){
-    const amt = document.getElementById("walletAmount");
-    const sub = document.getElementById("walletSub");
-    if(amt) amt.textContent = textAmount;
-    if(sub) sub.textContent = subText;
-  }
-
-  const wCard = document.getElementById("walletCard");
-  if(wCard) {
-    wCard.addEventListener("click", ()=>{
-      walletRevealed = !walletRevealed;
-      wCard.classList.toggle("reveal", walletRevealed);
-    });
-  }
+  document.getElementById("walletCard").addEventListener("click", ()=>{
+    walletRevealed = !walletRevealed;
+    document.getElementById("walletCard").classList.toggle("reveal", walletRevealed);
+  });
 
   async function loadWallet(user){
-    if (!window.Wallet || !user) { setWalletUI("—", "Cüzdan modülü yüklenemedi."); return; }
+    if (!window.Wallet || !user) return;
     try{
       const w = await Wallet.load(user.uid);
-      const balance = Number(w?.balanceTL ?? w?.balance ?? w?.tl ?? 0) || 0;
-      const freeLeft = Number(w?.freeLeft ?? w?.freeReportsLeft ?? w?.free ?? 0);
-      const tlText = new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(balance) + " TL";
-      const info = (freeLeft > 0) ? `Ücretsiz rapor hakkı: ${freeLeft} • Bakiye: (gizli)` : `Ücretsiz hak bitti • Bakiye: (gizli)`;
-      setWalletUI(tlText, info);
-    }catch(e){
-      setWalletUI("—", "Cüzdan okunamadı.");
-    }
+      const balance = Number(w?.balanceTL ?? 0);
+      const freeLeft = Number(w?.freeLeft ?? 0);
+      const tlText = new Intl.NumberFormat('tr-TR').format(balance) + " TL";
+      const info = (freeLeft > 0) ? `Ücretsiz rapor hakkı: ${freeLeft}` : `Bakiye: (gizli)`;
+      document.getElementById("walletAmount").textContent = tlText;
+      document.getElementById("walletSub").textContent = info;
+    }catch(e){}
   }
 
   auth.onAuthStateChanged(async (user)=>{
-    if (!user || !rid) { window.location.href="index.html"; return; }
-
+    if (!user || !rid) { location.href="index.html"; return; }
     const reports = readReports();
     const report = findByRid(reports, rid);
-    if (!report) { window.location.href="index.html"; return; }
+    if (!report) { location.href="index.html"; return; }
 
-    const bTitle = document.getElementById("baslik");
-    if(bTitle) bTitle.textContent = report.propertyName || "İsimsiz Gayrimenkul";
-    
+    document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
     await loadWallet(user);
 
-    const lockedLocal = isLockedFromLocalReport(report);
+    const lockedLocal = (report.isLocked === true || report.locked === true || report.final === true);
     const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
 
-    if (lockedLocal || lockedRemote){
-      applyLockedUI();
-    }
+    if (lockedLocal || lockedRemote) applyLockedUI();
   });
 </script>
+
+
 <script src="mobil-fix.js"></script>
 </body>
 </html>
