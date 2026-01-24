@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>İMAR DURUMU</title>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -53,6 +53,7 @@
       .header-info { text-align:left; margin-top:10px; }
     }
   </style>
+  <link rel="stylesheet" href="mobil-fix.css">
 </head>
 
 <body>
@@ -182,7 +183,6 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // legacy id -> rid yönlendirme
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -194,7 +194,6 @@
   const idx = rid ? findIndexByRid(reports, rid) : -1;
   let currentReport = (idx >= 0) ? (reports[idx] || {}) : null;
 
-  // DOM
   const katSayisiInput = document.getElementById('kat-sayisi');
   const hmaxOutput = document.getElementById('hmax-output');
   const yolaTerkInput = document.getElementById('yola-terk');
@@ -235,16 +234,12 @@
   function formVerileriniAl() {
     const nizamRadio = document.querySelector('input[name="nizam"]:checked');
     const lejantRadio = document.querySelector('input[name="lejant"]:checked');
-
     const nizamValue = nizamRadio ? nizamRadio.value : '';
     const lejantValue = lejantRadio ? lejantRadio.value : '';
     const terkMiktar = parseFloat(yolaTerkInput.value) || 0;
-
     let tecavuz = document.querySelector('input[name="tecavuz"]:checked') ? document.querySelector('input[name="tecavuz"]:checked').value : 'Hayır';
     let tecavuzMiktar = (tecavuz === 'Evet' && tecavuzAlanKutusu.value) ? parseFloat(tecavuzAlanKutusu.value) : 0;
-
     if (terkMiktar === 0) { tecavuz = 'Yok'; tecavuzMiktar = 0; }
-
     return {
       nizam: nizamValue === 'Diğer' ? digerNizamKutusu.value.trim() : nizamValue,
       kat: katSayisiInput.value,
@@ -273,22 +268,14 @@
       { key: 'KENTSEL', value: (veriler.kentsel || '').toUpperCase() },
       { key: 'RİSKLİ', value: (veriler.riskli || '').toUpperCase() }
     ];
-
-    // final rapor sayfan senin eski tablolarını direkt innerHTML basıyor.
-    // Bu yüzden burada "tam table HTML" üretiyoruz:
-    const rows = tabloVerileri.map(item =>
-      `<tr><th>${item.key}</th><td>${item.value}</td></tr>`
-    ).join("");
-
+    const rows = tabloVerileri.map(item => `<tr><th>${item.key}</th><td>${item.value}</td></tr>`).join("");
     return `<table><tbody>${rows}</tbody></table>`;
   }
 
   function otomatikMetinOlustur() {
     const veriler = formVerileriniAl();
     document.getElementById('otomatik-metin-alani').style.display = 'block';
-
     const tabloOutput = document.getElementById('banka-tablo-output');
-    // ekranda görünen tablo (kopyalama için)
     const tabloVerileri = [
       { key: 'BELEDİYE', value: currentReport?.ilce || '...' },
       { key: 'ÖLÇEK', value: '1/1000' },
@@ -302,10 +289,7 @@
       { key: 'KENTSEL', value: veriler.kentsel.toUpperCase() },
       { key: 'RİSKLİ', value: veriler.riskli.toUpperCase() }
     ];
-    tabloOutput.innerHTML = tabloVerileri.map(item =>
-      `<tr><td><b>${item.key}</b></td><td>${item.value}</td></tr>`
-    ).join('');
-
+    tabloOutput.innerHTML = tabloVerileri.map(item => `<tr><td><b>${item.key}</b></td><td>${item.value}</td></tr>`).join('');
     let tecavuzMetni;
     if (veriler.terk > 0) {
       if (veriler.tecavuz === 'Evet') {
@@ -313,38 +297,23 @@
       } else {
         tecavuzMetni = `Taşınmaz parselinin ${veriler.terk} m² yola terki bulunmakta olup, içindeki yapılarda yola tecavüz bulunmamaktadır.`;
       }
-    } else {
-      tecavuzMetni = `Taşınmaz parselinin yola terki bulunmamaktadır.`;
-    }
-
+    } else { tecavuzMetni = `Taşınmaz parselinin yola terki bulunmamaktadır.`; }
     const belediye = (currentReport?.ilce || '...') + " Belediyesi";
-    const raporMetni =
-      `${belediye} 1/1000 ölçekli uygulama imar planı içerisinde yer almakta olup, ` +
-      `${veriler.nizam} nizam, ${veriler.kat} kat, ${veriler.lejant} lejant, ` +
-      `TAKS: ${veriler.taks} - KAKS: ${veriler.kaks} yapılaşma şartlarındadır. ` +
-      `${tecavuzMetni} ` +
-      `İmar Müdürlüğünden alınan bilgiye göre parselin Kentsel Dönüşüm Alanı ${veriler.kentsel.toLowerCase()==='hayır' ? 'değildir' : 'dır'} ` +
-      `ve Riskli Yapı ilanı ${veriler.riskli.toLowerCase()==='hayır' ? 'bulunmamaktadır' : 'bulunmaktadır'}.`;
-
+    const raporMetni = `${belediye} 1/1000 ölçekli uygulama imar planı içerisinde yer almakta olup, ${veriler.nizam} nizam, ${veriler.kat} kat, ${veriler.lejant} lejant, TAKS: ${veriler.taks} - KAKS: ${veriler.kaks} yapılaşma şartlarındadır. ${tecavuzMetni} İmar Müdürlüğünden alınan bilgiye göre parselin Kentsel Dönüşüm Alanı ${veriler.kentsel.toLowerCase()==='hayır' ? 'değildir' : 'dır'} ve Riskli Yapı ilanı ${veriler.riskli.toLowerCase()==='hayır' ? 'bulunmamaktadır' : 'bulunmaktadır'}.`;
     document.getElementById('rapor-metni-output').textContent = raporMetni;
   }
 
   function tumunuKopyala() {
     const tablo = document.getElementById('banka-tablo-output');
     const raporMetni = document.getElementById('rapor-metni-output').textContent;
-
     let kopyalanacakMetin = '';
     tablo.querySelectorAll('tr').forEach(row => {
       const key = row.querySelector('b').textContent;
       const value = row.querySelector('td:last-child').textContent;
       kopyalanacakMetin += `${key}: ${value}\n`;
     });
-
     kopyalanacakMetin += '\n--- Tam Rapor Metni ---\n' + raporMetni;
-
-    navigator.clipboard.writeText(kopyalanacakMetin)
-      .then(()=> alert('Tüm bilgiler panoya kopyalandı!'))
-      .catch(()=> alert('Kopyalama başarısız oldu.'));
+    navigator.clipboard.writeText(kopyalanacakMetin).then(()=> alert('Tüm bilgiler panoya kopyalandı!')).catch(()=> alert('Kopyalama başarısız oldu.'));
   }
   window.tumunuKopyala = tumunuKopyala;
 
@@ -355,24 +324,16 @@
       document.getElementById('taks').value = i.taks || '0.40';
       document.getElementById('kaks').value = i.kaks || '1.60';
       yolaTerkInput.value = i.terk ?? '0';
-
-      // Nizam
       const nizamRadio = document.querySelector(`input[name="nizam"][value="${i.nizam}"]`);
       if (nizamRadio) nizamRadio.checked = true;
       else { document.getElementById('nizam-diger').checked = true; digerNizamKutusu.value = i.nizam || ""; }
-
-      // Lejant
       const lejantRadio = document.querySelector(`input[name="lejant"][value="${i.lejant}"]`);
       if (lejantRadio) lejantRadio.checked = true;
       else { document.getElementById('lejant-diger').checked = true; digerLejantKutusu.value = i.lejant || ""; }
-
-      // Kentsel + Riskli
       const k = document.querySelector(`input[name="kentsel"][value="${i.kentsel}"]`);
       const r = document.querySelector(`input[name="riskli"][value="${i.riskli}"]`);
       if (k) k.checked = true;
       if (r) r.checked = true;
-
-      // Tecavüz
       tecavuzSorusuGoster();
       if (i.tecavuz === 'Evet') {
         tecavuzEvetRadio.checked = true;
@@ -380,87 +341,55 @@
         tecavuzAlanKutusu.value = i.tecavuzMiktar || 0;
       }
     }
-
     hmaxHesapla();
     tecavuzSorusuGoster();
   }
 
-  function anaMenuyeDon() {
-    location.href = `${ANA_MENU_DOSYASI}?rid=${encodeURIComponent(rid)}`;
-  }
+  function anaMenuyeDon() { location.href = `${ANA_MENU_DOSYASI}?rid=${encodeURIComponent(rid)}`; }
 
   async function kaydet() {
     const veriler = formVerileriniAl();
-
-    // Metin + tablo üret
     otomatikMetinOlustur();
     const imarMetni = document.getElementById('rapor-metni-output').textContent || "";
     const imarTablo = buildImarTableHTML(veriler);
-
     const { arr, i, r } = getLatestData();
     if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
-
-    // ✅ Final rapor sayfanın beklediği alanlar
-    r.imarMetni = imarMetni;
-    r.imarTablo = imarTablo;
-
-    // ✅ Ham verileri de sakla (ileride formu doldurmak için)
-    r.imarDurumu = veriler;
-
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
-
-    // buluta da yaz
+    r.imarMetni = imarMetni; r.imarTablo = imarTablo; r.imarDurumu = veriler;
+    arr[i] = r; localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
     const user = auth.currentUser;
-    if (user) {
-      try{
-        await db.collection("users").doc(user.uid).set({
-          gayrimenkul_reports: arr,
-          lastUpdate: new Date().toISOString()
-        }, { merge:true });
-      }catch(e){}
-    }
-
-    // durum hesapla
+    if (user) { try{ await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: arr, lastUpdate: new Date().toISOString() }, { merge:true }); }catch(e){} }
     let durum = 0;
     if (veriler.nizam && veriler.kat && veriler.lejant && veriler.taks && veriler.kaks) durum = 2;
     else if (veriler.nizam || veriler.kat || veriler.lejant || veriler.taks || veriler.kaks) durum = 1;
-
     alert("İmar Durumu Kaydedildi!");
     location.href = `${ANA_MENU_DOSYASI}?update=${RAPOR_KEY}&status=${durum}&rid=${encodeURIComponent(rid)}`;
   }
 
-  // Eventler
   katSayisiInput.addEventListener('input', hmaxHesapla);
   yolaTerkInput.addEventListener('input', tecavuzSorusuGoster);
-
   document.getElementById('tecavuz-sorusu').addEventListener('change', (e) => {
     if (e.target.name === 'tecavuz') tecavuzAlanKutusu.style.display = e.target.value === 'Evet' ? 'inline' : 'none';
   });
-
   document.getElementById('yapi-nizam-group').addEventListener('change', (e) => {
     if (e.target.name === 'nizam') digerNizamKutusu.style.display = e.target.value === 'Diğer' ? 'inline' : 'none';
   });
-
   document.getElementById('lejant-group').addEventListener('change', (e) => {
     if (e.target.name === 'lejant') digerLejantKutusu.style.display = e.target.value === 'Diğer' ? 'inline' : 'none';
   });
-
   document.getElementById('olustur-button').addEventListener('click', otomatikMetinOlustur);
   document.getElementById('kaydet-button').addEventListener('click', kaydet);
 
-  // auth guard
   auth.onAuthStateChanged((user)=>{
-    if(!user || !rid || !currentReport){
-      location.href = "index.html";
-      return;
-    }
-    // header
-    document.getElementById('hdrAdres').textContent =
-      `${currentReport.propertyName || currentReport.adi || '...'} • ${currentReport.il || ''} / ${currentReport.ilce || ''}`;
-
+    if(!user || !rid || !currentReport){ location.href = "index.html"; return; }
+    document.getElementById('hdrAdres').textContent = `${currentReport.propertyName || currentReport.adi || '...'} • ${currentReport.il || ''} / ${currentReport.ilce || ''}`;
     verileriYukle();
   });
 </script>
+
+
+
+[Image of a modern urban development plan]
+
+<script src="mobil-fix.js"></script>
 </body>
 </html>
