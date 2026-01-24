@@ -9,14 +9,12 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 
-  <!-- Wallet (dokunmuyoruz) -->
   <script src="wallet.js"></script>
 
   <title>Rapor Ana Menü - Raporan X</title>
 
   <style>
     :root{ --hdrH: 78px; }
-
     body{
       font-family: Arial;
       background: linear-gradient(135deg,#4a148c,#7c4dff);
@@ -27,7 +25,6 @@
       flex-direction:column;
       overflow-x:hidden;
     }
-
     .header{
       padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;
       text-align:center;
@@ -35,10 +32,9 @@
       font-weight:bold;
       position: sticky;
       top: 0;
-      z-index: 999999;
+      z-index: 999;
       background: linear-gradient(135deg,#4a148c,#7c4dff);
     }
-
     .back{
       position:absolute;
       left:15px;
@@ -49,62 +45,41 @@
       text-decoration:none;
       color:white;
       font-weight:bold;
-      z-index: 1000000;
     }
-
-    /* ✅ kilit mesajı (sadece görünür/görünmez) */
     #kilitMesaji{
       display:none;
       max-width:1100px;
       margin:10px auto 0;
       width: calc(100% - 40px);
-      background: rgba(0,0,0,0.25);
-      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255, 145, 0, 0.3);
+      border: 1px solid rgba(255,255,255,0.4);
       border-radius: 14px;
       padding:10px 14px;
       font-size: 14px;
       font-weight: 900;
-      letter-spacing: .2px;
+      text-align: center;
     }
-
     .topbar{
       max-width:1100px;
       width: calc(100% - 40px);
       margin: 0 auto 10px;
       display:flex;
-      gap:12px;
-      align-items:center;
-      justify-content:space-between;
-      flex-wrap:wrap;
       padding: 0 20px;
     }
-
     .wallet-card{
-      flex: 1 1 420px;
+      flex: 1;
       background: rgba(255,255,255,0.14);
       border: 1px solid rgba(255,255,255,0.22);
       border-radius: 16px;
       padding: 12px 14px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
       cursor: pointer;
-      user-select:none;
     }
-    .wallet-title{ font-weight:900; letter-spacing:.4px; display:flex; align-items:center; gap:10px; }
-    .wallet-sub{ font-size:12px; opacity:.9; margin-top:6px; line-height:1.35; }
     .wallet-amount{
       font-size:20px;
       font-weight:900;
-      margin-left:auto;
-      padding:6px 10px;
-      border-radius:12px;
-      background: rgba(0,0,0,0.18);
-      border: 1px solid rgba(255,255,255,0.18);
+      filter: blur(6px);
     }
-    .wallet-hidden{ filter: blur(6px); transition: filter .2s ease; }
-    .wallet-card.reveal .wallet-hidden{ filter: blur(0); }
-
+    .reveal .wallet-amount{ filter: blur(0); }
     .menu{
       flex:1;
       display:flex;
@@ -112,7 +87,6 @@
       gap:20px;
       padding:30px;
       justify-content:center;
-      align-content:flex-start;
     }
     .btn{
       flex:1 1 350px;
@@ -124,15 +98,11 @@
       border-radius:20px;
       color:white;
       cursor:pointer;
-      box-shadow:0 8px 20px rgba(0,0,0,0.4);
       transition: 0.3s;
-      position:relative;
     }
-    .btn:hover{ background:#8e24aa; transform:scale(1.05); }
+    .btn:hover{ background:#8e24aa; transform:scale(1.02); }
     .btn-main-feature{ background: #4527a0; border: 2px solid #b39ddb; }
-    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
-    .btn:hover:disabled{ background:#6a1b9a; transform:none; }
-
+    .btn:disabled{ opacity:0.6; cursor:not-allowed; }
     .footer-btn{
       background:#ff5722;
       padding:25px;
@@ -145,58 +115,34 @@
       color:white;
       font-weight:bold;
       cursor: pointer;
-      text-align: center;
     }
-    .footer-btn.locked{
-      background:#2196F3;
-    }
-
-    @media (max-width: 600px){
-      .header{
-        position: fixed;
-        left: 0;
-        right: 0;
-        top: 0;
-        font-size:22px;
-      }
-      body{
-        padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px));
-      }
-      .menu{ padding: 20px; }
-      .btn{ flex:1 1 100%; padding: 26px; font-size: 20px; }
-      .footer-btn{ font-size: 24px; padding: 20px; }
-    }
+    .footer-btn.locked{ background:#2196F3; }
   </style>
 </head>
 
 <body oncontextmenu="return false;">
   <div class="header">
-    <a href="index.html" class="back">Ana Sayfa</a>
-    <div id="baslik">Gayrimenkul Raporu</div>
+    <a href="index.html" class="back">Geri</a>
+    <div id="baslik">Yükleniyor...</div>
   </div>
 
-  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüller görüntüleme modunda.</div>
+  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ - Modüller sadece görüntüleme modundadır.</div>
 
   <div class="topbar">
-    <div id="walletCard" class="wallet-card" title="Bakiye detayını görmek için tıkla">
-      <div class="wallet-title">
-        💳 Cüzdan
-        <span id="walletAmount" class="wallet-amount wallet-hidden">yükleniyor...</span>
-      </div>
-      <div id="walletSub" class="wallet-sub">
-        Bakiye gizlidir. Görmek için karta tıkla.
-      </div>
+    <div id="walletCard" class="wallet-card">
+      <div class="wallet-title">💳 Cüzdan: <span id="walletAmount" class="wallet-amount">...</span></div>
+      <div id="walletSub" style="font-size:12px; margin-top:5px;">Bakiyeyi görmek için dokun.</div>
     </div>
   </div>
 
   <div class="menu">
-    <button class="btn btn-main-feature modül-btn" data-modul="konum" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
-    <button class="btn modül-btn" data-modul="tapu" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
-    <button class="btn modül-btn" data-modul="imar" onclick="go('imar.html')">İMAR DURUMU</button>
-    <button class="btn modül-btn" data-modul="belgeler" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
-    <button class="btn modül-btn" data-modul="bina" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
-    <button class="btn modül-btn" data-modul="bb" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
-    <button class="btn modül-btn" data-modul="emsal" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
+    <button class="btn btn-main-feature modül-btn" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE</button>
+    <button class="btn modül-btn" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
+    <button class="btn modül-btn" onclick="go('imar.html')">İMAR DURUMU</button>
+    <button class="btn modül-btn" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
+    <button class="btn modül-btn" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
+    <button class="btn modül-btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+    <button class="btn modül-btn" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
   </div>
 
   <button id="btnRaporOlustur" class="footer-btn" onclick="raporOlusturUyari()">TAM RAPOR OLUŞTUR</button>
@@ -205,248 +151,105 @@
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  function genRid(){
-    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
-    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
-  }
-  function ensureRidMigration(arr){
-    let changed=false;
-    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
-    return changed;
-  }
-  function findIndexByRid(arr, rid){
-    return (arr||[]).findIndex(r => r && String(r.rid) === String(rid));
-  }
-
   const urlParams = new URLSearchParams(window.location.search);
   let rid = urlParams.get('rid');
-  const legacyId = urlParams.get('id');
+  let isLockedGlobal = false; // Sayfa genelinde kilit durumu
 
-  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-  if (!rid && legacyId !== null && legacyId !== "") {
-    const idx = Number(legacyId);
-    if (!Number.isNaN(idx) && reports[idx] && reports[idx].rid) {
-      rid = reports[idx].rid;
-      window.location.replace("rapor-detay.html?rid=" + encodeURIComponent(rid));
-    }
+  // Rapor verilerini çek
+  function getReports() {
+    return JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   }
 
-  function getReportIndexByRid(){
-    reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    const i = rid ? findIndexByRid(reports, rid) : -1;
-    return i;
-  }
-  function getReportByRid(){
-    const i = getReportIndexByRid();
-    if (i < 0) return null;
-    return reports[i];
-  }
-
-  function go(page){
-    if (!rid) { window.location.href="index.html"; return; }
+  function go(page) {
+    if (!rid) return;
+    // Eğer kilitliyse modüllere gitmeyi engellemiyoruz, modüllerin kendi içinde "read-only" olması gerekir.
+    // Ama buradan engellemek istersen: if(isLockedGlobal) { alert("Rapor kilitli!"); return; }
     window.location.href = page + "?rid=" + encodeURIComponent(rid);
   }
 
-  /* ========= KİLİT: rapor-detay KÖR OLMASIN ========= */
-  function isLockedLocalFlag(){
-    return localStorage.getItem("report_locked_" + rid) === "1";
-  }
-  function isLockedInLocalReports(){
-    try{
-      const arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
-      const idx = findIndexByRid(arr, rid);
-      if (idx < 0) return false;
-      const r = arr[idx] || {};
-      return (r.isLocked === true || r.locked === true || r.final === true);
-    }catch(e){
-      return false;
+  // Kilit durumunu kontrol eden ana fonksiyon
+  async function checkLockStatus(uid) {
+    // 1. LocalStorage Kontrolü
+    const reports = getReports();
+    const localReport = reports.find(r => r.rid === rid);
+    if (localReport && (localReport.isLocked || localReport.locked || localReport.final)) {
+      return true;
     }
-  }
-  function markLockedInLocal(){
-    try{
-      localStorage.setItem("report_locked_" + rid, "1");
-      const arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
-      const idx = findIndexByRid(arr, rid);
-      if (idx >= 0){
-        arr[idx].isLocked = true;
-        arr[idx].locked = true;
-        arr[idx].final = true;
-        arr[idx].lockedAt = Date.now();
-        localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
-      }
-    }catch(e){}
-  }
 
- async function isLockedRemote(uid){
-  // 1) locks/{uid}_{rid}
-  try{
-    const lockId = `${uid}_${rid}`;
-    const snap = await db.collection("locks").doc(lockId).get();
-    if (snap.exists){
-      const data = snap.data() || {};
-      if (data.locked === true && String(data.uid) === String(uid) && String(data.rid) === String(rid)) return true;
+    // 2. Firebase Kontrolü (Farklı koleksiyonları tarar)
+    try {
+      const lockDoc = await db.collection("locks").doc(`${uid}_${rid}`).get();
+      if (lockDoc.exists && lockDoc.data().locked) return true;
+
+      const userReportDoc = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
+      if (userReportDoc.exists && (userReportDoc.data().locked || userReportDoc.data().isLocked)) return true;
+    } catch (e) {
+      console.error("Kilit kontrolü hatası:", e);
     }
-  }catch(e){}
-
-  // 2) users/{uid}/locks/{rid}
-  try{
-    const snap = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
-    if (snap.exists){
-      const data = snap.data() || {};
-      if (data.locked === true && (String(data.uid||uid) === String(uid)) && String(data.rid||rid) === String(rid)) return true;
-    }
-  }catch(e){}
-
-  // 3) users/{uid}/reports/{rid}
-  try{
-    const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
-    if (snap.exists){
-      const data = snap.data() || {};
-      if ((data.locked === true || data.isLocked === true) && String(data.rid||rid) === String(rid)) return true;
-    }
-  }catch(e){}
-
-  // 4) reports/{rid}
-  try{
-    const snap = await db.collection("reports").doc(rid).get();
-    if (snap.exists){
-      const data = snap.data() || {};
-      // ⚠️ burada uid eşleşmesi çok önemli (başka kullanıcının raporunu kilit sanma)
-      if ((data.locked === true || data.isLocked === true) && String(data.uid||"") === String(uid) && String(data.rid||rid) === String(rid)) return true;
-    }
-  }catch(e){}
-
-  return false;
-}
-
-
-    try{
-      const d = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
-      if (d.exists) return true;
-    }catch(e){}
-
-    try{
-      const d = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
-      if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
-    }catch(e){}
-
-    try{
-      const d = await db.collection("reports").doc(rid).get();
-      if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
-    }catch(e){}
 
     return false;
   }
 
-  function applyLockedUI(){
+  // UI'ı kilit durumuna göre güncelle
+  function applyLockedUI() {
+    isLockedGlobal = true;
     document.getElementById("kilitMesaji").style.display = "block";
-    document.querySelectorAll(".modül-btn").forEach(b=> b.disabled = true);
+    
+    // Modül butonlarını pasif yapma (İsteğe bağlı: Modüllere girmesin dersen)
+    // document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
 
     const btn = document.getElementById("btnRaporOlustur");
     btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
     btn.classList.add("locked");
-
-    // kilitliyse rapor-olustur’a direkt git (uyarı/confirm yok)
     btn.onclick = () => {
-      const idx = getReportIndexByRid();
-      let url = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
-      if (idx >= 0) url += "&id=" + encodeURIComponent(String(idx));
-      window.location.href = url;
+      window.location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
     };
   }
 
-  async function syncLockState(user){
-    // 1) localde var mı?
-    let locked = isLockedLocalFlag() || isLockedInLocalReports();
-
-    // 2) localde yoksa remote’a bak
-    if (!locked){
-      locked = await isLockedRemote(user.uid);
-    }
-
-    // 3) kilitli ise local’e işle + UI
-    if (locked){
-      markLockedInLocal();
-      applyLockedUI();
-    }
-  }
-
-  /* ========= RAPOR OLUŞTUR UYARI (dokunmadan sadece parametreyi sağlamlaştırıyoruz) ========= */
-  function raporOlusturUyari(){
-    if (!rid) { window.location.href="index.html"; return; }
-
-    const msg =
-`UYARI! (ÖNEMLİ)
-Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
-
-Lütfen zaman ve para kaybı olmaması için tüm modülleri tekrar kontrol edin.
-Devam ederseniz rapor bankaya uygun taslak formatında üretilecektir.
-
-Devam etmek istiyor musunuz?`;
-
+  async function raporOlusturUyari() {
+    if (!rid) return;
+    
+    const msg = "DİKKAT! Rapor oluşturulduğunda bakiye düşebilir ve veriler kilitlenir. Devam edilsin mi?";
     if (!confirm(msg)) return;
 
-    // ✅ kritik: rapor-olustur eski id ile kilitliyorsa da çalışsın diye id’yi ekliyoruz
-    const idx = getReportIndexByRid();
-    let url = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
-    if (idx >= 0) url += "&id=" + encodeURIComponent(String(idx));
-    window.location.href = url;
+    window.location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
   }
 
-  /* ========= WALLET UI (dokunmuyoruz) ========= */
-  let walletRevealed = false;
-
-  function setWalletUI(textAmount, subText){
-    document.getElementById("walletAmount").textContent = textAmount;
-    document.getElementById("walletSub").textContent = subText;
-  }
-
-  function toggleWalletReveal(){
-    walletRevealed = !walletRevealed;
-    const card = document.getElementById("walletCard");
-    if (walletRevealed) card.classList.add("reveal");
-    else card.classList.remove("reveal");
-  }
-  document.getElementById("walletCard").addEventListener("click", toggleWalletReveal);
-
-  async function loadWallet(user){
-    if (!window.Wallet || !user) {
-      setWalletUI("—", "Cüzdan modülü yüklenemedi.");
-      return;
-    }
-    try{
-      const w = await Wallet.load(user.uid);
-      const balance = Number(w?.balanceTL ?? w?.balance ?? w?.tl ?? 0) || 0;
-      const freeLeft = Number(w?.freeLeft ?? w?.freeReportsLeft ?? w?.free ?? 0);
-
-      const tlText = new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(balance) + " TL";
-      const info = (freeLeft > 0)
-        ? `Ücretsiz rapor hakkı: ${freeLeft} • Bakiye: (gizli)`
-        : `Ücretsiz hak bitti • Bakiye: (gizli)`;
-
-      setWalletUI(tlText, info);
-    }catch(e){
-      setWalletUI("—", "Cüzdan okunamadı. İnternet / izin kontrol et.");
+  // Cüzdan Yükleme
+  async function loadWallet(uid) {
+    if (!window.Wallet) return;
+    try {
+      const w = await Wallet.load(uid);
+      const bal = w?.balanceTL || 0;
+      document.getElementById("walletAmount").textContent = bal + " TL";
+    } catch (e) {
+      document.getElementById("walletAmount").textContent = "Hata";
     }
   }
 
-  /* ========= BOOT ========= */
-  auth.onAuthStateChanged(async (user)=>{
-    if (!user || !rid) { window.location.href="index.html"; return; }
+  document.getElementById("walletCard").onclick = function() {
+    this.classList.toggle("reveal");
+  };
 
-    const report = getReportByRid();
-    if (!report) { window.location.href="index.html"; return; }
+  // Açılış
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) { window.location.href = "index.html"; return; }
+    if (!rid) { window.location.href = "index.html"; return; }
 
-    document.getElementById("baslik").textContent = report.propertyName || "İsimsiz Gayrimenkul";
+    const reports = getReports();
+    const report = reports.find(r => r.rid === rid);
+    if (report) {
+      document.getElementById("baslik").textContent = report.propertyName || "Gayrimenkul Raporu";
+    }
 
-    await loadWallet(user);
+    // Kilit kontrolünü yap ve uygula
+    const locked = await checkLockStatus(user.uid);
+    if (locked) {
+      applyLockedUI();
+    }
 
-    // ✅ asıl fix: kilidi kontrol et ve menüye yansıt
-    await syncLockState(user);
+    loadWallet(user.uid);
   });
 </script>
 </body>
 </html>
-
