@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RaporanX</title>
 
-  <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -229,6 +228,7 @@
       .login-container{ margin: 60px auto; padding: 30px 20px; }
     }
   </style>
+  <link rel="stylesheet" href="mobil-fix.css">
 </head>
 
 <body>
@@ -266,7 +266,6 @@
     </div>
   </div>
 
-  <!-- Action Sheet -->
   <div id="sheetBackdrop" class="sheet-backdrop" role="dialog" aria-modal="true">
     <div class="sheet">
       <div class="sheet-head">
@@ -541,27 +540,20 @@
     async function deleteReportByRid(rid){
       if (!confirm("Silmek istediğine emin misin?")) return;
 
-      // ✅ Tombstone ekle (geri dirilmesin)
       addDeletedRid(rid);
-
-      // ✅ Local array'den sil
       reports = safeArray(reports).filter(r => String(r?.rid) !== String(rid));
       setLocalReports(reports);
-
-      // (İstersen bu tarz yedekleri de sil)
       localStorage.removeItem("rapor_" + rid);
       localStorage.removeItem("report_locked_" + rid);
-
       loadReports();
 
-      // ✅ Cloud'a da yaz
       const user = auth.currentUser;
       if (user){
         try{
           await writeCloudState(user, reports, getDeletedRids());
         }catch(e){
           console.warn("Cloud silme yazma hatası:", e);
-          alert("⚠️ Silindi ama buluta yazılamadı. İnternet/izin kontrol et.");
+          alert("⚠️ Silindi ama buluta yazılamadı.");
         }
       }
     }
@@ -579,70 +571,43 @@
       document.getElementById("mainSection").style.display = "block";
       document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + user.email;
 
-      // önce local göster
       let localReports = getLocalReports();
       if (ensureRidMigration(localReports)) setLocalReports(localReports);
-
-      // ✅ local deleted
       let deletedLocal = getDeletedRids();
-
-      // ✅ deleted filtre
       localReports = filterDeleted(localReports, deletedLocal);
-
       reports = localReports;
       loadReports();
 
-      // cloud izle
       db.collection("users").doc(user.uid).onSnapshot(async (doc)=>{
         let cloudReports = [];
         let cloudDeleted = [];
-        let cloudLastUpdate = "";
-
         if (doc.exists){
           const d = doc.data() || {};
           cloudReports = safeArray(d.gayrimenkul_reports);
           cloudDeleted = safeArray(d.deletedRids);
-          cloudLastUpdate = (d.lastUpdate || "");
         }
-
         ensureRidMigration(cloudReports);
-
-        // local tekrar oku
         localReports = getLocalReports();
         ensureRidMigration(localReports);
-
-        // ✅ deleted birleşimi (local + cloud)
         const delSet = new Set([...getDeletedRids().map(String), ...cloudDeleted.map(String)]);
         const mergedDeleted = Array.from(delSet);
         setDeletedRids(mergedDeleted);
-
-        // ✅ deleted filtre uygula (her iki tarafa da)
         localReports = filterDeleted(localReports, mergedDeleted);
         cloudReports = filterDeleted(cloudReports, mergedDeleted);
 
-        // cloud boşsa local doluysa → local'i buluta bas
         if ((cloudReports.length === 0) && (localReports.length > 0)){
           reports = localReports;
           setLocalReports(reports);
           loadReports();
-
-          try{
-            await writeCloudState(user, reports, mergedDeleted);
-          }catch(e){
-            console.warn("Cloud ilk yazım hatası:", e);
-          }
+          try{ await writeCloudState(user, reports, mergedDeleted); }catch(e){}
           return;
         }
 
-        // normal merge
         const merged = mergeByRid(localReports, cloudReports);
-
         reports = merged;
         setLocalReports(reports);
         loadReports();
 
-        // ✅ cloudDeleted localde yoksa, cloud’a da geri yaz (senkron)
-        // Bu write, snapshot döngüsü yaratmasın diye sadece gerektiğinde:
         if (mergedDeleted.length && doc.exists){
           const d = doc.data() || {};
           const old = safeArray(d.deletedRids);
@@ -650,9 +615,7 @@
             try{ await writeCloudState(user, reports, mergedDeleted); }catch(e){}
           }
         }
-
       }, (error)=>{
-        console.error("Bulut hatası:", error);
         reports = filterDeleted(getLocalReports(), getDeletedRids());
         ensureRidMigration(reports);
         setLocalReports(reports);
@@ -661,5 +624,6 @@
       });
     });
   </script>
+  <script src="mobil-fix.js"></script>
 </body>
 </html>
