@@ -28,7 +28,7 @@
   .full-width { grid-column:span 2; }
   .btn-save { background:var(--success); color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:30px; }
   .btn-back { background:#6c757d; color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:10px; }
-  .preview-box { background:#222; color:#00ff6a; padding:20px; border-radius:15px; font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px; margin-top:20px; border:2px solid #555; }
+  .preview-box { background:#222; color:#00ff6a; padding:20px; border-radius:15px; font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px; margin-top:20px; border:2px solid #555; line-height:1.5; }
   .disabled-input { background:#eee; cursor:not-allowed; opacity:.7; }
   .locked-note{ margin-top:12px; padding:10px 12px; border-radius:14px; background:#fff3cd; border:1px solid #ffe69c; color:#7a5b00; font-weight:900; display:none; }
 </style>
@@ -59,12 +59,12 @@
         <div class="input-item"><label>(8) Dış Kapı No</label><input type="text" id="v8" list="h_v8" onfocus="showList(this)"></div>
         <div class="input-item"><label>(9) Bulunduğu Kat</label><input type="text" id="v9" list="h_v9" onfocus="showList(this)"></div>
         <div class="input-item"><label>(10) Daire No</label><input type="text" id="v10" list="h_v10" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(11) Bölge Gelişimi</label><input type="text" id="v11" list="h_v11" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(12) Bölge Yapılaşması</label><input type="text" id="v12" list="h_v12" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(13) Yapı Tipleri</label><input type="text" id="v13" list="h_v13" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(14) Gelir Düzeyi</label><input type="text" id="v14" list="h_v14" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(15) Yakın Yapı 1</label><input type="text" id="v15" list="h_v15" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(16) Yakın Yapı 2</label><input type="text" id="v16" list="h_v16" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(11) Bölge Gelişimi</label><input type="text" id="id11" list="h_v11" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(12) Bölge Yapılaşması</label><input type="text" id="id12" list="h_v12" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(13) Yapı Tipleri</label><input type="text" id="id13" list="h_v13" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(14) Gelir Düzeyi</label><input type="text" id="id14" list="h_v14" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(15) Yakın Yapı 1</label><input type="text" id="id15" list="h_v15" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(16) Yakın Yapı 2</label><input type="text" id="id16" list="h_v16" onfocus="showList(this)"></div>
 
         <div class="section-title">📝 METİN DEĞİŞKENLERİ</div>
         <div class="input-item full-width"><label>Ulaşım Tarifi</label><textarea id="ulasimTarifi" rows="3" list="h_ulasimTarifi" onfocus="showList(this)"></textarea></div>
@@ -79,12 +79,12 @@
         </div>
         <div class="input-item">
           <label>Altyapı Açıklaması</label>
-          <input type="text" id="altyapiAciklama" class="disabled-input" disabled list="h_altyapiAciklama" onfocus="showList(this)">
+          <input type="text" id="altyapiAciklama" class="disabled-input" disabled list="h_altyapiAciklama" onfocus="showList(this)" value="Altyapısı tamdır.">
         </div>
       </div>
     </form>
 
-    <div class="section-title">👀 CANLI ÖNİZLEME</div>
+    <div class="section-title">👀 CANLI ÖNİZLEME (TAM METİN)</div>
     <div class="preview-box" id="livePreview">Veri bekleniyor...</div>
 
     <button id="saveBtn" class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET</button>
@@ -121,7 +121,6 @@
     return { reports, idx, report };
   }
 
-  // ✅ METİN ÖNERİLERİNİ (DATALIST) DOLDURAN FONKSİYON
   function showList(el){
     const listId = el.getAttribute("list");
     if(!listId) return;
@@ -150,6 +149,39 @@
 
   function v(id){ return (document.getElementById(id)?.value ?? "").trim(); }
 
+  // ✅ GELİŞMİŞ TAM METİN OLUŞTURUCU
+  function buildTamMetin(){
+    const il = v("v4") || "...";
+    const ilce = v("v5") || "...";
+    const mah = v("v6") || "...";
+    const cadde = v("v7") || "...";
+    const kapi = v("v8") || "...";
+    const kat = v("v9") || "...";
+    const daire = v("v10") || "...";
+    
+    const gelişim = v("id11") || "...";
+    const yapılaşma = v("id12") || "...";
+    const tip = v("id13") || "...";
+    const gelir = v("id14") || "...";
+    const yakın1 = v("id15") || "...";
+    const yakın2 = v("id16") || "...";
+
+    const uTarif = v("ulasimTarifi") || "...";
+    const uOlanak = v("ulasimOlanaklari") || "...";
+    const alty = (document.querySelector('input[name="altyapi"]:checked')?.value || "Evet");
+    const altyAck = v("altyapiAciklama") || "...";
+
+    return `Değerleme konusu taşınmaz ${il} İli, ${ilce} İlçesi, ${mah} Mahallesi, ${cadde} üzerinde, ${kapi} dış kapı numaralı binanın ${kat}. katında yer alan ${daire} bağımsız bölüm numaralı taşınmazdır.
+
+Bölge gelişim seviyesi ${gelişim} olup, yapılaşma oranı %${yapılaşma} civarındadır. Civarda genellikle ${tip} tarzı yapılar bulunmakta olup sakinlerin gelir düzeyi ${gelir} seviyesindedir. Taşınmazın yakın çevresinde ${yakın1} ve ${yakın2} gibi önemli nirengi noktaları bulunmaktadır.
+
+ULAŞIM VE ALTYAPI: ${uTarif} Bölgeye ulaşım ${uOlanak} ile sağlanmaktadır. Taşınmazın bulunduğu bölgede belediye hizmetlerinden istifade edilmekte olup altyapı durumu ${alty}'dir. (${altyAck})`.trim();
+  }
+
+  function updatePreview(){
+    document.getElementById("livePreview").textContent = buildTamMetin();
+  }
+
   function toggleAltyapi(isEvet){
     const inp = document.getElementById("altyapiAciklama");
     if (isEvet) {
@@ -164,40 +196,9 @@
     updatePreview();
   }
 
-  function buildTamMetin(){
-    const il = v("v4") || "-";
-    const ilce = v("v5") || "-";
-    const mah = v("v6") || "-";
-    const adres = `${v("v7") || "-"} No:${v("v8") || "-"}`;
-    const uTarif = v("ulasimTarifi") || "-";
-    const uOlanak = v("ulasimOlanaklari") || "-";
-    const alty = (document.querySelector('input[name="altyapi"]:checked')?.value || "Evet");
-    const altyAck = v("altyapiAciklama") || "-";
-
-    return (
-`Taşınmazın konumu ${il}/${ilce}/${mah} sınırları içerisindedir.
-Adres bilgisi: ${adres}.
-Ulaşım tarifi: ${uTarif}
-Ulaşım olanakları: ${uOlanak}
-Altyapı durumu: ${alty}. ${altyAck}`.trim()
-    );
-  }
-
-  function updatePreview(){
-    const txt =
-`KONUM: ${(v('v4')||"...")}/${(v('v5')||"...")}/${(v('v6')||"...")}
-ADRES: ${(v('v7')||"...")} No:${(v('v8')||"...")}
-ULAŞIM: ${(v('ulasimTarifi')||"...")}
-
---- TAM METİN ---
-${buildTamMetin()}`;
-    document.getElementById("livePreview").textContent = txt;
-  }
-
   function checkLockStatus(report){
     const locked = report && (report.isLocked === true || report.locked === true || report.final === true);
     if (!locked) return false;
-
     document.getElementById("lockedNote").style.display = "block";
     const saveBtn = document.getElementById("saveBtn");
     saveBtn.disabled = true;
@@ -208,26 +209,19 @@ ${buildTamMetin()}`;
 
   function verileriYukle(){
     const { idx, report } = getState();
-    if (!rid || idx < 0 || !report){
-      alert("Rapor ID (rid) bulunamadı!");
-      location.href = "index.html";
-      return;
-    }
+    if (!rid || idx < 0 || !report){ alert("Rapor bulunamadı!"); location.href="index.html"; return; }
 
     const kc = report.konumCevre || {};
     document.getElementById("raporBilgi").textContent = `Emlak: ${report.propertyName || "Tanımsız"} | RID: ${rid}`;
 
-    for (let i=1;i<=16;i++){
-      const key="v"+i;
-      setInput(key, kc[key]);
-    }
+    for (let i=1;i<=10;i++) setInput("v"+i, kc["v"+i]);
+    for (let i=11;i<=16;i++) setInput("id"+i, kc["id"+i]);
 
     setInput("ulasimTarifi", kc.ulasimTarifi || "");
     setInput("ulasimOlanaklari", kc.ulasimOlanaklari || "");
     setInput("altyapiAciklama", kc.altyapiAciklama || "Altyapısı tamdır.");
 
-    const alty = (kc.altyapi || "Evet");
-    if (String(alty).toLowerCase() === "hayır" || String(alty).toLowerCase() === "hayir"){
+    if (String(kc.altyapi).toLowerCase() === "hayır"){
       document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
       toggleAltyapi(false);
     } else {
@@ -246,45 +240,39 @@ ${buildTamMetin()}`;
   function verileriKaydet(){
     const { reports, idx, report } = getState();
     if (idx < 0 || !report) return;
-
-    const locked = (report.isLocked === true || report.locked === true || report.final === true);
-    if (locked){ alert("Rapor kilitli. Düzenleme yapılamaz."); return; }
+    if (report.isLocked || report.locked || report.final){ alert("Rapor kilitli!"); return; }
 
     const konumObj = {
       updatedAt: Date.now(),
       ulasimTarifi: v("ulasimTarifi"),
       ulasimOlanaklari: v("ulasimOlanaklari"),
       altyapi: (document.querySelector('input[name="altyapi"]:checked')?.value || "Evet"),
-      altyapiAciklama: v("altyapiAciklama")
+      altyapiAciklama: v("altyapiAciklama"),
+      tamMetin: buildTamMetin() // Rapor oluştur için sakla
     };
-    for (let i=1;i<=16;i++) konumObj["v"+i] = v("v"+i);
-    konumObj.tamMetin = buildTamMetin();
+    
+    for (let i=1;i<=10;i++) konumObj["v"+i] = v("v"+i);
+    for (let i=11;i<=16;i++) konumObj["id"+i] = v("id"+i);
 
     reports[idx].konumCevre = konumObj;
-    reports[idx].il = v("v4") || reports[idx].il || "";
-    reports[idx].ilce = v("v5") || reports[idx].ilce || "";
-    reports[idx].mahalle = v("v6") || reports[idx].mahalle || "";
+    reports[idx].il = v("v4");
+    reports[idx].ilce = v("v5");
+    reports[idx].mahalle = v("v6");
 
     localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
-    alert("Başarıyla kaydedildi!");
+    alert("Kaydedildi!");
     verileriYukle();
   }
 
-  function anaMenuyeDon(){
-    if (!rid) location.href="index.html";
-    else location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
-  }
+  function anaMenuyeDon(){ location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid); }
 
   window.verileriKaydet = verileriKaydet;
   window.anaMenuyeDon = anaMenuyeDon;
-  window.showList = showList; // Dışarıdan erişim için
+  window.showList = showList;
 
   document.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', updatePreview));
   document.querySelectorAll('input[name="altyapi"]').forEach(r=>{
-    r.addEventListener("change", ()=>{
-      const val = document.querySelector('input[name="altyapi"]:checked')?.value || "Evet";
-      toggleAltyapi(val !== "Hayır");
-    });
+    r.addEventListener("change", () => toggleAltyapi(r.value === "Evet"));
   });
 
   auth.onAuthStateChanged((user)=>{
