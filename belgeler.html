@@ -18,42 +18,25 @@
     .container { max-width:900px; margin:20px auto; padding:20px; background:white; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); }
     .form-group { margin:25px 0; padding:20px; background:#f9f9f9; border-radius:12px; border: 1px solid #eee; }
     .radio-group { display:flex; gap:20px; flex-wrap:wrap; margin:10px 0; }
-
     .field-label { display:block; font-weight:800; margin:0 0 6px; color:#333; font-size:14px; }
     .grid3 { display:flex; gap:10px; margin-top:10px; margin-bottom:15px; flex-wrap:wrap; }
     .grid3 > div { flex:1; min-width:200px; }
-
-    input[type=text], input[type=date], input[type=number], textarea {
-      padding:12px; border:1px solid #ccc; border-radius:8px; font-size:16px; box-sizing:border-box;
-      transition: 0.3s; width: 100%;
-    }
+    input[type=text], input[type=date], input[type=number], textarea { padding:12px; border:1px solid #ccc; border-radius:8px; font-size:16px; box-sizing:border-box; transition: 0.3s; width: 100%; }
     input:focus, textarea:focus { border-color: var(--secondary); outline: none; background: #fdfdfd; }
     input:disabled { background: #e0e0e0; cursor: not-allowed; }
-
     .dynamic-item { display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap; background:#fff; padding:15px; border-radius:8px; border:1px solid #eee; }
     .dynamic-item > div { flex:1; min-width:180px; }
     .remove-btn { background:#d32f2f; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
     .add-btn { background:#2196f3; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; margin-top:10px; font-weight: bold; }
     .btn-kaydet { background:#00c853; color:white; padding:20px; width:100%; border:none; border-radius:12px; font-size:22px; font-weight:bold; cursor:pointer; margin-top:20px; box-shadow: 0 4px 15px rgba(0,200,83,0.3); }
     .btn-geri { background:#6c757d; color:white; padding:15px; width:100%; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; margin-top:10px; text-align:center; text-decoration:none; display:block; }
-
-    .taslak {
-      background:#e8f5e9; padding:30px; border-radius:12px; margin-top:30px; border:3px solid #4caf50;
-      font-size:19px; line-height:1.8; white-space:pre-wrap;
-      -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
-      transition: filter 0.3s ease;
-    }
+    .taslak { background:#e8f5e9; padding:30px; border-radius:12px; margin-top:30px; border:3px solid #4caf50; font-size:19px; line-height:1.8; white-space:pre-wrap; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; transition: filter 0.3s ease; }
     .taslak:not(:hover) { filter: blur(1px); }
-
-    @media print {
-      body * { visibility: hidden; }
-      .taslak { visibility: hidden; }
-      .taslak::after { content: "METİN KORUMALIDIR!"; visibility: visible; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 30px; color: red; }
-    }
-
+    @media print { body * { visibility: hidden; } .taslak { visibility: hidden; } .taslak::after { content: "METİN KORUMALIDIR!"; visibility: visible; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 30px; color: red; } }
     .conditional { display:none; margin-top:10px; }
     .property-name { font-weight: bold; margin-top: 5px; color: #ffd700; }
   </style>
+  <link rel="stylesheet" href="mobil-fix.css">
 </head>
 
 <body oncontextmenu="return false;">
@@ -64,31 +47,18 @@
   </div>
 
   <div class="container">
-
     <div class="form-group">
       <strong>1. Belediye ve Lokasyon Bilgisi</strong>
-
       <div class="grid3">
-        <div>
-          <span class="field-label">Belediye</span>
-          <input type="text" id="belediye" placeholder="Belediye" list="h_belgeler_belediye" onfocus="showList(this)">
-        </div>
-        <div>
-          <span class="field-label">İl</span>
-          <input type="text" id="il" placeholder="İl" list="h_belgeler_il" onfocus="showList(this)">
-        </div>
-        <div>
-          <span class="field-label">İlçe</span>
-          <input type="text" id="ilce" placeholder="İlçe" list="h_belgeler_ilce" onfocus="showList(this)">
-        </div>
+        <div><span class="field-label">Belediye</span><input type="text" id="belediye" placeholder="Belediye" list="h_belgeler_belediye" onfocus="showList(this)"></div>
+        <div><span class="field-label">İl</span><input type="text" id="il" placeholder="İl" list="h_belgeler_il" onfocus="showList(this)"></div>
+        <div><span class="field-label">İlçe</span><input type="text" id="ilce" placeholder="İlçe" list="h_belgeler_ilce" onfocus="showList(this)"></div>
       </div>
-
       <label><strong>Belgeler farklı ada/parselde mi?</strong></label>
       <div class="radio-group">
         <label><input type="radio" name="farkliParsel" value="hayir" checked> Hayır (Aynı)</label>
         <label><input type="radio" name="farkliParsel" value="evet"> Evet (Farklı)</label>
       </div>
-
       <div id="farkliParselDetay" class="conditional" style="gap:10px;">
         <input type="text" id="arsivAda" placeholder="Arşiv Ada No" list="h_belgeler_arsivAda" onfocus="showList(this)">
         <input type="text" id="arsivParsel" placeholder="Arşiv Parsel No" list="h_belgeler_arsivParsel" onfocus="showList(this)">
@@ -98,23 +68,14 @@
     <div class="form-group">
       <strong>2. Mimari Proje Tarihi ve Uyumluluk</strong>
       <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
-        <div style="flex:1; min-width:240px;">
-          <span class="field-label">Proje Tarihi</span>
-          <input type="date" id="projeTarihi">
-        </div>
-        <div style="flex:1; min-width:240px;">
-          <span class="field-label">Alternatif Tarih (Bila vb.)</span>
-          <input type="text" id="projeTarihiText" placeholder="Alternatif Tarih (Bila vb.)" list="h_belgeler_projeTarihiText" onfocus="showList(this)" oninput="checkBila()">
-        </div>
+        <div style="flex:1; min-width:240px;"><span class="field-label">Proje Tarihi</span><input type="date" id="projeTarihi"></div>
+        <div style="flex:1; min-width:240px;"><span class="field-label">Alternatif Tarih (Bila vb.)</span><input type="text" id="projeTarihiText" placeholder="Alternatif Tarih (Bila vb.)" list="h_belgeler_projeTarihiText" onfocus="showList(this)" oninput="checkBila()"></div>
       </div>
-
       <div class="radio-group">
         <label><input type="radio" name="uyum" value="evet" checked> Evet</label>
         <label><input type="radio" name="uyum" value="hayir"> Hayır</label>
         <label><input type="radio" name="uyum" value="kismen"> Kısmen</label>
       </div>
-
-      <!-- ✅ açıklama alanı var ama metne otomatik eklenmez -->
       <textarea id="uyumAciklama" rows="2" placeholder="Uyumsuzluk varsa açıklamayı buraya yaz..." style="margin-top:10px; display:none;" list="h_belgeler_uyumAciklama" onfocus="showList(this)"></textarea>
     </div>
 
@@ -168,7 +129,6 @@
 
     <button class="btn-kaydet" onclick="kaydetVeIsle()">KAYDET VE METİN ÜRET</button>
     <button class="btn-geri" onclick="anaMenuyeDon()">GERİ DÖN (ÇIK)</button>
-
     <div id="taslak" class="taslak" style="display:none;" oncopy="return false"></div>
   </div>
 
@@ -182,8 +142,6 @@
 <script>
   const auth = firebase.auth();
   const db = firebase.firestore();
-
-  /* ========= RID + migration ========= */
   const urlParams = new URLSearchParams(window.location.search);
   let rid = urlParams.get('rid');
   const legacyId = urlParams.get('id');
@@ -204,7 +162,6 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // legacy id -> rid
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -216,9 +173,8 @@
   const idx = rid ? findIndexByRid(reports, rid) : -1;
   let report = (idx >= 0) ? (reports[idx] || {}) : null;
 
-  document.getElementById('propertyName').textContent = report?.propertyName || "İsimsiz";
+  if(document.getElementById('propertyName')) document.getElementById('propertyName').textContent = report?.propertyName || "İsimsiz";
 
-  /* ========= Helpers ========= */
   const fieldsToRemember = ['belediye','il','ilce','projeTarihiText','denetimFirma','yikimAciklamaInput','uyumAciklama','arsivAda','arsivParsel'];
 
   document.addEventListener('keydown', function(e) {
@@ -256,11 +212,10 @@
     });
   }
 
-  /* ========= Conditional UI ========= */
   function toggleFarkliParsel() {
     const evet = document.querySelector('input[name="farkliParsel"]:checked')?.value === "evet";
     const box = document.getElementById('farkliParselDetay');
-    box.style.display = evet ? 'flex' : 'none';
+    if(box) box.style.display = evet ? 'flex' : 'none';
   }
 
   document.querySelectorAll('input[name="farkliParsel"]').forEach(r => r.onchange = toggleFarkliParsel);
@@ -285,109 +240,80 @@
     document.getElementById('uyumAciklama').style.display = (v === 'hayir' || v === 'kismen') ? 'block' : 'none';
   });
 
-  /* ========= Dynamic list: UID (asla bozulmaz) ========= */
   function makeUid(){
     return "u" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
   }
 
   function addRuhsat(data = {}) {
     const list = document.getElementById('ruhsatList');
+    if(!list) return;
     const uid = data.uid || makeUid();
-
     const item = document.createElement('div');
     item.className = 'dynamic-item';
     item.dataset.uid = uid;
-
     const kapsamType = data.kapsam_type || 'tam';
     const kismiText = data.kismi_text || '';
-
     item.innerHTML = `
       <div><strong>Tarih</strong><input type="date" class="r-tarih" value="${data.tarih_raw || ''}"></div>
       <div><strong>No</strong><input type="text" class="r-no" value="${data.no || ''}"></div>
       <div><strong>Amacı</strong><input type="text" class="r-amac" value="${data.amac || ''}"></div>
-
       <div><strong>Kapsam</strong><br>
         <label><input type="radio" name="rk-${uid}" value="tam" ${kapsamType !== 'kismi' ? 'checked' : ''}> Tam</label>
         <label><input type="radio" name="rk-${uid}" value="kismi" ${kapsamType === 'kismi' ? 'checked' : ''}> Kısmi</label>
       </div>
-
       <div class="kismi-box" style="display:${kapsamType === 'kismi' ? 'block' : 'none'}; width:100%;">
         <input type="text" class="r-kismi" placeholder="Kısmi açıklama..." value="${kismiText}">
       </div>
-
       <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
     `;
-
     list.appendChild(item);
-
     item.querySelectorAll(`input[name="rk-${uid}"]`).forEach(r => {
-      r.onchange = () => {
-        item.querySelector('.kismi-box').style.display = (r.value === 'kismi') ? 'block' : 'none';
-      };
+      r.onchange = () => { item.querySelector('.kismi-box').style.display = (r.value === 'kismi') ? 'block' : 'none'; };
     });
   }
 
   function addIskan(data = {}) {
     const list = document.getElementById('iskanList');
+    if(!list) return;
     const uid = data.uid || makeUid();
-
     const item = document.createElement('div');
     item.className = 'dynamic-item';
     item.dataset.uid = uid;
-
     const kapsamType = data.kapsam_type || 'tam';
     const kismiText = data.kismi_text || '';
-
     item.innerHTML = `
       <div><strong>Tarih</strong><input type="date" class="i-tarih" value="${data.tarih_raw || ''}"></div>
       <div><strong>No</strong><input type="text" class="i-no" value="${data.no || ''}"></div>
       <div><strong>Amacı</strong><input type="text" class="i-amac" value="${data.amac || 'Yapı Kullanma İzin Belgesi'}"></div>
-
       <div><strong>Kapsam</strong><br>
         <label><input type="radio" name="ik-${uid}" value="tam" ${kapsamType !== 'kismi' ? 'checked' : ''}> Tam</label>
         <label><input type="radio" name="ik-${uid}" value="kismi" ${kapsamType === 'kismi' ? 'checked' : ''}> Kısmi</label>
       </div>
-
       <div class="kismi-box" style="display:${kapsamType === 'kismi' ? 'block' : 'none'}; width:100%;">
         <input type="text" class="i-kismi" placeholder="Kısmi açıklama..." value="${kismiText}">
       </div>
-
       <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
     `;
-
     list.appendChild(item);
-
     item.querySelectorAll(`input[name="ik-${uid}"]`).forEach(r => {
-      r.onchange = () => {
-        item.querySelector('.kismi-box').style.display = (r.value === 'kismi') ? 'block' : 'none';
-      };
+      r.onchange = () => { item.querySelector('.kismi-box').style.display = (r.value === 'kismi') ? 'block' : 'none'; };
     });
   }
 
-  /* ========= Save + text build ========= */
   function kaydetVeIsle() {
     if (!report) { alert("Rapor bulunamadı!"); return; }
-
     const belediye = formatBelediye(document.getElementById('belediye').value);
     const il = document.getElementById('il').value || "...";
     const ilce = document.getElementById('ilce').value || "...";
-
     const farkliParsel = document.querySelector('input[name="farkliParsel"]:checked')?.value === "evet";
     const aAda = document.getElementById('arsivAda').value.trim();
     const aParsel = document.getElementById('arsivParsel').value.trim();
-
     const pTarInput = document.getElementById('projeTarihi').value;
     const pTarText = document.getElementById('projeTarihiText').value;
-    const pTar = (pTarText.toLowerCase().includes('bila'))
-      ? pTarText
-      : (pTarInput ? new Date(pTarInput).toLocaleDateString('tr-TR') : (pTarText || "..."));
-
+    const pTar = (pTarText.toLowerCase().includes('bila')) ? pTarText : (pTarInput ? new Date(pTarInput).toLocaleDateString('tr-TR') : (pTarText || "..."));
     const uyum = document.querySelector('input[name="uyum"]:checked')?.value || "evet";
     const uyumDurumText = (uyum === 'evet') ? 'uyumludur' : (uyum === 'hayir' ? 'uyumlu değildir' : 'kısmen uyumludur');
-
     const teyit = document.querySelector('input[name="belgeGoruldumu"]:checked')?.value || "görüldü";
-
-    // ruhsatlar
     const ruhsatlar = Array.from(document.querySelectorAll('#ruhsatList .dynamic-item')).map((el) => {
       const uid = el.dataset.uid;
       const tarih_raw = el.querySelector('.r-tarih').value;
@@ -399,8 +325,6 @@
       const kapsam = (kapsam_type === 'tam') ? 'binanın tamı için' : (kismi_text || 'kısmi');
       return { uid, tarih_raw, tarih, no, amac, kapsam_type, kismi_text, kapsam };
     });
-
-    // iskanlar
     const iskanVar = document.querySelector('input[name="iskanVar"]:checked')?.value === 'evet';
     const iskanlar = iskanVar ? Array.from(document.querySelectorAll('#iskanList .dynamic-item')).map((el) => {
       const uid = el.dataset.uid;
@@ -413,63 +337,31 @@
       const kapsam = (kapsam_type === 'tam') ? 'binanın tamı için' : (kismi_text || 'kısmi');
       return { uid, tarih_raw, tarih, no, amac, kapsam_type, kismi_text, kapsam };
     }) : [];
-
-    // yikim
     const yikimVar = document.querySelector('input[name="yikim"]:checked')?.value === 'evet';
     const yikimAciklama = document.getElementById('yikimAciklamaInput').value.trim();
-
-    // denetim
     const denetimDevam = document.querySelector('input[name="denetimDevam"]:checked')?.value || 'hayir';
     const denetimFirma = document.getElementById('denetimFirma').value || "";
     const bitmislikOrani = document.getElementById('bitmislikOrani').value || "";
 
-    // ✅ METİN (senin istediğin kurallar)
     let metin = "";
     metin += `${belediye} İmar ve Şehircilik Müdürlüğü'nden alınan bilgilere göre, rapora konu ana taşınmazın konumu uygundur. `;
     metin += `İmar paftasıyla, bağımsız bölüm bazında taşınmazın bina içindeki konumu ve büyüklüğü; ${ilce} Tapu Müdürlüğü Web Tapu sistemi ve ${belediye}'nde bulunan ${pTar} tarihli mimari projesiyle ${uyumDurumText}. `;
-
-    // ❌ Uyumsuzluk açıklamasını metne EKLEMİYORUZ (kullanıcı alanında kalsın)
-
-    // belgeler cümleleri
     const belgeCumleleri = [];
     ruhsatlar.forEach(r => belgeCumleleri.push(`${r.tarih} tarih ${r.no} sayılı ${r.kapsam} düzenlenmiş ${r.amac} yapı ruhsatı`));
     if (iskanVar) iskanlar.forEach(i => belgeCumleleri.push(`${i.tarih} tarih ${i.no} sayılı ${i.kapsam} düzenlenmiş ${i.amac}`));
-
-    if (belgeCumleleri.length > 0) {
-      metin += `Yapı için; ${belgeCumleleri.join(", ")} ${teyit}. `;
-    }
-
+    if (belgeCumleleri.length > 0) { metin += `Yapı için; ${belgeCumleleri.join(", ")} ${teyit}. `; }
     if (!iskanVar) {
       metin += `Taşınmazın Yapı Kullanma İzin Belgesi (İskân) bulunmamaktadır. `;
-      if (denetimDevam === 'evet') {
-        metin += `Yapının yapı denetimi ${denetimFirma || "..."} şirketi tarafından devam ettiği, bitmişlik oranının %${bitmislikOrani || "..."} olduğu ilgili belediyesinden öğrenilmiştir. `;
-      }
+      if (denetimDevam === 'evet') { metin += `Yapının yapı denetimi ${denetimFirma || "..."} şirketi tarafından devam ettiği, bitmişlik oranının %${bitmislikOrani || "..."} olduğu ilgili belediyesinden öğrenilmiştir. `; }
     }
-
-    metin += yikimVar
-      ? `Belediye arşivinde ${yikimAciklama || "..."} olumsuz karar ve tespit tutanağı olduğu görülmüştür. `
-      : `Belediye arşivinde herhangi bir olumsuz karar ve tespit tutanağına rastlanmamıştır. `;
-
-    // ✅ Farklı ada/parsel seçildiyse SONA EK CÜMLE
-    if (farkliParsel && aAda && aParsel) {
-      metin += `Taşınmaza ait belgeler ${aAda} ada ${aParsel} parsel için düzenlenmiştir. `;
-    }
-
-    // belge özetleri
+    metin += yikimVar ? `Belediye arşivinde ${yikimAciklama || "..."} olumsuz karar ve tespit tutanağı olduğu görülmüştür. ` : `Belediye arşivinde herhangi bir olumsuz karar ve tespit tutanağına rastlanmamıştır. `;
+    if (farkliParsel && aAda && aParsel) { metin += `Taşınmaza ait belgeler ${aAda} ada ${aParsel} parsel için düzenlenmiştir. `; }
     let altListe = "\n\nBELGE ÖZETLERİ:\n";
-    if (belgeCumleleri.length > 0) {
-      altListe += belgeCumleleri.map(c => "- " + c.charAt(0).toUpperCase() + c.slice(1)).join(".\n") + ".";
-    } else {
-      altListe += "- (Belge eklenmedi)";
-    }
-
+    if (belgeCumleleri.length > 0) { altListe += belgeCumleleri.map(c => "- " + c.charAt(0).toUpperCase() + c.slice(1)).join(".\n") + "."; } else { altListe += "- (Belge eklenmedi)"; }
     const finalMetin = metin + altListe;
-
-    // ekrana bas
     document.getElementById('taslak').innerText = finalMetin;
     document.getElementById('taslak').style.display = 'block';
 
-    // ✅ KAYIT
     report.belgeler = {
       belediye: document.getElementById('belediye').value,
       il: document.getElementById('il').value,
@@ -480,7 +372,7 @@
       projeTarihi: pTarInput,
       projeTarihiText: pTarText,
       uyum: uyum,
-      uyumAciklama: document.getElementById('uyumAciklama').value, // sakla ama metne basma
+      uyumAciklama: document.getElementById('uyumAciklama').value,
       ruhsatlar: ruhsatlar,
       iskanVar: iskanVar,
       iskanlar: iskanlar,
@@ -492,17 +384,13 @@
       yikimAciklama: yikimAciklama,
       belgelerMetni: finalMetin
     };
-
-    // geriye dönük uyumluluk
     report.belgelerMetni = finalMetin;
 
-    // autocomplete hafıza
     fieldsToRemember.forEach(fid => {
       const el = document.getElementById(fid);
       if (!el) return;
       const val = (el.value || "").trim();
       if (!val) return;
-
       let h = JSON.parse(localStorage.getItem('h_belgeler_' + fid)) || [];
       if (!h.includes(val)) {
         h.unshift(val);
@@ -512,7 +400,6 @@
 
     reports[idx] = report;
     localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
     alert("✅ Veriler başarıyla kaydedildi!");
     initAutocomplete();
   }
@@ -525,55 +412,43 @@
   window.onload = () => {
     initAutocomplete();
     toggleFarkliParsel();
-
     if (!report) { window.location.href = 'index.html'; return; }
-
     if (report.belgeler) {
       const b = report.belgeler;
-
       document.getElementById('belediye').value = b.belediye || "";
       document.getElementById('il').value = b.il || "";
       document.getElementById('ilce').value = b.ilce || "";
-
       if (b.farkliParsel === 'evet') {
-        document.querySelector('input[name="farkliParsel"][value="evet"]').checked = true;
+        const rad = document.querySelector('input[name="farkliParsel"][value="evet"]');
+        if(rad) rad.checked = true;
         toggleFarkliParsel();
         document.getElementById('arsivAda').value = b.arsivAda || "";
         document.getElementById('arsivParsel').value = b.arsivParsel || "";
       }
-
       document.getElementById('projeTarihi').value = b.projeTarihi || "";
       document.getElementById('projeTarihiText').value = b.projeTarihiText || "";
       checkBila();
-
       if (b.uyum) {
         const uy = document.querySelector(`input[name="uyum"][value="${b.uyum}"]`);
         if (uy) uy.checked = true;
-        const v = b.uyum;
-        document.getElementById('uyumAciklama').style.display = (v === 'hayir' || v === 'kismen') ? 'block' : 'none';
+        document.getElementById('uyumAciklama').style.display = (b.uyum === 'hayir' || b.uyum === 'kismen') ? 'block' : 'none';
         document.getElementById('uyumAciklama').value = b.uyumAciklama || "";
       }
-
-      // ruhsatlar
       const rl = b.ruhsatlar || [];
-      if (rl.length > 0) rl.forEach(r => addRuhsat(r));
-      else addRuhsat();
-
-      // iskan
+      if (rl.length > 0) rl.forEach(r => addRuhsat(r)); else addRuhsat();
       if (b.iskanVar) {
-        document.querySelector('input[name="iskanVar"][value="evet"]').checked = true;
+        const rad = document.querySelector('input[name="iskanVar"][value="evet"]');
+        if(rad) rad.checked = true;
         document.getElementById('iskanSection').style.display = 'block';
         document.getElementById('yapiDenetimSection').style.display = 'none';
         const ilist = b.iskanlar || [];
-        if (ilist.length > 0) ilist.forEach(i => addIskan(i));
-        else addIskan();
+        if (ilist.length > 0) ilist.forEach(i => addIskan(i)); else addIskan();
       } else {
-        document.querySelector('input[name="iskanVar"][value="hayir"]').checked = true;
+        const rad = document.querySelector('input[name="iskanVar"][value="hayir"]');
+        if(rad) rad.checked = true;
         document.getElementById('iskanSection').style.display = 'none';
         document.getElementById('yapiDenetimSection').style.display = 'block';
       }
-
-      // denetim
       if (b.denetimDevam) {
         const d = document.querySelector(`input[name="denetimDevam"][value="${b.denetimDevam}"]`);
         if (d) d.checked = true;
@@ -581,24 +456,20 @@
         document.getElementById('denetimFirma').value = b.denetimFirma || "";
         document.getElementById('bitmislikOrani').value = b.bitmislikOrani || "";
       }
-
-      // teyit
       if (b.teyit) {
         const t = document.querySelector(`input[name="belgeGoruldumu"][value="${b.teyit}"]`);
         if (t) t.checked = true;
       }
-
-      // yikim
       if (b.yikim === 'evet') {
-        document.querySelector('input[name="yikim"][value="evet"]').checked = true;
+        const rad = document.querySelector('input[name="yikim"][value="evet"]');
+        if(rad) rad.checked = true;
         document.getElementById('yikimAciklamaInput').style.display = 'block';
         document.getElementById('yikimAciklamaInput').value = b.yikimAciklama || "";
       } else {
-        document.querySelector('input[name="yikim"][value="hayir"]').checked = true;
+        const rad = document.querySelector('input[name="yikim"][value="hayir"]');
+        if(rad) rad.checked = true;
         document.getElementById('yikimAciklamaInput').style.display = 'none';
       }
-
-      // metin varsa göster
       if (b.belgelerMetni) {
         document.getElementById('taslak').innerText = b.belgelerMetni;
         document.getElementById('taslak').style.display = 'block';
@@ -608,5 +479,6 @@
     }
   };
 </script>
+<script src="mobil-fix.js"></script>
 </body>
 </html>
