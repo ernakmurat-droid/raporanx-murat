@@ -1,44 +1,44 @@
 /* mobil-fix.css */
 /* Amaç: safe-area + hızlı dokunma + yatay taşma fix. Her modülde kırmadan çalışsın. */
 
-:root {
+:root{
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Yatay taşmayı engelle */
-html, body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+html, body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
   -webkit-text-size-adjust: 100%;
 }
 
 /* Safe-area için global padding */
-body {
-  margin: 0;
-  box-sizing: border-box;
+body{
+  margin:0;
+  box-sizing:border-box;
   padding-top: var(--safe-top);
   padding-bottom: var(--safe-bottom);
 }
 
 /* iOS input zoom bug: font-size 16px altına düşmesin */
-input, textarea, select {
-  font-size: 16px !important;
+input, textarea, select{
+  font-size:16px !important;
 }
 
 /* Tıklama gecikmesi/çift tık zoom hissini azalt */
-button, a, .btn, .back, .footer-btn {
+button, a, .btn, .back, .footer-btn{
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Parmak ergonomisi */
-button, .btn, .footer-btn, .back {
-  min-height: 44px;
+/* Parmak ergonomisi (min height 44px kuralı) */
+button, .btn, .footer-btn, .back{
+  min-height:44px;
 }
 
-/* --- ✅ SENİN EKLEDİĞİN KRİTİK FİX'LER --- */
+/* --- ✅ SENİN EKLEDİĞİN MOBİL ÜST BAR FİX'LERİ --- */
 
 /* Geri butonu üst bar altında kalmasın */
 .back, a.back, button.back {
