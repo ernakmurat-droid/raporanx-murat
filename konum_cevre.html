@@ -31,7 +31,6 @@
   .preview-box { background:#222; color:#00ff6a; padding:20px; border-radius:15px; font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px; margin-top:20px; border:2px solid #555; }
   .disabled-input { background:#eee; cursor:not-allowed; opacity:.7; }
   .locked-note{ margin-top:12px; padding:10px 12px; border-radius:14px; background:#fff3cd; border:1px solid #ffe69c; color:#7a5b00; font-weight:900; display:none; }
-  .debug-box{ margin-top:14px; padding:12px; border-radius:14px; background:#0b1020; color:#c9d1ff; font:600 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; white-space:pre-wrap; border:1px solid rgba(255,255,255,.12); display:none; }
 </style>
 </head>
 
@@ -90,96 +89,32 @@
 
     <button id="saveBtn" class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET</button>
     <button class="btn-back" onclick="anaMenuyeDon()">MENÜYE DÖN</button>
-
-    <!-- DEBUG: veri nerede duruyor gör -->
-    <div class="section-title">🛠 DEBUG (gerekirse aç)</div>
-    <div id="debugBox" class="debug-box"></div>
   </div>
 </div>
 
 <script>
   const auth = window.auth || firebase.auth();
 
-  // RID / legacy
-  const params = new URLSearchParams(location.search);
-  let rid = (params.get("rid") || "").toString().trim();
-  const legacyId = (params.get("id") || "").toString().trim();
+  const qs = new URLSearchParams(location.search);
+  let rid = (qs.get("rid") || "").toString().trim();
 
   function readReports(){
     try{ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
     catch(e){ return []; }
   }
-  function genRid(){
-    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
-    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
-  }
-  function ensureRidMigration(arr){
-    let changed=false;
-    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
-    return changed;
-  }
   function findIndexByRid(arr, rid){
     return (arr||[]).findIndex(r => r && String(r.rid) === String(rid));
   }
-
-  // migrate
-  (function(){
-    let reports = readReports();
-    if (ensureRidMigration(reports)) localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
-
-    if (!rid && legacyId){
-      const idx = Number(legacyId);
-      if (!Number.isNaN(idx) && reports[idx] && reports[idx].rid){
-        rid = String(reports[idx].rid);
-        location.replace("konum_cevre.html?rid=" + encodeURIComponent(rid));
-      }
-    }
-  })();
-
   function getReportByRid(){
     const reports = readReports();
     const idx = findIndexByRid(reports, rid);
     return { reports, idx, report: (idx >= 0 ? reports[idx] : null) };
   }
 
-  // helpers
-  const has = (o,k)=> o && Object.prototype.hasOwnProperty.call(o,k);
-  const deep = (o,p)=> { try{ return p.split(".").reduce((a,k)=> (a && a[k] !== undefined ? a[k] : undefined), o); }catch(e){ return undefined; } };
-
   function setInput(id, value){
     const el = document.getElementById(id);
     if (!el) return;
     if (value !== undefined && value !== null) el.value = String(value);
-  }
-
-  function kcOf(report){
-    return report?.konumCevre || report?.konum_cevre || report?.konum || {};
-  }
-
-  function readField(kc, key){
-    if (has(kc, key)) return kc[key];
-    const candidates = ["veriler."+key, "tablo."+key, "table."+key, "fields."+key];
-    for (const p of candidates){
-      const v = deep(kc, p);
-      if (v !== undefined) return v;
-    }
-    return undefined;
-  }
-
-  function bestText(report, kc){
-    // “ulasimTarifi” yoksa buradan yakala
-    return (
-      (has(kc,"ulasimTarifi") ? kc.ulasimTarifi : undefined) ??
-      deep(kc,"metin.ulasimTarifi") ??
-      deep(kc,"tamMetin") ??
-      deep(kc,"metin") ??
-      report?.konumMetni ??
-      report?.konumMetin ??
-      report?.konumCevreMetni ??
-      report?.konumCevre?.tamMetin ??
-      report?.konumCevre?.metin ??
-      ""
-    );
   }
 
   function updatePreview(){
@@ -206,13 +141,14 @@
 
   function checkLockStatus(report){
     const locked = report && (report.isLocked === true || report.locked === true || report.final === true);
-    if (!locked) return;
+    if (!locked) return false;
 
     document.getElementById("lockedNote").style.display = "block";
     const saveBtn = document.getElementById("saveBtn");
     saveBtn.disabled = true;
     saveBtn.textContent = "RAPOR KİLİTLİ (DÜZENLENEMEZ)";
     document.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
+    return true;
   }
 
   function verileriYukle(){
@@ -223,40 +159,24 @@
       return;
     }
 
-    const kc = kcOf(report);
+    const kc = report.konumCevre || {};
 
     document.getElementById("raporBilgi").textContent =
       `Emlak: ${report.propertyName || "Tanımsız"} | RID: ${rid}`;
 
-    // 1-16 alanları (varsa)
-    for (let i = 1; i <= 16; i++) {
+    // 1-16 (direkt senin sistemde var)
+    for (let i = 1; i <= 16; i++){
       const key = "v" + i;
-      setInput(key, readField(kc, key));
+      setInput(key, kc[key]);
     }
 
-    // ✅ İl/ilçe/mahalle fallback: report kökünden çek
-    if (!document.getElementById("v4").value) setInput("v4", report.il || report.sehir || report.city);
-    if (!document.getElementById("v5").value) setInput("v5", report.ilce || report.ilçe || report.district);
-    if (!document.getElementById("v6").value) setInput("v6", report.mahalle || report.mahallesi || report.neighborhood);
+    // Metinler (direkt senin sistemde var)
+    setInput("ulasimTarifi", kc.ulasimTarifi || "");
+    setInput("ulasimOlanaklari", kc.ulasimOlanaklari || "");
+    setInput("altyapiAciklama", kc.altyapiAciklama || "Altyapısı tamdır.");
 
-    // Metinler fallback
-    const ulasim = bestText(report, kc);
-    if (ulasim && !document.getElementById("ulasimTarifi").value) setInput("ulasimTarifi", ulasim);
-
-    setInput("ulasimOlanaklari",
-      (has(kc,"ulasimOlanaklari") ? kc.ulasimOlanaklari : undefined) ??
-      deep(kc,"metin.ulasimOlanaklari") ??
-      report.ulasimOlanaklari ??
-      ""
-    );
-
-    setInput("altyapiAciklama",
-      (has(kc,"altyapiAciklama") ? kc.altyapiAciklama : undefined) ??
-      deep(kc,"metin.altyapiAciklama") ??
-      ""
-    );
-
-    const alty = (has(kc,"altyapi") ? kc.altyapi : (deep(kc,"metin.altyapi") || "Evet"));
+    // Radio
+    const alty = (kc.altyapi || "Evet");
     if (String(alty).toLowerCase() === "hayır" || String(alty).toLowerCase() === "hayir"){
       document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
       toggleAltyapi(false);
@@ -265,15 +185,10 @@
       toggleAltyapi(true);
     }
 
-    // DEBUG (gerekirse aç)
-    const dbg = document.getElementById("debugBox");
-    dbg.style.display = "block";
-    dbg.textContent =
-      "REPORT KEYS: " + Object.keys(report).join(", ") + "\n\n" +
-      "KONUMCEVRE KEYS: " + Object.keys(kc || {}).join(", ") + "\n\n" +
-      "SAMPLE report.il/ilce/mahalle: " + JSON.stringify({il:report.il, ilce:report.ilce, mahalle:report.mahalle}) + "\n\n" +
-      "SAMPLE kc.v4/v5/v6: " + JSON.stringify({v4:readField(kc,"v4"), v5:readField(kc,"v5"), v6:readField(kc,"v6")}) + "\n\n" +
-      "SAMPLE text bestText(): " + (bestText(report,kc) || "(boş)");
+    // Eğer v4/v5/v6 boşsa kökten tamamla (sende kökte de var)
+    if (!document.getElementById("v4").value) setInput("v4", report.il || "");
+    if (!document.getElementById("v5").value) setInput("v5", report.ilce || "");
+    if (!document.getElementById("v6").value) setInput("v6", report.mahalle || "");
 
     updatePreview();
     checkLockStatus(report);
@@ -283,7 +198,6 @@
     const { reports, idx, report } = getReportByRid();
     if (idx < 0 || !report) return;
 
-    // kilitliyse kaydetme
     const locked = report && (report.isLocked === true || report.locked === true || report.final === true);
     if (locked){
       alert("Rapor kilitli. Düzenleme yapılamaz.");
@@ -299,14 +213,16 @@
     };
     for (let i = 1; i <= 16; i++) konumObj["v"+i] = document.getElementById("v"+i).value;
 
+    // ✅ Asıl kayıt
     reports[idx].konumCevre = konumObj;
 
-    // ayrıca kök il/ilçe/mahalle alanlarını da güncelle (rapor-olustur buradan okuyorsa sorun çıkmasın)
-    reports[idx].il = reports[idx].il || document.getElementById("v4").value;
-    reports[idx].ilce = reports[idx].ilce || document.getElementById("v5").value;
-    reports[idx].mahalle = reports[idx].mahalle || document.getElementById("v6").value;
+    // ✅ kökte de dursun (rapor-olustur kökten okuyorsa sorun çıkmasın)
+    reports[idx].il = document.getElementById("v4").value || reports[idx].il || "";
+    reports[idx].ilce = document.getElementById("v5").value || reports[idx].ilce || "";
+    reports[idx].mahalle = document.getElementById("v6").value || reports[idx].mahalle || "";
 
     localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
+
     alert("Başarıyla kaydedildi!");
     verileriYukle();
   }
@@ -315,10 +231,10 @@
     if (!rid) location.href = "index.html";
     else location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
   }
-  window.anaMenuyeDon = anaMenuyeDon;
-  window.verileriKaydet = verileriKaydet;
 
-  // listeners
+  window.verileriKaydet = verileriKaydet;
+  window.anaMenuyeDon = anaMenuyeDon;
+
   document.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', updatePreview));
   document.querySelectorAll('input[name="altyapi"]').forEach(r=>{
     r.addEventListener("change", ()=>{
