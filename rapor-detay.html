@@ -1,208 +1,571 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapor Ana Menü - Yönetim Paneli</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Gayrimenkul Değerleme Raporu</title>
 
-    <script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="wallet.js"></script>
 
-    <style>
-        :root { --primary: #4a148c; --accent: #7c4dff; --success: #00c853; --warning: #ffeb3b; --error: #ff5252; --bg: #f4f7f6; }
+<style>
+:root{
+  --primary:#1a237e;
+  --secondary:#3949ab;
+  --bg:#f4f7f9;
 
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, var(--primary), var(--accent)); margin:0; color:white; min-height:100vh; display:flex; flex-direction:column; }
+  /* ✅ MOBİL HEADER YÜKSEKLİĞİ (gerekirse 96 yap) */
+  --hdrH: 90px;
+}
 
-        /* ✅ MOBİL ÜST ÇENTİK/STATUS BAR FIX + ÜSTE SABİTLEME */
-        .header {
-            padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;
-            text-align:center;
-            position: sticky;
-            top: 0;
-            z-index: 999999;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-        }
+body{
+  font-family:'Segoe UI',sans-serif;
+  background:var(--bg);
+  margin:0;
+  color:#2c3e50;
+}
 
-        /* ✅ Butonların üstten mesafesine safe-area ekle */
-        .back {
-            position:absolute;
-            left:15px;
-            top: calc(20px + env(safe-area-inset-top, 0px));
-            background:rgba(255,255,255,0.2);
-            padding:10px 20px;
-            border-radius:30px;
-            text-decoration:none;
-            color:white;
-            font-weight:bold;
-            font-size: 14px;
-            border: none;
-            cursor: pointer;
-        }
+/* ✅ HEADER: mobilde kaybolmasın + safe-area */
+.header{
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:#fff;
+  padding: calc(30px + env(safe-area-inset-top,0px)) 20px 20px;
+  text-align:center;
+  position: sticky;
+  top: 0;
+  z-index: 999999;
+}
 
-        .wallet-status {
-            position: absolute;
-            right: 15px;
-            top: calc(15px + env(safe-area-inset-top, 0px));
-            background: rgba(0,0,0,0.3);
-            padding: 8px 15px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 12px;
-            border: 1px solid rgba(255,255,255,0.2);
-            transition: 0.3s;
-        }
-        .wallet-status:hover { background: rgba(0,0,0,0.5); }
+.header.locked{background:linear-gradient(135deg,#263238,#455a64);}
 
-        .menu { flex:1; display:flex; flex-wrap:wrap; gap:15px; padding:20px; justify-content:center; align-content:flex-start; }
+/* ✅ Back butonu safe-area altında kalsın */
+.back{
+  position:absolute;
+  left:20px;
+  top: calc(25px + env(safe-area-inset-top,0px));
+  background:rgba(255,255,255,.2);
+  padding:8px 15px;
+  border-radius:30px;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+  z-index: 1000000;
+}
 
-        .btn { flex: 1 1 320px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 25px; font-size: 20px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; color: white; cursor: pointer; transition: 0.3s; position: relative; text-align: left; }
-        .btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); transform: translateY(-3px); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.badge{
+  display:none;
+  margin:10px auto 0;
+  width:fit-content;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:900;
+  background:rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.22);
+}
 
-        .status-dot { position: absolute; top: 12px; right: 15px; font-size: 12px; padding: 4px 10px; border-radius: 10px; font-weight: bold; }
-        .status-missing { background: var(--error); color: white; }
-        .status-incomplete { background: var(--warning); color: #333; }
-        .status-ok { background: var(--success); color: white; }
+.main-wrapper{
+  max-width:1300px;
+  margin:14px auto 30px;
+  display:grid;
+  grid-template-columns:270px 1fr;
+  gap:25px;
+  padding:0 20px;
+}
 
-        .footer-btn { background:#ff5722; padding:20px; font-size:22px; width:90%; max-width:500px; margin:15px auto; border-radius:15px; border:none; color:white; font-weight:bold; cursor: pointer; display: block; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .footer-btn.locked { background: #2196F3; }
+.toc-container{position:sticky;top:20px;height:fit-content;}
+.toc{background:#fff;padding:18px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.05);border-left:6px solid var(--primary);}
+.toc-title{font-weight:bold;color:var(--primary);margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:6px;}
+.toc ul{list-style:none;padding:0;margin:0;}
+.toc li{margin:6px 0;}
+.toc a{color:#444;text-decoration:none;font-size:.9em;display:block;padding:4px 6px;border-radius:4px;}
+.toc a:hover{background:#f0f2ff;color:var(--primary);}
 
-        #kilitMesaji { display: none; background: rgba(255,112,67,0.2); border: 1px solid #ff7043; padding: 10px; margin: 10px auto; width: 80%; text-align: center; border-radius: 10px; color: #ffd600; font-weight: bold; }
+.container{background:#fff;padding:35px;border-radius:12px;box-shadow:0 0 25px rgba(0,0,0,.05);}
+.section{margin-bottom:45px;}
+.section h2{color:var(--primary);border-bottom:2px solid #eee;padding-bottom:8px;font-size:1.2em;}
+.text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;color:#34495e;}
+.warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
 
-        @media (max-width: 600px) {
-            /* ✅ Senin mantık aynı, sadece safe-area ile uyumlu */
-            .header { font-size: 20px; padding-top: calc(60px + env(safe-area-inset-top, 0px)); }
+.print-btn{
+  background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;
+  margin:10px auto;display:block;cursor:pointer;font-weight:bold;
+}
+.print-btn:hover{background:#1e874e;}
 
-            .btn { flex: 1 1 100%; padding: 20px; font-size: 18px; }
+.action-btn{
+  background:#ff5722;color:#fff;padding:13px 26px;border:none;border-radius:50px;
+  margin:10px auto 0;display:block;cursor:pointer;font-weight:900;
+}
+.action-btn:hover{opacity:.92;}
+.action-btn:disabled{opacity:.55;cursor:not-allowed;}
 
-            .wallet-status { right: 10px; top: calc(10px + env(safe-area-inset-top, 0px)); }
-            .back { left: 10px; top: calc(20px + env(safe-area-inset-top, 0px)); }
-        }
-    </style>
+#statusBar{
+  max-width:1300px;
+  margin:12px auto 0;
+  padding:10px 14px;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.06);
+  border-left:6px solid var(--secondary);
+  color:#2c3e50;
+  font-weight:900;
+}
+#statusBar small{display:block;font-weight:700;opacity:.88;margin-top:4px}
+
+@media(max-width:992px){
+  .main-wrapper{grid-template-columns:1fr;}
+  .toc-container{position:relative;margin-bottom:15px;}
+}
+
+/* ✅ Mobilde sticky bazen yetmez: fixed + body padding-top */
+@media(max-width:600px){
+  .header{
+    position: fixed;
+    left: 0; right: 0;
+    top: 0;
+  }
+  body{
+    padding-top: calc(var(--hdrH) + env(safe-area-inset-top,0px));
+  }
+}
+
+@media print{
+  .header,.toc-container,.print-btn,.action-btn,#statusBar{display:none!important;}
+  .container{box-shadow:none;padding:0;}
+}
+</style>
 </head>
 <body>
 
-    <div class="header">
-        <a href="index.html" class="back">Ana Sayfa</a>
-        <div id="walletBox" class="wallet-status">
-            💳 <span id="walletText">Kredi: Yükleniyor...</span>
-        </div>
-        <div id="baslik" style="margin-top:20px;">Gayrimenkul Raporu</div>
-        <div id="kilitMesaji">🔒 RAPOR MÜHÜRLENDİ - YALNIZCA GÖRÜNTÜLEME</div>
+<div class="header" id="hdr">
+  <button class="back" id="btnBack">← Geri</button>
+  <h1 style="margin:0;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
+  <div id="raporTarih" style="margin-top:6px;"></div>
+  <div id="finalBadge" class="badge">🔒 FINAL / KİLİTLİ</div>
+</div>
+
+<div id="statusBar">
+  Hazır.
+  <small>Rapor metinleri yükleniyor…</small>
+</div>
+
+<div class="main-wrapper">
+  <aside class="toc-container">
+    <div class="toc">
+      <div class="toc-title">📋 RAPOR BÖLÜMLERİ</div>
+      <ul>
+        <li><a href="#genel">1. Genel Bilgiler</a></li>
+        <li><a href="#imar">2. İmar Durumu</a></li>
+        <li><a href="#belgeler">3. Belgeler</a></li>
+        <li><a href="#bina">4. Ana Bina Bilgileri</a></li>
+        <li><a href="#bb">5. Bağımsız Bölüm</a></li>
+        <li><a href="#konum">6. Konum Analizi</a></li>
+        <li><a href="#tapu">7. Tapu Bilgileri</a></li>
+        <li><a href="#emsal">8. Değerleme / Emsal</a></li>
+      </ul>
     </div>
-    
-    <div class="menu">
-        <button class="btn modül-btn" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE <span id="stat_konum" class="status-dot"></span></button>
-        <button class="btn modül-btn" onclick="go('tapu_kayit.html')">TAPU KAYITLARI <span id="stat_tapu" class="status-dot"></span></button>
-        <button class="btn modül-btn" onclick="go('imar.html')">İMAR DURUMU <span id="stat_imar" class="status-dot"></span></button>
-        <button class="btn modül-btn" onclick="go('belgeler.html')">İNCELENEN BELGELER <span id="stat_belgeler" class="status-dot"></span></button>
-        <button class="btn modül-btn" onclick="go('bina.html')">BİNA BİLGİLERİ <span id="stat_bina" class="status-dot"></span></button>
-        <button class="btn modül-btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM <span id="stat_bb" class="status-dot"></span></button>
-        <button class="btn modül-btn" onclick="go('emsal.html')">EMSAL ANALİZİ <span id="stat_emsal" class="status-dot"></span></button>
-    </div>
-   
-    <button id="mainBtn" class="footer-btn" onclick="raporKontrolVeKilitle()">RAPORU TAMAMLA VE KİLİTLE</button>
+  </aside>
 
-    <script>
-        // URL'den Rapor ID'sini Al
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
+  <main class="container">
+    <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
+    <button class="action-btn" id="btnFinalCreate" disabled>🧾 Final Rapor Oluştur (Hak Düş + Kilitle)</button>
 
-        // Sayfa Değiştirme Fonksiyonu (Parametre Koruyucu)
-        function go(page) { window.location.href = page + '?id=' + id; }
+    <section id="genel" class="section">
+      <h2>1. Genel Bilgiler</h2>
+      <div id="genelBilgi"></div>
+    </section>
 
-        function isValueEmpty(val) {
-            if (!val) return true;
-            if (typeof val === 'string' && (val.trim().length < 5 || val.includes("Metin burada oluşacak"))) return true;
-            return false;
-        }
+    <section id="imar" class="section">
+      <h2>2. İmar Durumu</h2>
+      <div id="imarTablo"></div>
+      <div class="text-block" id="imarMetin"></div>
+    </section>
 
-        async function durumuGuncelle() {
-            const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-            const r = reports[id];
-            if (!r) return;
+    <section id="belgeler" class="section">
+      <h2>3. Belgeler</h2>
+      <div class="text-block" id="belgelerMetin"></div>
+    </section>
 
-            const kontroller = {
-                stat_konum: { veri: r.konumCevre?.tamMetin, tamam: r.konum_tamamlandi },
-                stat_tapu: { veri: r.tapuMetniB1, tamam: r.tapu_tamamlandi },
-                stat_imar: { veri: r.imarMetni, tamam: r.imar_tamamlandi },
-                stat_belgeler: { veri: r.belgelerMetni, tamam: r.belgeler_tamamlandi },
-                stat_bina: { veri: r.bina?.metin || r.binaMetni, tamam: r.bina_tamamlandi },
-                stat_bb: { veri: r.bbDetay?.tamMetin || r.katDetayMetni, tamam: r.bb_tamamlandi },
-                stat_emsal: { veri: r.degerlemeOzet?.emsalFinalMetni, tamam: (r.emsaller && r.emsaller.length >= 4) }
-            };
+    <section id="bina" class="section">
+      <h2>4. Ana Bina Bilgileri</h2>
+      <div class="text-block" id="binaMetin"></div>
+    </section>
 
-            for (let dotId in kontroller) {
-                const el = document.getElementById(dotId);
-                const d = kontroller[dotId];
-                if (el) {
-                    if (isValueEmpty(d.veri)) { el.textContent = "Eksik"; el.className = "status-dot status-missing"; }
-                    else if (d.tamam === false) { el.textContent = "⚠️ Eksik"; el.className = "status-dot status-incomplete"; }
-                    else { el.textContent = "Tamam"; el.className = "status-dot status-ok"; }
-                }
-            }
-        }
+    <section id="bb" class="section">
+      <h2>5. Bağımsız Bölüm</h2>
+      <div class="text-block" id="bbMetin"></div>
+    </section>
 
-        async function raporKontrolVeKilitle() {
-            const user = auth.currentUser;
-            if (!user) return alert("Lütfen giriş yapın!");
+    <section id="konum" class="section">
+      <h2>6. Konum Analizi</h2>
+      <div class="text-block" id="konumMetin"></div>
+    </section>
 
-            const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-            const r = reports[id];
-            if (r.isLocked) { window.location.href = 'rapor-olustur.html?id=' + id; return; }
+    <section id="tapu" class="section">
+      <h2>7. Tapu Bilgileri</h2>
+      <div class="text-block" id="tapuMetinB1"></div>
+      <div class="text-block" id="tapuMetinB2"></div>
+    </section>
 
-            const userRef = db.collection("users").doc(user.uid);
-            const userDoc = await userRef.get();
-            const mevcutKredi = userDoc.data().kredi || 0;
+    <section id="emsal" class="section">
+      <h2>8. Değerleme / Emsal</h2>
+      <div class="text-block" id="emsalMetin"></div>
+    </section>
+  </main>
+</div>
 
-            const hatirlatmaMetni = "Veri girişlerinin tamamını yaptığınızdan emin olun. Rapor mühürlendikten sonra değişiklik yapılamaz.";
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // firebase-config.js içinden gelen global auth/db’yi kullan
+  const auth = window.auth || firebase.auth();
+  const db = window.db || firebase.firestore();
+  const $ = (id) => document.getElementById(id);
 
-            if (mevcutKredi <= 0) {
-                alert("⚠️ Krediniz yetersiz! Lütfen yükleme yapın.");
-                return;
-            }
+  function setStatus(title, sub){
+    const el = $("statusBar");
+    el.textContent = title;
+    const sm = document.createElement("small");
+    sm.textContent = sub || "";
+    el.appendChild(sm);
+  }
 
-            if (confirm(`${hatirlatmaMetni}\n\nMevcut Krediniz: ${mevcutKredi}\nİşlem Sonrası: ${mevcutKredi - 1}\n\nRapor mühürlensin mi?`)) {
-                await userRef.update({
-                    kredi: firebase.firestore.FieldValue.increment(-1)
-                });
+  const params = new URLSearchParams(location.search);
+  const rid = (params.get("rid") || params.get("id") || "").toString().trim();
+  const confirmParam = params.get("confirm") === "1";
 
-                r.isLocked = true;
-                reports[id] = r;
-                localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-                await userRef.set({ gayrimenkul_reports: reports }, { merge: true });
-                location.reload();
-            }
-        }
+  $("btnBack").onclick = () => {
+    if (!rid) location.href="index.html";
+    else location.href="rapor-detay.html?rid=" + encodeURIComponent(rid);
+  };
 
-        // Kimlik ve Kredi Kontrolü
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-                const r = reports[id];
-                if (r) {
-                    document.getElementById('baslik').textContent = r.propertyName || "Gayrimenkul Raporu";
-                    durumuGuncelle();
-                    
-                    const userDoc = await db.collection("users").doc(user.uid).get();
-                    const kredi = userDoc.data().kredi || 0;
-                    document.getElementById('walletText').textContent = `Kredi: ${kredi}`;
+  if (!rid){
+    setStatus("❌ rid yok.", "Ana sayfaya dön.");
+    alert("Rapor id (rid) bulunamadı!");
+    return;
+  }
 
-                    if (r.isLocked) {
-                        document.querySelectorAll('.modül-btn').forEach(btn => btn.disabled = true);
-                        document.getElementById('kilitMesaji').style.display = 'block';
-                        const mainBtn = document.getElementById('mainBtn');
-                        mainBtn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
-                        mainBtn.className = "footer-btn locked";
-                    }
-                }
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
-    </script>
+  // ---------- LOCK (cihazlar arası senkron) ----------
+  function isLockedLocal(){ return localStorage.getItem("report_locked_" + rid) === "1"; }
+  function setLockedLocal(){
+    localStorage.setItem("report_locked_" + rid, "1");
+    $("finalBadge").style.display = "block";
+    $("hdr").classList.add("locked");
+  }
+
+  async function isLockedRemote(uid){
+    // rapor kilit bilgisini birkaç yerde arayalım
+    // 1) locks/{uid}_{rid}
+    try{
+      const lockId = `${uid}_${rid}`;
+      const d = await db.collection("locks").doc(lockId).get();
+      if (d.exists) return true;
+    }catch(e){}
+
+    // 2) users/{uid}/locks/{rid}
+    try{
+      const d = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
+      if (d.exists) return true;
+    }catch(e){}
+
+    // 3) users/{uid}/reports/{rid} içinde locked alanı
+    try{
+      const d = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
+      if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
+    }catch(e){}
+
+    // 4) reports/{rid} içinde locked alanı
+    try{
+      const d = await db.collection("reports").doc(rid).get();
+      if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
+    }catch(e){}
+
+    return false;
+  }
+
+  async function setLockedRemote(uid){
+    const now = firebase.firestore.FieldValue.serverTimestamp();
+    const payload = { uid, rid, locked:true, createdAt: now };
+
+    // birkaç yere yaz (hangisini kullanıyorsan oradan okur)
+    try{
+      const lockId = `${uid}_${rid}`;
+      await db.collection("locks").doc(lockId).set(payload, { merge:true });
+    }catch(e){}
+
+    try{
+      await db.collection("users").doc(uid).collection("locks").doc(rid).set(payload, { merge:true });
+    }catch(e){}
+
+    try{
+      await db.collection("users").doc(uid).collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true });
+    }catch(e){}
+
+    try{
+      await db.collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true });
+    }catch(e){}
+  }
+
+  // ---------- METİN HELPERS ----------
+  function formatMetin(t){
+    if (t === null || t === undefined) return "";
+    const s = String(t);
+    return s.replace(/\r\n/g,"\n").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+  }
+
+  function pick(obj, ...paths){
+    for (const p of paths){
+      try{
+        const val = p.split(".").reduce((acc,k)=> (acc && acc[k] !== undefined ? acc[k] : undefined), obj);
+        if (val !== undefined && val !== null && String(val).trim() !== "") return val;
+      }catch{}
+    }
+    return "";
+  }
+
+  function bbYazdir(list){
+    if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
+    return list.map((bb,i)=>{
+      const baslik = bb?.baslik || bb?.title || "Bağımsız Bölüm";
+      const metin = pick(bb,"bbDetay.tamMetin","bbDetay.metin","tamMetin","metin");
+      return `(${i+1}) ${baslik}:\n${formatMetin(metin)}`.trim();
+    }).join("\n\n");
+  }
+
+  function emsalMetni(rep){
+    const direct = pick(rep,"emsalFinalMetni","degerlemeOzet.emsalFinalMetni","degerleme.emsalFinalMetni");
+    if (direct) return formatMetin(direct);
+    const list = rep?.bbDetayList;
+    if (Array.isArray(list) && list.length){
+      const uniq = new Set();
+      const arr = [];
+      for (const bb of list){
+        const t = pick(bb,"degerlemeOzet.emsalFinalMetni","emsalFinalMetni","degerleme.emsalFinalMetni");
+        const ft = formatMetin(t);
+        if (!ft) continue;
+        if (uniq.has(ft)) continue;
+        uniq.add(ft);
+        arr.push(ft);
+      }
+      return arr.length ? arr.join("\n\n") : "Emsal analizi bulunamadı";
+    }
+    return "Emsal verisi yok";
+  }
+
+  function render(r){
+    $("raporTarih").textContent = "Tarih: " + new Date().toLocaleDateString("tr-TR");
+
+    const il = pick(r,"il");
+    const ilce = pick(r,"ilce");
+    const ada = pick(r,"ada");
+    const parsel = pick(r,"parsel");
+    const propertyName = pick(r,"propertyName","tasınmazAdi","tasinmazAdi","baslik");
+
+    $("genelBilgi").innerHTML = `
+      <div><b>İl / İlçe:</b> ${il || "-"} / ${ilce || "-"}</div>
+      <div><b>Ada / Parsel:</b> ${ada || "-"} / ${parsel || "-"}</div>
+      <div><b>Taşınmaz:</b> ${propertyName || "Tanımsız"}</div>
+    `;
+
+    const imarTablo = pick(r,"imarTablo");
+    $("imarTablo").innerHTML = imarTablo || "<div class='warning'>İmar tablosu bulunamadı</div>";
+
+    $("imarMetin").textContent = formatMetin(pick(r,"imarMetni","imar.metin","imar.tamMetin"));
+    $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin","belgeler.tamMetin"));
+    $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","bina.tamMetin","binaMetni","binaMetin"));
+    $("bbMetin").textContent = bbYazdir(r.bbDetayList || r.bbList || r.bagimsizBolumler);
+    $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumCevre.metin","konumMetni","konumMetin"));
+    $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1","tapuMetinB1"));
+    $("tapuMetinB2").textContent = formatMetin(pick(r,"tapuMetniB2","tapu.b2","tapuMetinB2"));
+    $("emsalMetin").textContent = emsalMetni(r);
+  }
+
+  // ---------- RAPOR LOAD (localStorage + Firestore fallback) ----------
+  function loadReportLocal(){
+    let raporlar = [];
+    try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
+
+    const report =
+      raporlar.find(r => String(r?.rid ?? "").trim() === rid) ||
+      raporlar.find(r => String(r?.rid ?? "").trim() === String(Number(rid))) ||
+      null;
+
+    let report2 = null;
+    if (!report){
+      try{
+        const maybe = localStorage.getItem("rapor_" + rid);
+        if (maybe) report2 = JSON.parse(maybe);
+      }catch{}
+    }
+    return report || report2 || null;
+  }
+
+  async function getDocIfExists(path){
+    try{
+      const ref = db.doc(path);
+      const snap = await ref.get();
+      if (snap.exists) return snap.data();
+    }catch(e){}
+    return null;
+  }
+
+  async function loadReportRemote(uid){
+    // 1) users/{uid}/reports/{rid}
+    let data = await getDocIfExists(`users/${uid}/reports/${rid}`);
+    if (data) return data;
+
+    // 2) reports/{rid}
+    data = await getDocIfExists(`reports/${rid}`);
+    if (data) return data;
+
+    // 3) reports koleksiyonunda query (uid + rid/id)
+    try{
+      let q = await db.collection("reports")
+        .where("uid","==",uid)
+        .where("rid","==",rid)
+        .limit(1)
+        .get();
+      if (!q.empty) return q.docs[0].data();
+    }catch(e){}
+
+    try{
+      let q2 = await db.collection("reports")
+        .where("uid","==",uid)
+        .where("id","==",rid)
+        .limit(1)
+        .get();
+      if (!q2.empty) return q2.docs[0].data();
+    }catch(e){}
+
+    return null;
+  }
+
+  // ---------- WALLET ----------
+  async function consumeWalletOrExplain(user){
+    if (!user) return { ok:false, why:"Giriş yok (user null)" };
+    if (!window.Wallet || typeof Wallet.consumeReport !== "function") return { ok:false, why:"Wallet.consumeReport yok" };
+
+    try{
+      const before = await Wallet.load(user.uid);
+      const bFree = Number(before?.freeReportsLeft ?? 0);
+
+      const ok = await Wallet.consumeReport(user.uid, rid);
+
+      const after = await Wallet.load(user.uid);
+      const aFree = Number(after?.freeReportsLeft ?? 0);
+
+      if (!ok) return { ok:false, why:`Yetersiz hak/bakiye (before: ${bFree} → after: ${aFree})` };
+      return { ok:true, why:`OK (before: ${bFree} → after: ${aFree})` };
+
+    }catch(e){
+      return { ok:false, why:(e?.message || String(e)) };
+    }
+  }
+
+  async function finalizeFlow(user, showAlerts){
+    let rep = loadReportLocal();
+    if (!rep) rep = await loadReportRemote(user.uid);
+
+    if (!rep){
+      setStatus("❌ Rapor bulunamadı.", "localStorage + Firestore içinde bu rid yok.");
+      if (showAlerts) alert("Rapor bulunamadı (rid: " + rid + ")");
+      return;
+    }
+
+    render(rep);
+
+    const locked = isLockedLocal() || await isLockedRemote(user.uid);
+    if (locked){
+      setLockedLocal();
+      setStatus("🔒 Zaten kilitli.", "Bu rapor daha önce final yapılmış.");
+      return;
+    }
+
+    if (!confirmParam){
+      const msg =
+`UYARI! (ÖNEMLİ)
+Final rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
+Devam etmek istiyor musunuz?`;
+      if (!confirm(msg)) return;
+    }
+
+    setStatus("💳 Hak düşürülüyor…", "Cüzdandan düşüm denenecek. Başarısızsa kilit atılmayacak.");
+
+    const res = await consumeWalletOrExplain(user);
+
+    if (!res.ok){
+      setStatus("❌ Hak düşürülemedi!", res.why);
+      if (showAlerts) alert("Hak düşürülemedi:\n" + res.why + "\n\nFirestore rules/izin sorunu olabilir.");
+      return;
+    }
+
+    setLockedLocal();
+    await setLockedRemote(user.uid);
+
+    setStatus("✅ Hak düşürüldü ve kilitlendi.", res.why);
+    if (showAlerts) alert("✅ Hak düşürüldü. Rapor kilitlendi.\n" + res.why);
+  }
+
+  async function boot(){
+    setStatus("⏳ Giriş kontrol ediliyor…", "Auth bekleniyor (mobilde şart).");
+
+    const user = (typeof window.waitForAuth === "function")
+      ? await window.waitForAuth()
+      : await new Promise((resolve)=> auth.onAuthStateChanged(u=> u && resolve(u)));
+
+    if (!user){
+      setStatus("❌ Giriş yok.", "Lütfen giriş yap.");
+      alert("Giriş bulunamadı. Lütfen tekrar giriş yapın.");
+      return;
+    }
+
+    setStatus("⏳ Rapor yükleniyor…", "Önce cihaz (local), yoksa Firestore.");
+    let rep = loadReportLocal();
+    let source = "localStorage";
+
+    if (!rep){
+      rep = await loadReportRemote(user.uid);
+      source = rep ? "Firestore" : "yok";
+    }
+
+    if (!rep){
+      setStatus("❌ Rapor yok.", `rid: ${rid} (localStorage + Firestore bulunamadı)`);
+      alert("Rapor bulunamadı! (rid: " + rid + ")");
+      return;
+    }
+
+    render(rep);
+
+    const locked = isLockedLocal() || await isLockedRemote(user.uid);
+    if (locked){
+      setLockedLocal();
+      setStatus("🔒 Kilitli.", `Kaynak: ${source}. Bu rapor final yapılmış.`);
+    } else {
+      setStatus("✅ Hazır.", `Kaynak: ${source}. Final yapmak için butonu kullan.`);
+    }
+
+    const btn = $("btnFinalCreate");
+    btn.disabled = false;
+
+    const handler = () => finalizeFlow(user, true);
+    btn.addEventListener("click", handler, { passive:true });
+    btn.addEventListener("touchstart", handler, { passive:true });
+
+    if (confirmParam){
+      setTimeout(()=> finalizeFlow(user, false), 150);
+    }
+  }
+
+  boot().catch((e)=>{
+    console.error(e);
+    setStatus("❌ Hata oluştu.", e?.message || String(e));
+    alert("Hata:\n" + (e?.message || String(e)));
+  });
+});
+</script>
+
 </body>
 </html>
