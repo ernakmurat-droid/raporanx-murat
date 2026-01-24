@@ -1,47 +1,47 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yeni Rapor Oluştur - RaporanX</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yeni Rapor Oluştur - RaporanX</title>
 
-  <!-- Firebase CDN (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
+<!-- Firebase CDN (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 
-  <style>
-    body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #ba68c8); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
-    .container { max-width: 600px; margin: 0 auto; text-align: center; }
-    h1 { font-size: 32px; margin-bottom: 10px; }
-    .mode-badge{
-      display:inline-block; margin: 10px 0 18px;
-      background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:999px;
-      font-weight:bold; font-size:13px;
-    }
-    form { background: rgba(255,255,255,0.2); padding: 30px; border-radius: 15px; }
-    label { display: block; margin: 15px 0 5px; font-weight: bold; text-align: left; }
-    input { width: 100%; padding: 14px; border: none; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
-    button { background: #00c853; color: white; padding: 18px; border: none; border-radius: 12px; width: 100%; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-    button:hover { background: #00b140; }
-    button:disabled{ opacity:.55; cursor:not-allowed; }
-    .geri-btn { background: #6c757d; margin-top: 15px; }
-    .geri-btn:hover { background: #5a6268; }
-    .referans-btn { background: #2196f3; margin-top: 15px; }
-    .referans-btn:hover { background: #1976d2; }
+<style>
+  body { font-family: Arial, sans-serif; background: linear-gradient(to bottom, #4a148c, #ba68c8); margin: 0; padding: 40px 20px; color: white; min-height: 100vh; }
+  .container { max-width: 600px; margin: 0 auto; text-align: center; }
+  h1 { font-size: 32px; margin-bottom: 10px; }
+  .mode-badge{
+    display:inline-block; margin: 10px 0 18px;
+    background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:999px;
+    font-weight:bold; font-size:13px;
+  }
+  form { background: rgba(255,255,255,0.2); padding: 30px; border-radius: 15px; }
+  label { display: block; margin: 15px 0 5px; font-weight: bold; text-align: left; }
+  input { width: 100%; padding: 14px; border: none; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; font-size: 16px; }
+  button { background: #00c853; color: white; padding: 18px; border: none; border-radius: 12px; width: 100%; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+  button:hover { background: #00b140; }
+  button:disabled{ opacity:.55; cursor:not-allowed; }
+  .geri-btn { background: #6c757d; margin-top: 15px; }
+  .geri-btn:hover { background: #5a6268; }
+  .referans-btn { background: #2196f3; margin-top: 15px; }
+  .referans-btn:hover { background: #1976d2; }
 
-    .status{
-      margin: 12px 0 0;
-      padding: 10px 12px;
-      background: rgba(0,0,0,0.22);
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 12px;
-      font-weight: 800;
-      text-align:left;
-    }
-    .status small{display:block; opacity:.9; font-weight:700; margin-top:6px;}
-  </style>
+  .status{
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 12px;
+    font-weight: 800;
+    text-align:left;
+  }
+  .status small{display:block; opacity:.9; font-weight:700; margin-top:6px;}
+</style>
 </head>
 
 <body>
@@ -79,270 +79,309 @@
     </form>
   </div>
 
-  <script>
-    const auth = window.auth || firebase.auth();
-    const db   = window.db   || firebase.firestore();
+<script>
+  const auth = window.auth || firebase.auth();
+  const db   = window.db   || firebase.firestore();
 
-    function $(id){ return document.getElementById(id); }
-    function setStatus(title, sub){
-      $("statusBox").textContent = title;
-      const sm = document.createElement("small");
-      sm.textContent = sub || "";
-      $("statusBox").appendChild(sm);
+  function $(id){ return document.getElementById(id); }
+  function setStatus(title, sub){
+    $("statusBox").textContent = title;
+    const sm = document.createElement("small");
+    sm.textContent = sub || "";
+    $("statusBox").appendChild(sm);
+  }
+
+  /* ========= RID helpers ========= */
+  function genRid(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
+  function safeText(v){ return (v ?? '').toString().trim(); }
+
+  /* ========= ✅ DELETE TOMBSTONE (silinen geri gelmesin) ========= */
+  function getDeletedSet(){
+    try { return new Set(JSON.parse(localStorage.getItem("deleted_rids") || "[]")); }
+    catch { return new Set(); }
+  }
+  function isDeletedRid(rid){
+    return getDeletedSet().has(String(rid));
+  }
+  async function loadCloudDeletes(uid){
+    try{
+      const snap = await db.collection("users").doc(uid).collection("deletes").get();
+      const s = getDeletedSet();
+      snap.forEach(d => {
+        const rr = d.id || d.data()?.rid;
+        if (rr) s.add(String(rr));
+      });
+      localStorage.setItem("deleted_rids", JSON.stringify([...s]));
+      return s;
+    }catch(e){
+      console.warn("cloud deletes okunamadı:", e);
+      return getDeletedSet();
     }
+  }
+  function filterDeleted(arr){
+    const deleted = getDeletedSet();
+    return (Array.isArray(arr) ? arr : []).filter(r => r && r.rid && !deleted.has(String(r.rid)));
+  }
 
-    /* ========= RID helpers ========= */
-    function genRid(){
-      try{
-        if (crypto && crypto.randomUUID) return crypto.randomUUID();
-      }catch(e){}
-      return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
-    }
-    function safeText(v){ return (v ?? '').toString().trim(); }
-
-    /* ========= Local Storage (HATA İMMÜN) ========= */
-    function getReports(){
-      const raw = localStorage.getItem('gayrimenkul_reports');
-      if (!raw) return [];
-      try{
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) {
-          console.warn("gayrimenkul_reports array değil, sıfırlanıyor:", parsed);
-          localStorage.removeItem('gayrimenkul_reports');
-          return [];
-        }
-        return parsed;
-      }catch(e){
-        console.warn("gayrimenkul_reports bozuk JSON, sıfırlanıyor:", e);
+  /* ========= Local Storage (HATA İMMÜN) ========= */
+  function getReports(){
+    const raw = localStorage.getItem('gayrimenkul_reports');
+    if (!raw) return [];
+    try{
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        console.warn("gayrimenkul_reports array değil, sıfırlanıyor:", parsed);
         localStorage.removeItem('gayrimenkul_reports');
         return [];
       }
+      return parsed;
+    }catch(e){
+      console.warn("gayrimenkul_reports bozuk JSON, sıfırlanıyor:", e);
+      localStorage.removeItem('gayrimenkul_reports');
+      return [];
     }
-    function setReports(arr){
-      localStorage.setItem('gayrimenkul_reports', JSON.stringify(Array.isArray(arr) ? arr : []));
+  }
+  function setReports(arr){
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(Array.isArray(arr) ? arr : []));
+    localStorage.setItem("gayrimenkul_reports_lastUpdate", new Date().toISOString());
+  }
+  function findIndexByRid(arr, rid){
+    return (Array.isArray(arr) ? arr : []).findIndex(r => r && String(r.rid) === String(rid));
+  }
+
+  /* ========= URL params ========= */
+  const urlParams = new URLSearchParams(window.location.search);
+  const mode = (urlParams.get('mode') || '').toLowerCase();
+  const rid  = (urlParams.get('rid') || '').trim();
+  const isEditMode = (mode === 'edit' && !!rid);
+
+  function setupEditUI(){
+    $("pageTitle").textContent = "RAPOR DÜZENLE";
+    $("modeBadge").style.display = "inline-block";
+    $("btnSave").textContent = "RAPORU GÜNCELLE";
+  }
+
+  function loadReportToFormByRid(rid){
+    const reports = getReports();
+    const idx = findIndexByRid(reports, rid);
+    if (idx < 0) {
+      alert("⚠️ Düzenlenecek rapor bulunamadı! (RID)");
+      window.location.href = "index.html";
+      return;
     }
-    function findIndexByRid(arr, rid){
-      return (Array.isArray(arr) ? arr : []).findIndex(r => r && r.rid === rid);
+    const r = reports[idx] || {};
+    $("propertyName").value = r.propertyName || "";
+    $("il").value = r.il || "";
+    $("ilce").value = r.ilce || "";
+    $("mahalle").value = r.mahalle || "";
+    $("ada").value = r.ada || "";
+    $("parsel").value = r.parsel || "";
+  }
+
+  /* ========= Cloud Sync =========
+     ✅ FIX: silinenleri (tombstone) önce çek, sonra raporları filtrele.
+  */
+  async function syncReportsFromCloud(uid){
+    // 0) deletes'i çek (silinenler geri gelmesin diye şart)
+    await loadCloudDeletes(uid);
+
+    let merged = filterDeleted(getReports());
+
+    const map = new Map();
+    for (const r of merged){
+      if (!r || !r.rid) continue;
+      if (isDeletedRid(r.rid)) continue;
+      map.set(String(r.rid), r);
     }
 
-    /* ========= URL params ========= */
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = (urlParams.get('mode') || '').toLowerCase();
-    const rid  = (urlParams.get('rid') || '').trim();
-    const isEditMode = (mode === 'edit' && !!rid);
-
-    function setupEditUI(){
-      $("pageTitle").textContent = "RAPOR DÜZENLE";
-      $("modeBadge").style.display = "inline-block";
-      $("btnSave").textContent = "RAPORU GÜNCELLE";
+    // (A) users/{uid}/reports subcollection
+    try{
+      const snap = await db.collection("users").doc(uid).collection("reports").get();
+      snap.forEach(doc => {
+        const data = doc.data() || {};
+        const rrid = data.rid || doc.id;
+        if (!rrid) return;
+        if (isDeletedRid(rrid)) return; // ✅ EN KRİTİK SATIR
+        map.set(String(rrid), { ...(map.get(String(rrid)) || {}), ...data, rid: String(rrid) });
+      });
+    }catch(e){
+      console.warn("users/{uid}/reports okunamadı:", e?.message || e);
     }
 
-    function loadReportToFormByRid(rid){
-      const reports = getReports();
+    // (B) users/{uid} doc içi gayrimenkul_reports array (yedek)
+    try{
+      const userDoc = await db.collection("users").doc(uid).get();
+      if (userDoc.exists){
+        const arr = userDoc.data()?.gayrimenkul_reports;
+        if (Array.isArray(arr)){
+          arr.forEach(r => {
+            if (!r || !r.rid) return;
+            if (isDeletedRid(r.rid)) return; // ✅ EN KRİTİK SATIR
+            map.set(String(r.rid), { ...(map.get(String(r.rid)) || {}), ...r, rid: String(r.rid) });
+          });
+        }
+      }
+    }catch(e){
+      console.warn("users/{uid} doc okunamadı:", e?.message || e);
+    }
+
+    merged = filterDeleted(Array.from(map.values()).filter(r => r && r.rid));
+    setReports(merged);
+    return merged.length;
+  }
+
+  // Geriye uyumluluk için array yedek
+  async function backupArrayToUserDoc(uid){
+    const reports = filterDeleted(getReports());
+    await db.collection("users").doc(uid).set({
+      gayrimenkul_reports: reports,
+      lastUpdate: new Date().toISOString()
+    }, { merge: true });
+  }
+
+  async function saveSingleReport(uid, report){
+    const rrid = String(report.rid);
+
+    // ✅ eğer bu rid silinmiş listede ise ASLA yazma
+    if (isDeletedRid(rrid)) {
+      console.warn("Silinmiş rid tekrar yazılmak istendi, engellendi:", rrid);
+      return;
+    }
+
+    await db.collection("users").doc(uid).collection("reports").doc(rrid).set({
+      ...report,
+      rid: rrid,
+      updatedAtIso: new Date().toISOString(),
+    }, { merge:true });
+
+    // array yedek
+    try{ await backupArrayToUserDoc(uid); }catch(e){}
+  }
+
+  /* ========= Actions ========= */
+  function referansAc(){ window.open('referans-bilgiler.html', '_blank'); }
+  function anaSayfayaDon(){ window.location.href = 'index.html'; }
+
+  async function raporKaydet(user){
+    if (!safeText($("propertyName").value) || !safeText($("il").value)) {
+      alert("Gayrimenkul Adı ve İl zorunlu!");
+      return;
+    }
+
+    let reports = filterDeleted(getReports());
+
+    if (isEditMode) {
       const idx = findIndexByRid(reports, rid);
       if (idx < 0) {
-        alert("⚠️ Düzenlenecek rapor bulunamadı! (RID)");
+        alert("⚠️ Güncellenecek rapor bulunamadı!");
         window.location.href = "index.html";
         return;
       }
-      const r = reports[idx] || {};
-      $("propertyName").value = r.propertyName || "";
-      $("il").value = r.il || "";
-      $("ilce").value = r.ilce || "";
-      $("mahalle").value = r.mahalle || "";
-      $("ada").value = r.ada || "";
-      $("parsel").value = r.parsel || "";
-    }
 
-    /* ========= Cloud Sync =========
-       Telefonda verilerin gelmesi için şart: buluttan çek → localStorage’a yaz.
-    */
-    async function syncReportsFromCloud(uid){
-      let merged = getReports();
-      if (!Array.isArray(merged)) merged = [];
+      const existing = reports[idx] || {};
+      existing.rid = existing.rid || rid;
 
-      const map = new Map();
-      for (const r of merged){
-        if (!r) continue;
-        if (!r.rid) continue;
-        map.set(r.rid, r);
-      }
+      existing.propertyName = safeText($("propertyName").value) || existing.propertyName || "İsimsiz Gayrimenkul";
+      existing.il = safeText($("il").value);
+      existing.ilce = safeText($("ilce").value);
+      existing.mahalle = safeText($("mahalle").value);
+      existing.ada = safeText($("ada").value);
+      existing.parsel = safeText($("parsel").value);
 
-      // (A) Yeni yöntem: users/{uid}/reports subcollection
-      try{
-        const snap = await db.collection("users").doc(uid).collection("reports").get();
-        snap.forEach(doc => {
-          const data = doc.data() || {};
-          const rrid = data.rid || doc.id;
-          if (!rrid) return;
-          map.set(rrid, { ...(map.get(rrid) || {}), ...data, rid: rrid });
-        });
-      }catch(e){
-        console.warn("users/{uid}/reports okunamadı:", e?.message || e);
-      }
+      existing.createdAt = existing.createdAt || new Date().toLocaleString('tr-TR');
+      existing.updatedAt = new Date().toLocaleString('tr-TR');
 
-      // (B) Eski yöntem: users/{uid} doc içi gayrimenkul_reports array
-      try{
-        const userDoc = await db.collection("users").doc(uid).get();
-        if (userDoc.exists){
-          const arr = userDoc.data()?.gayrimenkul_reports;
-          if (Array.isArray(arr)){
-            arr.forEach(r => {
-              if (!r || !r.rid) return;
-              map.set(r.rid, { ...(map.get(r.rid) || {}), ...r, rid: r.rid });
-            });
-          }
-        }
-      }catch(e){
-        console.warn("users/{uid} doc okunamadı:", e?.message || e);
-      }
-
-      merged = Array.from(map.values()).filter(r => r && r.rid);
-      setReports(merged);
-      return merged.length;
-    }
-
-    // Geriye uyumluluk için eski yedek (istersen sonra kapatırız)
-    async function backupArrayToUserDoc(uid){
-      const reports = getReports();
-      await db.collection("users").doc(uid).set({
-        gayrimenkul_reports: reports,
-        lastUpdate: new Date().toISOString()
-      }, { merge: true });
-    }
-
-    async function saveSingleReport(uid, report){
-      const rrid = report.rid;
-      await db.collection("users").doc(uid).collection("reports").doc(rrid).set({
-        ...report,
-        rid: rrid,
-        updatedAtIso: new Date().toISOString(),
-      }, { merge:true });
-
-      // Eski sistem yedeği (istersen kaldırırız)
-      try{ await backupArrayToUserDoc(uid); }catch(e){}
-    }
-
-    /* ========= Actions ========= */
-    function referansAc(){ window.open('referans-bilgiler.html', '_blank'); }
-    function anaSayfayaDon(){ window.location.href = 'index.html'; }
-
-    async function raporKaydet(user){
-      if (!safeText($("propertyName").value) || !safeText($("il").value)) {
-        alert("Gayrimenkul Adı ve İl zorunlu!");
-        return;
-      }
-
-      let reports = getReports();
-
-      if (isEditMode) {
-        const idx = findIndexByRid(reports, rid);
-        if (idx < 0) {
-          alert("⚠️ Güncellenecek rapor bulunamadı!");
-          window.location.href = "index.html";
-          return;
-        }
-
-        const existing = reports[idx] || {};
-        existing.rid = existing.rid || rid;
-
-        existing.propertyName = safeText($("propertyName").value) || existing.propertyName || "İsimsiz Gayrimenkul";
-        existing.il = safeText($("il").value);
-        existing.ilce = safeText($("ilce").value);
-        existing.mahalle = safeText($("mahalle").value);
-        existing.ada = safeText($("ada").value);
-        existing.parsel = safeText($("parsel").value);
-
-        existing.createdAt = existing.createdAt || new Date().toLocaleString('tr-TR');
-        existing.updatedAt = new Date().toLocaleString('tr-TR');
-
-        reports[idx] = existing;
-        setReports(reports);
-
-        setStatus("⏳ Güncelleniyor…", "Buluta kaydediliyor…");
-        await saveSingleReport(user.uid, existing);
-
-        alert("✅ Rapor güncellendi (PC/Telefon aynı)!");
-        window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(existing.rid);
-        return;
-      }
-
-      const newRid = genRid();
-      const report = {
-        rid: newRid,
-        propertyName: safeText($("propertyName").value) || "İsimsiz Gayrimenkul",
-        il: safeText($("il").value),
-        ilce: safeText($("ilce").value),
-        mahalle: safeText($("mahalle").value),
-        ada: safeText($("ada").value),
-        parsel: safeText($("parsel").value),
-        createdAt: new Date().toLocaleString('tr-TR'),
-
-        bina: {},
-        bbDetay: {},
-        emsaller: [],
-        konumCevre: {},
-        tapu: {},
-        imar: {},
-        belgeler: {}
-      };
-
-      reports.push(report);
+      reports[idx] = existing;
       setReports(reports);
 
-      setStatus("⏳ Kaydediliyor…", "Rapor oluşturuluyor ve buluta yazılıyor…");
-      await saveSingleReport(user.uid, report);
+      setStatus("⏳ Güncelleniyor…", "Buluta kaydediliyor…");
+      await saveSingleReport(user.uid, existing);
 
-      alert("✅ Rapor oluşturuldu (PC/Telefon aynı)!");
-      window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(newRid);
+      alert("✅ Rapor güncellendi!");
+      window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(existing.rid);
+      return;
     }
 
-    /* ========= BOOT ========= */
-    async function boot(){
-      // local bozuksa daha baştan düzelt
-      setReports(getReports());
+    const newRid = genRid();
+    const report = {
+      rid: newRid,
+      propertyName: safeText($("propertyName").value) || "İsimsiz Gayrimenkul",
+      il: safeText($("il").value),
+      ilce: safeText($("ilce").value),
+      mahalle: safeText($("mahalle").value),
+      ada: safeText($("ada").value),
+      parsel: safeText($("parsel").value),
+      createdAt: new Date().toLocaleString('tr-TR'),
+      updatedAt: new Date().toLocaleString('tr-TR'),
 
-      $("btnRef").addEventListener("click", referansAc, { passive:true });
-      $("btnBack").addEventListener("click", anaSayfayaDon, { passive:true });
+      bina: {},
+      bbDetay: {},
+      emsaller: [],
+      konumCevre: {},
+      tapu: {},
+      imar: {},
+      belgeler: {}
+    };
 
-      setStatus("⏳ Giriş bekleniyor…", "Auth hazır olunca bulut senkronu yapılacak.");
+    reports.push(report);
+    setReports(reports);
 
-      const user = (typeof window.waitForAuth === "function")
-        ? await window.waitForAuth()
-        : await new Promise((resolve) => auth.onAuthStateChanged(u => u && resolve(u)));
+    setStatus("⏳ Kaydediliyor…", "Rapor oluşturuluyor ve buluta yazılıyor…");
+    await saveSingleReport(user.uid, report);
 
-      if (!user){
-        alert("⚠️ Giriş yetkisi yok! Lütfen giriş yapın.");
-        window.location.href = 'index.html';
-        return;
-      }
+    alert("✅ Rapor oluşturuldu!");
+    window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(newRid);
+  }
 
-      setStatus("⏳ Bulut senkronu…", "Telefonda verilerin gelmesi için şart.");
-      const count = await syncReportsFromCloud(user.uid);
-      setStatus("✅ Hazır.", `Senkron tamam: ${count} rapor.`);
+  /* ========= BOOT ========= */
+  async function boot(){
+    // local bozuksa daha baştan düzelt + silinen filtre
+    setReports(filterDeleted(getReports()));
 
-      if (isEditMode) {
-        setupEditUI();
-        loadReportToFormByRid(rid);
-      }
+    $("btnRef").addEventListener("click", referansAc, { passive:true });
+    $("btnBack").addEventListener("click", anaSayfayaDon, { passive:true });
 
-      $("btnSave").disabled = false;
-      $("btnRef").disabled = false;
-      $("btnBack").disabled = false;
+    setStatus("⏳ Giriş bekleniyor…", "Auth hazır olunca bulut senkronu yapılacak.");
 
-      const handler = () => raporKaydet(user).catch((e)=>{
-        console.error(e);
-        alert("Hata:\n" + (e?.message || String(e)));
-      });
-      $("btnSave").addEventListener("click", handler, { passive:true });
-      $("btnSave").addEventListener("touchstart", handler, { passive:true });
+    const user = (typeof window.waitForAuth === "function")
+      ? await window.waitForAuth()
+      : await new Promise((resolve) => auth.onAuthStateChanged(u => resolve(u)));
+
+    if (!user){
+      alert("⚠️ Giriş yetkisi yok! Lütfen giriş yapın.");
+      window.location.href = 'index.html';
+      return;
     }
 
-    boot().catch((e)=>{
+    setStatus("⏳ Bulut senkronu…", "Silinenler geri gelmeyecek şekilde çekiliyor…");
+    const count = await syncReportsFromCloud(user.uid);
+    setStatus("✅ Hazır.", `Senkron tamam: ${count} rapor.`);
+
+    if (isEditMode) {
+      setupEditUI();
+      loadReportToFormByRid(rid);
+    }
+
+    $("btnSave").disabled = false;
+    $("btnRef").disabled = false;
+    $("btnBack").disabled = false;
+
+    const handler = () => raporKaydet(user).catch((e)=>{
       console.error(e);
-      setStatus("❌ Hata oluştu.", e?.message || String(e));
       alert("Hata:\n" + (e?.message || String(e)));
     });
-  </script>
+    $("btnSave").addEventListener("click", handler, { passive:true });
+    $("btnSave").addEventListener("touchstart", handler, { passive:true });
+  }
+
+  boot().catch((e)=>{
+    console.error(e);
+    setStatus("❌ Hata oluştu.", e?.message || String(e));
+    alert("Hata:\n" + (e?.message || String(e)));
+  });
+</script>
 </body>
 </html>
