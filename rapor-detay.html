@@ -16,19 +16,9 @@
   --primary:#1a237e;
   --secondary:#3949ab;
   --bg:#f4f7f9;
-
-  /* ✅ MOBİL HEADER YÜKSEKLİĞİ (gerekirse 96 yap) */
   --hdrH: 90px;
 }
-
-body{
-  font-family:'Segoe UI',sans-serif;
-  background:var(--bg);
-  margin:0;
-  color:#2c3e50;
-}
-
-/* ✅ HEADER: mobilde kaybolmasın + safe-area */
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e50;}
 .header{
   background:linear-gradient(135deg,var(--primary),var(--secondary));
   color:#fff;
@@ -38,44 +28,19 @@ body{
   top: 0;
   z-index: 999999;
 }
-
 .header.locked{background:linear-gradient(135deg,#263238,#455a64);}
-
-/* ✅ Back butonu safe-area altında kalsın */
 .back{
-  position:absolute;
-  left:20px;
+  position:absolute;left:20px;
   top: calc(25px + env(safe-area-inset-top,0px));
   background:rgba(255,255,255,.2);
-  padding:8px 15px;
-  border-radius:30px;
-  color:#fff;
-  border:none;
-  cursor:pointer;
+  padding:8px 15px;border-radius:30px;color:#fff;border:none;cursor:pointer;
   z-index: 1000000;
 }
-
 .badge{
-  display:none;
-  margin:10px auto 0;
-  width:fit-content;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:13px;
-  font-weight:900;
-  background:rgba(0,0,0,.22);
-  border:1px solid rgba(255,255,255,.22);
+  display:none;margin:10px auto 0;width:fit-content;padding:6px 10px;border-radius:999px;
+  font-size:13px;font-weight:900;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.22);
 }
-
-.main-wrapper{
-  max-width:1300px;
-  margin:14px auto 30px;
-  display:grid;
-  grid-template-columns:270px 1fr;
-  gap:25px;
-  padding:0 20px;
-}
-
+.main-wrapper{max-width:1300px;margin:14px auto 30px;display:grid;grid-template-columns:270px 1fr;gap:25px;padding:0 20px;}
 .toc-container{position:sticky;top:20px;height:fit-content;}
 .toc{background:#fff;padding:18px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.05);border-left:6px solid var(--primary);}
 .toc-title{font-weight:bold;color:var(--primary);margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:6px;}
@@ -83,60 +48,27 @@ body{
 .toc li{margin:6px 0;}
 .toc a{color:#444;text-decoration:none;font-size:.9em;display:block;padding:4px 6px;border-radius:4px;}
 .toc a:hover{background:#f0f2ff;color:var(--primary);}
-
 .container{background:#fff;padding:35px;border-radius:12px;box-shadow:0 0 25px rgba(0,0,0,.05);}
 .section{margin-bottom:45px;}
 .section h2{color:var(--primary);border-bottom:2px solid #eee;padding-bottom:8px;font-size:1.2em;}
 .text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;color:#34495e;}
 .warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
-
-.print-btn{
-  background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;
-  margin:10px auto;display:block;cursor:pointer;font-weight:bold;
-}
+.print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto;display:block;cursor:pointer;font-weight:bold;}
 .print-btn:hover{background:#1e874e;}
-
-.action-btn{
-  background:#ff5722;color:#fff;padding:13px 26px;border:none;border-radius:50px;
-  margin:10px auto 0;display:block;cursor:pointer;font-weight:900;
-}
+.action-btn{background:#ff5722;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto 0;display:block;cursor:pointer;font-weight:900;}
 .action-btn:hover{opacity:.92;}
 .action-btn:disabled{opacity:.55;cursor:not-allowed;}
-
 #statusBar{
-  max-width:1300px;
-  margin:12px auto 0;
-  padding:10px 14px;
-  border-radius:12px;
-  background:#fff;
-  box-shadow:0 4px 14px rgba(0,0,0,.06);
-  border-left:6px solid var(--secondary);
-  color:#2c3e50;
-  font-weight:900;
+  max-width:1300px;margin:12px auto 0;padding:10px 14px;border-radius:12px;background:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.06);border-left:6px solid var(--secondary);color:#2c3e50;font-weight:900;
 }
 #statusBar small{display:block;font-weight:700;opacity:.88;margin-top:4px}
-
-@media(max-width:992px){
-  .main-wrapper{grid-template-columns:1fr;}
-  .toc-container{position:relative;margin-bottom:15px;}
-}
-
-/* ✅ Mobilde sticky bazen yetmez: fixed + body padding-top */
+@media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
 @media(max-width:600px){
-  .header{
-    position: fixed;
-    left: 0; right: 0;
-    top: 0;
-  }
-  body{
-    padding-top: calc(var(--hdrH) + env(safe-area-inset-top,0px));
-  }
+  .header{position: fixed;left: 0; right: 0;top: 0;}
+  body{padding-top: calc(var(--hdrH) + env(safe-area-inset-top,0px));}
 }
-
-@media print{
-  .header,.toc-container,.print-btn,.action-btn,#statusBar{display:none!important;}
-  .container{box-shadow:none;padding:0;}
-}
+@media print{.header,.toc-container,.print-btn,.action-btn,#statusBar{display:none!important;}.container{box-shadow:none;padding:0;}}
 </style>
 </head>
 <body>
@@ -220,7 +152,6 @@ body{
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // firebase-config.js içinden gelen global auth/db’yi kullan
   const auth = window.auth || firebase.auth();
   const db = window.db || firebase.firestore();
   const $ = (id) => document.getElementById(id);
@@ -248,7 +179,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // ---------- LOCK (cihazlar arası senkron) ----------
   function isLockedLocal(){ return localStorage.getItem("report_locked_" + rid) === "1"; }
   function setLockedLocal(){
     localStorage.setItem("report_locked_" + rid, "1");
@@ -256,60 +186,37 @@ document.addEventListener("DOMContentLoaded", () => {
     $("hdr").classList.add("locked");
   }
 
+  /* ✅ EKSİK OLABİLEN FONKSİYON: isLockedRemote */
   async function isLockedRemote(uid){
-    // rapor kilit bilgisini birkaç yerde arayalım
-    // 1) locks/{uid}_{rid}
     try{
       const lockId = `${uid}_${rid}`;
       const d = await db.collection("locks").doc(lockId).get();
       if (d.exists) return true;
     }catch(e){}
-
-    // 2) users/{uid}/locks/{rid}
     try{
       const d = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
       if (d.exists) return true;
     }catch(e){}
-
-    // 3) users/{uid}/reports/{rid} içinde locked alanı
     try{
       const d = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
       if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
     }catch(e){}
-
-    // 4) reports/{rid} içinde locked alanı
     try{
       const d = await db.collection("reports").doc(rid).get();
       if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
     }catch(e){}
-
     return false;
   }
 
   async function setLockedRemote(uid){
     const now = firebase.firestore.FieldValue.serverTimestamp();
     const payload = { uid, rid, locked:true, createdAt: now };
-
-    // birkaç yere yaz (hangisini kullanıyorsan oradan okur)
-    try{
-      const lockId = `${uid}_${rid}`;
-      await db.collection("locks").doc(lockId).set(payload, { merge:true });
-    }catch(e){}
-
-    try{
-      await db.collection("users").doc(uid).collection("locks").doc(rid).set(payload, { merge:true });
-    }catch(e){}
-
-    try{
-      await db.collection("users").doc(uid).collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true });
-    }catch(e){}
-
-    try{
-      await db.collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true });
-    }catch(e){}
+    try{ await db.collection("locks").doc(`${uid}_${rid}`).set(payload, { merge:true }); }catch(e){}
+    try{ await db.collection("users").doc(uid).collection("locks").doc(rid).set(payload, { merge:true }); }catch(e){}
+    try{ await db.collection("users").doc(uid).collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true }); }catch(e){}
+    try{ await db.collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true }); }catch(e){}
   }
 
-  // ---------- METİN HELPERS ----------
   function formatMetin(t){
     if (t === null || t === undefined) return "";
     const s = String(t);
@@ -357,7 +264,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function render(r){
     $("raporTarih").textContent = "Tarih: " + new Date().toLocaleDateString("tr-TR");
-
     const il = pick(r,"il");
     const ilce = pick(r,"ilce");
     const ada = pick(r,"ada");
@@ -383,7 +289,6 @@ document.addEventListener("DOMContentLoaded", () => {
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
-  // ---------- RAPOR LOAD (localStorage + Firestore fallback) ----------
   function loadReportLocal(){
     let raporlar = [];
     try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
@@ -413,15 +318,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadReportRemote(uid){
-    // 1) users/{uid}/reports/{rid}
     let data = await getDocIfExists(`users/${uid}/reports/${rid}`);
     if (data) return data;
-
-    // 2) reports/{rid}
     data = await getDocIfExists(`reports/${rid}`);
     if (data) return data;
 
-    // 3) reports koleksiyonunda query (uid + rid/id)
     try{
       let q = await db.collection("reports")
         .where("uid","==",uid)
@@ -443,7 +344,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   }
 
-  // ---------- WALLET ----------
   async function consumeWalletOrExplain(user){
     if (!user) return { ok:false, why:"Giriş yok (user null)" };
     if (!window.Wallet || typeof Wallet.consumeReport !== "function") return { ok:false, why:"Wallet.consumeReport yok" };
