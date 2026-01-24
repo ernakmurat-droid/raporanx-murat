@@ -28,13 +28,17 @@
   .full-width { grid-column:span 2; }
   .btn-save { background:var(--success); color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:30px; }
   .btn-back { background:#6c757d; color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:10px; }
-  
-  /* ✅ ÖNİZLEME ALANI: Kopyalama Sadece Burada Kapalı */
-  .preview-box { 
-    background:#222; color:#00ff6a; padding:20px; border-radius:15px; 
-    font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px; 
+
+  /* ✅ ÖNİZLEME: SADECE BURADA kopyalama/seçim kapalı */
+  .preview-box{
+    background:#222; color:#00ff6a; padding:20px; border-radius:15px;
+    font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px;
     margin-top:20px; border:2px solid #555; line-height:1.5;
-    -webkit-user-select: none; user-select: none;
+
+    user-select:none;
+    -webkit-user-select:none;
+    -ms-user-select:none;
+    -webkit-touch-callout:none;
   }
 
   .disabled-input { background:#eee; cursor:not-allowed; opacity:.7; }
@@ -42,7 +46,8 @@
 </style>
 </head>
 
-<body oncontextmenu="return false;">
+<!-- ❌ body oncontextmenu kaldırıldı: input/textarea kopyala-yapıştır bozulmasın -->
+<body>
 
 <div class="header">
   <button onclick="anaMenuyeDon()" class="back">← Geri</button>
@@ -93,7 +98,7 @@
     </form>
 
     <div class="section-title">👀 CANLI ÖNİZLEME</div>
-    <div class="preview-box" id="livePreview" oncopy="return false">Veri bekleniyor...</div>
+    <div class="preview-box" id="livePreview">Veri bekleniyor...</div>
 
     <button id="saveBtn" class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET</button>
     <button class="btn-back" onclick="anaMenuyeDon()">MENÜYE DÖN</button>
@@ -101,34 +106,57 @@
 </div>
 
 <div id="datalists">
-    <datalist id="h_v1"></datalist><datalist id="h_v2"></datalist><datalist id="h_v3"></datalist>
-    <datalist id="h_v4"></datalist><datalist id="h_v5"></datalist><datalist id="h_v6"></datalist>
-    <datalist id="h_v7"></datalist><datalist id="h_v8"></datalist><datalist id="h_v9"></datalist>
-    <datalist id="h_v10"></datalist><datalist id="h_v11"></datalist><datalist id="h_v12"></datalist>
-    <datalist id="h_v13"></datalist><datalist id="h_v14"></datalist><datalist id="h_v15"></datalist>
-    <datalist id="h_v16"></datalist><datalist id="h_ulasimTarifi"></datalist>
-    <datalist id="h_ulasimOlanaklari"></datalist><datalist id="h_altyapiAciklama"></datalist>
+  <datalist id="h_v1"></datalist><datalist id="h_v2"></datalist><datalist id="h_v3"></datalist>
+  <datalist id="h_v4"></datalist><datalist id="h_v5"></datalist><datalist id="h_v6"></datalist>
+  <datalist id="h_v7"></datalist><datalist id="h_v8"></datalist><datalist id="h_v9"></datalist>
+  <datalist id="h_v10"></datalist><datalist id="h_v11"></datalist><datalist id="h_v12"></datalist>
+  <datalist id="h_v13"></datalist><datalist id="h_v14"></datalist><datalist id="h_v15"></datalist>
+  <datalist id="h_v16"></datalist><datalist id="h_ulasimTarifi"></datalist>
+  <datalist id="h_ulasimOlanaklari"></datalist><datalist id="h_altyapiAciklama"></datalist>
 </div>
 
 <script>
   const auth = firebase.auth();
   const urlParams = new URLSearchParams(window.location.search);
   const rid = (urlParams.get("rid") || "").trim();
-  const inputIds = ['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'];
+
+  const inputIds = [
+    'v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16',
+    'ulasimTarifi','ulasimOlanaklari','altyapiAciklama'
+  ];
 
   function getReports(){ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
 
-  // ✅ METİN ÖNERİSİ (DATALIST)
+  /* ✅ SADECE ÖNİZLEMEDE kopyalama/sağ tık/seçim kapalı */
+  function lockPreviewCopy(){
+    const el = document.getElementById("livePreview");
+    if(!el) return;
+
+    const block = (e)=>{ e.preventDefault(); e.stopPropagation(); return false; };
+    ["copy","cut","contextmenu","selectstart","dragstart"].forEach(ev=>{
+      el.addEventListener(ev, block, { passive:false });
+    });
+
+    // Ek: bazı tarayıcılarda selectionı da temizleyelim
+    el.addEventListener("mousedown", ()=>{ try{ window.getSelection()?.removeAllRanges(); }catch(e){} });
+    el.addEventListener("touchstart", ()=>{ try{ window.getSelection()?.removeAllRanges(); }catch(e){} }, { passive:true });
+  }
+
+  // ✅ METİN ÖNERİSİ (DATALIST) — input/textarea kopyala-yapıştır serbest
   function showList(el){
-    const dl = document.getElementById(el.getAttribute("list"));
+    const listId = el.getAttribute("list");
+    const dl = listId ? document.getElementById(listId) : null;
     if(!dl) return;
+
     dl.innerHTML = "";
     const set = new Set();
+
     getReports().forEach(r => {
-      const val = (r.konumCevre && r.konumCevre[el.id]) ? String(r.konumCevre[el.id]).trim() : "";
+      const val = (r?.konumCevre && r.konumCevre[el.id]) ? String(r.konumCevre[el.id]).trim() : "";
       if(val && val !== "...") set.add(val);
     });
-    set.forEach(v => { dl.innerHTML += `<option value="${v}">`; });
+
+    set.forEach(v => { dl.innerHTML += `<option value="${String(v).replaceAll('"','&quot;')}">`; });
   }
 
   function toggleAltyapi(isEvet){
@@ -145,13 +173,14 @@
     guncelleOnizleme();
   }
 
-  // ✅ MÜKEMMEL METİN FORMATLARI
+  // ✅ METİN FORMATLARI
   function guncelleOnizleme(){
     let vData = {};
     inputIds.forEach(id => { vData[id] = document.getElementById(id).value || "..."; });
 
     let yapiTipi = (vData.v13 || "").trim();
     let yapiTipiMetni = (yapiTipi !== "..." && !yapiTipi.toLowerCase().includes("tip")) ? yapiTipi + " tipi yapılar" : yapiTipi;
+
     const altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
     const altyapiMetni = altyapiTik === "Evet" ? "alt yapısı tamamlanmıştır" : (vData.altyapiAciklama || "...");
 
@@ -160,7 +189,9 @@
     for(let i=1; i<=16; i++){ tablo += `${labels[i-1].padEnd(15,' ')} : ${vData['v'+i]}\n`; }
 
     const f1 = `KONUMU VE ÇEVRESEL ÖZELLİKLERİ (Format 1)\nDeğerlemeye konu taşınmaz, ${vData.v4} ili, ${vData.v5} İlçesi, ${vData.v6} Mahallesi ${vData.v7}, No: ${vData.v8}/${vData.v10} posta adresinde yer almaktadır. Taşınmaza ulaşım; ${vData.ulasimTarifi}. Bölge genelde yapı kalitesine bağlı olarak, ${vData.v14} gelir grubu tarafından yerleşim amaçlı olarak talep görmektedir. Bölge çevresinde ${vData.v12} katlı ${yapiTipiMetni} bulunmaktadır. ${vData.ulasimOlanaklari} Taşınmazın yakın çevresinde ${vData.v15} ve ${vData.v16} yer almaktadır.\n\nBölgenin Gelişimine Analiz: ${vData.v14} grubunun tercih ettiği, yapılaşmanın ${vData.v11} olduğu bir bölgedir.`;
+
     const f2 = `TAŞINMAZIN YERİ VE ÇEVRE ÖZELLİKLERİ (Format 2)\nGayrimenkul, ${vData.v6} Mahallesi, ${vData.v7}, No: ${vData.v8}, Kat: ${vData.v9} Daire: ${vData.v10}, ${vData.v5}/${vData.v4} adresindedir. Bölgede ${vData.v12} nitelikli ${yapiTipiMetni} hakimdir. Ulaşım: ${vData.ulasimTarifi}. Yakın çevre: ${vData.v15}, ${vData.v16}.`;
+
     const f3 = `ULAŞIM TARİFİ (Format 3)\n${vData.v4} İli, ${vData.v5} İlçesi, ${vData.v6} Mahallesi sınırlarında yer alan taşınmaza ulaşım ${vData.ulasimTarifi}. Bölge ${vData.v11} fonksiyonlu gelişmiş olup, ${vData.v14} gelir grubuna hitap eder. Altyapı: (yol, su, elektrik) ${altyapiMetni}. ${vData.ulasimOlanaklari}`;
 
     const sonuc = tablo + "\n" + f1 + "\n\n" + f2 + "\n\n" + f3;
@@ -175,18 +206,24 @@
 
     document.getElementById('raporBilgi').textContent = `${report.propertyName || "Rapor"} • RID: ${rid}`;
 
+    // Önce raporun kök bilgisini inputlara bas (il/ilçe/mahalle boş kalmasın)
+    if(!document.getElementById('v4').value) document.getElementById('v4').value = report.il || "";
+    if(!document.getElementById('v5').value) document.getElementById('v5').value = report.ilce || "";
+    if(!document.getElementById('v6').value) document.getElementById('v6').value = report.mahalle || "";
+
+    // Sonra modül datasını bas (varsa)
     if(report.konumCevre){
-      inputIds.forEach(id => { if(report.konumCevre[id]) document.getElementById(id).value = report.konumCevre[id]; });
+      inputIds.forEach(id => {
+        if(report.konumCevre[id] !== undefined && report.konumCevre[id] !== null && String(report.konumCevre[id]).trim() !== ""){
+          document.getElementById(id).value = report.konumCevre[id];
+        }
+      });
+
       if(report.konumCevre.altyapiTik === "Hayır"){
         document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
         toggleAltyapi(false);
       }
     }
-
-    // Kökteki adres bilgilerini çek
-    if(!document.getElementById('v4').value) document.getElementById('v4').value = report.il || "";
-    if(!document.getElementById('v5').value) document.getElementById('v5').value = report.ilce || "";
-    if(!document.getElementById('v6').value) document.getElementById('v6').value = report.mahalle || "";
 
     guncelleOnizleme();
 
@@ -221,10 +258,14 @@
 
   auth.onAuthStateChanged(user => {
     if(!user || !rid) { location.href="index.html"; return; }
+    lockPreviewCopy();   // ✅ sadece preview kilit
     loadData();
   });
 
-  inputIds.forEach(id => document.getElementById(id).addEventListener("input", guncelleOnizleme));
+  inputIds.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("input", guncelleOnizleme);
+  });
 </script>
 
 </body>
