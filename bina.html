@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bina Bilgileri</title>
 
-<!-- Firebase (compat) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -35,6 +34,7 @@
     .status-msg { display: none; text-align: center; font-weight: bold; margin-top: 10px; padding: 10px; border-radius: 8px; }
     .hidden { display:none !important; }
 </style>
+<link rel="stylesheet" href="mobil-fix.css">
 </head>
 
 <body>
@@ -146,7 +146,6 @@
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  /* ========= RID + legacy id desteği ========= */
   const urlParams = new URLSearchParams(window.location.search);
   let rid = urlParams.get('rid');
   const legacyId = urlParams.get('id');
@@ -167,7 +166,6 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // eski id linki geldiyse rid'e çevir
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -181,14 +179,12 @@
 
   const hafizaInputlar = ['girisKotu', 'girisCephe', 'girisKapi', 'merdivenZemin', 'disCephe', 'isinma', 'hangiBlok', 'blokKonum'];
 
-  // Sağ tık: input/textarea/select serbest, diğer yerde engel
   document.addEventListener('contextmenu', (e) => {
     const isInput = e.target.closest('input, textarea, select');
     if (isInput) return;
     e.preventDefault();
   });
 
-  // Ctrl+C gibi kısayollar: inputlarda serbest, taslakta engel (zaten user-select none)
   document.addEventListener('keydown', (e) => {
     const t = e.target;
     const isInput = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
@@ -240,36 +236,28 @@
 
   function taslakOlustur() {
     const { report: r } = getLatestData();
-
     const bT = document.querySelector('input[name="binaTipi"]:checked').value;
     const aA = document.getElementById('arsaAlani').value || "...";
     const nizam = document.getElementById('nizam').value || "...";
     const yS = (document.getElementById('yapiSinifi').value === "diger")
       ? (document.getElementById('yapiSinifiDiger').value || "")
       : document.getElementById('yapiSinifi').value;
-
     const bodrum = document.getElementById('bodrumKatSayisi').value || "0";
     const normal = document.getElementById('normalKatSayisi').value || "0";
     const toplamKat = parseInt(bodrum || "0", 10) + 1 + parseInt(normal || "0", 10);
-
     const asansor = document.getElementById('asansor').value;
     const katMetni = r.katDetayMetni || "KAT DETAYI GİRİLMEDİ";
-
-    // bb sayısı: kat-detay metninden geliyor, yoksa 0
     const bbSayisi = parseInt(r.bina?.toplamBagimsizBolum || 0, 10) || 0;
 
     let metin = "";
     const ortak = `${r.il || '...'} İli, ${r.ilce || '...'} ilçesi, ${r.mahalle || '...'} Mahallesinde ${r.ada || '...'} Ada ${r.parsel || '...'} Nolu Parselde konumlu ${aA} m² arsa üzerinde ${nizam} nizamda `;
 
     if (bT === "tek") {
-      metin =
-`Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${yS || '...'} yapı sınıfında inşa edilmiş yapıdır. Değerleme konusu taşınmaz ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Bina girişi ${document.getElementById('girisKotu').value || '...'} seviyesinden ${document.getElementById('girisCephe').value || '...'} cephesinden sağlanmaktadır. Bina giriş kapısı ${document.getElementById('girisKapi').value || '...'} kapıdır. Binanın giriş ve merdiven zeminleri ${document.getElementById('merdivenZemin').value || '...'} olup bina dış cephesi ${document.getElementById('disCephe').value || '...'}’dır. Binada asansör ${asansor}. Bina ısıtma sistemi ${document.getElementById('isinma').value || '...'}’dır.`;
+      metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${yS || '...'} yapı sınıfında inşa edilmiş yapıdır. Değerleme konusu taşınmaz ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Bina girişi ${document.getElementById('girisKotu').value || '...'} seviyesinden ${document.getElementById('girisCephe').value || '...'} cephesinden sağlanmaktadır. Bina giriş kapısı ${document.getElementById('girisKapi').value || '...'} kapıdır. Binanın giriş ve merdiven zeminleri ${document.getElementById('merdivenZemin').value || '...'} olup bina dış cephesi ${document.getElementById('disCephe').value || '...'}’dır. Binada asansör ${asansor}. Bina ısıtma sistemi ${document.getElementById('isinma').value || '...'}’dır.`;
     } else {
       const bS = document.getElementById('blokSayisi').value || "...";
-      metin =
-`Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${bS} blokta ${yS || '...'} yapı sınıfında inşa edilmiştir. Taşınmazın bulunduğu ${document.getElementById('hangiBlok').value || '...'} Blok parselin ${document.getElementById('blokKonum').value || '...'} bulunan yapıdır. ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Taşınmaz girişi ${document.getElementById('girisKotu').value || '...'} seviyesinden ${document.getElementById('girisCephe').value || '...'} cephesinden sağlanmaktadır. Giriş kapısı ${document.getElementById('girisKapi').value || '...'} kapıdır. Bina giriş ve merdiven zeminleri ${document.getElementById('merdivenZemin').value || '...'} olup dış cephesi ${document.getElementById('disCephe').value || '...'}’dır. Taşınmazda asansör ${asansor}. Isıtma sistemi ${document.getElementById('isinma').value || '...'}’dır.`;
+      metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${bS} blokta ${yS || '...'} yapı sınıfında inşa edilmiştir. Taşınmazın bulunduğu ${document.getElementById('hangiBlok').value || '...'} Blok parselin ${document.getElementById('blokKonum').value || '...'} bulunan yapıdır. ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Taşınmaz girişi ${document.getElementById('girisKotu').value || '...'} seviyesinden ${document.getElementById('girisCephe').value || '...'} cephesinden sağlanmaktadır. Giriş kapısı ${document.getElementById('girisKapi').value || '...'} kapıdır. Bina giriş ve merdiven zeminleri ${document.getElementById('merdivenZemin').value || '...'} olup dış cephesi ${document.getElementById('disCephe').value || '...'}’dır. Taşınmazda asansör ${asansor}. Isıtma sistemi ${document.getElementById('isinma').value || '...'}’dır.`;
     }
-
     document.getElementById('taslak').innerText = metin;
     return metin;
   }
@@ -277,10 +265,7 @@
   async function kaydet() {
     const { reports: allReports, report: r, idx: i } = getLatestData();
     if (i < 0) { alert("Rapor bulunamadı!"); return; }
-
     const metin = taslakOlustur();
-
-    // Hafıza
     hafizaInputlar.forEach(alanId => {
       const el = document.getElementById(alanId);
       if(!el) return;
@@ -291,12 +276,10 @@
       }
     });
 
-    // Denetim (Sıfır tolerans)
     const arsa = document.getElementById('arsaAlani').value;
     const nizam = document.getElementById('nizam').value;
     const yapiS = document.getElementById('yapiSinifi').value;
     const disCephe = document.getElementById('disCephe').value;
-
     const bbSayisi = parseInt(r.bina?.toplamBagimsizBolum) || 0;
     const eksikVar = (!arsa || !nizam || !yapiS || !disCephe || bbSayisi === 0);
 
@@ -329,28 +312,21 @@
       asansor: document.getElementById('asansor').value,
       isinma: document.getElementById('isinma').value,
       metin: metin,
-      binaMetni: metin,             // yeni standart
+      binaMetni: metin,
       toplamBagimsizBolum: bbSayisi
     };
 
     allReports[i].bina_tamamlandi = !eksikVar;
-    // geriye dönük uyum
     allReports[i].binaMetni = metin;
-
     localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
 
-    try {
-      await bulutaGonder();
-    } catch (e) {
-      alert("Bulut hatası: " + e.message);
-    }
+    try { await bulutaGonder(); } catch (e) { alert("Bulut hatası: " + e.message); }
 
     const box = document.getElementById('statusBox');
     box.style.display = 'block';
     box.style.backgroundColor = eksikVar ? '#fff3cd' : '#d1e7dd';
     box.textContent = eksikVar ? "⚠️ EKSİK VERİYLE KAYDEDİLDİ" : "✅ BİNA VERİLERİ MÜHÜRLENDİ";
     setTimeout(() => box.style.display = 'none', 3000);
-
     hafizaYukle();
   }
 
@@ -359,7 +335,6 @@
 
   function initPage(){
     const { report } = getLatestData();
-
     document.getElementById('propertyInfo').textContent = (report.propertyName || "Rapor Bilgisi");
     document.getElementById('il').value = report.il || '';
     document.getElementById('ilce').value = report.ilce || '';
@@ -369,23 +344,17 @@
 
     if (report.bina) {
       const b = report.bina;
-
       const targetRadio = document.querySelector(`input[name="binaTipi"][value="${b.binaTipi || 'tek'}"]`);
       if(targetRadio) targetRadio.checked = true;
-
       document.getElementById('arsaAlani').value = b.arsaAlani || '';
       document.getElementById('nizam').value = b.nizam || '';
       document.getElementById('blokSayisi').value = b.blokSayisi || '';
-
       document.getElementById('yapiSinifi').value = b.yapiSinifi || '';
       document.getElementById('yapiSinifiDiger').value = b.yapiSinifiDiger || '';
-
       document.getElementById('hangiBlok').value = b.hangiBlok || '';
       document.getElementById('blokKonum').value = b.blokKonum || '';
-
       document.getElementById('bodrumKatSayisi').value = b.bodrumKatSayisi || '0';
       document.getElementById('normalKatSayisi').value = b.normalKatSayisi || '0';
-
       document.getElementById('girisKotu').value = b.girisKotu || '';
       document.getElementById('girisCephe').value = b.girisCephe || '';
       document.getElementById('girisKapi').value = b.girisKapi || '';
@@ -393,14 +362,10 @@
       document.getElementById('disCephe').value = b.disCephe || '';
       document.getElementById('asansor').value = b.asansor || 'yoktur';
       document.getElementById('isinma').value = b.isinma || '';
-
       if(b.yapiSinifi === 'diger') document.getElementById('yapiSinifiDiger').classList.remove('hidden');
-
-      // kayıtlı metin varsa bas
       const m = b.binaMetni || b.metin || report.binaMetni || "";
       if (m) document.getElementById('taslak').innerText = m;
     }
-
     toggleBlokFields();
     hafizaYukle();
     taslakOlustur();
@@ -415,5 +380,7 @@
     }));
   }
 </script>
+
+<script src="mobil-fix.js"></script>
 </body>
 </html>
