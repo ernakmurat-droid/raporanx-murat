@@ -33,6 +33,7 @@
     .engel-aciklama{ margin-top:6px; display:none; }
     .engel-aciklama input{ font-size: 12.5px; }
   </style>
+  <link rel="stylesheet" href="mobil-fix.css">
 </head>
 
 <body>
@@ -57,6 +58,7 @@
     </div>
 
     <h5 class="mt-4">Takyidatlar</h5>
+    
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <thead class="table-dark">
@@ -128,7 +130,6 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // legacy id -> rid
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -145,7 +146,6 @@
     initFromReport();
   });
 
-  /* ========= Kopyala/Yapıştır Serbest (Inputlarda) ========= */
   document.addEventListener('contextmenu', (e) => {
     const isInput = e.target.closest('input, textarea, select');
     if (isInput) return;
@@ -169,9 +169,6 @@
       .replaceAll('"',"&quot;").replaceAll("'","&#039;");
   }
 
-  /* ========= Takyidat Satırı =========
-     Engel?=Evet seçilince AÇIKLAMA alanı açılır ve kayda dahil edilir
-  */
   function takyidatEkle(tur='', acik='', tar='', say='', engel='hayir', engelAciklama='') {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -217,8 +214,6 @@
 
     tr.classList.toggle('engel-evet', isEvet);
     box.style.display = isEvet ? 'block' : 'none';
-
-    // evet değilse açıklamayı temizlemeyelim; kullanıcı fikrini değiştirirse geri gelsin
   }
 
   function malikEkle(ad='', pay='') {
@@ -238,7 +233,6 @@
     rows.forEach(row => { row.querySelector('.m-pay').value = `1/${rows.length || 1}`; });
   }
 
-  /* ========= Metin üretim ========= */
   function guncelle() {
     const tVal = document.getElementById('tarihInput').value;
     const tarihTakbis = tVal ? tVal.split('-').reverse().join('.') : "....";
@@ -272,7 +266,6 @@
       if(ad) malikMetni += `- ${ad} (Hisse: ${row.querySelector('.m-pay').value})\n`;
     });
 
-    // ✅ B1 (AYRIMLI)
     let b1 =
 `YASAL KISITLAMALAR (Şerh, Rehin, Beyan, İpotek, Haciz ve Diğer Haklar)
 
@@ -289,7 +282,6 @@ Not: 'Engel?=Evet' seçilen kayıtlar satışa engel teşkil edebilir; nihai de�
 MALİK BİLGİLERİ:
 ${malikMetni || "Girilmedi."}`;
 
-    // ✅ B2 (AYRIMLI)
     let b2 =
 `TAPU KAYIT VE TAKYİDAT ANALİZİ
 
@@ -300,8 +292,6 @@ ${satisEngelOlmayan.length ? satisEngelOlmayan.map(x => "• " + x).join("\n") :
 
 SATIŞA ENGEL TEŞKİL EDEBİLECEK TAKYİDATLAR (Engel?=Evet):
 ${satisEngelOlabilecek.length ? satisEngelOlabilecek.map(x => "• " + x).join("\n") : "- Yok"}
-
-Not: 'Engel?=Evet' seçilen kayıtlar satışa engel teşkil edebilir; nihai karar banka/hukuk değerlendirmesine bağlıdır.
 
 MÜLKİYET YAPISI:
 ${malikMetni || "- Bilgi Yok"}`;
@@ -317,7 +307,6 @@ ${malikMetni || "- Bilgi Yok"}`;
 
   async function kaydet() {
     const metinler = guncelle();
-
     let takyidatData = [];
     let takyidatVar = false;
 
@@ -330,7 +319,6 @@ ${malikMetni || "- Bilgi Yok"}`;
       const engelAciklama = row.querySelector('.t-engel-acik') ? row.querySelector('.t-engel-acik').value.trim() : "";
 
       if((tur + acik).trim().length > 1) takyidatVar = true;
-
       takyidatData.push({ tur, acik, tar, say, engel, engelAciklama });
     });
 
@@ -380,24 +368,19 @@ ${malikMetni || "- Bilgi Yok"}`;
     if(report.tapuTarih) document.getElementById('tarihInput').value = report.tapuTarih;
     if(report.tapuSaat) document.getElementById('saatInput').value = report.tapuSaat;
 
-    // takyidat
     document.getElementById('tabloGövde').innerHTML = "";
     if(report.tapuTakyidatDizi && report.tapuTakyidatDizi.length > 0) {
       report.tapuTakyidatDizi.forEach(d => takyidatEkle(d.tur, d.acik, d.tar, d.say, d.engel, d.engelAciklama || ""));
-    } else {
-      takyidatEkle();
-    }
+    } else { takyidatEkle(); }
 
-    // malik
     document.getElementById('malikGövde').innerHTML = "";
     if(report.tapuMalikDizi && report.tapuMalikDizi.length > 0) {
       report.tapuMalikDizi.forEach(m => malikEkle(m.ad, m.pay));
-    } else {
-      malikEkle();
-    }
+    } else { malikEkle(); }
 
     guncelle();
   }
 </script>
+<script src="mobil-fix.js"></script>
 </body>
 </html>
