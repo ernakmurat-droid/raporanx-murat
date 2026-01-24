@@ -29,7 +29,7 @@
   .btn-save { background:var(--success); color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:30px; }
   .btn-back { background:#6c757d; color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:10px; }
   
-  /* ✅ ÖNİZLEME ALANI: SADECE BURADA KOPYALAMA YASAK */
+  /* ✅ ÖNİZLEME ALANI: Kopyalama Sadece Burada Kapalı */
   .preview-box { 
     background:#222; color:#00ff6a; padding:20px; border-radius:15px; 
     font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px; 
@@ -52,7 +52,7 @@
 
 <div class="main-wrapper">
   <div class="form-container">
-    <div id="lockedNote" class="locked-note">🔒 RAPOR KİLİTLİ - Sadece Görüntüleme Modu</div>
+    <div id="lockedNote" class="locked-note">🔒 RAPOR KİLİTLİ - Modüller Düzenlenemez</div>
 
     <form id="mainForm" onsubmit="return false;">
       <div class="grid-form">
@@ -92,7 +92,7 @@
       </div>
     </form>
 
-    <div class="section-title">👀 CANLI ÖNİZLEME (TAM METİN)</div>
+    <div class="section-title">👀 CANLI ÖNİZLEME</div>
     <div class="preview-box" id="livePreview" oncopy="return false">Veri bekleniyor...</div>
 
     <button id="saveBtn" class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET</button>
@@ -115,19 +115,16 @@
   const urlParams = new URLSearchParams(window.location.search);
   const rid = (urlParams.get("rid") || "").trim();
   const inputIds = ['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'];
-  const $ = (id) => document.getElementById(id);
 
   function getReports(){ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
 
-  // ✅ METİN ÖNERİLERİ (DATALIST)
+  // ✅ METİN ÖNERİSİ (DATALIST)
   function showList(el){
-    const listId = el.getAttribute("list");
-    if(!listId) return;
-    const dl = $(listId);
+    const dl = document.getElementById(el.getAttribute("list"));
+    if(!dl) return;
     dl.innerHTML = "";
-    const reports = getReports();
     const set = new Set();
-    reports.forEach(r => {
+    getReports().forEach(r => {
       const val = (r.konumCevre && r.konumCevre[el.id]) ? String(r.konumCevre[el.id]).trim() : "";
       if(val && val !== "...") set.add(val);
     });
@@ -135,7 +132,7 @@
   }
 
   function toggleAltyapi(isEvet){
-    const inp = $('altyapiAciklama');
+    const inp = document.getElementById('altyapiAciklama');
     if(isEvet){
       inp.disabled = true;
       inp.classList.add('disabled-input');
@@ -148,10 +145,10 @@
     guncelleOnizleme();
   }
 
-  // ✅ MÜKEMMEL METİN FORMATI
+  // ✅ MÜKEMMEL METİN FORMATLARI
   function guncelleOnizleme(){
     let vData = {};
-    inputIds.forEach(id => { vData[id] = $(id).value || "..."; });
+    inputIds.forEach(id => { vData[id] = document.getElementById(id).value || "..."; });
 
     let yapiTipi = (vData.v13 || "").trim();
     let yapiTipiMetni = (yapiTipi !== "..." && !yapiTipi.toLowerCase().includes("tip")) ? yapiTipi + " tipi yapılar" : yapiTipi;
@@ -163,43 +160,40 @@
     for(let i=1; i<=16; i++){ tablo += `${labels[i-1].padEnd(15,' ')} : ${vData['v'+i]}\n`; }
 
     const f1 = `KONUMU VE ÇEVRESEL ÖZELLİKLERİ (Format 1)\nDeğerlemeye konu taşınmaz, ${vData.v4} ili, ${vData.v5} İlçesi, ${vData.v6} Mahallesi ${vData.v7}, No: ${vData.v8}/${vData.v10} posta adresinde yer almaktadır. Taşınmaza ulaşım; ${vData.ulasimTarifi}. Bölge genelde yapı kalitesine bağlı olarak, ${vData.v14} gelir grubu tarafından yerleşim amaçlı olarak talep görmektedir. Bölge çevresinde ${vData.v12} katlı ${yapiTipiMetni} bulunmaktadır. ${vData.ulasimOlanaklari} Taşınmazın yakın çevresinde ${vData.v15} ve ${vData.v16} yer almaktadır.\n\nBölgenin Gelişimine Analiz: ${vData.v14} grubunun tercih ettiği, yapılaşmanın ${vData.v11} olduğu bir bölgedir.`;
-    
     const f2 = `TAŞINMAZIN YERİ VE ÇEVRE ÖZELLİKLERİ (Format 2)\nGayrimenkul, ${vData.v6} Mahallesi, ${vData.v7}, No: ${vData.v8}, Kat: ${vData.v9} Daire: ${vData.v10}, ${vData.v5}/${vData.v4} adresindedir. Bölgede ${vData.v12} nitelikli ${yapiTipiMetni} hakimdir. Ulaşım: ${vData.ulasimTarifi}. Yakın çevre: ${vData.v15}, ${vData.v16}.`;
-    
     const f3 = `ULAŞIM TARİFİ (Format 3)\n${vData.v4} İli, ${vData.v5} İlçesi, ${vData.v6} Mahallesi sınırlarında yer alan taşınmaza ulaşım ${vData.ulasimTarifi}. Bölge ${vData.v11} fonksiyonlu gelişmiş olup, ${vData.v14} gelir grubuna hitap eder. Altyapı: (yol, su, elektrik) ${altyapiMetni}. ${vData.ulasimOlanaklari}`;
 
-    const paket = tablo + "\n" + f1 + "\n\n" + f2 + "\n\n" + f3;
-    $('livePreview').textContent = paket;
-    return paket;
+    const sonuc = tablo + "\n" + f1 + "\n\n" + f2 + "\n\n" + f3;
+    document.getElementById('livePreview').textContent = sonuc;
+    return sonuc;
   }
 
   function loadData(){
     const reports = getReports();
-    const idx = reports.findIndex(r => r && String(r.rid) === String(rid));
-    if(idx < 0) { alert("Rapor bulunamadı!"); location.href="index.html"; return; }
-    const report = reports[idx];
+    const report = reports.find(r => r && String(r.rid) === String(rid));
+    if(!report){ alert("Rapor bulunamadı!"); location.href="index.html"; return; }
 
-    $('raporBilgi').textContent = `${report.propertyName || "Rapor"} • RID: ${rid}`;
+    document.getElementById('raporBilgi').textContent = `${report.propertyName || "Rapor"} • RID: ${rid}`;
 
     if(report.konumCevre){
-      inputIds.forEach(id => { if(report.konumCevre[id]) $(id).value = report.konumCevre[id]; });
+      inputIds.forEach(id => { if(report.konumCevre[id]) document.getElementById(id).value = report.konumCevre[id]; });
       if(report.konumCevre.altyapiTik === "Hayır"){
         document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
         toggleAltyapi(false);
       }
     }
 
-    // Otomatik Adres Yakala
-    if(!$('v4').value) $('v4').value = report.il || "";
-    if(!$('v5').value) $('v5').value = report.ilce || "";
-    if(!$('v6').value) $('v6').value = report.mahalle || "";
+    // Kökteki adres bilgilerini çek
+    if(!document.getElementById('v4').value) document.getElementById('v4').value = report.il || "";
+    if(!document.getElementById('v5').value) document.getElementById('v5').value = report.ilce || "";
+    if(!document.getElementById('v6').value) document.getElementById('v6').value = report.mahalle || "";
 
     guncelleOnizleme();
 
     if(report.isLocked || report.locked || report.final){
-      $('lockedNote').style.display = "block";
-      $('saveBtn').disabled = true;
-      $('saveBtn').textContent = "KİLİTLİ";
+      document.getElementById('lockedNote').style.display = "block";
+      document.getElementById('saveBtn').disabled = true;
+      document.getElementById('saveBtn').textContent = "KİLİTLİ";
       document.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
     }
   }
@@ -210,7 +204,7 @@
     if(idx < 0) return;
 
     let vData = {};
-    inputIds.forEach(id => { vData[id] = $(id).value; });
+    inputIds.forEach(id => { vData[id] = document.getElementById(id).value; });
 
     reports[idx].konumCevre = {
       ...vData,
@@ -220,7 +214,7 @@
     };
 
     localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
-    alert("✅ Kaydedildi!");
+    alert("✅ Veriler Kaydedildi!");
   }
 
   function anaMenuyeDon(){ location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid); }
@@ -230,7 +224,7 @@
     loadData();
   });
 
-  inputIds.forEach(id => $(id).addEventListener("input", guncelleOnizleme));
+  inputIds.forEach(id => document.getElementById(id).addEventListener("input", guncelleOnizleme));
 </script>
 
 </body>
