@@ -108,196 +108,94 @@
 </div>
 
 <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id') || 0;
+  // Firebase
+  const auth = window.auth || firebase.auth();
+  const db   = window.db   || firebase.firestore();
 
-    let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    let report = reports[id] || {};
+  // RID üret (migration için)
+  function genRid(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
 
-    const inputIds = [
-        'v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16',
-        'ulasimTarifi','ulasimOlanaklari','altyapiAciklama'
-    ];
+  function ensureRidMigration(arr){
+    let changed=false;
+    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
+    return changed;
+  }
 
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) e.preventDefault();
+  function findIndexByRid(arr, rid){
+    return (arr||[]).findIndex(r => r && String(r.rid) === String(rid));
+  }
+
+  // URL paramları
+  const params   = new URLSearchParams(location.search);
+  let rid        = (params.get("rid") || "").toString().trim();
+  const legacyId = (params.get("id")  || "").toString().trim();
+
+  // localStorage raporları
+  let reports = [];
+  try{ reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch(e){ reports=[]; }
+
+  // rid yoksa ama id varsa -> rid’ye çevir
+  if (ensureRidMigration(reports)) localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
+
+  if (!rid && legacyId !== ""){
+    const idx = Number(legacyId);
+    if (!Number.isNaN(idx) && reports[idx] && reports[idx].rid){
+      rid = reports[idx].rid;
+      // aynı sayfayı rid ile reload et (yanlış rapor okuma biter)
+      location.replace("konum_cevre.html?rid=" + encodeURIComponent(rid));
+    }
+  }
+
+  // raporu rid ile bul
+  function getReportByRid(){
+    try{ reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch(e){ reports=[]; }
+    const i = findIndexByRid(reports, rid);
+    if (i < 0) return null;
+    return reports[i];
+  }
+
+  // ✅ GERİ DÖN: her zaman rapor-detay’a
+  function goBackToRaporDetay(){
+    if (!rid) location.href = "index.html";
+    else location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
+  }
+
+  // Sayfanda back butonu varsa ID’sini buraya yaz:
+  // örnek: <button id="btnBack">← Geri</button>
+  // yoksa class="back" ise ona da bağlayalım
+  window.addEventListener("DOMContentLoaded", () => {
+    const b1 = document.getElementById("btnBack");
+    if (b1) b1.onclick = goBackToRaporDetay;
+
+    const b2 = document.querySelector(".back");
+    if (b2) b2.onclick = (e)=>{ e.preventDefault(); goBackToRaporDetay(); };
+
+    // Auth bekle (mobilde donma/boşluk yapmasın)
+    auth.onAuthStateChanged(async (user)=>{
+      if (!user){ location.href="index.html"; return; }
+
+      const r = getReportByRid();
+      if (!r){ alert("Rapor bulunamadı (rid)."); location.href="index.html"; return; }
+
+      // ✅ BURADA ARTIK DOĞRU RAPOR GELİR
+      // Senin sayfanda hangi alanlara yazıyorsan onları doldur:
+      // Örnek:
+      // document.getElementById("tamMetin").value = r.konumCevre?.tamMetin || "";
+      // document.getElementById("baslik").textContent = r.propertyName || "Gayrimenkul";
+
+      // Not: Senin mevcut doldurma/saklama kodunu buraya aynen koy,
+      // ama 'reports[id]' gibi kullandığın her yeri rid mantığına çevir:
+      // reports[idx] yerine -> raporu 'findIndexByRid' ile bul.
     });
+  });
 
-    function showList(input) {
-        input.setAttribute('autocomplete', 'off');
-        const val = input.value;
-        input.value = '';
-        setTimeout(() => { input.value = val; }, 1);
-    }
-
-    function cleanText(s){
-        s = (s || "").replace(/\s+/g, " ").trim();
-        if (!s) return "...";
-        s = s.replace(/\s*([,.!?;:])\s*/g, "$1 ");
-        s = s.replace(/\s+/g, " ").trim();
-        if (!/[.!?]$/.test(s)) s += ".";
-        return s;
-    }
-
-    function norm(s){
-        s = (s || "").trim();
-        return s ? s : "...";
-    }
-
-    function toggleAltyapi(isEvet) {
-        const input = document.getElementById('altyapiAciklama');
-        if(isEvet) {
-            input.disabled = true;
-            input.classList.add('disabled-input');
-            input.value = "";
-        } else {
-            input.disabled = false;
-            input.classList.remove('disabled-input');
-        }
-        guncelleOnizleme();
-    }
-
-    function autoFillFromReport(){
-        // rapordan otomatik doldur: il/ilçe/mahalle/cadde gibi
-        if (!document.getElementById('v4').value && report.il) document.getElementById('v4').value = report.il;
-        if (!document.getElementById('v5').value && report.ilce) document.getElementById('v5').value = report.ilce;
-        // mahalle/sokak raporda farklı isimde olabilir, yoksa dokunma
-    }
-
-    function guncelleOnizleme() {
-        let v = {};
-        inputIds.forEach(k => { v[k] = document.getElementById(k).value || ""; });
-
-        // “Yapı tipleri” akıllı ek
-        let yapiTipi = (v.v13 || "").trim();
-        let yapiTipiMetni = yapiTipi || "...";
-        if (yapiTipi && !/yapı|tip|bina/i.test(yapiTipi)) yapiTipiMetni = yapiTipi + " tipi yapılar";
-
-        // altyapı metni
-        const altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
-        const altyapiAcik = (v.altyapiAciklama || "").trim();
-        const altyapiMetni = altyapiTik === "Evet"
-            ? "altyapısı tamamlanmış olup, yol, su, elektrik, kanalizasyon ve doğalgaz hizmetleri mevcuttur."
-            : (altyapiAcik ? cleanText(altyapiAcik).replace(/\.$/,"") + "." : "altyapı hizmetlerinde eksiklikler bulunmaktadır.");
-
-        const raporAdi = report.propertyName || "Taşınmaz";
-        const ada = report.ada || "...";
-        const parsel = report.parsel || "...";
-
-        // tablo
-        const labels = [
-            "UAVT","Koord X","Koord Y","İli","İlçesi","Mahallesi","Cadde/Sokak","Dış Kapı No",
-            "Bulunduğu Kat","Daire No","Bölge Gelişimi","Bölge Yapılaşması","Yapı Tipleri",
-            "Gelir Düzeyi","Yakın Yapı 1","Yakın Yapı 2"
-        ];
-
-        let tablo = "----------------------------------------------\n";
-        tablo += " ÇEVRESEL ÖZELLİKLER TABLOSU\n";
-        tablo += "----------------------------------------------\n";
-        tablo += `Rapor/Parsel         : ${raporAdi} (Ada/Parsel: ${ada}/${parsel})\n`;
-        for(let i=1; i<=16; i++){
-            const key = 'v' + i;
-            const valx = norm(v[key]);
-            tablo += `${labels[i-1].padEnd(20,' ')} : ${valx}\n`;
-        }
-        tablo += "----------------------------------------------\n";
-
-        // FORMAT 1 (uzun, rapor dili)
-        const f1 =
-`KONUMU VE ÇEVRESEL ÖZELLİKLERİ (FORMAT 1)
-Değerlemeye konu taşınmaz; ${norm(v.v4)} ili, ${norm(v.v5)} ilçesi, ${norm(v.v6)} mahallesi, ${norm(v.v7)} adresinde yer almakta olup dış kapı numarası ${norm(v.v8)} olarak beyan edilmiştir. Taşınmazın bulunduğu kat ${norm(v.v9)}, daire numarası ${norm(v.v10)} olarak belirtilmiştir.
-Taşınmaza ulaşım; ${cleanText(v.ulasimTarifi)} Bölge; genel olarak ${norm(v.v14)} gelir grubunun talep gösterdiği, ağırlıklı olarak ${norm(v.v12)} katlı ${yapiTipiMetni} nitelikli yapılaşmanın bulunduğu bir çevre niteliğindedir. ${cleanText(v.ulasimOlanaklari)}
-Taşınmazın yakın çevresinde ${norm(v.v15)} ile ${norm(v.v16)} gibi önemli noktalar bulunmaktadır. Bölgenin planlı yapılaşmaya sahip olduğu, ${altyapiMetni}
-
-BÖLGENİN GELİŞİMİNE İLİŞKİN ANALİZ
-Taşınmazın bulunduğu bölgede kentsel gelişim ${norm(v.v11)} yönünde gerçekleşmekte olup, çevredeki yapılaşma ve kullanım kararları bölgesel talebi destekler niteliktedir. Bölge, ulaşım bağlantıları ve yakın çevredeki donatılar sayesinde yerleşim amaçlı tercih edilen alanlar arasında değerlendirilmektedir.
-
-BÖLGEDEKİ YAPILAŞMA DURUMU
-Bölgede genel olarak ${yapiTipiMetni} yoğunlukta olup, yapılaşma karakteri ${norm(v.v12)} şeklindedir. Mevcut eğilimler değerlendirildiğinde bölgede gelişimin ${norm(v.v11)} doğrultusunda devam ettiği gözlemlenmektedir.`;
-
-        // FORMAT 2 (daha kısa ama profesyonel)
-        const f2 =
-`TAŞINMAZIN YERİ VE ÇEVRE ÖZELLİKLERİ (FORMAT 2)
-Değerlemesi yapılan taşınmaz; ${norm(v.v6)} mahallesi, ${norm(v.v7)} (Dış Kapı No: ${norm(v.v8)}), Kat: ${norm(v.v9)} Daire: ${norm(v.v10)} açık posta adresinde yer almaktadır (${norm(v.v5)}/${norm(v.v4)}).
-Gayrimenkulün bulunduğu çevrede ${norm(v.v12)} karakterli, ${yapiTipiMetni} nitelikli yapılaşma mevcuttur. Taşınmaza ulaşım ${cleanText(v.ulasimTarifi)} Yakın çevrede ${norm(v.v15)} ve ${norm(v.v16)} bulunmaktadır.`;
-
-        // FORMAT 3 (ulaşım + altyapı)
-        const f3 =
-`ULAŞIM TARİFİ (FORMAT 3)
-Değerleme konusu taşınmaz; ${norm(v.v4)} ili, ${norm(v.v5)} ilçesi, ${norm(v.v6)} mahallesi, ${norm(v.v7)} adresinde konumludur. Taşınmaza ulaşım; ${cleanText(v.ulasimTarifi)}
-Bölgede toplu taşıma ve/veya özel araç ile erişim mümkündür. Yakın çevre ${norm(v.v11)} fonksiyonlu gelişmiş olup bölge yapılaşma karakteristiğini ağırlıklı olarak ${yapiTipiMetni} oluşturmaktadır. Bölge ${norm(v.v14)} gelir grubunun talep gösterdiği bir alandır. Altyapı açısından ${altyapiMetni} ${cleanText(v.ulasimOlanaklari)}`;
-
-        const tamPaket = tablo + "\n" + f1 + "\n\n" + f2 + "\n\n" + f3;
-        document.getElementById('livePreview').textContent = tamPaket;
-        return tamPaket;
-    }
-
-    function verileriKaydet() {
-        const paket = guncelleOnizleme();
-
-        let v = {};
-        inputIds.forEach(k => { v[k] = document.getElementById(k).value; });
-        v.altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
-
-        // RAPOR OLUŞTUR BURADAN ÇEKECEK:
-        report.konumCevre = { ...v, tamMetin: paket };
-
-        reports[id] = report;
-        localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-        // hatırlatma (datalist)
-        inputIds.forEach(k => {
-            const valx = (v[k] || "").trim();
-            if (valx && valx !== "...") {
-                let h = JSON.parse(localStorage.getItem('h_' + k)) || [];
-                if (!h.includes(valx)) {
-                    h.unshift(valx);
-                    localStorage.setItem('h_' + k, JSON.stringify(h.slice(0,20)));
-                }
-            }
-            const dl = document.getElementById('h_' + k);
-            if (dl) {
-                let h = JSON.parse(localStorage.getItem('h_' + k)) || [];
-                dl.innerHTML = h.map(item => `<option value="${item}">`).join('');
-            }
-        });
-
-        alert("✅ Konum/Çevre verileri kaydedildi!");
-    }
-
-    function anaMenuyeDon() {
-        window.location.href = `rapor-detay.html?id=${id}`;
-    }
-
-    window.onload = () => {
-        document.getElementById('raporBilgi').textContent = report.propertyName || "Yeni Rapor";
-
-        // datalistleri bas
-        inputIds.forEach(k => {
-            let h = JSON.parse(localStorage.getItem('h_' + k)) || [];
-            const dl = document.getElementById('h_' + k);
-            if(dl) dl.innerHTML = h.map(item => `<option value="${item}">`).join('');
-        });
-
-        // rapordan otomatik doldur
-        autoFillFromReport();
-
-        // kayıtlı veri varsa yükle
-        if(report.konumCevre) {
-            inputIds.forEach(k => {
-                if(report.konumCevre[k]) document.getElementById(k).value = report.konumCevre[k];
-            });
-            if(report.konumCevre.altyapiTik === "Hayır") toggleAltyapi(false);
-        }
-
-        guncelleOnizleme();
-    };
-
-    inputIds.forEach(k => {
-        const el = document.getElementById(k);
-        if(el) el.addEventListener('input', guncelleOnizleme);
-    });
-    document.querySelectorAll('input[name="altyapi"]').forEach(el => el.addEventListener('change', guncelleOnizleme));
+  // Dışarı aç (html inline onclick varsa diye)
+  window.goBackToRaporDetay = goBackToRaporDetay;
 </script>
+
 </body>
 </html>
+
