@@ -1,61 +1,49 @@
-/* ====== GLOBAL STABİLİTE ====== */
-html, body { height: 100%; }
+/* mobil-fix.css */
+/* Amaç: safe-area + hızlı dokunma + yatay taşma fix. Her modülde kırmadan çalışsın. */
+
+:root{
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Yatay taşmayı engelle */
+html, body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Safe-area için global padding (en az riskli yaklaşım) */
 body{
   margin:0;
-  width:100%;
-  overflow-x:hidden;
-  -webkit-overflow-scrolling: touch;
-  -webkit-tap-highlight-color: transparent;
-
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing:border-box;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
 }
 
-/* iPhone input zoom engeli */
-input, textarea, select{ font-size:16px; }
+/* iOS input zoom bug: font-size 16px altına düşmesin */
+input, textarea, select{
+  font-size:16px;
+}
 
-/* Tıklama gecikmesi / double-tap */
-button, .btn, .back, a{
+/* Tıklama gecikmesi/çift tık zoom hissini azalt */
+button, a, .btn, .back, .footer-btn{
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ====== HEADER / BACK GÖRÜNÜR ====== */
-.header{
-  position: sticky;
-  top: 0;
-  z-index: 10000;
-
-  /* safe area */
-  padding-top: calc(15px + env(safe-area-inset-top, 0px));
-
-  /* iOS sticky titreme azalt */
-  will-change: transform;
-  transform: translateZ(0);
-}
-.back{ z-index: 10001; }
-
-/* ====== FOOTER BUTON SAFE AREA ====== */
-.btn-save, .btn-back, .footer-btn{
-  margin-bottom: env(safe-area-inset-bottom, 0px);
-  min-height: 44px;
+/* Parmak ergonomisi (çok agresif yapmıyoruz, sadece min height) */
+button, .btn, .footer-btn, .back{
+  min-height:44px;
 }
 
-/* ====== MOBİLDE AĞIR EFEKTLERİ AZALT (FPS) ====== */
-@media (max-width: 768px){
-  .wallet-card, .hero, .report-card, .container, .form-container{
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
+/* Eğer bazı sayfalarda header fixed/sticky ise safe-area ile çakışmasın */
+.header, header{
+  padding-top: calc(12px + var(--safe-top));
 }
 
-/* ====== STICKY NAZ YAPARSA: FIXED FALLBACK ======
-   sayfa bazlı açabilirsin:
-   document.body.classList.add("use-fixed-header");
-*/
-body.use-fixed-header{
-  padding-top: calc(80px + env(safe-area-inset-top, 0px));
-}
-body.use-fixed-header .header{
-  position: fixed;
-  left:0; right:0; top:0;
+/* Bazı sayfalarda geri butonu absolute ise üstte kaybolmasın */
+.back{
+  top: calc(12px + var(--safe-top)) !important;
 }
