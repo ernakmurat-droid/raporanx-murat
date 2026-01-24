@@ -8,7 +8,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-
   <script src="wallet.js"></script>
 
   <title>Rapor Ana Menü - Raporan X</title>
@@ -51,18 +50,19 @@
       max-width:1100px;
       margin:10px auto 0;
       width: calc(100% - 40px);
-      background: rgba(255, 145, 0, 0.3);
-      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(0,0,0,0.3);
+      border: 2px solid #ff5252;
       border-radius: 14px;
-      padding:10px 14px;
+      padding:12px;
       font-size: 14px;
       font-weight: 900;
       text-align: center;
+      color: #ff5252;
     }
     .topbar{
       max-width:1100px;
       width: calc(100% - 40px);
-      margin: 0 auto 10px;
+      margin: 10px auto;
       display:flex;
       padding: 0 20px;
     }
@@ -74,11 +74,7 @@
       padding: 12px 14px;
       cursor: pointer;
     }
-    .wallet-amount{
-      font-size:20px;
-      font-weight:900;
-      filter: blur(6px);
-    }
+    .wallet-amount{ font-size:20px; font-weight:900; filter: blur(6px); }
     .reveal .wallet-amount{ filter: blur(0); }
     .menu{
       flex:1;
@@ -101,8 +97,7 @@
       transition: 0.3s;
     }
     .btn:hover{ background:#8e24aa; transform:scale(1.02); }
-    .btn-main-feature{ background: #4527a0; border: 2px solid #b39ddb; }
-    .btn:disabled{ opacity:0.6; cursor:not-allowed; }
+    .btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none !important; }
     .footer-btn{
       background:#ff5722;
       padding:25px;
@@ -122,21 +117,21 @@
 
 <body oncontextmenu="return false;">
   <div class="header">
-    <a href="index.html" class="back">Geri</a>
+    <a href="index.html" class="back">Ana Sayfa</a>
     <div id="baslik">Yükleniyor...</div>
   </div>
 
-  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ - Modüller sadece görüntüleme modundadır.</div>
+  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüller sadece görüntüleme modundadır.</div>
 
   <div class="topbar">
     <div id="walletCard" class="wallet-card">
       <div class="wallet-title">💳 Cüzdan: <span id="walletAmount" class="wallet-amount">...</span></div>
-      <div id="walletSub" style="font-size:12px; margin-top:5px;">Bakiyeyi görmek için dokun.</div>
+      <div id="walletSub" style="font-size:12px; margin-top:5px;">Bakiye gizli. Görmek için tıkla.</div>
     </div>
   </div>
 
   <div class="menu">
-    <button class="btn btn-main-feature modül-btn" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE</button>
+    <button class="btn modül-btn" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
     <button class="btn modül-btn" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
     <button class="btn modül-btn" onclick="go('imar.html')">İMAR DURUMU</button>
     <button class="btn modül-btn" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
@@ -150,53 +145,53 @@
 <script>
   const auth = firebase.auth();
   const db = firebase.firestore();
-
   const urlParams = new URLSearchParams(window.location.search);
   let rid = urlParams.get('rid');
-  let isLockedGlobal = false; // Sayfa genelinde kilit durumu
-
-  // Rapor verilerini çek
-  function getReports() {
-    return JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-  }
+  let isLocked = false; 
 
   function go(page) {
     if (!rid) return;
-    // Eğer kilitliyse modüllere gitmeyi engellemiyoruz, modüllerin kendi içinde "read-only" olması gerekir.
-    // Ama buradan engellemek istersen: if(isLockedGlobal) { alert("Rapor kilitli!"); return; }
+    // KRİTİK FİX: Eğer kilitliyse modül butonları asla işlem yapmasın
+    if (isLocked) {
+      alert("Bu rapor kilitlenmiştir. Modüllere giriş yapılamaz.");
+      return;
+    }
     window.location.href = page + "?rid=" + encodeURIComponent(rid);
   }
 
-  // Kilit durumunu kontrol eden ana fonksiyon
-  async function checkLockStatus(uid) {
+  async function syncAndCheckLock(uid) {
+    let locked = false;
+
     // 1. LocalStorage Kontrolü
-    const reports = getReports();
-    const localReport = reports.find(r => r.rid === rid);
-    if (localReport && (localReport.isLocked || localReport.locked || localReport.final)) {
-      return true;
+    const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports') || "[]");
+    const r = reports.find(item => item.rid === rid);
+    if (r && (r.isLocked || r.locked || r.final)) locked = true;
+
+    // 2. Firebase Kontrolü
+    if (!locked) {
+      try {
+        const d1 = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
+        if (d1.exists && (d1.data().locked || d1.data().isLocked)) locked = true;
+        
+        if (!locked) {
+          const d2 = await db.collection("locks").doc(`${uid}_${rid}`).get();
+          if (d2.exists && d2.data().locked) locked = true;
+        }
+      } catch (e) { console.error("Lock sync error", e); }
     }
 
-    // 2. Firebase Kontrolü (Farklı koleksiyonları tarar)
-    try {
-      const lockDoc = await db.collection("locks").doc(`${uid}_${rid}`).get();
-      if (lockDoc.exists && lockDoc.data().locked) return true;
-
-      const userReportDoc = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
-      if (userReportDoc.exists && (userReportDoc.data().locked || userReportDoc.data().isLocked)) return true;
-    } catch (e) {
-      console.error("Kilit kontrolü hatası:", e);
+    if (locked) {
+      isLocked = true;
+      applyLockedUI();
     }
-
-    return false;
   }
 
-  // UI'ı kilit durumuna göre güncelle
   function applyLockedUI() {
-    isLockedGlobal = true;
     document.getElementById("kilitMesaji").style.display = "block";
-    
-    // Modül butonlarını pasif yapma (İsteğe bağlı: Modüllere girmesin dersen)
-    // document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+    document.querySelectorAll(".modül-btn").forEach(b => {
+      b.disabled = true;
+      b.style.opacity = "0.5";
+    });
 
     const btn = document.getElementById("btnRaporOlustur");
     btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
@@ -206,50 +201,36 @@
     };
   }
 
-  async function raporOlusturUyari() {
+  function raporOlusturUyari() {
     if (!rid) return;
-    
-    const msg = "DİKKAT! Rapor oluşturulduğunda bakiye düşebilir ve veriler kilitlenir. Devam edilsin mi?";
-    if (!confirm(msg)) return;
-
-    window.location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
-  }
-
-  // Cüzdan Yükleme
-  async function loadWallet(uid) {
-    if (!window.Wallet) return;
-    try {
-      const w = await Wallet.load(uid);
-      const bal = w?.balanceTL || 0;
-      document.getElementById("walletAmount").textContent = bal + " TL";
-    } catch (e) {
-      document.getElementById("walletAmount").textContent = "Hata";
+    if (confirm("Rapor oluşturulacak. Bakiye düşebilir ve rapor kilitlenir. Onaylıyor musunuz?")) {
+      window.location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
     }
   }
+
+  auth.onAuthStateChanged(async (user) => {
+    if (!user || !rid) { window.location.href = "index.html"; return; }
+    
+    // Başlık ayarı
+    const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports') || "[]");
+    const report = reports.find(r => r.rid === rid);
+    if (report) document.getElementById("baslik").textContent = report.propertyName || "Rapor Detay";
+
+    // Kilit kontrolü
+    await syncAndCheckLock(user.uid);
+
+    // Cüzdan (Wallet) yükleme
+    if (window.Wallet) {
+      try {
+        const w = await Wallet.load(user.uid);
+        document.getElementById("walletAmount").textContent = (w?.balanceTL || 0) + " TL";
+      } catch(e) {}
+    }
+  });
 
   document.getElementById("walletCard").onclick = function() {
     this.classList.toggle("reveal");
   };
-
-  // Açılış
-  auth.onAuthStateChanged(async (user) => {
-    if (!user) { window.location.href = "index.html"; return; }
-    if (!rid) { window.location.href = "index.html"; return; }
-
-    const reports = getReports();
-    const report = reports.find(r => r.rid === rid);
-    if (report) {
-      document.getElementById("baslik").textContent = report.propertyName || "Gayrimenkul Raporu";
-    }
-
-    // Kilit kontrolünü yap ve uygula
-    const locked = await checkLockStatus(user.uid);
-    if (locked) {
-      applyLockedUI();
-    }
-
-    loadWallet(user.uid);
-  });
 </script>
 </body>
 </html>
