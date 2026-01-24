@@ -1,400 +1,131 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapor Detay</title>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
+<!-- Firebase (varsa zaten kullanıyorsun) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 
-  <script src="wallet.js"></script>
+<style>
+:root{
+  --primary:#5e35b1;
+  --secondary:#7c4dff;
+  --bg:#f4f7f9;
+  --headerH:64px;
+}
 
-  <title>Rapor Detay - Raporan X</title>
+*{ box-sizing:border-box; }
 
-  <style>
-    body { font-family: Arial; background: linear-gradient(135deg,#4a148c,#7c4dff); margin:0; color:white; min-height:100vh; display:flex; flex-direction:column; }
+html,body{
+  margin:0;
+  padding:0;
+  height:100%;
+  background:var(--bg);
+  font-family:'Segoe UI',Tahoma,sans-serif;
+  overflow-x:hidden;
+}
 
-    .header { padding:20px; text-align:center; font-size:28px; font-weight:bold; position: relative; transition:.25s ease; }
-    .header.locked { background: linear-gradient(135deg,#263238,#455a64); box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+/* ================= HEADER ================= */
+.header{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:999999;
 
-    .back { position:absolute; left:15px; top:20px; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:30px; text-decoration:none; color:white; font-weight:bold; }
+  height:calc(var(--headerH) + env(safe-area-inset-top,0px));
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;
 
-    .lockBadge{
-      display:none;
-      margin-left:10px;
-      align-items:center;
-      gap:8px;
-      font-size:13px;
-      font-weight:900;
-      padding:6px 10px;
-      border-radius:999px;
-      background: rgba(0,0,0,0.22);
-      border: 1px solid rgba(255,255,255,0.22);
-      vertical-align: middle;
-    }
+  background:linear-gradient(135deg,#4a148c,#7c4dff);
+  color:#fff;
 
-    .statusBar{
-      max-width:1100px;
-      width: calc(100% - 40px);
-      margin: 0 auto 10px;
-      padding: 10px 14px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.22);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.16);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      font-weight: 900;
-      line-height: 1.35;
-    }
-    .statusBar small{ display:block; opacity:.9; font-weight:700; margin-top:4px; }
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
 
-    .topbar{
-      max-width:1100px;
-      width: calc(100% - 40px);
-      margin: 0 auto 10px;
-      display:flex;
-      gap:12px;
-      align-items:center;
-      justify-content:space-between;
-      flex-wrap:wrap;
-      padding: 0 20px;
-    }
+.header h1{
+  margin:0;
+  font-size:18px;
+  font-weight:600;
+}
 
-    .wallet-card{
-      flex: 1 1 420px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.22);
-      border-radius: 16px;
-      padding: 12px 14px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      cursor: pointer;
-      user-select:none;
-    }
-    .wallet-title{ font-weight:900; letter-spacing:.4px; display:flex; align-items:center; gap:10px; }
-    .wallet-sub{ font-size:12px; opacity:.95; margin-top:6px; line-height:1.35; }
-    .wallet-amount{
-      font-size:20px;
-      font-weight:900;
-      margin-left:auto;
-      padding:6px 10px;
-      border-radius:12px;
-      background: rgba(0,0,0,0.18);
-      border: 1px solid rgba(255,255,255,0.18);
-    }
-    .wallet-hidden{ filter: blur(6px); transition: filter .2s ease; }
-    .wallet-card.reveal .wallet-hidden{ filter: blur(0); }
+/* geri butonu */
+.back-btn{
+  background:rgba(255,255,255,0.25);
+  border:none;
+  color:#fff;
+  font-size:16px;
+  padding:8px 14px;
+  border-radius:30px;
+  cursor:pointer;
+  z-index:1000000;
+}
 
-    .menu { flex:1; display:flex; flex-wrap:wrap; gap:20px; padding:30px; justify-content:center; align-content:flex-start; }
+/* ================= CONTENT ================= */
+body{
+  padding-top:calc(var(--headerH) + env(safe-area-inset-top,0px));
+}
 
-    .btn {
-      flex:1 1 350px;
-      background:#6a1b9a;
-      padding:35px;
-      font-size:24px;
-      font-weight:bold;
-      border:none;
-      border-radius:20px;
-      color:white;
-      cursor:pointer;
-      box-shadow:0 8px 20px rgba(0,0,0,0.4);
-      transition: 0.3s;
-      position:relative;
-    }
-    .btn:hover { background:#8e24aa; transform:scale(1.05); }
-    .btn-main-feature { background: #4527a0; border: 2px solid #b39ddb; }
+.container{
+  padding:16px;
+}
 
-    .footer-btn {
-      background:#ff5722;
-      padding:25px;
-      font-size:28px;
-      width:90%;
-      max-width:600px;
-      margin:20px auto;
-      border-radius:20px;
-      border:none;
-      color:white;
-      font-weight:bold;
-      cursor: pointer;
-      text-align: center;
-      box-shadow:0 10px 25px rgba(0,0,0,0.25);
-      transition: .25s ease;
-    }
-    .footer-btn:hover{opacity:.94}
+/* kartlar */
+.card{
+  background:#6a1b9a;
+  color:#fff;
+  border-radius:22px;
+  padding:26px 18px;
+  margin-bottom:18px;
+  text-align:center;
+  font-size:22px;
+  font-weight:700;
+  box-shadow:0 10px 25px rgba(0,0,0,0.25);
+}
 
-    /* ✅ Kilitliyken SADECE modül butonlarını kilitle */
-    .modulesLocked .menu .btn{
-      opacity:.45;
-      filter: grayscale(60%);
-      transform:none !important;
-      cursor:not-allowed !important;
-      pointer-events:none;
-    }
+.card.alt{
+  background:#7b1fa2;
+}
 
-    /* geri + cüzdan + rapor butonu açık kalsın */
-    .modulesLocked .wallet-card,
-    .modulesLocked .back,
-    .modulesLocked #btnFinalCreate{
-      pointer-events:auto !important;
-      opacity:1 !important;
-      filter:none !important;
-    }
-  </style>
+/* mobil ekstra güvenlik */
+@media(max-width:600px){
+  .card{
+    font-size:20px;
+    padding:24px 16px;
+  }
+}
+</style>
 </head>
 
-<body oncontextmenu="return false;">
-  <div id="header" class="header">
-    <a href="index.html" class="back">Ana Sayfa</a>
-    <div>
-      <span id="baslik">Gayrimenkul Raporu</span>
-      <span id="lockBadge" class="lockBadge">🔒 KİLİTLİ / FİNAL</span>
-    </div>
+<body>
+
+<!-- ================= HEADER ================= -->
+<div class="header">
+  <button class="back-btn" onclick="history.back()">← Geri</button>
+  <h1>Rapor Detay</h1>
+  <div style="width:40px"></div>
+</div>
+
+<!-- ================= CONTENT ================= -->
+<div class="container">
+
+  <div class="card">
+    KONUM VE<br>ÇEVRE ÖZELLİKLERİ
   </div>
 
-  <div id="statusBar" class="statusBar">
-    Hazır.
-    <small>Modüllere girip veri girişi yap, sonra raporu oluştur.</small>
+  <div class="card alt">
+    TAPU KAYIT<br>BİLGİLERİ
   </div>
 
-  <!-- Cüzdan -->
-  <div class="topbar">
-    <div id="walletCard" class="wallet-card" title="Bakiye detayını görmek için tıkla">
-      <div class="wallet-title">
-        💳 Cüzdan
-        <span id="walletAmount" class="wallet-amount wallet-hidden">yükleniyor...</span>
-      </div>
-      <div id="walletSub" class="wallet-sub">Yükleniyor…</div>
-    </div>
-  </div>
+  <!-- Buraya diğer rapor bölümleri aynen eklenir -->
 
-  <!-- Modüller -->
-  <div class="menu">
-    <button class="btn btn-main-feature" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
-    <button class="btn" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
-    <button class="btn" onclick="go('imar.html')">İMAR DURUMU</button>
-    <button class="btn" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
-    <button class="btn" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
-    <button class="btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
-    <button class="btn" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
-  </div>
+</div>
 
-  <button id="btnFinalCreate" class="footer-btn">TAM RAPOR OLUŞTUR</button>
-
-<script>
-(function(){
-  const auth = window.auth || firebase.auth();
-  const db   = window.db   || firebase.firestore();
-  const $ = (id) => document.getElementById(id);
-
-  function setStatus(title, sub){
-    const bar = $("statusBar");
-    bar.textContent = title;
-    const sm = document.createElement("small");
-    sm.textContent = sub || "";
-    bar.appendChild(sm);
-  }
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const rid = (urlParams.get("rid") || urlParams.get("id") || "").toString().trim();
-
-  // ----- Local reports (hata immün)
-  function getReports(){
-    const raw = localStorage.getItem("gayrimenkul_reports");
-    if (!raw) return [];
-    try{
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) {
-        localStorage.removeItem("gayrimenkul_reports");
-        return [];
-      }
-      return parsed;
-    }catch(e){
-      localStorage.removeItem("gayrimenkul_reports");
-      return [];
-    }
-  }
-  function setReports(arr){
-    localStorage.setItem("gayrimenkul_reports", JSON.stringify(Array.isArray(arr) ? arr : []));
-  }
-
-  function getReportByRidLocal(){
-    const reports = getReports();
-    const i = reports.findIndex(r => r && String(r.rid||"").trim() === String(rid));
-    return i >= 0 ? reports[i] : null;
-  }
-
-  async function getReportByRidRemote(user){
-    // Asıl kaynak: users/{uid}/reports/{rid}
-    try{
-      const d = await db.collection("users").doc(user.uid).collection("reports").doc(rid).get();
-      if (d.exists) return d.data();
-    }catch(e){}
-    return null;
-  }
-
-  // ---- Lock (local cache + Firestore gerçek)
-  function isLockedLocal(){
-    return localStorage.getItem("report_locked_" + rid) === "1";
-  }
-
-  function setModulesLockedUI(locked){
-    const badge = $("lockBadge");
-    const header = $("header");
-    const btn = $("btnFinalCreate");
-
-    if (locked){
-      document.body.classList.add("modulesLocked");
-      header.classList.add("locked");
-      badge.style.display = "inline-flex";
-
-      // ✅ kilitliyken buton açık: rapora gir / pdf al
-      btn.textContent = "📄 RAPORU AÇ / PDF";
-      btn.onclick = () => {
-        location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
-      };
-
-      setStatus("🔒 Bu rapor FINAL ve modüller kilitli.",
-        "Alttaki “RAPORU AÇ / PDF” ile rapora girip yazdır/PDF alabilirsin.");
-    } else {
-      document.body.classList.remove("modulesLocked");
-      header.classList.remove("locked");
-      badge.style.display = "none";
-
-      btn.textContent = "TAM RAPOR OLUŞTUR";
-      btn.onclick = () => raporOlusturUyari();
-
-      setStatus("Hazır.",
-        "Modüllere girip veri girişi yap, sonra “TAM RAPOR OLUŞTUR” ile final raporu üret.");
-    }
-  }
-
-  function raporOlusturUyari(){
-    if (!rid) { location.href="index.html"; return; }
-
-    const msg =
-`UYARI! (ÖNEMLİ)
-Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
-
-Lütfen zaman ve para kaybı olmaması için tüm modülleri tekrar kontrol edin.
-Devam etmek istiyor musunuz?`;
-
-    if (!confirm(msg)) return;
-    location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
-  }
-
-  // modül sayfalarına rid ile git
-  window.go = function(page){
-    if (!rid) { location.href="index.html"; return; }
-    location.href = page + "?rid=" + encodeURIComponent(rid);
-  };
-
-  /* WALLET UI */
-  let walletRevealed = false;
-  function setWalletUI(textAmount, subText){
-    $("walletAmount").textContent = textAmount;
-    $("walletSub").textContent = subText;
-  }
-  $("walletCard").addEventListener("click", ()=>{
-    walletRevealed = !walletRevealed;
-    if (walletRevealed) $("walletCard").classList.add("reveal");
-    else $("walletCard").classList.remove("reveal");
-  });
-
-  async function loadWallet(user){
-    if (!window.Wallet || !user) {
-      setWalletUI("—", "Cüzdan modülü yüklenemedi.");
-      return;
-    }
-    try{
-      const w = await Wallet.load(user.uid);
-      const balance = Number(w?.balanceTL ?? w?.balance ?? w?.tl ?? 0) || 0;
-      const freeLeft = Number(w?.freeLeft ?? w?.freeReportsLeft ?? w?.free ?? 0);
-
-      const tlText = new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(balance) + " TL";
-      const info = `🎁 Ücretsiz rapor hakkın: ${freeLeft} • 💰 Bakiye: (gizli, tıkla gör)`;
-
-      setWalletUI(tlText, info);
-    }catch(e){
-      setWalletUI("—", "Cüzdan okunamadı. İnternet / izin kontrol et.");
-    }
-  }
-
-  function watchLockFromFirestore(user){
-    // ✅ GERÇEK KAYNAK: users/{uid}/reports/{rid}.locked
-    try{
-      return db
-        .collection("users")
-        .doc(user.uid)
-        .collection("reports")
-        .doc(rid)
-        .onSnapshot((snap)=>{
-          const data = snap.exists ? (snap.data() || {}) : {};
-          const locked = (data.locked === true || data.isLocked === true || data.status === "final");
-
-          if (locked) localStorage.setItem("report_locked_" + rid, "1");
-
-          setModulesLockedUI(locked || isLockedLocal());
-        }, (err)=>{
-          console.warn("lock watch error:", err?.message || err);
-          setModulesLockedUI(isLockedLocal());
-        });
-    }catch(e){
-      console.warn("watchLockFromFirestore fail:", e?.message || e);
-      setModulesLockedUI(isLockedLocal());
-      return null;
-    }
-  }
-
-  // BOOT
-  auth.onAuthStateChanged(async (user)=>{
-    if (!user){
-      setStatus("❌ Giriş yok.", "Ana sayfaya yönlendiriliyor…");
-      setTimeout(()=>location.href="index.html", 300);
-      return;
-    }
-
-    if (!rid){
-      setStatus("❌ rid yok.", "Ana sayfaya yönlendiriliyor…");
-      setTimeout(()=>location.href="index.html", 300);
-      return;
-    }
-
-    // raporu önce local, yoksa bulut
-    let report = getReportByRidLocal();
-    if (!report) report = await getReportByRidRemote(user);
-
-    if (!report){
-      setStatus("❌ Rapor bulunamadı.", "Bu rid ile kayıt yok (local + bulut). Ana sayfaya dön.");
-      setTimeout(()=>location.href="index.html", 600);
-      return;
-    }
-
-    // Başlık
-    $("baslik").textContent = report.propertyName || "İsimsiz Gayrimenkul";
-
-    // Wallet
-    await loadWallet(user);
-
-    // önce local cache
-    setModulesLockedUI(isLockedLocal());
-
-    // sonra bulut izleme (asıl kilit)
-    watchLockFromFirestore(user);
-
-    // opsiyonel: local’a raporu cache’le (telefon hızlansın)
-    try{
-      const reports = getReports();
-      const idx = reports.findIndex(r => r && r.rid === report.rid);
-      if (idx >= 0) reports[idx] = { ...reports[idx], ...report };
-      else reports.push(report);
-      setReports(reports);
-    }catch(e){}
-  });
-})();
-</script>
 </body>
 </html>
