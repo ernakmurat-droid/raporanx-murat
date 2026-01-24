@@ -149,13 +149,20 @@
   let rid = urlParams.get('rid');
   let isLocked = false; 
 
+  // VERİ KARIŞIKLIĞINI ÖNLEYEN GİT FONKSİYONU
   function go(page) {
-    if (!rid) return;
-    // KRİTİK FİX: Eğer kilitliyse modül butonları asla işlem yapmasın
+    if (!rid) {
+        alert("Hata: Rapor ID bulunamadı. Lütfen ana sayfadan tekrar girin.");
+        window.location.href = "index.html";
+        return;
+    }
+    
     if (isLocked) {
       alert("Bu rapor kilitlenmiştir. Modüllere giriş yapılamaz.");
       return;
     }
+
+    // rid parametresini net bir şekilde ekleyerek sayfaya yönlendiriyoruz
     window.location.href = page + "?rid=" + encodeURIComponent(rid);
   }
 
@@ -211,15 +218,12 @@
   auth.onAuthStateChanged(async (user) => {
     if (!user || !rid) { window.location.href = "index.html"; return; }
     
-    // Başlık ayarı
     const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports') || "[]");
     const report = reports.find(r => r.rid === rid);
     if (report) document.getElementById("baslik").textContent = report.propertyName || "Rapor Detay";
 
-    // Kilit kontrolü
     await syncAndCheckLock(user.uid);
 
-    // Cüzdan (Wallet) yükleme
     if (window.Wallet) {
       try {
         const w = await Wallet.load(user.uid);
