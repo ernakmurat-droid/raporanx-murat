@@ -29,16 +29,12 @@
   .btn-save { background:var(--success); color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:30px; }
   .btn-back { background:#6c757d; color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:10px; }
   
-  /* ✅ ÖNİZLEME ALANI: Kopyalamaya Kapalı */
+  /* ✅ ÖNİZLEME ALANI: SADECE BURADA KOPYALAMA YASAK */
   .preview-box { 
     background:#222; color:#00ff6a; padding:20px; border-radius:15px; 
     font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px; 
     margin-top:20px; border:2px solid #555; line-height:1.5;
-    -webkit-user-select: none; 
-    -moz-user-select: none; 
-    -ms-user-select: none; 
-    user-select: none; 
-    pointer-events: none; /* Mouse ile seçim yapılmasını tamamen engeller */
+    -webkit-user-select: none; user-select: none;
   }
 
   .disabled-input { background:#eee; cursor:not-allowed; opacity:.7; }
@@ -61,26 +57,26 @@
     <form id="mainForm" onsubmit="return false;">
       <div class="grid-form">
         <div class="section-title">📊 TABLO VERİLERİ (1-16)</div>
-        <div class="input-item"><label>(1) UAVT</label><input type="text" id="v1"></div>
-        <div class="input-item"><label>(2) Koordinat X</label><input type="text" id="v2"></div>
-        <div class="input-item"><label>(3) Koordinat Y</label><input type="text" id="v3"></div>
-        <div class="input-item"><label>(4) İli</label><input type="text" id="v4"></div>
-        <div class="input-item"><label>(5) İlçesi</label><input type="text" id="v5"></div>
-        <div class="input-item"><label>(6) Mahallesi</label><input type="text" id="v6"></div>
-        <div class="input-item"><label>(7) Cadde/Sokak</label><input type="text" id="v7"></div>
-        <div class="input-item"><label>(8) Dış Kapı No</label><input type="text" id="v8"></div>
-        <div class="input-item"><label>(9) Bulunduğu Kat</label><input type="text" id="v9"></div>
-        <div class="input-item"><label>(10) Daire No</label><input type="text" id="v10"></div>
-        <div class="input-item"><label>(11) Bölge Gelişimi</label><input type="text" id="v11"></div>
-        <div class="input-item"><label>(12) Bölge Yapılaşması</label><input type="text" id="v12"></div>
-        <div class="input-item"><label>(13) Yapı Tipleri</label><input type="text" id="v13"></div>
-        <div class="input-item"><label>(14) Gelir Düzeyi</label><input type="text" id="v14"></div>
-        <div class="input-item"><label>(15) Yakın Yapı 1</label><input type="text" id="v15"></div>
-        <div class="input-item"><label>(16) Yakın Yapı 2</label><input type="text" id="v16"></div>
+        <div class="input-item"><label>(1) UAVT</label><input type="text" id="v1" list="h_v1" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(2) Koordinat X</label><input type="text" id="v2" list="h_v2" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(3) Koordinat Y</label><input type="text" id="v3" list="h_v3" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(4) İli</label><input type="text" id="v4" list="h_v4" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(5) İlçesi</label><input type="text" id="v5" list="h_v5" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(6) Mahallesi</label><input type="text" id="v6" list="h_v6" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(7) Cadde/Sokak</label><input type="text" id="v7" list="h_v7" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(8) Dış Kapı No</label><input type="text" id="v8" list="h_v8" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(9) Bulunduğu Kat</label><input type="text" id="v9" list="h_v9" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(10) Daire No</label><input type="text" id="v10" list="h_v10" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(11) Bölge Gelişimi</label><input type="text" id="v11" list="h_v11" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(12) Bölge Yapılaşması</label><input type="text" id="v12" list="h_v12" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(13) Yapı Tipleri</label><input type="text" id="v13" list="h_v13" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(14) Gelir Düzeyi</label><input type="text" id="v14" list="h_v14" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(15) Yakın Yapı 1</label><input type="text" id="v15" list="h_v15" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(16) Yakın Yapı 2</label><input type="text" id="v16" list="h_v16" onfocus="showList(this)"></div>
 
         <div class="section-title">📝 METİN DEĞİŞKENLERİ</div>
-        <div class="input-item full-width"><label>Ulaşım Tarifi</label><textarea id="ulasimTarifi" rows="3"></textarea></div>
-        <div class="input-item full-width"><label>Ulaşım Olanakları</label><input type="text" id="ulasimOlanaklari"></div>
+        <div class="input-item full-width"><label>Ulaşım Tarifi</label><textarea id="ulasimTarifi" rows="3" list="h_ulasimTarifi" onfocus="showList(this)"></textarea></div>
+        <div class="input-item full-width"><label>Ulaşım Olanakları</label><input type="text" id="ulasimOlanaklari" list="h_ulasimOlanaklari" onfocus="showList(this)"></div>
 
         <div class="input-item">
           <label>Altyapı Durumu</label>
@@ -91,17 +87,27 @@
         </div>
         <div class="input-item">
           <label>Altyapı Açıklaması</label>
-          <input type="text" id="altyapiAciklama" class="disabled-input" disabled value="alt yapısı tamamlanmıştır">
+          <input type="text" id="altyapiAciklama" class="disabled-input" disabled value="alt yapısı tamamlanmıştır" list="h_altyapiAciklama" onfocus="showList(this)">
         </div>
       </div>
     </form>
 
-    <div class="section-title">👀 CANLI ÖNİZLEME</div>
-    <div class="preview-box" id="livePreview">Veri bekleniyor...</div>
+    <div class="section-title">👀 CANLI ÖNİZLEME (TAM METİN)</div>
+    <div class="preview-box" id="livePreview" oncopy="return false">Veri bekleniyor...</div>
 
     <button id="saveBtn" class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET</button>
     <button class="btn-back" onclick="anaMenuyeDon()">MENÜYE DÖN</button>
   </div>
+</div>
+
+<div id="datalists">
+    <datalist id="h_v1"></datalist><datalist id="h_v2"></datalist><datalist id="h_v3"></datalist>
+    <datalist id="h_v4"></datalist><datalist id="h_v5"></datalist><datalist id="h_v6"></datalist>
+    <datalist id="h_v7"></datalist><datalist id="h_v8"></datalist><datalist id="h_v9"></datalist>
+    <datalist id="h_v10"></datalist><datalist id="h_v11"></datalist><datalist id="h_v12"></datalist>
+    <datalist id="h_v13"></datalist><datalist id="h_v14"></datalist><datalist id="h_v15"></datalist>
+    <datalist id="h_v16"></datalist><datalist id="h_ulasimTarifi"></datalist>
+    <datalist id="h_ulasimOlanaklari"></datalist><datalist id="h_altyapiAciklama"></datalist>
 </div>
 
 <script>
@@ -112,7 +118,21 @@
   const $ = (id) => document.getElementById(id);
 
   function getReports(){ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
-  function findReportIndexByRid(){ return getReports().findIndex(r => r && String(r.rid) === String(rid)); }
+
+  // ✅ METİN ÖNERİLERİ (DATALIST)
+  function showList(el){
+    const listId = el.getAttribute("list");
+    if(!listId) return;
+    const dl = $(listId);
+    dl.innerHTML = "";
+    const reports = getReports();
+    const set = new Set();
+    reports.forEach(r => {
+      const val = (r.konumCevre && r.konumCevre[el.id]) ? String(r.konumCevre[el.id]).trim() : "";
+      if(val && val !== "...") set.add(val);
+    });
+    set.forEach(v => { dl.innerHTML += `<option value="${v}">`; });
+  }
 
   function toggleAltyapi(isEvet){
     const inp = $('altyapiAciklama');
@@ -128,43 +148,54 @@
     guncelleOnizleme();
   }
 
+  // ✅ MÜKEMMEL METİN FORMATI
   function guncelleOnizleme(){
-    let v = {};
-    inputIds.forEach(id => { v[id] = $(id).value || "..."; });
+    let vData = {};
+    inputIds.forEach(id => { vData[id] = $(id).value || "..."; });
 
-    let yapiTipi = (v.v13 || "").trim();
-    let yapiTipiMetni = (yapiTipi !== "..." && yapiTipi && !yapiTipi.toLowerCase().includes("tip")) ? yapiTipi + " tipi yapılar" : (yapiTipi || "...");
+    let yapiTipi = (vData.v13 || "").trim();
+    let yapiTipiMetni = (yapiTipi !== "..." && !yapiTipi.toLowerCase().includes("tip")) ? yapiTipi + " tipi yapılar" : yapiTipi;
     const altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
-    const altyapiMetni = altyapiTik === "Evet" ? "alt yapısı tamamlanmıştır" : (v.altyapiAciklama || "...");
+    const altyapiMetni = altyapiTik === "Evet" ? "alt yapısı tamamlanmıştır" : (vData.altyapiAciklama || "...");
 
     let tablo = "------------------------------------------\n ÇEVRESEL ÖZELLİKLER TABLOSU\n------------------------------------------\n";
     const labels = ["UAVT","Koord X","Koord Y","İl","İlçe","Mahalle","Sokak","Kapı No","Kat","Daire No","Gelişim","Yapılaşma","Tip","Gelir","Yakın 1","Yakın 2"];
-    for(let i=1; i<=16; i++){ tablo += `${labels[i-1].padEnd(15,' ')} : ${v['v'+i]}\n`; }
+    for(let i=1; i<=16; i++){ tablo += `${labels[i-1].padEnd(15,' ')} : ${vData['v'+i]}\n`; }
 
-    const f1 = `KONUMU VE ÇEVRESEL ÖZELLİKLERİ\nDeğerlemeye konu taşınmaz, ${v.v4} ili, ${v.v5} İlçesi, ${v.v6} Mahallesi ${v.v7}, No: ${v.v8}/${v.v10} posta adresinde yer almaktadır. Taşınmaza ulaşım; ${v.ulasimTarifi}. Bölge genelde yapı kalitesine bağlı olarak, ${v.v14} gelir grubu tarafından yerleşim amaçlı olarak talep görmektedir. Bölge çevresinde ${v.v12} katlı ${yapiTipiMetni} bulunmaktadır. ${v.ulasimOlanaklari} Taşınmazın yakın çevresinde ${v.v15} ve ${v.v16} yer almaktadır.\n\nBölgenin Gelişimine Analiz: ${v.v14} grubunun tercih ettiği, yapılaşmanın ${v.v11} olduğu bir bölgedir.`;
-    const f2 = `TAŞINMAZIN YERİ VE ÇEVRE ÖZELLİKLERİ\nGayrimenkul, ${v.v6} Mahallesi, ${v.v7}, No: ${v.v8}, Kat: ${v.v9} Daire: ${v.v10}, ${v.v5}/${v.v4} adresindedir. Bölgede ${v.v12} nitelikli ${yapiTipiMetni} hakimdir. Ulaşım: ${v.ulasimTarifi}. Yakın çevre: ${v.v15}, ${v.v16}.`;
-    const f3 = `ULAŞIM TARİFİ\n${v.v4} İli, ${v.v5} İlçesi, ${v.v6} Mahallesi sınırlarında yer alan taşınmaza ulaşım ${v.ulasimTarifi}. Bölge ${v.v11} fonksiyonlu gelişmiş olup, ${v.v14} gelir grubuna hitap eder. Altyapı: (yol, su, elektrik) ${altyapiMetni}. ${v.ulasimOlanaklari}`;
+    const f1 = `KONUMU VE ÇEVRESEL ÖZELLİKLERİ (Format 1)\nDeğerlemeye konu taşınmaz, ${vData.v4} ili, ${vData.v5} İlçesi, ${vData.v6} Mahallesi ${vData.v7}, No: ${vData.v8}/${vData.v10} posta adresinde yer almaktadır. Taşınmaza ulaşım; ${vData.ulasimTarifi}. Bölge genelde yapı kalitesine bağlı olarak, ${vData.v14} gelir grubu tarafından yerleşim amaçlı olarak talep görmektedir. Bölge çevresinde ${vData.v12} katlı ${yapiTipiMetni} bulunmaktadır. ${vData.ulasimOlanaklari} Taşınmazın yakın çevresinde ${vData.v15} ve ${vData.v16} yer almaktadır.\n\nBölgenin Gelişimine Analiz: ${vData.v14} grubunun tercih ettiği, yapılaşmanın ${vData.v11} olduğu bir bölgedir.`;
+    
+    const f2 = `TAŞINMAZIN YERİ VE ÇEVRE ÖZELLİKLERİ (Format 2)\nGayrimenkul, ${vData.v6} Mahallesi, ${vData.v7}, No: ${vData.v8}, Kat: ${vData.v9} Daire: ${vData.v10}, ${vData.v5}/${vData.v4} adresindedir. Bölgede ${vData.v12} nitelikli ${yapiTipiMetni} hakimdir. Ulaşım: ${vData.ulasimTarifi}. Yakın çevre: ${vData.v15}, ${vData.v16}.`;
+    
+    const f3 = `ULAŞIM TARİFİ (Format 3)\n${vData.v4} İli, ${vData.v5} İlçesi, ${vData.v6} Mahallesi sınırlarında yer alan taşınmaza ulaşım ${vData.ulasimTarifi}. Bölge ${vData.v11} fonksiyonlu gelişmiş olup, ${vData.v14} gelir grubuna hitap eder. Altyapı: (yol, su, elektrik) ${altyapiMetni}. ${vData.ulasimOlanaklari}`;
 
-    $('livePreview').textContent = tablo + "\n" + f1 + "\n\n" + f2 + "\n\n" + f3;
+    const paket = tablo + "\n" + f1 + "\n\n" + f2 + "\n\n" + f3;
+    $('livePreview').textContent = paket;
+    return paket;
   }
 
   function loadData(){
     const reports = getReports();
-    const report = reports.find(r => r && String(r.rid) === String(rid));
-    if(!report){ alert("Rapor bulunamadı!"); location.href="index.html"; return; }
+    const idx = reports.findIndex(r => r && String(r.rid) === String(rid));
+    if(idx < 0) { alert("Rapor bulunamadı!"); location.href="index.html"; return; }
+    const report = reports[idx];
 
     $('raporBilgi').textContent = `${report.propertyName || "Rapor"} • RID: ${rid}`;
 
     if(report.konumCevre){
-      inputIds.forEach(id => {
-        if(report.konumCevre[id]) $(id).value = report.konumCevre[id];
-      });
+      inputIds.forEach(id => { if(report.konumCevre[id]) $(id).value = report.konumCevre[id]; });
       if(report.konumCevre.altyapiTik === "Hayır"){
         document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
         toggleAltyapi(false);
       }
     }
+
+    // Otomatik Adres Yakala
+    if(!$('v4').value) $('v4').value = report.il || "";
+    if(!$('v5').value) $('v5').value = report.ilce || "";
+    if(!$('v6').value) $('v6').value = report.mahalle || "";
+
     guncelleOnizleme();
+
     if(report.isLocked || report.locked || report.final){
       $('lockedNote').style.display = "block";
       $('saveBtn').disabled = true;
@@ -174,17 +205,17 @@
   }
 
   function verileriKaydet(){
-    const idx = findReportIndexByRid();
-    if(idx < 0) return alert("Hata!");
-
     const reports = getReports();
+    const idx = reports.findIndex(r => r && String(r.rid) === String(rid));
+    if(idx < 0) return;
+
     let vData = {};
     inputIds.forEach(id => { vData[id] = $(id).value; });
 
     reports[idx].konumCevre = {
       ...vData,
       altyapiTik: document.querySelector('input[name="altyapi"]:checked').value,
-      tamMetin: $('livePreview').textContent,
+      tamMetin: guncelleOnizleme(),
       updatedAt: Date.now()
     };
 
@@ -199,9 +230,7 @@
     loadData();
   });
 
-  inputIds.forEach(id => {
-    $(id).addEventListener("input", guncelleOnizleme);
-  });
+  inputIds.forEach(id => $(id).addEventListener("input", guncelleOnizleme));
 </script>
 
 </body>
