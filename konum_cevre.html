@@ -28,7 +28,19 @@
   .full-width { grid-column:span 2; }
   .btn-save { background:var(--success); color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:30px; }
   .btn-back { background:#6c757d; color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:10px; }
-  .preview-box { background:#222; color:#00ff6a; padding:20px; border-radius:15px; font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px; margin-top:20px; border:2px solid #555; line-height:1.5; }
+  
+  /* ✅ ÖNİZLEME ALANI: Kopyalamaya Kapalı */
+  .preview-box { 
+    background:#222; color:#00ff6a; padding:20px; border-radius:15px; 
+    font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px; 
+    margin-top:20px; border:2px solid #555; line-height:1.5;
+    -webkit-user-select: none; 
+    -moz-user-select: none; 
+    -ms-user-select: none; 
+    user-select: none; 
+    pointer-events: none; /* Mouse ile seçim yapılmasını tamamen engeller */
+  }
+
   .disabled-input { background:#eee; cursor:not-allowed; opacity:.7; }
   .locked-note { display:none; background:#fff3cd; color:#856404; padding:15px; border-radius:10px; margin-bottom:15px; font-weight:900; text-align:center; border:1px solid #ffeeba; }
 </style>
@@ -94,62 +106,13 @@
 
 <script>
   const auth = firebase.auth();
-
   const urlParams = new URLSearchParams(window.location.search);
   const rid = (urlParams.get("rid") || "").trim();
-
   const inputIds = ['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'];
-
   const $ = (id) => document.getElementById(id);
 
   function getReports(){ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
-  function findReportByRid(){
-    const reports = getReports();
-    return reports.find(r => r && String(r.rid) === String(rid)) || null;
-  }
-  function findReportIndexByRid(){
-    const reports = getReports();
-    return reports.findIndex(r => r && String(r.rid) === String(rid));
-  }
-
-  // ✅ farklı alan adlarını yakalamak için helper
-  function pick(obj, ...paths){
-    for(const p of paths){
-      try{
-        const v = p.split(".").reduce((a,k)=> (a && a[k] !== undefined ? a[k] : undefined), obj);
-        if(v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
-      }catch(e){}
-    }
-    return "";
-  }
-
-  // ✅ il/ilce/mahalle için en geniş olasılık listesi
-  function getCityInfo(report){
-    const il = pick(report,
-      "il","sehir","şehir","province","city",
-      "adres.il","adres.sehir","adres.city",
-      "konum.il","konum.sehir","konum.city",
-      "konumCevre.il","konumCevre.sehir","konumCevre.city"
-    );
-
-    const ilce = pick(report,
-      "ilce","ilçe","district",
-      "adres.ilce","adres.ilçe","adres.district",
-      "konum.ilce","konum.ilçe","konum.district",
-      "konumCevre.ilce","konumCevre.ilçe","konumCevre.district"
-    );
-
-    const mahalle = pick(report,
-      "mahalle","neighborhood","quarter",
-      "adres.mahalle","adres.neighborhood",
-      "konum.mahalle","konum.neighborhood",
-      "konumCevre.mahalle","konumCevre.neighborhood"
-    );
-
-    // adres string varsa kaba parse dene (son çare)
-    const adresTek = pick(report,"adres","address","konumCevre.adres","konum.adres");
-    return { il, ilce, mahalle, adresTek };
-  }
+  function findReportIndexByRid(){ return getReports().findIndex(r => r && String(r.rid) === String(rid)); }
 
   function toggleAltyapi(isEvet){
     const inp = $('altyapiAciklama');
@@ -171,7 +134,6 @@
 
     let yapiTipi = (v.v13 || "").trim();
     let yapiTipiMetni = (yapiTipi !== "..." && yapiTipi && !yapiTipi.toLowerCase().includes("tip")) ? yapiTipi + " tipi yapılar" : (yapiTipi || "...");
-
     const altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
     const altyapiMetni = altyapiTik === "Evet" ? "alt yapısı tamamlanmıştır" : (v.altyapiAciklama || "...");
 
@@ -179,131 +141,50 @@
     const labels = ["UAVT","Koord X","Koord Y","İl","İlçe","Mahalle","Sokak","Kapı No","Kat","Daire No","Gelişim","Yapılaşma","Tip","Gelir","Yakın 1","Yakın 2"];
     for(let i=1; i<=16; i++){ tablo += `${labels[i-1].padEnd(15,' ')} : ${v['v'+i]}\n`; }
 
-    const f1 =
-`KONUMU VE ÇEVRESEL ÖZELLİKLERİ
-Değerlemeye konu taşınmaz, ${v.v4} ili, ${v.v5} İlçesi, ${v.v6} Mahallesi ${v.v7}, No: ${v.v8}/${v.v10} posta adresinde yer almaktadır.
-Taşınmaza ulaşım; ${v.ulasimTarifi}.
-Bölge genelde yapı kalitesine bağlı olarak, ${v.v14} gelir grubu tarafından yerleşim amaçlı olarak talep görmektedir.
-Bölge çevresinde ${v.v12} katlı ${yapiTipiMetni} bulunmaktadır.
-${v.ulasimOlanaklari}
-Taşınmazın yakın çevresinde ${v.v15} ve ${v.v16} yer almaktadır.
+    const f1 = `KONUMU VE ÇEVRESEL ÖZELLİKLERİ\nDeğerlemeye konu taşınmaz, ${v.v4} ili, ${v.v5} İlçesi, ${v.v6} Mahallesi ${v.v7}, No: ${v.v8}/${v.v10} posta adresinde yer almaktadır. Taşınmaza ulaşım; ${v.ulasimTarifi}. Bölge genelde yapı kalitesine bağlı olarak, ${v.v14} gelir grubu tarafından yerleşim amaçlı olarak talep görmektedir. Bölge çevresinde ${v.v12} katlı ${yapiTipiMetni} bulunmaktadır. ${v.ulasimOlanaklari} Taşınmazın yakın çevresinde ${v.v15} ve ${v.v16} yer almaktadır.\n\nBölgenin Gelişimine Analiz: ${v.v14} grubunun tercih ettiği, yapılaşmanın ${v.v11} olduğu bir bölgedir.`;
+    const f2 = `TAŞINMAZIN YERİ VE ÇEVRE ÖZELLİKLERİ\nGayrimenkul, ${v.v6} Mahallesi, ${v.v7}, No: ${v.v8}, Kat: ${v.v9} Daire: ${v.v10}, ${v.v5}/${v.v4} adresindedir. Bölgede ${v.v12} nitelikli ${yapiTipiMetni} hakimdir. Ulaşım: ${v.ulasimTarifi}. Yakın çevre: ${v.v15}, ${v.v16}.`;
+    const f3 = `ULAŞIM TARİFİ\n${v.v4} İli, ${v.v5} İlçesi, ${v.v6} Mahallesi sınırlarında yer alan taşınmaza ulaşım ${v.ulasimTarifi}. Bölge ${v.v11} fonksiyonlu gelişmiş olup, ${v.v14} gelir grubuna hitap eder. Altyapı: (yol, su, elektrik) ${altyapiMetni}. ${v.ulasimOlanaklari}`;
 
-Bölgenin Gelişimine Analiz: ${v.v14} grubunun tercih ettiği, yapılaşmanın ${v.v11} olduğu bir bölgedir.`;
-
-    const f2 =
-`TAŞINMAZIN YERİ VE ÇEVRE ÖZELLİKLERİ
-Gayrimenkul, ${v.v6} Mahallesi, ${v.v7}, No: ${v.v8}, Kat: ${v.v9} Daire: ${v.v10}, ${v.v5}/${v.v4} adresindedir.
-Bölgede ${v.v12} nitelikli ${yapiTipiMetni} hakimdir.
-Ulaşım: ${v.ulasimTarifi}.
-Yakın çevre: ${v.v15}, ${v.v16}.`;
-
-    const f3 =
-`ULAŞIM TARİFİ
-${v.v4} İli, ${v.v5} İlçesi, ${v.v6} Mahallesi sınırlarında yer alan taşınmaza ulaşım ${v.ulasimTarifi}.
-Bölge ${v.v11} fonksiyonlu gelişmiş olup, ${v.v14} gelir grubuna hitap eder.
-Altyapı: (yol, su, elektrik) ${altyapiMetni}.
-${v.ulasimOlanaklari}`;
-
-    const tamPaket = tablo + "\n" + f1 + "\n\n" + f2 + "\n\n" + f3;
-    $('livePreview').textContent = tamPaket;
-    return tamPaket;
-  }
-
-  function applyLockUI(){
-    $('lockedNote').style.display = "block";
-    const saveBtn = $('saveBtn');
-    saveBtn.disabled = true;
-    saveBtn.textContent = "KİLİTLİ";
-    document.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
-  }
-
-  function checkLockStatusLocal(report){
-    if(localStorage.getItem("report_locked_" + rid) === "1") return true;
-    if(report && (report.isLocked || report.locked || report.final)) return true;
-    return false;
+    $('livePreview').textContent = tablo + "\n" + f1 + "\n\n" + f2 + "\n\n" + f3;
   }
 
   function loadData(){
-    const report = findReportByRid();
-    if(!report){
-      alert("Rapor bulunamadı!");
-      location.href="index.html";
-      return;
-    }
+    const reports = getReports();
+    const report = reports.find(r => r && String(r.rid) === String(rid));
+    if(!report){ alert("Rapor bulunamadı!"); location.href="index.html"; return; }
 
-    $('raporBilgi').textContent = `${report.propertyName || "Rapor"}  • RID: ${rid}`;
+    $('raporBilgi').textContent = `${report.propertyName || "Rapor"} • RID: ${rid}`;
 
-    // 1) konumCevre içinden doldur
     if(report.konumCevre){
       inputIds.forEach(id => {
-        const val = report.konumCevre[id];
-        if(val !== undefined && val !== null && String(val).trim() !== ""){
-          $(id).value = val;
-        }
+        if(report.konumCevre[id]) $(id).value = report.konumCevre[id];
       });
-
-      const a = report.konumCevre.altyapi || report.konumCevre.altyapiTik;
-      if(a === "Hayır"){
+      if(report.konumCevre.altyapiTik === "Hayır"){
         document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
         toggleAltyapi(false);
       }
     }
-
-    // 2) v4/v5/v6 boşsa raporun başka alanlarından otomatik yakala
-    const city = getCityInfo(report);
-
-    if(!$('v4').value && city.il) $('v4').value = city.il;
-    if(!$('v5').value && city.ilce) $('v5').value = city.ilce;
-    if(!$('v6').value && city.mahalle) $('v6').value = city.mahalle;
-
-    // 3) hala boşsa ve adres string varsa çok kaba bir parse dene
-    // (adres formatı değişkense kesin çözüm değil ama yardımcı olur)
-    if((!$('v4').value || !$('v5').value) && city.adresTek){
-      const a = city.adresTek;
-      // ör: "... İlçe/İl" veya "... İl/İlçe"
-      if(!$('v4').value){
-        const m = a.match(/([A-Za-zÇĞİÖŞÜçğıöşü\s]+)\s*\/\s*([A-Za-zÇĞİÖŞÜçğıöşü\s]+)/);
-        if(m){
-          // varsayılan: ilçe/il
-          if(!$('v5').value) $('v5').value = (m[1] || "").trim();
-          $('v4').value = (m[2] || "").trim();
-        }
-      }
-    }
-
-    // 4) bulunduysa kalıcı hale getir: konumCevre içine de yaz (hatırlasın diye)
-    const idx = findReportIndexByRid();
-    if(idx >= 0){
-      const reports = getReports();
-      reports[idx].konumCevre = reports[idx].konumCevre || {};
-      if(!$('v4').value) {} else reports[idx].konumCevre.v4 = $('v4').value;
-      if(!$('v5').value) {} else reports[idx].konumCevre.v5 = $('v5').value;
-      if(!$('v6').value) {} else reports[idx].konumCevre.v6 = $('v6').value;
-      localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
-    }
-
     guncelleOnizleme();
-
-    // kilit
-    if(checkLockStatusLocal(report)) applyLockUI();
+    if(report.isLocked || report.locked || report.final){
+      $('lockedNote').style.display = "block";
+      $('saveBtn').disabled = true;
+      $('saveBtn').textContent = "KİLİTLİ";
+      document.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
+    }
   }
 
   function verileriKaydet(){
     const idx = findReportIndexByRid();
-    if(idx < 0) return alert("Hata: Rapor bulunamadı!");
+    if(idx < 0) return alert("Hata!");
 
     const reports = getReports();
     let vData = {};
     inputIds.forEach(id => { vData[id] = $(id).value; });
 
-    const altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
-
     reports[idx].konumCevre = {
-      ...(reports[idx].konumCevre || {}),
       ...vData,
-      altyapi: altyapiTik,
-      altyapiTik: altyapiTik,
-      tamMetin: guncelleOnizleme(),
+      altyapiTik: document.querySelector('input[name="altyapi"]:checked').value,
+      tamMetin: $('livePreview').textContent,
       updatedAt: Date.now()
     };
 
@@ -311,22 +192,15 @@ ${v.ulasimOlanaklari}`;
     alert("✅ Kaydedildi!");
   }
 
-  function anaMenuyeDon(){
-    if(!rid){ location.href="index.html"; return; }
-    location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
-  }
+  function anaMenuyeDon(){ location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid); }
 
-  // boot
   auth.onAuthStateChanged(user => {
-    if(!user){ location.href="index.html"; return; }
-    if(!rid){ location.href="index.html"; return; }
+    if(!user || !rid) { location.href="index.html"; return; }
     loadData();
   });
 
-  // live preview
   inputIds.forEach(id => {
-    const el = $(id);
-    if(el) el.addEventListener("input", guncelleOnizleme);
+    $(id).addEventListener("input", guncelleOnizleme);
   });
 </script>
 
