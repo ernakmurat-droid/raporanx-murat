@@ -146,7 +146,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // firebase-config.js içinden gelen global auth/db’yi kullan
   const auth = window.auth || firebase.auth();
   const db = window.db || firebase.firestore();
   const $ = (id) => document.getElementById(id);
@@ -174,36 +173,54 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // ✅ çift tıklama / touch+click çakışması engeli
+  let finalizing = false;
+
   // ---------- LOCK (cihazlar arası senkron) ----------
   function isLockedLocal(){ return localStorage.getItem("report_locked_" + rid) === "1"; }
+
+  // ✅ MENÜNÜN KİLİDİ GÖRMESİ İÇİN: gayrimenkul_reports içine isLocked yaz
+  function markLockedInLocalReports(){
+    try{
+      const arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
+      if (!Array.isArray(arr)) return;
+
+      const idx = arr.findIndex(r => String(r?.rid || "").trim() === rid);
+      if (idx < 0) return;
+
+      arr[idx].isLocked = true;
+      arr[idx].locked = true;
+      arr[idx].lockedAt = Date.now();
+      localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
+    }catch(e){
+      console.warn("local reports lock write fail:", e);
+    }
+  }
+
   function setLockedLocal(){
     localStorage.setItem("report_locked_" + rid, "1");
+    markLockedInLocalReports(); // ✅ kritik satır
     $("finalBadge").style.display = "block";
     $("hdr").classList.add("locked");
   }
 
   async function isLockedRemote(uid){
-    // rapor kilit bilgisini birkaç yerde arayalım
-    // 1) locks/{uid}_{rid}
     try{
       const lockId = `${uid}_${rid}`;
       const d = await db.collection("locks").doc(lockId).get();
       if (d.exists) return true;
     }catch(e){}
 
-    // 2) users/{uid}/locks/{rid}
     try{
       const d = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
       if (d.exists) return true;
     }catch(e){}
 
-    // 3) users/{uid}/reports/{rid} içinde locked alanı
     try{
       const d = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
       if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
     }catch(e){}
 
-    // 4) reports/{rid} içinde locked alanı
     try{
       const d = await db.collection("reports").doc(rid).get();
       if (d.exists && (d.data()?.locked === true || d.data()?.isLocked === true)) return true;
@@ -216,7 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const now = firebase.firestore.FieldValue.serverTimestamp();
     const payload = { uid, rid, locked:true, createdAt: now };
 
-    // birkaç yere yaz (hangisini kullanıyorsan oradan okur)
     try{
       const lockId = `${uid}_${rid}`;
       await db.collection("locks").doc(lockId).set(payload, { merge:true });
@@ -227,11 +243,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }catch(e){}
 
     try{
-      await db.collection("users").doc(uid).collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true });
+      await db.collection("users").doc(uid).collection("reports").doc(rid).set({ locked:true, isLocked:true, updatedAt: now }, { merge:true });
     }catch(e){}
 
     try{
-      await db.collection("reports").doc(rid).set({ locked:true, updatedAt: now }, { merge:true });
+      await db.collection("reports").doc(rid).set({ locked:true, isLocked:true, updatedAt: now }, { merge:true });
     }catch(e){}
   }
 
@@ -339,17 +355,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadReportRemote(uid){
-    // 1) users/{uid}/reports/{rid}
     let data = await getDocIfExists(`users/${uid}/reports/${rid}`);
     if (data) return data;
 
-    // 2) reports/{rid}
     data = await getDocIfExists(`reports/${rid}`);
     if (data) return data;
 
-    // 3) reports koleksiyonunda query (uid + rid/id)
     try{
-      // rid alanı olabilir
       let q = await db.collection("reports")
         .where("uid","==",uid)
         .where("rid","==",rid)
@@ -359,7 +371,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }catch(e){}
 
     try{
-      // doc id ile tutuluyor olabilir (id == rid)
       let q2 = await db.collection("reports")
         .where("uid","==",uid)
         .where("id","==",rid)
@@ -394,60 +405,63 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function finalizeFlow(user, showAlerts){
-    // raporu tekrar yükle (local veya remote)
-    let rep = loadReportLocal();
-    if (!rep) rep = await loadReportRemote(user.uid);
+    if (finalizing) return;          // ✅ re-entry engeli
+    finalizing = true;
+    try{
+      let rep = loadReportLocal();
+      if (!rep) rep = await loadReportRemote(user.uid);
 
-    if (!rep){
-      setStatus("❌ Rapor bulunamadı.", "localStorage + Firestore içinde bu rid yok.");
-      if (showAlerts) alert("Rapor bulunamadı (rid: " + rid + ")");
-      return;
-    }
+      if (!rep){
+        setStatus("❌ Rapor bulunamadı.", "localStorage + Firestore içinde bu rid yok.");
+        if (showAlerts) alert("Rapor bulunamadı (rid: " + rid + ")");
+        return;
+      }
 
-    render(rep);
+      render(rep);
 
-    // lock kontrol (local + remote)
-    const locked = isLockedLocal() || await isLockedRemote(user.uid);
-    if (locked){
-      setLockedLocal();
-      setStatus("🔒 Zaten kilitli.", "Bu rapor daha önce final yapılmış.");
-      return;
-    }
+      const locked = isLockedLocal() || await isLockedRemote(user.uid);
+      if (locked){
+        setLockedLocal();
+        setStatus("🔒 Zaten kilitli.", "Bu rapor daha önce final yapılmış.");
+        return;
+      }
 
-    if (!confirmParam){
-      const msg =
+      if (!confirmParam){
+        const msg =
 `UYARI! (ÖNEMLİ)
 Final rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
 Devam etmek istiyor musunuz?`;
-      if (!confirm(msg)) return;
+        if (!confirm(msg)) return;
+      }
+
+      setStatus("💳 Hak düşürülüyor…", "Cüzdandan düşüm denenecek. Başarısızsa kilit atılmayacak.");
+
+      const res = await consumeWalletOrExplain(user);
+
+      if (!res.ok){
+        setStatus("❌ Hak düşürülemedi!", res.why);
+        if (showAlerts) alert("Hak düşürülemedi:\n" + res.why + "\n\nFirestore rules/izin sorunu olabilir.");
+        return;
+      }
+
+      // ✅ hak düştü → kilitle (local + reports + remote)
+      setLockedLocal();
+      await setLockedRemote(user.uid);
+
+      setStatus("✅ Hak düşürüldü ve kilitlendi.", res.why);
+      if (showAlerts) alert("✅ Hak düşürüldü. Rapor kilitlendi.\n" + res.why);
+
+    } finally {
+      finalizing = false;
     }
-
-    setStatus("💳 Hak düşürülüyor…", "Cüzdandan düşüm denenecek. Başarısızsa kilit atılmayacak.");
-
-    const res = await consumeWalletOrExplain(user);
-
-    if (!res.ok){
-      setStatus("❌ Hak düşürülemedi!", res.why);
-      if (showAlerts) alert("Hak düşürülemedi:\n" + res.why + "\n\nFirestore rules/izin sorunu olabilir.");
-      return; // ✅ hak düşmeden kilitleme YOK
-    }
-
-    // ✅ hak düştü → kilitle (local + remote)
-    setLockedLocal();
-    await setLockedRemote(user.uid);
-
-    setStatus("✅ Hak düşürüldü ve kilitlendi.", res.why);
-    if (showAlerts) alert("✅ Hak düşürüldü. Rapor kilitlendi.\n" + res.why);
   }
 
-  // ---------- BOOT (auth hazır olmadan hiçbir şey yapma) ----------
   async function boot(){
-    setStatus("⏳ Giriş kontrol ediliyor…", "Auth bekleniyor (mobilde şart).");
+    setStatus("⏳ Giriş kontrol ediliyor…", "Auth bekleniyor.");
 
-    // firebase-config.js içinde varsa onu kullan
     const user = (typeof window.waitForAuth === "function")
       ? await window.waitForAuth()
-      : await new Promise((resolve)=> auth.onAuthStateChanged(u=> u && resolve(u)));
+      : await new Promise((resolve)=> auth.onAuthStateChanged(u=> resolve(u)));
 
     if (!user){
       setStatus("❌ Giriş yok.", "Lütfen giriş yap.");
@@ -455,7 +469,6 @@ Devam etmek istiyor musunuz?`;
       return;
     }
 
-    // raporu yükle
     setStatus("⏳ Rapor yükleniyor…", "Önce cihaz (local), yoksa Firestore.");
     let rep = loadReportLocal();
     let source = "localStorage";
@@ -473,7 +486,6 @@ Devam etmek istiyor musunuz?`;
 
     render(rep);
 
-    // lock kontrol (local + remote)
     const locked = isLockedLocal() || await isLockedRemote(user.uid);
     if (locked){
       setLockedLocal();
@@ -482,17 +494,14 @@ Devam etmek istiyor musunuz?`;
       setStatus("✅ Hazır.", `Kaynak: ${source}. Final yapmak için butonu kullan.`);
     }
 
-    // butonu aktif et + event bağla (click + touchstart)
     const btn = $("btnFinalCreate");
     btn.disabled = false;
 
-    const handler = () => finalizeFlow(user, true);
-    btn.addEventListener("click", handler, { passive:true });
-    btn.addEventListener("touchstart", handler, { passive:true });
+    // ✅ tek handler, re-entry engelli
+    btn.addEventListener("click", (e)=>{ e.preventDefault(); finalizeFlow(user, true); });
+    btn.addEventListener("touchstart", (e)=>{ e.preventDefault(); finalizeFlow(user, true); }, { passive:false });
 
-    // confirm=1 ile geldiyse otomatik dene
     if (confirmParam){
-      // mobilde auth zaten hazır ama yine de UI akışı için çok kısa gecikme
       setTimeout(()=> finalizeFlow(user, false), 150);
     }
   }
