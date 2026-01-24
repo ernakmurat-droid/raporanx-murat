@@ -337,7 +337,31 @@
       return localStorage.getItem("gayrimenkul_reports_lastUpdate") || "";
     }
 
-    /* ========= RID bazlı MERGE (en kritik düzeltme) ========= */
+    /* ========= ✅ DELETED (tombstone) ========= */
+    function getDeletedRids(){
+      try{
+        return safeArray(JSON.parse(localStorage.getItem("deleted_rids") || "[]"));
+      }catch(e){
+        return [];
+      }
+    }
+    function setDeletedRids(arr){
+      localStorage.setItem("deleted_rids", JSON.stringify(safeArray(arr)));
+    }
+    function addDeletedRid(rid){
+      const s = new Set(getDeletedRids());
+      s.add(String(rid));
+      setDeletedRids(Array.from(s));
+    }
+    function filterDeleted(arr, deletedArr){
+      const del = new Set(safeArray(deletedArr).map(x=>String(x)));
+      return safeArray(arr).filter(r=>{
+        const rid = String(r?.rid||"");
+        return rid && !del.has(rid);
+      });
+    }
+
+    /* ========= RID bazlı MERGE ========= */
     function parseTime(s){
       if (!s) return 0;
       const t = Date.parse(s);
@@ -345,7 +369,6 @@
     }
 
     function reportUpdatedAt(r){
-      // yeni_kayit.html zaten updatedAt yazıyor, yoksa createdAt kullanırız
       return parseTime(r?.updatedAt) || parseTime(r?.createdAt) || 0;
     }
 
@@ -367,13 +390,11 @@
       return s;
     }
 
-    // RID'ye göre birleşir, daha yeni/komple olan kazanır
     function mergeByRid(localArr, cloudArr){
       const L = safeArray(localArr);
       const C = safeArray(cloudArr);
       const map = new Map();
 
-      // önce cloud koy
       for (const r of C){
         if (!r) continue;
         const rid = String(r.rid || "").trim();
@@ -381,7 +402,6 @@
         map.set(rid, r);
       }
 
-      // sonra local ile kıyasla
       for (const lr of L){
         if (!lr) continue;
         const rid = String(lr.rid || "").trim();
@@ -397,28 +417,26 @@
         const ct = reportUpdatedAt(cr);
 
         if (lt > ct){
-          map.set(rid, { ...cr, ...lr }); // local daha yeni → local baskın
+          map.set(rid, { ...cr, ...lr });
         } else if (ct > lt){
-          map.set(rid, { ...lr, ...cr }); // cloud daha yeni → cloud baskın
+          map.set(rid, { ...lr, ...cr });
         } else {
-          // aynı zaman → daha dolu olan
           const ls = completenessScore(lr);
           const cs = completenessScore(cr);
           map.set(rid, (ls >= cs) ? ({...cr, ...lr}) : ({...lr, ...cr}));
         }
       }
 
-      // stabil sıralama: createdAt/updatedAt desc
       const out = Array.from(map.values());
       out.sort((a,b)=> (reportUpdatedAt(b) - reportUpdatedAt(a)));
       return out;
     }
 
-    /* ========= Cloud write (silme geri gelmesin diye) ========= */
-    async function writeCloudReports(user, arr){
-      // gayrimenkul_reports alanı net olarak overwrite olur (merge:true olsa bile field overwrite)
+    /* ========= Cloud write ========= */
+    async function writeCloudState(user, reportsArr, deletedRidsArr){
       await db.collection("users").doc(user.uid).set({
-        gayrimenkul_reports: safeArray(arr),
+        gayrimenkul_reports: safeArray(reportsArr),
+        deletedRids: safeArray(deletedRidsArr),
         lastUpdate: new Date().toISOString()
       }, { merge: true });
     }
@@ -523,30 +541,29 @@
     async function deleteReportByRid(rid){
       if (!confirm("Silmek istediğine emin misin?")) return;
 
-      const idx = (reports || []).findIndex(r => r && r.rid === rid);
-      if (idx < 0){
-        alert("Rapor bulunamadı!");
-        return;
-      }
+      // ✅ Tombstone ekle (geri dirilmesin)
+      addDeletedRid(rid);
 
-      // 1) RAM
-      reports.splice(idx, 1);
-
-      // 2) LOCAL (hemen)
+      // ✅ Local array'den sil
+      reports = safeArray(reports).filter(r => String(r?.rid) !== String(rid));
       setLocalReports(reports);
 
-      // 3) CLOUD (hemen)
+      // (İstersen bu tarz yedekleri de sil)
+      localStorage.removeItem("rapor_" + rid);
+      localStorage.removeItem("report_locked_" + rid);
+
+      loadReports();
+
+      // ✅ Cloud'a da yaz
       const user = auth.currentUser;
       if (user){
         try{
-          await writeCloudReports(user, reports);
+          await writeCloudState(user, reports, getDeletedRids());
         }catch(e){
           console.warn("Cloud silme yazma hatası:", e);
           alert("⚠️ Silindi ama buluta yazılamadı. İnternet/izin kontrol et.");
         }
       }
-
-      loadReports();
     }
 
     /* ========= BOOT + SNAPSHOT ========= */
@@ -565,69 +582,78 @@
       // önce local göster
       let localReports = getLocalReports();
       if (ensureRidMigration(localReports)) setLocalReports(localReports);
+
+      // ✅ local deleted
+      let deletedLocal = getDeletedRids();
+
+      // ✅ deleted filtre
+      localReports = filterDeleted(localReports, deletedLocal);
+
       reports = localReports;
       loadReports();
 
-      // sonra cloud izle
+      // cloud izle
       db.collection("users").doc(user.uid).onSnapshot(async (doc)=>{
         let cloudReports = [];
+        let cloudDeleted = [];
         let cloudLastUpdate = "";
 
         if (doc.exists){
           const d = doc.data() || {};
           cloudReports = safeArray(d.gayrimenkul_reports);
+          cloudDeleted = safeArray(d.deletedRids);
           cloudLastUpdate = (d.lastUpdate || "");
         }
 
-        // RID garantisi
         ensureRidMigration(cloudReports);
 
-        // local tekrar oku (snapshot arası local değişmiş olabilir)
+        // local tekrar oku
         localReports = getLocalReports();
         ensureRidMigration(localReports);
 
-        const localLU = getLocalLastUpdate();
-        const cloudLU = cloudLastUpdate;
+        // ✅ deleted birleşimi (local + cloud)
+        const delSet = new Set([...getDeletedRids().map(String), ...cloudDeleted.map(String)]);
+        const mergedDeleted = Array.from(delSet);
+        setDeletedRids(mergedDeleted);
 
-        // ✅ Karar:
-        // - Cloud boşsa ve local doluysa: local'i buluta bas (ilk kurulum / veri kaybını önle)
-        // - Cloud doluysa: RID bazlı merge yap (ama SON güncelleme daha yeni olan baskın)
+        // ✅ deleted filtre uygula (her iki tarafa da)
+        localReports = filterDeleted(localReports, mergedDeleted);
+        cloudReports = filterDeleted(cloudReports, mergedDeleted);
+
+        // cloud boşsa local doluysa → local'i buluta bas
         if ((cloudReports.length === 0) && (localReports.length > 0)){
           reports = localReports;
           setLocalReports(reports);
           loadReports();
 
           try{
-            await writeCloudReports(user, reports);
+            await writeCloudState(user, reports, mergedDeleted);
           }catch(e){
             console.warn("Cloud ilk yazım hatası:", e);
           }
           return;
         }
 
-        // cloud doluysa: RID merge
+        // normal merge
         const merged = mergeByRid(localReports, cloudReports);
 
-        // 🔥 Silinenlerin geri gelmesini engelleyen kural:
-        // Eğer cloud güncellemesi local'den daha yeniyse, cloud baskın kabul edilir.
-        // (Local eskiyse, cloud’daki listeye geri dönmek doğal. Ama cloud’da silinmişse geri dirilmez.)
-        const localT = parseTime(localLU);
-        const cloudT = parseTime(cloudLU);
-
-        if (cloudT > localT){
-          reports = mergeByRid([], cloudReports); // cloud’ı temel al
-        } else {
-          reports = merged; // local daha yeni olabilir → merged
-        }
-
-        // yaz-local (cache)
+        reports = merged;
         setLocalReports(reports);
         loadReports();
 
+        // ✅ cloudDeleted localde yoksa, cloud’a da geri yaz (senkron)
+        // Bu write, snapshot döngüsü yaratmasın diye sadece gerektiğinde:
+        if (mergedDeleted.length && doc.exists){
+          const d = doc.data() || {};
+          const old = safeArray(d.deletedRids);
+          if (old.length !== mergedDeleted.length){
+            try{ await writeCloudState(user, reports, mergedDeleted); }catch(e){}
+          }
+        }
+
       }, (error)=>{
         console.error("Bulut hatası:", error);
-        // cloud yoksa local ile devam
-        reports = getLocalReports();
+        reports = filterDeleted(getLocalReports(), getDeletedRids());
         ensureRidMigration(reports);
         setLocalReports(reports);
         loadReports();
