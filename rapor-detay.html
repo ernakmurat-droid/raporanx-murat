@@ -279,12 +279,48 @@
     }catch(e){}
   }
 
-  async function isLockedRemote(uid){
-    try{
-      const lockId = `${uid}_${rid}`;
-      const d = await db.collection("locks").doc(lockId).get();
-      if (d.exists) return true;
-    }catch(e){}
+ async function isLockedRemote(uid){
+  // 1) locks/{uid}_{rid}
+  try{
+    const lockId = `${uid}_${rid}`;
+    const snap = await db.collection("locks").doc(lockId).get();
+    if (snap.exists){
+      const data = snap.data() || {};
+      if (data.locked === true && String(data.uid) === String(uid) && String(data.rid) === String(rid)) return true;
+    }
+  }catch(e){}
+
+  // 2) users/{uid}/locks/{rid}
+  try{
+    const snap = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
+    if (snap.exists){
+      const data = snap.data() || {};
+      if (data.locked === true && (String(data.uid||uid) === String(uid)) && String(data.rid||rid) === String(rid)) return true;
+    }
+  }catch(e){}
+
+  // 3) users/{uid}/reports/{rid}
+  try{
+    const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
+    if (snap.exists){
+      const data = snap.data() || {};
+      if ((data.locked === true || data.isLocked === true) && String(data.rid||rid) === String(rid)) return true;
+    }
+  }catch(e){}
+
+  // 4) reports/{rid}
+  try{
+    const snap = await db.collection("reports").doc(rid).get();
+    if (snap.exists){
+      const data = snap.data() || {};
+      // ⚠️ burada uid eşleşmesi çok önemli (başka kullanıcının raporunu kilit sanma)
+      if ((data.locked === true || data.isLocked === true) && String(data.uid||"") === String(uid) && String(data.rid||rid) === String(rid)) return true;
+    }
+  }catch(e){}
+
+  return false;
+}
+
 
     try{
       const d = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
@@ -413,3 +449,4 @@ Devam etmek istiyor musunuz?`;
 </script>
 </body>
 </html>
+
