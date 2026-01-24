@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Rapor Detay</title>
 
-<!-- Firebase (varsa zaten kullanıyorsun) -->
+<!-- Firebase (sende zaten var) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -24,18 +24,20 @@
 html,body{
   margin:0;
   padding:0;
-  height:100%;
+  min-height:100%;
   background:var(--bg);
   font-family:'Segoe UI',Tahoma,sans-serif;
   overflow-x:hidden;
 }
 
-/* ================= HEADER ================= */
+/* ================= HEADER (MOBİL GARANTİ) ================= */
+body{
+  padding-top:calc(var(--headerH) + env(safe-area-inset-top,0px));
+}
+
 .header{
   position:fixed;
-  top:0;
-  left:0;
-  right:0;
+  top:0; left:0; right:0;
   z-index:999999;
 
   height:calc(var(--headerH) + env(safe-area-inset-top,0px));
@@ -55,7 +57,6 @@ html,body{
   font-weight:600;
 }
 
-/* geri butonu */
 .back-btn{
   background:rgba(255,255,255,0.25);
   border:none;
@@ -68,15 +69,15 @@ html,body{
 }
 
 /* ================= CONTENT ================= */
-body{
-  padding-top:calc(var(--headerH) + env(safe-area-inset-top,0px));
+.container{ padding:16px; }
+
+/* Kartlar: link gibi çalışsın */
+.card-link{
+  display:block;
+  text-decoration:none;
+  color:inherit;
 }
 
-.container{
-  padding:16px;
-}
-
-/* kartlar */
 .card{
   background:#6a1b9a;
   color:#fff;
@@ -87,45 +88,84 @@ body{
   font-size:22px;
   font-weight:700;
   box-shadow:0 10px 25px rgba(0,0,0,0.25);
+  transition: transform .08s ease, filter .08s ease;
+  user-select:none;
 }
 
-.card.alt{
-  background:#7b1fa2;
+.card.alt{ background:#7b1fa2; }
+
+.card:active{
+  transform: scale(0.99);
+  filter: brightness(0.95);
 }
 
-/* mobil ekstra güvenlik */
+/* küçük ok */
+.card .go{
+  display:block;
+  margin-top:10px;
+  font-size:14px;
+  font-weight:600;
+  opacity:0.9;
+}
+
+/* mobil */
 @media(max-width:600px){
-  .card{
-    font-size:20px;
-    padding:24px 16px;
-  }
+  .card{ font-size:20px; padding:24px 16px; }
 }
 </style>
 </head>
 
 <body>
 
-<!-- ================= HEADER ================= -->
 <div class="header">
   <button class="back-btn" onclick="history.back()">← Geri</button>
   <h1>Rapor Detay</h1>
   <div style="width:40px"></div>
 </div>
 
-<!-- ================= CONTENT ================= -->
 <div class="container">
 
-  <div class="card">
-    KONUM VE<br>ÇEVRE ÖZELLİKLERİ
-  </div>
+  <!-- ✅ 1) Konum & Çevre (dosya adını sende neyse ona göre değiştir) -->
+  <a class="card-link" href="konum-cevre.html">
+    <div class="card">
+      KONUM VE<br>ÇEVRE ÖZELLİKLERİ
+      <span class="go">Aç →</span>
+    </div>
+  </a>
 
-  <div class="card alt">
-    TAPU KAYIT<br>BİLGİLERİ
-  </div>
+  <!-- ✅ 2) Tapu Kayıt (dosya adını sende neyse ona göre değiştir) -->
+  <a class="card-link" href="tapu-kayit.html">
+    <div class="card alt">
+      TAPU KAYIT<br>BİLGİLERİ
+      <span class="go">Aç →</span>
+    </div>
+  </a>
 
-  <!-- Buraya diğer rapor bölümleri aynen eklenir -->
+  <!-- Buraya diğer rapor bölümlerini aynı formatta ekleyebilirsin:
+  <a class="card-link" href="belgeler.html"><div class="card">İNCELENEN BELGELER<span class="go">Aç →</span></div></a>
+  -->
 
 </div>
+
+<script>
+/* Eğer sen projede rid/id taşıyorsan ve diğer sayfalara taşımak istiyorsan:
+   URL'de ?rid=... varsa linklere otomatik ekleyelim. */
+(function(){
+  const params = new URLSearchParams(location.search);
+  const rid = params.get('rid');
+  const id  = params.get('id');
+  if(!rid && !id) return;
+
+  document.querySelectorAll('a.card-link').forEach(a=>{
+    try{
+      const u = new URL(a.getAttribute('href'), location.href);
+      if(rid) u.searchParams.set('rid', rid);
+      if(id)  u.searchParams.set('id', id);
+      a.setAttribute('href', u.pathname + '?' + u.searchParams.toString());
+    }catch(e){}
+  });
+})();
+</script>
 
 </body>
 </html>
