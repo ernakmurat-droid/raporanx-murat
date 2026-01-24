@@ -22,21 +22,31 @@
     .input-item { display: flex; flex-direction: column; }
     .input-item label { font-weight: 600; font-size: 13px; color: #444; margin-bottom: 5px; }
     input, textarea { padding:12px; border:1px solid #ccc; border-radius:10px; font-size:15px; background: #fff; transition: 0.3s; width: 100%; box-sizing: border-box; }
-    input:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(26,35,126,0.1); outline: none; }
+    input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(26,35,126,0.1); outline: none; }
     .radio-group { display: flex; gap: 20px; padding: 10px 0; }
     .radio-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
     .full-width { grid-column: span 2; }
     .btn-save { background: var(--success); color: white; padding: 20px; border: none; border-radius: 15px; width: 100%; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 30px; box-shadow: 0 4px 15px rgba(0,200,83,0.3); }
     .btn-back { background: #6c757d; color: white; padding: 20px; border: none; border-radius: 15px; width: 100%; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 10px; }
-    
     .preview-box {
         background: #222; color: #00ff6a; padding: 20px; border-radius: 15px;
         font-family: 'Courier New', monospace; white-space: pre-wrap; font-size: 13px;
         margin-top: 20px; border: 2px solid #555;
     }
     .disabled-input { background: #eee; cursor: not-allowed; opacity: 0.7; }
+    .locked-note{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:#fff3cd;
+      border:1px solid #ffe69c;
+      color:#7a5b00;
+      font-weight:800;
+      display:none;
+    }
 </style>
 </head>
+
 <body oncontextmenu="return false;">
 
 <div class="header">
@@ -47,6 +57,8 @@
 
 <div class="main-wrapper">
     <div class="form-container">
+        <div id="lockedNote" class="locked-note">🔒 RAPOR KİLİTLİ — Bu modül düzenlenemez.</div>
+
         <form id="mainForm" onsubmit="return false;">
             <div class="grid-form">
                 <div class="section-title">📊 TABLO VERİLERİ (1-16)</div>
@@ -74,8 +86,8 @@
                 <div class="input-item">
                     <label>Altyapı Durumu</label>
                     <div class="radio-group">
-                        <label class="radio-item"><input type="radio" name="altyapi" value="Evet" checked onclick="toggleAltyapi(true)"> Evet</label>
-                        <label class="radio-item"><input type="radio" name="altyapi" value="Hayır" onclick="toggleAltyapi(false)"> Hayır</label>
+                        <label class="radio-item"><input type="radio" name="altyapi" value="Evet" checked> Evet</label>
+                        <label class="radio-item"><input type="radio" name="altyapi" value="Hayır"> Hayır</label>
                     </div>
                 </div>
                 <div class="input-item">
@@ -94,126 +106,230 @@
 </div>
 
 <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const params = new URLSearchParams(location.search);
-    let rid = (params.get("rid") || "").toString().trim();
+  // ✅ firebase-config.js varsa onu kullan, yoksa default
+  const auth = window.auth || firebase.auth();
+  const db   = window.db   || firebase.firestore();
 
-    // 1. Raporu RID ile Bulma
-    function getReportIndex() {
-        let reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
-        return reports.findIndex(r => r && String(r.rid) === String(rid));
+  // ---------- RID / legacy id migration ----------
+  function genRid(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
+  function ensureRidMigration(arr){
+    let changed=false;
+    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
+    return changed;
+  }
+
+  const params = new URLSearchParams(location.search);
+  let rid = (params.get("rid") || "").toString().trim();
+  const legacyId = (params.get("id") || "").toString().trim();
+
+  function readReports(){
+    try{ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
+    catch(e){ return []; }
+  }
+
+  // rid yoksa id'den rid'ye çevir
+  (function migrateOrRedirect(){
+    let reports = readReports();
+    if (ensureRidMigration(reports)) localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
+
+    if (!rid && legacyId){
+      const idx = Number(legacyId);
+      if (!Number.isNaN(idx) && reports[idx] && reports[idx].rid){
+        rid = String(reports[idx].rid);
+        location.replace("konum_cevre.html?rid=" + encodeURIComponent(rid));
+      }
     }
+  })();
 
-    // 2. Verileri Sayfaya Yükle (RID Filtreli)
-    function verileriYukle() {
-        let reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
-        const idx = getReportIndex();
-        
-        if (idx < 0) {
-            alert("Rapor ID bulunamadı!");
-            location.href = "index.html";
-            return;
-        }
+  function findIndexByRid(arr, rid){
+    return (arr||[]).findIndex(r => r && String(r.rid) === String(rid));
+  }
 
-        const report = reports[idx];
-        const data = report.konumCevre || {};
-        
-        document.getElementById("raporBilgi").textContent = `Emlak: ${report.propertyName || "Tanımsız"} | RID: ${rid}`;
+  function getReportByRid(){
+    const reports = readReports();
+    const idx = findIndexByRid(reports, rid);
+    return { reports, idx, report: (idx >= 0 ? reports[idx] : null) };
+  }
 
-        // Alanları doldur
-        for (let i = 1; i <= 16; i++) {
-            if (data["v" + i]) document.getElementById("v" + i).value = data["v" + i];
-        }
-        if (data.ulasimTarifi) document.getElementById("ulasimTarifi").value = data.ulasimTarifi;
-        if (data.ulasimOlanaklari) document.getElementById("ulasimOlanaklari").value = data.ulasimOlanaklari;
-        if (data.altyapiAciklama) document.getElementById("altyapiAciklama").value = data.altyapiAciklama;
-        
-        if (data.altyapi === "Hayır") {
-            document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
-            toggleAltyapi(false);
-        }
+  // ---------- Helpers (asıl fix burada) ----------
+  function has(obj, key){
+    return obj && Object.prototype.hasOwnProperty.call(obj, key);
+  }
 
-        updatePreview();
+  // konumCevre içinde farklı eski yapıları da dene
+  function getKC(report){
+    if (!report) return {};
+    const kc = report.konumCevre || report.konum_cevre || report.konum || {};
+    return kc;
+  }
+
+  function getValDeep(obj, path){
+    try{
+      return path.split(".").reduce((a,k)=> (a && a[k] !== undefined ? a[k] : undefined), obj);
+    }catch(e){ return undefined; }
+  }
+
+  // v4 vb. alanları farklı yerdeyse yakala
+  function readField(kc, key){
+    if (has(kc, key)) return kc[key];
+
+    // eski olası yerler
+    const candidates = [
+      "veriler."+key,
+      "table."+key,
+      "tablo."+key,
+      "fields."+key
+    ];
+    for (const p of candidates){
+      const v = getValDeep(kc, p);
+      if (v !== undefined) return v;
     }
+    return undefined;
+  }
 
-    // 3. Verileri Kaydet (Sadece bu RID'ye ait alana)
-    function verileriKaydet() {
-        let reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
-        const idx = getReportIndex();
+  function setInput(id, value){
+    const el = document.getElementById(id);
+    if (!el) return;
+    // undefined/null değilse yaz (boş string dahil!)
+    if (value !== undefined && value !== null) el.value = String(value);
+  }
 
-        if (idx < 0) return;
+  function updatePreview(){
+    const v = (id) => (document.getElementById(id)?.value ?? "").trim() || "...";
+    let txt = `KONUM: ${v('v4')}/${v('v5')}/${v('v6')}\n`;
+    txt += `ADRES: ${v('v7')} No:${v('v8')}\n`;
+    txt += `ULAŞIM: ${v('ulasimTarifi')}`;
+    document.getElementById("livePreview").textContent = txt;
+  }
 
-        const konumObj = {
-            ulasimTarifi: document.getElementById("ulasimTarifi").value,
-            ulasimOlanaklari: document.getElementById("ulasimOlanaklari").value,
-            altyapi: document.querySelector('input[name="altyapi"]:checked').value,
-            altyapiAciklama: document.getElementById("altyapiAciklama").value,
-            updatedAt: Date.now()
-        };
-
-        for (let i = 1; i <= 16; i++) {
-            konumObj["v" + i] = document.getElementById("v" + i).value;
-        }
-
-        reports[idx].konumCevre = konumObj;
-        localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
-
-        alert("Başarıyla kaydedildi!");
-        updatePreview();
+  function toggleAltyapi(isEvet){
+    const inp = document.getElementById("altyapiAciklama");
+    if (!inp) return;
+    if (isEvet) {
+      inp.disabled = true;
+      inp.classList.add("disabled-input");
+      inp.value = "Altyapısı tamdır.";
+    } else {
+      inp.disabled = false;
+      inp.classList.remove("disabled-input");
+      if (inp.value === "Altyapısı tamdır.") inp.value = "";
     }
+    updatePreview();
+  }
 
-    // 4. Kilit Kontrolü (Girişi ve Kaydı Engelle)
-    async function checkLockStatus(uid) {
-        // Local kilit kontrolü
-        let reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
-        const r = reports.find(item => item.rid === rid);
-        let locked = r && (r.isLocked || r.locked || r.final);
-
-        if (locked) {
-            document.getElementById("saveBtn").disabled = true;
-            document.getElementById("saveBtn").textContent = "RAPOR KİLİTLİ (DÜZENLENEMEZ)";
-            document.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
-        }
-    }
-
-    function toggleAltyapi(isEvet) {
-        const inp = document.getElementById("altyapiAciklama");
-        if (isEvet) {
-            inp.disabled = true;
-            inp.classList.add("disabled-input");
-            inp.value = "Altyapısı tamdır.";
-        } else {
-            inp.disabled = false;
-            inp.classList.remove("disabled-input");
-            if (inp.value === "Altyapısı tamdır.") inp.value = "";
-        }
-        updatePreview();
-    }
-
-    function updatePreview() {
-        const v = (id) => document.getElementById(id).value || "...";
-        let txt = `KONUM: ${v('v4')}/${v('v5')}/${v('v6')}\n`;
-        txt += `ADRES: ${v('v7')} No:${v('v8')}\n`;
-        txt += `ULAŞIM: ${v('ulasimTarifi')}`;
-        document.getElementById("livePreview").textContent = txt;
-    }
-
-    function anaMenuyeDon() {
-        location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
-    }
-
-    // Başlat
-    auth.onAuthStateChanged((user) => {
-        if (!user) { location.href = "index.html"; return; }
-        verileriYukle();
-        checkLockStatus(user.uid);
+  // radio change
+  document.addEventListener("DOMContentLoaded", ()=>{
+    document.querySelectorAll('input[name="altyapi"]').forEach(r=>{
+      r.addEventListener("change", ()=>{
+        const v = document.querySelector('input[name="altyapi"]:checked')?.value || "Evet";
+        toggleAltyapi(v !== "Hayır");
+      });
     });
+  });
 
-    // Dinleyiciler
-    document.querySelectorAll('input, textarea').forEach(el => {
-        el.addEventListener('input', updatePreview);
-    });
+  // ---------- Load ----------
+  function verileriYukle(){
+    const { idx, report } = getReportByRid();
+    if (!rid || idx < 0 || !report){
+      alert("Rapor ID (rid) bulunamadı!");
+      location.href = "index.html";
+      return;
+    }
+
+    const kc = getKC(report);
+
+    document.getElementById("raporBilgi").textContent =
+      `Emlak: ${report.propertyName || "Tanımsız"} | RID: ${rid}`;
+
+    // ✅ 1-16 alanları: anahtar varsa doldur (boş olsa bile)
+    for (let i = 1; i <= 16; i++) {
+      const key = "v" + i;
+      const val = readField(kc, key);
+      setInput(key, val);
+    }
+
+    // metin alanları
+    setInput("ulasimTarifi",      (has(kc,"ulasimTarifi") ? kc.ulasimTarifi : getValDeep(kc,"metin.ulasimTarifi")));
+    setInput("ulasimOlanaklari",  (has(kc,"ulasimOlanaklari") ? kc.ulasimOlanaklari : getValDeep(kc,"metin.ulasimOlanaklari")));
+    setInput("altyapiAciklama",   (has(kc,"altyapiAciklama") ? kc.altyapiAciklama : getValDeep(kc,"metin.altyapiAciklama")));
+
+    // altyapi radio
+    const alty = (has(kc,"altyapi") ? kc.altyapi : (getValDeep(kc,"metin.altyapi") || "Evet"));
+    if (String(alty).toLowerCase() === "hayır" || String(alty).toLowerCase() === "hayir"){
+      document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
+      toggleAltyapi(false);
+    } else {
+      document.querySelector('input[name="altyapi"][value="Evet"]').checked = true;
+      toggleAltyapi(true);
+    }
+
+    updatePreview();
+  }
+
+  // ---------- Save ----------
+  function verileriKaydet(){
+    const { reports, idx } = getReportByRid();
+    if (idx < 0) return;
+
+    const konumObj = {
+      updatedAt: Date.now(),
+      ulasimTarifi: document.getElementById("ulasimTarifi").value,
+      ulasimOlanaklari: document.getElementById("ulasimOlanaklari").value,
+      altyapi: document.querySelector('input[name="altyapi"]:checked').value,
+      altyapiAciklama: document.getElementById("altyapiAciklama").value
+    };
+
+    for (let i = 1; i <= 16; i++) {
+      konumObj["v" + i] = document.getElementById("v" + i).value;
+    }
+
+    reports[idx].konumCevre = konumObj;
+    localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
+
+    alert("Başarıyla kaydedildi!");
+    updatePreview();
+  }
+
+  // ---------- Lock control (local) ----------
+  function checkLockStatus(){
+    const { report } = getReportByRid();
+    const locked = report && (report.isLocked === true || report.locked === true || report.final === true);
+
+    if (locked){
+      document.getElementById("lockedNote").style.display = "block";
+      const saveBtn = document.getElementById("saveBtn");
+      saveBtn.disabled = true;
+      saveBtn.textContent = "RAPOR KİLİTLİ (DÜZENLENEMEZ)";
+      document.querySelectorAll("input, textarea, button.btn-save").forEach(el => {
+        if (el.id !== "saveBtn") el.disabled = true;
+      });
+      // Menüye dön butonu kalsın
+      document.querySelectorAll(".btn-back").forEach(b => b.disabled = false);
+    }
+  }
+
+  function anaMenuyeDon(){
+    if (!rid) location.href = "index.html";
+    else location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
+  }
+  window.anaMenuyeDon = anaMenuyeDon;
+  window.verileriKaydet = verileriKaydet;
+
+  // ---------- Boot ----------
+  auth.onAuthStateChanged((user) => {
+    if (!user) { location.href = "index.html"; return; }
+    verileriYukle();
+    checkLockStatus();
+  });
+
+  // preview listeners
+  document.querySelectorAll('input, textarea').forEach(el => {
+    el.addEventListener('input', updatePreview);
+  });
 </script>
+
 </body>
 </html>
