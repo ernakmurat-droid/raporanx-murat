@@ -14,7 +14,8 @@
 
   <style>
     :root{ --hdrH: 78px; }
-    body{
+
+    body {
       font-family: Arial;
       background: linear-gradient(135deg,#4a148c,#7c4dff);
       margin:0;
@@ -24,17 +25,19 @@
       flex-direction:column;
       overflow-x:hidden;
     }
-    .header{
+
+    .header {
       padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;
       text-align:center;
       font-size:28px;
       font-weight:bold;
       position: sticky;
       top: 0;
-      z-index: 999;
+      z-index: 999999;
       background: linear-gradient(135deg,#4a148c,#7c4dff);
     }
-    .back{
+
+    .back {
       position:absolute;
       left:15px;
       top: calc(20px + env(safe-area-inset-top, 0px));
@@ -44,47 +47,72 @@
       text-decoration:none;
       color:white;
       font-weight:bold;
+      z-index: 1000000;
     }
+
     #kilitMesaji{
       display:none;
       max-width:1100px;
       margin:10px auto 0;
       width: calc(100% - 40px);
-      background: rgba(0,0,0,0.3);
-      border: 2px solid #ff5252;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.22);
       border-radius: 14px;
-      padding:12px;
+      padding:10px 14px;
       font-size: 14px;
       font-weight: 900;
-      text-align: center;
-      color: #ff5252;
+      letter-spacing: .2px;
     }
+
     .topbar{
       max-width:1100px;
       width: calc(100% - 40px);
-      margin: 10px auto;
+      margin: 0 auto 10px;
       display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
       padding: 0 20px;
     }
+
     .wallet-card{
-      flex: 1;
+      flex: 1 1 420px;
       background: rgba(255,255,255,0.14);
       border: 1px solid rgba(255,255,255,0.22);
       border-radius: 16px;
       padding: 12px 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       cursor: pointer;
+      user-select:none;
     }
-    .wallet-amount{ font-size:20px; font-weight:900; filter: blur(6px); }
-    .reveal .wallet-amount{ filter: blur(0); }
-    .menu{
+    .wallet-title{ font-weight:900; letter-spacing:.4px; display:flex; align-items:center; gap:10px; }
+    .wallet-sub{ font-size:12px; opacity:.9; margin-top:6px; line-height:1.35; }
+    .wallet-amount{
+      font-size:20px;
+      font-weight:900;
+      margin-left:auto;
+      padding:6px 10px;
+      border-radius:12px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .wallet-hidden{ filter: blur(6px); transition: filter .2s ease; }
+    .wallet-card.reveal .wallet-hidden{ filter: blur(0); }
+
+    .menu {
       flex:1;
       display:flex;
       flex-wrap:wrap;
       gap:20px;
       padding:30px;
       justify-content:center;
+      align-content:flex-start;
     }
-    .btn{
+
+    .btn {
       flex:1 1 350px;
       background:#6a1b9a;
       padding:35px;
@@ -94,11 +122,16 @@
       border-radius:20px;
       color:white;
       cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,0.4);
       transition: 0.3s;
+      position:relative;
     }
-    .btn:hover{ background:#8e24aa; transform:scale(1.02); }
-    .btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none !important; }
-    .footer-btn{
+    .btn:hover { background:#8e24aa; transform:scale(1.05); }
+    .btn-main-feature { background: #4527a0; border: 2px solid #b39ddb; }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+    .btn:hover:disabled{ background:#6a1b9a; transform:none; }
+
+    .footer-btn {
       background:#ff5722;
       padding:25px;
       font-size:28px;
@@ -110,28 +143,75 @@
       color:white;
       font-weight:bold;
       cursor: pointer;
+      text-align: center;
     }
     .footer-btn.locked{ background:#2196F3; }
+
+    @media (max-width: 600px){
+      .header{
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        font-size:22px;
+      }
+      body{
+        padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px));
+      }
+      .menu{ padding: 20px; }
+      .btn{ flex:1 1 100%; padding: 26px; font-size: 20px; }
+      .footer-btn{ font-size: 24px; padding: 20px; }
+    }
   </style>
 </head>
 
 <body oncontextmenu="return false;">
+
+<!-- ✅ Fallback: script çökse bile modüller çalışsın -->
+<script>
+(function(){
+  const p = new URLSearchParams(location.search);
+  const rid0 = (p.get("rid") || "").toString().trim();
+  window.__RID__ = rid0;
+
+  window.go = function(page){
+    const rid = (window.__RID__ || "").toString().trim();
+    if (!rid) { location.href = "index.html"; return; }
+    location.href = page + "?rid=" + encodeURIComponent(rid);
+  };
+
+  window.raporOlusturUyari = function(){
+    const rid = (window.__RID__ || "").toString().trim();
+    if (!rid) { location.href="index.html"; return; }
+    const msg =
+`UYARI! (ÖNEMLİ)
+Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.
+Devam etmek istiyor musunuz?`;
+    if (!confirm(msg)) return;
+    location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
+  };
+})();
+</script>
+
   <div class="header">
     <a href="index.html" class="back">Ana Sayfa</a>
-    <div id="baslik">Yükleniyor...</div>
+    <div id="baslik">Gayrimenkul Raporu</div>
   </div>
 
-  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüller sadece görüntüleme modundadır.</div>
+  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüller görüntüleme modunda.</div>
 
   <div class="topbar">
-    <div id="walletCard" class="wallet-card">
-      <div class="wallet-title">💳 Cüzdan: <span id="walletAmount" class="wallet-amount">...</span></div>
-      <div id="walletSub" style="font-size:12px; margin-top:5px;">Bakiye gizli. Görmek için tıkla.</div>
+    <div id="walletCard" class="wallet-card" title="Bakiye detayını görmek için tıkla">
+      <div class="wallet-title">
+        💳 Cüzdan
+        <span id="walletAmount" class="wallet-amount wallet-hidden">yükleniyor...</span>
+      </div>
+      <div id="walletSub" class="wallet-sub">Bakiye gizlidir. Görmek için karta tıkla.</div>
     </div>
   </div>
 
   <div class="menu">
-    <button class="btn modül-btn" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
+    <button class="btn btn-main-feature modül-btn" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
     <button class="btn modül-btn" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
     <button class="btn modül-btn" onclick="go('imar.html')">İMAR DURUMU</button>
     <button class="btn modül-btn" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
@@ -145,96 +225,119 @@
 <script>
   const auth = firebase.auth();
   const db = firebase.firestore();
-  const urlParams = new URLSearchParams(window.location.search);
-  let rid = urlParams.get('rid');
-  let isLocked = false; 
 
-  // VERİ KARIŞIKLIĞINI ÖNLEYEN GİT FONKSİYONU
-  function go(page) {
-    if (!rid) {
-        alert("Hata: Rapor ID bulunamadı. Lütfen ana sayfadan tekrar girin.");
-        window.location.href = "index.html";
-        return;
-    }
-    
-    if (isLocked) {
-      alert("Bu rapor kilitlenmiştir. Modüllere giriş yapılamaz.");
-      return;
-    }
+  // RID al (fallback ile aynı)
+  const params = new URLSearchParams(location.search);
+  let rid = (params.get("rid") || "").toString().trim();
+  window.__RID__ = rid; // fallback ile senkron
 
-    // rid parametresini net bir şekilde ekleyerek sayfaya yönlendiriyoruz
-    window.location.href = page + "?rid=" + encodeURIComponent(rid);
+  // reports oku
+  function readReports(){
+    try{ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
+    catch(e){ return []; }
   }
 
-  async function syncAndCheckLock(uid) {
-    let locked = false;
-
-    // 1. LocalStorage Kontrolü
-    const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports') || "[]");
-    const r = reports.find(item => item.rid === rid);
-    if (r && (r.isLocked || r.locked || r.final)) locked = true;
-
-    // 2. Firebase Kontrolü
-    if (!locked) {
-      try {
-        const d1 = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
-        if (d1.exists && (d1.data().locked || d1.data().isLocked)) locked = true;
-        
-        if (!locked) {
-          const d2 = await db.collection("locks").doc(`${uid}_${rid}`).get();
-          if (d2.exists && d2.data().locked) locked = true;
-        }
-      } catch (e) { console.error("Lock sync error", e); }
-    }
-
-    if (locked) {
-      isLocked = true;
-      applyLockedUI();
-    }
+  function findByRid(arr, rid){
+    return (arr||[]).find(r => r && String(r.rid) === String(rid)) || null;
   }
 
-  function applyLockedUI() {
+  function isLockedFromLocalReport(r){
+    if (!r) return false;
+    return (r.isLocked === true || r.locked === true || r.final === true);
+  }
+
+  function applyLockedUI(){
     document.getElementById("kilitMesaji").style.display = "block";
-    document.querySelectorAll(".modül-btn").forEach(b => {
-      b.disabled = true;
-      b.style.opacity = "0.5";
-    });
+    document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
 
     const btn = document.getElementById("btnRaporOlustur");
     btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
     btn.classList.add("locked");
-    btn.onclick = () => {
-      window.location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
-    };
+    btn.onclick = () => location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
   }
 
-  function raporOlusturUyari() {
-    if (!rid) return;
-    if (confirm("Rapor oluşturulacak. Bakiye düşebilir ve rapor kilitlenir. Onaylıyor musunuz?")) {
-      window.location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
-    }
+  // Remote lock'ı SADECE doğru rapor için doğrula
+  async function isLockedRemoteStrict(uid){
+    try{
+      const lockId = `${uid}_${rid}`;
+      const s = await db.collection("locks").doc(lockId).get();
+      if (s.exists){
+        const d = s.data() || {};
+        if (d.locked === true && String(d.uid||uid) === String(uid) && String(d.rid||rid) === String(rid)) return true;
+      }
+    }catch(e){}
+
+    try{
+      const s = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
+      if (s.exists){
+        const d = s.data() || {};
+        if (d.locked === true && String(d.uid||uid) === String(uid) && String(d.rid||rid) === String(rid)) return true;
+      }
+    }catch(e){}
+
+    try{
+      const s = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
+      if (s.exists){
+        const d = s.data() || {};
+        if ((d.locked === true || d.isLocked === true) && String(d.rid||rid) === String(rid)) return true;
+      }
+    }catch(e){}
+
+    try{
+      const s = await db.collection("reports").doc(rid).get();
+      if (s.exists){
+        const d = s.data() || {};
+        if ((d.locked === true || d.isLocked === true) && String(d.uid||"") === String(uid) && String(d.rid||rid) === String(rid)) return true;
+      }
+    }catch(e){}
+
+    return false;
   }
 
-  auth.onAuthStateChanged(async (user) => {
-    if (!user || !rid) { window.location.href = "index.html"; return; }
-    
-    const reports = JSON.parse(localStorage.getItem('gayrimenkul_reports') || "[]");
-    const report = reports.find(r => r.rid === rid);
-    if (report) document.getElementById("baslik").textContent = report.propertyName || "Rapor Detay";
-
-    await syncAndCheckLock(user.uid);
-
-    if (window.Wallet) {
-      try {
-        const w = await Wallet.load(user.uid);
-        document.getElementById("walletAmount").textContent = (w?.balanceTL || 0) + " TL";
-      } catch(e) {}
-    }
+  // Wallet UI (seninki)
+  let walletRevealed = false;
+  function setWalletUI(textAmount, subText){
+    document.getElementById("walletAmount").textContent = textAmount;
+    document.getElementById("walletSub").textContent = subText;
+  }
+  document.getElementById("walletCard").addEventListener("click", ()=>{
+    walletRevealed = !walletRevealed;
+    document.getElementById("walletCard").classList.toggle("reveal", walletRevealed);
   });
 
-  document.getElementById("walletCard").onclick = function() {
-    this.classList.toggle("reveal");
-  };
+  async function loadWallet(user){
+    if (!window.Wallet || !user) { setWalletUI("—", "Cüzdan modülü yüklenemedi."); return; }
+    try{
+      const w = await Wallet.load(user.uid);
+      const balance = Number(w?.balanceTL ?? w?.balance ?? w?.tl ?? 0) || 0;
+      const freeLeft = Number(w?.freeLeft ?? w?.freeReportsLeft ?? w?.free ?? 0);
+      const tlText = new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(balance) + " TL";
+      const info = (freeLeft > 0) ? `Ücretsiz rapor hakkı: ${freeLeft} • Bakiye: (gizli)` : `Ücretsiz hak bitti • Bakiye: (gizli)`;
+      setWalletUI(tlText, info);
+    }catch(e){
+      setWalletUI("—", "Cüzdan okunamadı. İnternet / izin kontrol et.");
+    }
+  }
+
+  auth.onAuthStateChanged(async (user)=>{
+    if (!user || !rid) { window.location.href="index.html"; return; }
+
+    const reports = readReports();
+    const report = findByRid(reports, rid);
+    if (!report) { window.location.href="index.html"; return; }
+
+    document.getElementById("baslik").textContent = report.propertyName || "İsimsiz Gayrimenkul";
+    await loadWallet(user);
+
+    // ✅ Kilidi doğru yerden oku:
+    // önce local report objesi, değilse remote strict
+    const lockedLocal = isLockedFromLocalReport(report);
+    const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
+
+    if (lockedLocal || lockedRemote){
+      applyLockedUI();
+    }
+  });
 </script>
 </body>
 </html>
