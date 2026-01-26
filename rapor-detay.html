@@ -208,7 +208,7 @@
     if (!rid) { location.href="index.html"; return; }
     const msg =
 `UYARI! (ÖNEMLİ)
-Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.Para ve zamaman kaybı olmaması için bütün modüllerde veri girşlerinizin tamamlamış olduğunu kontrol edin
+Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir.Para ve zaman kaybı yaşamamak için bütün modüllerde veri girşlerinizin tamamlamış olduğunuzu kontrol edin
 Devam etmek istiyor musunuz?`;
     if (!confirm(msg)) return;
     location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
@@ -326,4 +326,5 @@ Devam etmek istiyor musunuz?`;
 <script src="mobil-fix.js"></script>
 </body>
 </html>
+
 
