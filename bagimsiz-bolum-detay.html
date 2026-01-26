@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bağımsız Bölüm Detay</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bağımsız Bölüm Detay</title>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
 
-<style>
-    :root { --primary: #4a148c; --secondary: #7c4dff; --success: #00c853; --bg: #f0f2f5; --danger:#c62828; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin:0; padding-bottom:120px; color: #333; }
+  <style>
+    :root { --primary: #4a148c; --secondary: #7c4dff; --success: #00c853; --bg: #f0f2f5; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin:0; padding-bottom:110px; color: #333; }
     .header { background: linear-gradient(135deg,#4a148c,#7c4dff); color:white; padding:25px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
     .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; font-size: 14px; cursor: pointer; border: none; }
+
     .container { max-width:850px; margin:20px auto; padding:20px; background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
     .section-title { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; color: #4a148c; font-size: 1.2em; font-weight: bold; }
     .form-group { margin-bottom: 20px; padding: 15px; background: #fdfdfd; border: 1px solid #f0f0f0; border-radius: 10px; }
@@ -22,32 +24,59 @@
     .input-item label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; color: #555; }
     input, select, textarea { padding:12px; width:100%; border:1.5px solid #dee2e6; border-radius:8px; font-size:15px; box-sizing:border-box; outline: none; transition: 0.3s; }
     input:focus, textarea:focus { border-color: #7c4dff; background: #f9f7ff; }
+
     .hacim-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 15px; }
     .hacim-card { background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 8px; text-align: center; }
+
     .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
     .checkbox-group label { background: #f0f0f0; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; }
     .checkbox-group input { display: none; }
     .checkbox-group input:checked + span { background: #4a148c; color: white; border-radius: 20px; padding: 8px 15px; margin: -8px -15px; display: inline-block; }
+
     .btn { padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
     .btn-save { background: #00c853; color: white; }
-    .bbbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px; border:1px solid #eee; border-radius:12px; background:#fafafa; margin:10px 0 20px; }
+
+    /* BB Tab Bar */
+    .bbbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px; border:1px solid #e0e6ed; border-radius:12px; background:#fff; margin-bottom:16px; }
     .bbTabs{ display:flex; gap:8px; flex-wrap:wrap; }
     .bbTab{ padding:10px 12px; border-radius:10px; border:1px solid #ddd; cursor:pointer; background:#fff; color:#333; font-weight:bold; }
-    .bbTab.active{ background: var(--primary); color:#fff; border-color: transparent; }
-    .bbBtn{ padding:10px 12px; border:none; border-radius:10px; cursor:pointer; font-weight:bold; background: var(--secondary); color:#fff; }
-    .bbBtn.clone{ background: var(--primary); }
-    .bbBtn.delete{ background: var(--danger); }
-    .taslak { background:#fff8e1; padding:25px; border-radius:12px; margin-top:10px; border:2px dashed #ffb300; font-size:15px; line-height:1.8; white-space:pre-wrap; color: #333; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; transition: filter 0.3s ease; }
+    .bbTab.active{ background:var(--primary); color:#fff; border-color:transparent; }
+    .hint{ font-size:12px; color:#666; margin-top:6px; width:100%; }
+
+    /* TASLAK (korumalı metin) */
+    .taslak {
+      background:#fff8e1; padding:25px; border-radius:12px; margin-top:30px; border:2px dashed #ffb300;
+      font-size:15px; line-height:1.8; white-space:pre-wrap; color: #333;
+      user-select: none;
+      transition: filter 0.3s ease;
+    }
     .taslak:not(:hover) { filter: blur(1.5px); }
-    .taslakAll { background:#e8f5e9; padding:20px; border-radius:12px; margin-top:18px; border:2px solid #4caf50; font-size:15px; line-height:1.8; white-space:pre-wrap; color:#1b5e20; -webkit-user-select:none; user-select:none; }
-    .taslakAll:not(:hover){ filter: blur(1.2px); transition: filter .3s ease; }
-    @media print { body * { visibility: hidden; } .taslak, .taslakAll { visibility: hidden; } .taslak::after { content: "BU METİN KORUMALIDIR!"; visibility: visible; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 30px; color: red; } }
+
+    @media print {
+      body * { visibility: hidden; }
+      .taslak { visibility: hidden; }
+      .taslak::after { content: "BU METİN KORUMALIDIR!"; visibility: visible; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 30px; color: red; }
+    }
+
     .hidden { display: none !important; }
-</style>
-<link rel="stylesheet" href="mobil-fix.css">
+
+    /* Kilitli görünüm */
+    .lockedNote{
+      background:#ffe9e9;
+      border-left:6px solid #c62828;
+      padding:12px 14px;
+      border-radius:12px;
+      margin-bottom:14px;
+      font-weight:900;
+      color:#7a1b1b;
+    }
+    .btn-save[disabled]{ opacity:.5; cursor:not-allowed; }
+  </style>
+
+  <link rel="stylesheet" href="mobil-fix.css">
 </head>
 
-<body oncontextmenu="return false;">
+<body>
 
 <div class="header">
   <button onclick="anaMenuyeDon()" class="back">← Menü</button>
@@ -56,11 +85,16 @@
 </div>
 
 <div class="container">
+
+  <div id="lockNote" class="lockedNote hidden">
+    🔒 Bu rapor FINAL yapılmış. Bu modül kilitlidir (düzenleme yapılamaz).
+  </div>
+
+  <!-- BB Seçimi -->
   <div class="bbbar">
+    <div style="font-weight:bold; color:var(--primary);">Bağımsız Bölüm Seç:</div>
     <div class="bbTabs" id="bbTabs"></div>
-    <button class="bbBtn" type="button" onclick="addNewBB(false)">➕ Yeni BB</button>
-    <button class="bbBtn clone" type="button" onclick="addNewBB(true)">📄 Seçileni Kopyala</button>
-    <button class="bbBtn delete" type="button" onclick="deleteActiveBB()">🗑️ Sil</button>
+    <div class="hint">Her BB için ayrı detay kaydedilir. Sekme değiştirince o BB’nin verileri yüklenir.</div>
   </div>
 
   <div class="section-title">1. Temel Bilgiler ve Alanlar (Net Öncelikli)</div>
@@ -70,11 +104,13 @@
       <div class="input-item"><label>BB No</label><input type="text" id="bbNo" oninput="metinOlustur()"></div>
       <div class="input-item"><label>Kapı No</label><input type="text" id="kapiNo" oninput="metinOlustur()"></div>
     </div>
+
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
       <div class="input-item"><label>Proje Net (m²)</label><input type="number" id="alanNet" value="0" oninput="metinOlustur()"></div>
-      <div class="input-item"><label>Proje Brüt (m²)</label><input type="number" id="alanBrut" value="0" oninput="metinOlustur()"></div>
+      <div class="input-item"><label>Proje Brüt (m²)</label><input type="number" id="alanBrut" oninput="metinOlustur()"></div>
       <div class="input-item"><label>Girişe Göre Konumu</label><input type="text" id="konum" placeholder="sağ tarafta" oninput="metinOlustur()"></div>
     </div>
+
     <div class="input-item">
       <label>Cepheler</label>
       <div class="checkbox-group">
@@ -97,6 +133,7 @@
       <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="hayir" checked onchange="farkKontrol(); metinOlustur();"> Hayır</label>
       <label style="width:auto; cursor:pointer;"><input type="radio" name="farkVar" value="evet" onchange="farkKontrol(); metinOlustur();"> Evet</label>
     </div>
+
     <div id="farkDetay" class="hidden">
       <div class="input-item"><label>İlave Açıklaması</label><textarea id="farkAciklama" oninput="metinOlustur()"></textarea></div>
       <div class="input-item"><label>İlave Brüt Alan (m²)</label><input type="number" id="ilaveBrut" value="0" oninput="metinOlustur()"></div>
@@ -135,13 +172,12 @@
     </div>
   </div>
 
-  <button class="btn btn-save" onclick="kaydet()">AKTİF BB'Yİ KAYDET (LOCAL + BULUT)</button>
-  <div id="taslak" class="taslak" oncopy="return false"></div>
-  <div style="margin-top:22px; font-weight:bold; color:var(--primary);">TÜM BAĞIMSIZ BÖLÜM METİNLERİ (ALT ALTA)</div>
-  <div id="taslakAll" class="taslakAll" oncopy="return false">Veri girişi bekleniyor...</div>
+  <button id="btnSave" class="btn btn-save" onclick="kaydet()">VERİLERİ KAYDET</button>
+  <div id="taslak" class="taslak"></div>
 </div>
 
-<div id="datalist_container">
+<!-- datalist -->
+<div id="datalist_container" style="display:none;">
   <datalist id="h_antreZemin"></datalist><datalist id="h_antreDuvar"></datalist>
   <datalist id="h_salonZemin"></datalist><datalist id="h_salonDuvar"></datalist>
   <datalist id="h_odaZemin"></datalist><datalist id="h_odaDuvar"></datalist>
@@ -155,6 +191,8 @@
 <script>
   const auth = firebase.auth();
   const db = firebase.firestore();
+
+  /* ========= RID + legacy id ========= */
   const params = new URLSearchParams(window.location.search);
   let rid = params.get('rid');
   const legacyId = params.get('id');
@@ -179,7 +217,7 @@
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
       rid = reports[idxLegacy].rid;
-      const file = (location.pathname.split("/").pop() || "bb-detay.html");
+      const file = (location.pathname.split("/").pop() || "bagimsiz-bolum-detay.html");
       window.location.replace(file + "?rid=" + encodeURIComponent(rid));
     }
   }
@@ -190,69 +228,77 @@
     const r = (i >= 0) ? (arr[i] || null) : null;
     return { arr, i, r };
   }
+  function persist(arr, i, r){
+    arr[i] = r;
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+  }
 
+  /* ========= BB List ========= */
   let activeBBIndex = 0;
   function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
-  function createEmptyBB(seq){
-    return {
-      bbid: "bb_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8),
-      baslik: `${seq}. BB`,
-      bbDetay: null
-    };
-  }
+
   function ensureBBList(report){
     if (!report.bbDetayList || !Array.isArray(report.bbDetayList) || report.bbDetayList.length === 0) {
       if (report.bbDetay) {
-        report.bbDetayList = [ { bbid:"bb_1", baslik:"1. BB", bbDetay: deepClone(report.bbDetay) } ];
+        report.bbDetayList = [ { bbid:"bb_1", baslik:"1. BB", bbDetay: deepClone(report.bbDetay), degerlemeOzet: {} } ];
       } else {
-        report.bbDetayList = [ createEmptyBB(1) ];
+        report.bbDetayList = [ { bbid:"bb_1", baslik:"1. BB", bbDetay: {}, degerlemeOzet: {} } ];
       }
-    } else {
-      report.bbDetayList.forEach((x, idx) => {
-        if (!x.bbid) x.bbid = "bb_" + (idx+1);
-        if (!x.baslik) x.baslik = `${idx+1}. BB`;
-        if (typeof x.bbDetay === "undefined") x.bbDetay = null;
-      });
     }
+    report.bbDetayList.forEach((x, idx) => {
+      if (!x.bbid) x.bbid = "bb_" + (idx+1);
+      if (!x.baslik) x.baslik = `${idx+1}. BB`;
+      if (typeof x.degerlemeOzet !== "object" || x.degerlemeOzet === null) x.degerlemeOzet = {};
+      if (typeof x.bbDetay !== "object" || x.bbDetay === null) x.bbDetay = {};
+    });
   }
 
-  document.addEventListener('keydown', function(e) {
-    const isInput = e.target.closest('input, textarea, select');
-    if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) e.preventDefault();
-    if (e.ctrlKey && e.key === 'c' && !isInput) e.preventDefault();
-  });
+  function renderBBTabs(){
+    const { r, arr, i } = getLatestData();
+    if (!r) return;
+    ensureBBList(r);
+    const el = document.getElementById("bbTabs");
+    el.innerHTML = r.bbDetayList.map((x, idx) => {
+      const active = idx === activeBBIndex ? "bbTab active" : "bbTab";
+      return `<button type="button" class="${active}" onclick="setActiveBB(${idx})">${x.baslik || (idx+1)+'. BB'}</button>`;
+    }).join("");
+    persist(arr, i, r);
+  }
 
-  document.addEventListener('contextmenu', (e) => {
-    const isInput = e.target.closest('input, textarea, select');
-    if (isInput) return;
-    e.preventDefault();
-  });
+  function setActiveBB(idx){
+    activeBBIndex = idx;
+    renderBBTabs();
+    veriYukle();
+    hacimPanelKontrol();
+    metinOlustur();
+  }
 
-  auth.onAuthStateChanged((user) => {
-    const { r } = getLatestData();
-    if (!user || !rid || !r) {
-      window.location.href = 'index.html';
-      return;
-    }
-  });
-
+  /* ========= Hatırlatma (datalist) ========= */
   const fieldsToRemember = ['antreZemin','antreDuvar','salonZemin','salonDuvar','odaZemin','odaDuvar','mutfakZemin','mutfakDuvar','mutfakDolap','mutfakTezgah','islakHacim','daireKapi','icKapi','pencere','isitma'];
 
-  window.onload = function() {
-    const { arr, i, r } = getLatestData();
-    if (!r) { alert("Rapor verisi bulunamadı!"); return; }
-    ensureBBList(r);
-    document.getElementById('raporBilgi').textContent = (r.propertyName || "Dosya") + " Detayları";
-    initAutocomplete();
-    renderBBTabs();
-    loadActiveBBToForm();
-    hacimPanelKontrol();
-    farkKontrol();
-    metinOlustur();
-    buildAllText();
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
-  };
+  function escapeAttr(s){ return String(s).replace(/"/g,'&quot;'); }
+
+  function initAutocomplete() {
+    fieldsToRemember.forEach(f => {
+      const history = JSON.parse(localStorage.getItem('h_bb_' + f) || '[]');
+      const dl = document.getElementById('h_' + f);
+      if (dl) dl.innerHTML = history.map(i => `<option value="${escapeAttr(i)}">`).join('');
+    });
+  }
+
+  function saveAutocompleteHistory(){
+    fieldsToRemember.forEach(f => {
+      const el = document.getElementById(f);
+      if (!el) return;
+      const val = (el.value || "").trim();
+      if(!val) return;
+
+      let h = JSON.parse(localStorage.getItem('h_bb_' + f) || '[]');
+      h = h.filter(x => x !== val);
+      h.unshift(val);
+      localStorage.setItem('h_bb_' + f, JSON.stringify(h.slice(0,15)));
+    });
+  }
 
   function showList(input) {
     input.setAttribute('autocomplete', 'off');
@@ -261,6 +307,17 @@
     setTimeout(() => { input.value = val; }, 1);
   }
 
+  /* ========= Kopya/print engeli (Sadece taslak korumalı) ========= */
+  document.addEventListener("copy", (e) => {
+    const inProtected = e.target && e.target.closest && e.target.closest("#taslak");
+    if (inProtected) e.preventDefault();
+  });
+  document.addEventListener("contextmenu", (e) => {
+    const inProtected = e.target && e.target.closest && e.target.closest("#taslak");
+    if (inProtected) e.preventDefault();
+  });
+
+  /* ========= UI Mantıkları ========= */
   function farkKontrol() {
     const isEvet = document.querySelector('input[name="farkVar"]:checked').value === 'evet';
     document.getElementById('farkDetay').classList.toggle('hidden', !isEvet);
@@ -273,257 +330,235 @@
     document.querySelectorAll('.oda-inputs').forEach(el => el.classList.toggle('hidden', oCount === 0));
   }
 
-  function initAutocomplete() {
-    fieldsToRemember.forEach(f => {
-      const history = JSON.parse(localStorage.getItem('h_bb_' + f)) || [];
-      const dl = document.getElementById('h_' + f);
-      if(dl) dl.innerHTML = history.map(i => `<option value="${i}">`).join('');
-    });
-  }
-
-  function renderBBTabs(){
-    const { r } = getLatestData();
-    if (!r) return;
-    ensureBBList(r);
-    const el = document.getElementById("bbTabs");
-    el.innerHTML = r.bbDetayList.map((x, idx) => {
-      const active = idx === activeBBIndex ? "bbTab active" : "bbTab";
-      const label = x.baslik || `${idx+1}. BB`;
-      return `<button type="button" class="${active}" onclick="setActiveBB(${idx})">${label}</button>`;
-    }).join("");
-  }
-
-  function setActiveBB(idx){
-    saveActiveToModelSoft();
-    activeBBIndex = idx;
-    renderBBTabs();
-    loadActiveBBToForm();
-    hacimPanelKontrol();
-    farkKontrol();
-    metinOlustur();
-    buildAllText();
-  }
-
-  function addNewBB(fromClone){
-    const { arr, i, r } = getLatestData();
-    if (!r || i < 0) return;
-    ensureBBList(r);
-    saveActiveToModelSoft();
-    if (fromClone) {
-      const src = r.bbDetayList[activeBBIndex];
-      const cloned = deepClone(src);
-      cloned.bbid = "bb_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8);
-      cloned.baslik = `${r.bbDetayList.length + 1}. BB`;
-      r.bbDetayList.push(cloned);
-    } else {
-      r.bbDetayList.push(createEmptyBB(r.bbDetayList.length + 1));
-    }
-    r.bbDetayList.forEach((x, idx) => x.baslik = x.baslik || `${idx+1}. BB`);
-    activeBBIndex = r.bbDetayList.length - 1;
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
-    renderBBTabs();
-    loadActiveBBToForm();
-    hacimPanelKontrol();
-    farkKontrol();
-    metinOlustur();
-    buildAllText();
-  }
-
-  function deleteActiveBB(){
-    const { arr, i, r } = getLatestData();
-    if (!r || i < 0) return;
-    ensureBBList(r);
-    if (r.bbDetayList.length === 1) { alert("En az 1 bağımsız bölüm kalmalı."); return; }
-    if (!confirm("Seçili bağımsız bölümü silmek istiyor musun?")) return;
-    r.bbDetayList.splice(activeBBIndex, 1);
-    r.bbDetayList.forEach((x, idx) => x.baslik = `${idx+1}. BB`);
-    activeBBIndex = Math.max(0, activeBBIndex - 1);
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
-    renderBBTabs();
-    loadActiveBBToForm();
-    hacimPanelKontrol();
-    farkKontrol();
-    metinOlustur();
-    buildAllText();
-  }
-
-  function readFormToBBDetay(){
-    const seciliCepheler = Array.from(document.querySelectorAll('input[name="cephe"]:checked')).map(cb => cb.value);
-    const obj = {
-      kat: document.getElementById('kat').value,
-      bbNo: document.getElementById('bbNo').value,
-      kapiNo: document.getElementById('kapiNo').value,
-      konum: document.getElementById('konum').value,
-      cephe: seciliCepheler,
-      alanBrut: document.getElementById('alanBrut').value,
-      alanNet: document.getElementById('alanNet').value,
-      ilaveBrut: document.getElementById('ilaveBrut').value,
-      farkVar: document.querySelector('input[name="farkVar"]:checked').value,
-      farkAciklama: document.getElementById('farkAciklama').value,
-      zeminDuvar: {},
-      sayaclar: {
-        count_salon: document.getElementById('count_salon').value,
-        count_oda: document.getElementById('count_oda').value,
-        count_mutfak: document.getElementById('count_mutfak').value,
-        count_banyo: document.getElementById('count_banyo').value,
-        count_wc: document.getElementById('count_wc').value,
-        count_antre: document.getElementById('count_antre').value,
-        count_balkon: document.getElementById('count_balkon').value
-      },
-      tamMetin: document.getElementById('taslak').textContent
-    };
-    fieldsToRemember.forEach(f => obj.zeminDuvar[f] = document.getElementById(f).value);
-    return obj;
-  }
-
-  function loadBBDetayToForm(d){
-    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = (val ?? ""); };
-    set('kat', d?.kat || "");
-    set('bbNo', d?.bbNo || "");
-    set('kapiNo', d?.kapiNo || "");
-    set('konum', d?.konum || "");
-    set('alanBrut', d?.alanBrut || 0);
-    set('alanNet', d?.alanNet || 0);
-    set('ilaveBrut', d?.ilaveBrut || 0);
-    set('farkAciklama', d?.farkAciklama || "");
-    set('count_salon', d?.sayaclar?.count_salon ?? 1);
-    set('count_oda', d?.sayaclar?.count_oda ?? 3);
-    set('count_mutfak', d?.sayaclar?.count_mutfak ?? 1);
-    set('count_banyo', d?.sayaclar?.count_banyo ?? 1);
-    set('count_wc', d?.sayaclar?.count_wc ?? 1);
-    set('count_antre', d?.sayaclar?.count_antre ?? 1);
-    set('count_balkon', d?.sayaclar?.count_balkon ?? 1);
-    document.querySelectorAll('input[name="cephe"]').forEach(cb => cb.checked = false);
-    if (d?.cephe && Array.isArray(d.cephe)) {
-      document.querySelectorAll('input[name="cephe"]').forEach(cb => { cb.checked = d.cephe.includes(cb.value); });
-    }
-    const farkVal = d?.farkVar || 'hayir';
-    const farkRadio = document.querySelector(`input[name="farkVar"][value="${farkVal}"]`);
-    if (farkRadio) farkRadio.checked = true;
-    fieldsToRemember.forEach(f => {
-      const el = document.getElementById(f);
-      if (el) el.value = (d?.zeminDuvar && d.zeminDuvar[f]) ? d.zeminDuvar[f] : "";
-    });
-    document.getElementById('taslak').textContent = d?.tamMetin || "";
-  }
-
-  function loadActiveBBToForm(){
-    const { r } = getLatestData();
-    if (!r) return;
-    ensureBBList(r);
-    const active = r.bbDetayList[activeBBIndex];
-    loadBBDetayToForm(active?.bbDetay);
-  }
-
-  function saveActiveToModelSoft(){
-    const { arr, i, r } = getLatestData();
-    if (!r || i < 0) return;
-    ensureBBList(r);
-    const active = r.bbDetayList[activeBBIndex];
-    active.bbDetay = readFormToBBDetay();
-    const k = (active.bbDetay.kat || "").trim();
-    const kap = (active.bbDetay.kapiNo || "").trim();
-    const bbno = (active.bbDetay.bbNo || "").trim();
-    let suffix = "";
-    if (k || kap || bbno) suffix = ` (${k || "-"} / BB:${bbno || "-"} / K:${kap || "-"})`;
-    active.baslik = `${activeBBIndex+1}. BB${suffix}`;
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
-  }
-
   function metinOlustur() {
     const v = (id) => (document.getElementById(id).value || "").trim() || "...";
     const cphe = Array.from(document.querySelectorAll('input[name="cephe"]:checked')).map(cb => cb.value).join("-") || "...";
     const aBrut = parseFloat(document.getElementById('alanBrut').value) || 0;
     const aNet = parseFloat(document.getElementById('alanNet').value) || 0;
     const farkVar = document.querySelector('input[name="farkVar"]:checked').value === 'evet';
-    const items = [ { id: 'salon', label: 'salon' }, { id: 'oda', label: 'oda' }, { id: 'mutfak', label: 'mutfak' }, { id: 'banyo', label: 'banyo' }, { id: 'wc', label: 'wc' }, { id: 'antre', label: 'antre-hol' }, { id: 'balkon', label: 'balkon' } ];
+
+    const items = [
+      { id: 'salon', label: 'salon' }, { id: 'oda', label: 'oda' }, { id: 'mutfak', label: 'mutfak' },
+      { id: 'banyo', label: 'banyo' }, { id: 'wc', label: 'wc' }, { id: 'antre', label: 'antre-hol' }, { id: 'balkon', label: 'balkon' }
+    ];
     let hList = [];
     items.forEach(i => {
       let val = parseInt(document.getElementById('count_' + i.id).value) || 0;
       if(val > 0) hList.push(val === 1 ? i.label : val + " " + i.label);
     });
     const hacimMetni = hList.join(", ");
+
     let metin = `Değerleme konusu taşınmaz binanın ${v('kat')} katında yer alan ${v('bbNo')} bağımsız bölüm ve ${v('kapiNo')} kapı numaralı taşınmazdır. `;
     metin += `Taşınmaz bina girişine göre ${v('konum')} yer almaktadır. Taşınmaz ${cphe} cephelidir. `;
+
     metin += `Projesine göre `;
     if (aNet > 0) metin += `net ${aNet} m², `;
     metin += `brüt ${aBrut} m² kullanım alanına sahiptir. `;
+
     if (farkVar) {
       metin += `Taşınmaz projesine göre ${hacimMetni} hacimlerinden oluşmaktadır. ${v('farkAciklama')} `;
       const ilave = parseFloat(document.getElementById('ilaveBrut').value) || 0;
-      if (ilave > 0) { metin += `Mevcut durumda brüt ${ilave} m² ilave ile mevcut durumdaki toplam alanın brüt ${aBrut + ilave} m² olduğu tespit edilmiştir. `; } 
-      else { metin += `Mevcut durumda taşınmazın alanı değişmemiştir. `; }
-    } else { metin += `Taşınmaz projesine göre ve mevcut durumda ${hacimMetni} hacimlerinden oluşmaktadır. `; }
+      if (ilave > 0) {
+        metin += `Mevcut durumda brüt ${ilave} m² ilave ile mevcut durumdaki toplam alanın brüt ${aBrut + ilave} m² olduğu tespit edilmiştir. `;
+      } else {
+        metin += `Mevcut durumda taşınmazın alanı değişmemiştir. `;
+      }
+    } else {
+      metin += `Taşınmaz projesine göre ve mevcut durumda ${hacimMetni} hacimlerinden oluşmaktadır. `;
+    }
+
     metin += `\n\nAntre zeminleri ${v('antreZemin')}, duvarları ${v('antreDuvar')}. `;
     if (parseInt(document.getElementById('count_salon').value) > 0) metin += `Salon zemini ${v('salonZemin')}, duvarları ${v('salonDuvar')}. `;
     if (parseInt(document.getElementById('count_oda').value) > 0) metin += `Oda zeminleri ${v('odaZemin')}, duvarları ${v('odaDuvar')}. `;
+
     metin += `Mutfak zemini ${v('mutfakZemin')}, duvarları ${v('mutfakDuvar')}. `;
     metin += `Mutfak dolabı ${v('mutfakDolap')}, tezgâhı ${v('mutfakTezgah')}. Islak hacimlerin zemin ve duvarları ${v('islakHacim')}. `;
     metin += `Taşınmazın giriş kapısı ${v('daireKapi')}, iç kapıları ${v('icKapi')}. Pencereleri ${v('pencere')} doğramadır. `;
     metin += `Gayrimenkulün ısıtılması ${v('isitma')} ile sağlanmaktadır. Taşınmazda elektrik, su ve haberleşme tesisatları mevcuttur.`;
-    document.getElementById('taslak').textContent = metin;
-    saveActiveToModelSoft();
-    buildAllText();
-    renderBBTabs();
-  }
 
-  function buildAllText(){
+    document.getElementById("taslak").textContent = metin;
+
+    // aktif BB içine “anlık taslak” da yazalım (kaydetmeden de metin kaybolmasın)
     const { arr, i, r } = getLatestData();
-    if (!r || i < 0) return;
-    ensureBBList(r);
-    const blocks = r.bbDetayList.map((x, idx) => {
-      const d = x.bbDetay || {};
-      const kat = (d.kat || "-").trim();
-      const bbNo = (d.bbNo || "-").trim();
-      const kapi = (d.kapiNo || "-").trim();
-      const baslik = `BAĞIMSIZ BÖLÜM ${idx+1} (${kat} / BB:${bbNo} / K:${kapi})`;
-      const text = (d.tamMetin || "").trim() || "Veri girişi bekleniyor...";
-      return `${baslik}\n${text}`.trim();
-    }).join("\n\n");
-    document.getElementById('taslakAll').textContent = blocks || "Veri girişi bekleniyor...";
-    r.bbDetayCombinedText = blocks;
-    r.bbDetay = deepClone(r.bbDetayList[0].bbDetay || {});
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+    if (r) {
+      ensureBBList(r);
+      const bb = r.bbDetayList[activeBBIndex];
+      if (bb) {
+        bb.bbDetay = bb.bbDetay || {};
+        bb.bbDetay.tamMetin = metin;
+        bb.bbDetay.metin = metin;
+        persist(arr, i, r);
+      }
+    }
   }
 
-  async function kaydet() {
-    fieldsToRemember.forEach(f => {
-      const el = document.getElementById(f);
-      const val = el ? el.value.trim() : "";
-      if(val) {
-        let h = JSON.parse(localStorage.getItem('h_bb_' + f)) || [];
-        if(!h.includes(val)) { h.unshift(val); localStorage.setItem('h_bb_' + f, JSON.stringify(h.slice(0,15))); }
-      }
+  function setFormDisabled(disabled){
+    document.querySelectorAll("input, textarea, select, button.bbTab").forEach(el=>{
+      // bbTab butonları kilitliyken de gezilebilir olsun (sadece inputlar kapanır)
+      if (el.classList && el.classList.contains("bbTab")) return;
+      el.disabled = !!disabled;
     });
+  }
+
+  function isReportLocked(){
+    if (!rid) return false;
+    return localStorage.getItem("report_locked_" + rid) === "1";
+  }
+
+  function veriYukle(){
+    const { r } = getLatestData();
+    if (!r) return;
+
+    ensureBBList(r);
+    const bb = r.bbDetayList[activeBBIndex] || { bbDetay: {} };
+    const d = bb.bbDetay || {};
+
+    // temel
+    document.getElementById("kat").value = d.kat ?? "";
+    document.getElementById("bbNo").value = d.bbNo ?? "";
+    document.getElementById("kapiNo").value = d.kapiNo ?? "";
+
+    document.getElementById("alanNet").value = (d.alanNet ?? 0);
+    document.getElementById("alanBrut").value = (d.alanBrut ?? 0);
+    document.getElementById("konum").value = d.konum ?? "";
+
+    // cephe
+    const cepheSet = new Set((d.cepheler || "").split("-").map(x=>x.trim()).filter(Boolean));
+    document.querySelectorAll('input[name="cephe"]').forEach(cb=>{
+      cb.checked = cepheSet.has(cb.value);
+    });
+
+    // fark
+    const fark = (d.farkVar === true || d.farkVar === "evet") ? "evet" : "hayir";
+    document.querySelectorAll('input[name="farkVar"]').forEach(radio=>{
+      radio.checked = (radio.value === fark);
+    });
+    farkKontrol();
+    document.getElementById("farkAciklama").value = d.farkAciklama ?? "";
+    document.getElementById("ilaveBrut").value = (d.ilaveBrut ?? 0);
+
+    // hacimler
+    document.getElementById("count_salon").value  = (d.count_salon ?? 1);
+    document.getElementById("count_oda").value    = (d.count_oda ?? 3);
+    document.getElementById("count_mutfak").value = (d.count_mutfak ?? 1);
+    document.getElementById("count_banyo").value  = (d.count_banyo ?? 1);
+    document.getElementById("count_wc").value     = (d.count_wc ?? 1);
+    document.getElementById("count_antre").value  = (d.count_antre ?? 1);
+    document.getElementById("count_balkon").value = (d.count_balkon ?? 1);
+    hacimPanelKontrol();
+
+    // detay alanlar
+    fieldsToRemember.forEach(f=>{
+      const el = document.getElementById(f);
+      if (el) el.value = d[f] ?? "";
+    });
+
+    // taslak
+    document.getElementById("taslak").textContent = (d.tamMetin || d.metin || "");
+
+    metinOlustur();
+  }
+
+  function collectForm(){
+    const get = (id)=> (document.getElementById(id).value || "").toString().trim();
+    const num = (id)=> Number(document.getElementById(id).value || 0) || 0;
+
+    const cepheler = Array.from(document.querySelectorAll('input[name="cephe"]:checked'))
+      .map(cb=>cb.value).join("-");
+
+    const farkVarVal = document.querySelector('input[name="farkVar"]:checked')?.value || "hayir";
+
+    const obj = {
+      kat: get("kat"),
+      bbNo: get("bbNo"),
+      kapiNo: get("kapiNo"),
+      alanNet: num("alanNet"),
+      alanBrut: num("alanBrut"),
+      konum: get("konum"),
+      cepheler: cepheler,
+
+      farkVar: (farkVarVal === "evet"),
+      farkAciklama: get("farkAciklama"),
+      ilaveBrut: num("ilaveBrut"),
+
+      count_salon: num("count_salon"),
+      count_oda: num("count_oda"),
+      count_mutfak: num("count_mutfak"),
+      count_banyo: num("count_banyo"),
+      count_wc: num("count_wc"),
+      count_antre: num("count_antre"),
+      count_balkon: num("count_balkon"),
+    };
+
+    fieldsToRemember.forEach(f=>{
+      obj[f] = get(f);
+    });
+
+    const metin = (document.getElementById("taslak").textContent || "").trim();
+    obj.tamMetin = metin;
+    obj.metin = metin;
+
+    return obj;
+  }
+
+  function kaydet(){
+    if (!rid) { alert("RID bulunamadı!"); return; }
+    if (isReportLocked()) { alert("Bu rapor FINAL yapılmış. Düzenleme kapalı."); return; }
+
     const { arr, i, r } = getLatestData();
     if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
+
     ensureBBList(r);
-    r.bbDetayList[activeBBIndex].bbDetay = readFormToBBDetay();
-    buildAllText();
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
-    const user = auth.currentUser;
-    if (user) {
-      try{
-        await db.collection("users").doc(user.uid).set({ gayrimenkul_reports: arr, lastUpdate: new Date().toISOString() }, { merge: true });
-        alert("✅ Aktif bağımsız bölüm kaydedildi ve buluta işlendi!");
-      }catch(e){
-        console.error("Bulut kaydı hatası:", e);
-        alert("⚠️ Yerel kaydedildi ama buluta gönderilemedi.");
-      }
-    } else { alert("✅ Aktif bağımsız bölüm kaydedildi!"); }
-    initAutocomplete();
-    renderBBTabs();
+    const bb = r.bbDetayList[activeBBIndex];
+    if (!bb) { alert("BB bulunamadı!"); return; }
+
+    bb.bbDetay = collectForm();
+
+    // autocomplete hafızası
+    saveAutocompleteHistory();
+
+    persist(arr, i, r);
+    alert("✅ Kaydedildi.");
+    anaMenuyeDon();
   }
 
-  function anaMenuyeDon() {
-    window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+  function anaMenuyeDon(){
+    if (!rid) { window.location.href = "rapor-detay.html"; return; }
+    window.location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
   }
+
+  /* ========= BOOT ========= */
+  auth.onAuthStateChanged((user)=>{
+    if (!user) { window.location.href = "index.html"; return; }
+    if (!rid) { window.location.href = "index.html"; return; }
+
+    initAutocomplete();
+
+    const { r } = getLatestData();
+    if (!r) { alert("Rapor bulunamadı!"); window.location.href="index.html"; return; }
+
+    document.getElementById("raporBilgi").textContent =
+      `${r.propertyName || "İsimsiz Gayrimenkul"} • RID: ${rid}`;
+
+    renderBBTabs();
+    veriYukle();
+    farkKontrol();
+    hacimPanelKontrol();
+    metinOlustur();
+
+    // Final kilit varsa bu modül de kilitli açılsın
+    if (isReportLocked()){
+      document.getElementById("lockNote").classList.remove("hidden");
+      document.getElementById("btnSave").textContent = "🔒 KİLİTLİ (FINAL)";
+      document.getElementById("btnSave").disabled = true;
+      setFormDisabled(true);
+      // BB sekmeler arasında gezebilirsin (sadece görüntü)
+      document.querySelectorAll(".bbTab").forEach(b=> b.disabled = false);
+    }
+  });
 </script>
+
+<!-- mobil fix -->
 <script src="mobil-fix.js"></script>
 </body>
 </html>
