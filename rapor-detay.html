@@ -26,28 +26,43 @@
       overflow-x:hidden;
     }
 
+    /* ✅ Header her zaman üstte, mobilde de sabit */
     .header {
-      padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;
+      padding: calc(16px + env(safe-area-inset-top, 0px)) 14px 14px;
       text-align:center;
-      font-size:28px;
+      font-size:26px;
       font-weight:bold;
       position: sticky;
       top: 0;
       z-index: 999999;
       background: linear-gradient(135deg,#4a148c,#7c4dff);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
     }
 
+    /* ✅ Mobilde kaybolmayan geri butonu */
     .back {
       position:absolute;
-      left:15px;
-      top: calc(20px + env(safe-area-inset-top, 0px));
-      background:rgba(255,255,255,0.2);
-      padding:10px 20px;
-      border-radius:30px;
+      left:12px;
+      top: calc(12px + env(safe-area-inset-top, 0px));
+      background:rgba(255,255,255,0.22);
+      padding:10px 14px;
+      border-radius:999px;
       text-decoration:none;
       color:white;
-      font-weight:bold;
+      font-weight:900;
       z-index: 1000000;
+
+      /* Mobilde başlığın üstüne taşma olmasın */
+      max-width: 44vw;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ✅ Başlık geri butonuna çarpmasın */
+    #baslik{
+      padding: 0 64px; /* solda back, sağda boşluk */
+      line-height: 1.2;
     }
 
     #kilitMesaji{
@@ -144,7 +159,6 @@
       font-weight:bold;
       cursor: pointer;
       text-align: center;
-      /* Alt bar güvenli alanı */
       margin-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     }
     .footer-btn.locked{ background:#2196F3; }
@@ -155,7 +169,8 @@
         left: 0;
         right: 0;
         top: 0;
-        font-size:22px;
+        font-size:20px;
+        padding: calc(14px + env(safe-area-inset-top, 0px)) 12px 12px;
       }
       body{
         padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px));
@@ -163,6 +178,12 @@
       .menu{ padding: 20px; }
       .btn{ flex:1 1 100%; padding: 26px; font-size: 20px; }
       .footer-btn{ font-size: 24px; padding: 20px; }
+
+      .back{
+        padding: 10px 12px;
+        top: calc(10px + env(safe-area-inset-top, 0px));
+      }
+      #baslik{ padding: 0 56px; }
     }
   </style>
   <link rel="stylesheet" href="mobil-fix.css">
@@ -196,7 +217,7 @@ Devam etmek istiyor musunuz?`;
 </script>
 
   <div class="header">
-    <a href="index.html" class="back">Ana Sayfa</a>
+    <a href="index.html" class="back">← Ana Sayfa</a>
     <div id="baslik">Gayrimenkul Raporu</div>
   </div>
 
@@ -218,7 +239,10 @@ Devam etmek istiyor musunuz?`;
     <button class="btn modül-btn" onclick="go('imar.html')">İMAR DURUMU</button>
     <button class="btn modül-btn" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
     <button class="btn modül-btn" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
-    <button class="btn modül-btn" onclick="go('kat-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+
+    <!-- ✅ BURASI DÜZELTİLDİ: kat-detay.html YANLIŞTI -->
+    <button class="btn modül-btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+
     <button class="btn modül-btn" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
   </div>
 
@@ -244,6 +268,7 @@ Devam etmek istiyor musunuz?`;
   function applyLockedUI(){
     document.getElementById("kilitMesaji").style.display = "block";
     document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+
     const btn = document.getElementById("btnRaporOlustur");
     btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
     btn.classList.add("locked");
@@ -267,11 +292,16 @@ Devam etmek istiyor musunuz?`;
   async function loadWallet(user){
     if (!window.Wallet || !user) return;
     try{
+      // wallet.js senin sürümünde alanlar: balance + freeReportsLeft
       const w = await Wallet.load(user.uid);
-      const balance = Number(w?.balanceTL ?? 0);
-      const freeLeft = Number(w?.freeLeft ?? 0);
-      const tlText = new Intl.NumberFormat('tr-TR').format(balance) + " TL";
-      const info = (freeLeft > 0) ? `Ücretsiz rapor hakkı: ${freeLeft}` : `Bakiye: (gizli)`;
+      const balance = Number(w?.balance ?? 0);
+      const freeLeft = Number(w?.freeReportsLeft ?? 0);
+
+      const tlText = new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(balance) + " TL";
+      const info = (freeLeft > 0)
+        ? `Ücretsiz rapor hakkı: ${freeLeft} • Bakiye: (gizli)`
+        : `Ücretsiz hak bitti • Bakiye: (gizli)`;
+
       document.getElementById("walletAmount").textContent = tlText;
       document.getElementById("walletSub").textContent = info;
     }catch(e){}
@@ -292,7 +322,6 @@ Devam etmek istiyor musunuz?`;
     if (lockedLocal || lockedRemote) applyLockedUI();
   });
 </script>
-
 
 <script src="mobil-fix.js"></script>
 </body>
