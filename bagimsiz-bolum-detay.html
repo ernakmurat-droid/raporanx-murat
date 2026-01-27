@@ -294,8 +294,7 @@
     <div class="section-title" style="margin-top:40px; border-color: #ff9800; color: #e65100;">
       📋 Tüm Bağımsız Bölümlerin Metin Özeti
     </div>
-    <div id="topluMetinAlani" class="toplu-liste-konteyner">
-    </div>
+    <div id="topluMetinAlani" class="toplu-liste-konteyner"></div>
   </div>
 
 <script>
@@ -304,6 +303,7 @@
 
   const params = new URLSearchParams(window.location.search);
   let rid = params.get('rid');
+  const legacyId = params.get('id'); // eski link destek
 
   // SABİTLER VE LİSTELER
   const FIELD_IDS = [
@@ -323,7 +323,7 @@
     let hafiza = JSON.parse(localStorage.getItem("h_cache_" + id) || "[]");
     if (!hafiza.includes(deger)) {
       hafiza.push(deger);
-      if (hafiza.length > 20) hafiza.shift(); // Son 20 girişi tutar
+      if (hafiza.length > 20) hafiza.shift();
       localStorage.setItem("h_cache_" + id, JSON.stringify(hafiza));
     }
     hatirlaticiListesiniGuncelle(id);
@@ -351,18 +351,62 @@
     });
   }
 
-  // RAPOR VERİ YÖNETİMİ
+  // ====== RAPOR VERİ YÖNETİMİ (FIXED) ======
+  const STORAGE_KEY = 'gayrimenkul_reports';
+
+  function genRid(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
+
+  function toArrayIfObject(data){
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object") return Object.values(data);
+    return [];
+  }
+
+  function resolveRidAndMigrateIfNeeded(arr){
+    // 1) rid varsa
+    if (rid) {
+      const idx = arr.findIndex(x => x && x.rid === rid);
+      if (idx >= 0) return { arr, i: idx, r: arr[idx] };
+    }
+
+    // 2) rid yoksa legacyId ile bul
+    if (legacyId) {
+      const idx2 = arr.findIndex(x => x && (String(x.id) === String(legacyId) || String(x.legacyId) === String(legacyId)));
+      if (idx2 >= 0) {
+        if (!arr[idx2].rid) arr[idx2].rid = genRid();
+        rid = arr[idx2].rid;
+        history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+        return { arr, i: idx2, r: arr[idx2] };
+      }
+    }
+
+    return { arr, i: -1, r: null };
+  }
+
   function getLatestData(){
-    const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    const i = arr.findIndex(r => r && r.rid === rid);
-    const r = (i >= 0) ? (arr[i] || null) : null;
-    return { arr, i, r };
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    const arr = toArrayIfObject(raw);
+    return resolveRidAndMigrateIfNeeded(arr);
   }
 
   function persist(arr, i, r){
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+    if (!r) return;
+
+    if (i >= 0) {
+      arr[i] = r;
+    } else {
+      // rapor bulundu ama index yoksa (rid boş/yanlış) -> yeni gibi push
+      if (!r.rid) r.rid = rid || genRid();
+      rid = r.rid;
+      arr.push(r);
+      history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
   }
+  // =========================================
 
   let activeBBIndex = 0;
 
@@ -408,14 +452,13 @@
     document.querySelectorAll('input[name="cephe"]').forEach(cb=> cb.checked = set.has(cb.value));
   }
 
-  // METİN OLUŞTURMA (0 FİLTRELİ)
+  // METİN OLUŞTURMA
   function buildTextFromData(data) {
     const get = (key, def = "...") => (data[key] && data[key] !== "") ? data[key] : def;
     const getNum = (key) => parseInt(data[key] || "0", 10);
 
     const cepheler = (data.cepheler && data.cepheler.length > 0) ? data.cepheler.join(", ") : "...";
-    
-    // HACİM FİLTRESİ: Sadece 0'dan büyük olanları listeler
+
     const roomCounts = [
       { n: "salon", v: getNum("count_salon") },
       { n: "oda", v: getNum("count_oda") },
@@ -424,12 +467,12 @@
       { n: "wc", v: getNum("count_wc") },
       { n: "antre/hol", v: getNum("count_antre") },
       { n: "balkon", v: getNum("count_balkon") }
-    ].filter(x => x.v > 0) 
+    ].filter(x => x.v > 0)
      .map(x => `${x.v} adet ${x.n}`)
      .join(", ") || "...";
 
-    const alanText = getNum("alanNet") > 0 
-      ? `net ${getNum("alanNet")} brüt ${getNum("alanBrut")} m²` 
+    const alanText = getNum("alanNet") > 0
+      ? `net ${getNum("alanNet")} brüt ${getNum("alanBrut")} m²`
       : `brüt ${getNum("alanBrut")} m²`;
 
     const tesisat = get("tesisatVar") === "evet" ? "mevcuttur" : (get("tesisatAciklama") || "...");
@@ -458,15 +501,15 @@
   // KAYIT VE GEÇİŞ SİSTEMİ
   function saveActiveBBToReport(){
     const { r, arr, i } = getLatestData();
-    if (!r || i < 0) return;
+    if (!r) return;
+
     const bb = r.bbDetayList[activeBBIndex];
     if(!bb) return;
 
     const data = readForm();
     bb.bbDetay = data;
     bb.taslakMetin = buildTextFromData(data);
-    
-    // Hafızaya/Hatırlatıcıya ekle
+
     FIELD_IDS.forEach(id => {
       const el = document.getElementById(id);
       if(el && el.value && el.type !== "number") hatirlaVeEkle(id, el.value);
@@ -490,7 +533,7 @@
   function renderBBTabs(){
     const { r } = getLatestData();
     if (!r) return;
-    document.getElementById("bbTabs").innerHTML = r.bbDetayList.map((x, idx) => 
+    document.getElementById("bbTabs").innerHTML = r.bbDetayList.map((x, idx) =>
       `<button class="bbTab ${idx === activeBBIndex ? 'active' : ''}" onclick="setActiveBB(${idx})">${x.baslik}</button>`
     ).join("");
   }
@@ -506,21 +549,50 @@
     setActiveBB(activeBBIndex);
   }
 
+  function renameBB(){
+    if (isReportLocked()) return;
+    const { r, arr, i } = getLatestData();
+    if(!r) return;
+    const bb = r.bbDetayList[activeBBIndex];
+    const yeni = prompt("BB Adı:", bb.baslik || "");
+    if(!yeni) return;
+    bb.baslik = yeni;
+    persist(arr, i, r);
+    renderBBTabs();
+    topluListeyiGuncelle();
+  }
+
+  function deleteBB(){
+    if (isReportLocked()) return;
+    const { r, arr, i } = getLatestData();
+    if(!r) return;
+    if (r.bbDetayList.length <= 1) { alert("En az 1 BB kalmalı."); return; }
+    if(!confirm("Bu BB silinsin mi?")) return;
+
+    r.bbDetayList.splice(activeBBIndex, 1);
+    activeBBIndex = Math.max(0, activeBBIndex - 1);
+    persist(arr, i, r);
+    renderBBTabs();
+    writeForm(r.bbDetayList[activeBBIndex].bbDetay);
+    metinOlustur();
+  }
+
   function kaydet() {
     if (isReportLocked()) return;
     saveActiveBBToReport();
     const { r, arr, i } = getLatestData();
-    
+    if(!r) return;
+
     let topluMetin = "";
     r.bbDetayList.forEach(bb => {
-      const m = buildTextFromData(bb.bbDetay);
+      const m = buildTextFromData(bb.bbDetay || {});
       bb.taslakMetin = m;
       topluMetin += `📍 ${bb.baslik}\n${m}\n\n`;
     });
 
     if(!r.modules) r.modules = {};
     r.modules.bagimsizBolum = { text: topluMetin };
-    
+
     persist(arr, i, r);
     alert("Kaydedildi ✅ Tüm veriler ve hatırlatıcılar güncellendi.");
   }
@@ -550,11 +622,15 @@
   }
 
   function init(){
-    const { r } = getLatestData();
-    if (!r) { alert("Rapor bulunamadı!"); return; }
+    const { r, arr, i } = getLatestData();
+    if (!r) { alert("Rapor bulunamadı! (rid/id eşleşmedi)"); return; }
+
     ensureBBList(r);
+    // ✅ çok önemli: bbDetayList yoksa oluşturduk, hemen kaydet
+    persist(arr, i, r);
+
     renderBBTabs();
-    writeForm(r.bbDetayList[activeBBIndex].bbDetay);
+    writeForm(r.bbDetayList[activeBBIndex].bbDetay || {});
     fillHeaderInfo();
     tumHatirlaticilariYukle();
     setFormDisabled(isReportLocked());
@@ -564,7 +640,11 @@
     metinOlustur();
   }
 
-  function anaMenuyeDon(){ history.back(); }
+  function anaMenuyeDon(){
+    history.back();
+    // İstersen daha sağlam:
+    // window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid||"")}`;
+  }
 
   document.addEventListener("DOMContentLoaded", init);
 </script>
