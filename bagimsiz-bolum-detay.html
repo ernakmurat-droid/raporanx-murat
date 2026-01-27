@@ -295,7 +295,8 @@
       📋 Tüm Bağımsız Bölümlerin Metin Özeti
     </div>
     <div id="topluMetinAlani" class="toplu-liste-konteyner">
-      </div>
+      <!-- Buraya tüm BB metinleri dinamik olarak eklenecek -->
+    </div>
   </div>
 
 <script>
@@ -472,66 +473,80 @@
     document.querySelectorAll('.oda-inputs').forEach(el => el.classList.toggle('hidden', oCount === 0));
   }
 
-  function buildTextFromData(data){
-    data = data || {};
-    const v = (k) => (data[k] ?? "").toString().trim();
-    const num = (k) => {
-      const x = Number(v(k));
-      return Number.isFinite(x) ? x : 0;
+  // YENİ VE GÜNCELLENMİŞ METİN OLUŞTURMA FONKSİYONU
+  function buildTextFromData(data) {
+    // Null-safe değer alma fonksiyonu
+    const get = (key, defaultValue = "...") => 
+      data[key] !== undefined && data[key] !== null && data[key] !== "" 
+        ? data[key] 
+        : defaultValue;
+
+    // Sayısal değerler için
+    const getNum = (key) => {
+      const val = get(key, "0");
+      const num = Number(val);
+      return Number.isFinite(num) ? num : 0;
     };
 
-    const kat = v("kat") || "...";
-    const bbNo = v("bbNo") || "...";
-    const kapiNo = v("kapiNo") || "...";
-    const nitelik = v("nitelik") || "...";
-    const konum = v("konum") || "...";
+    // Değişkenler
+    const kat = get("kat");
+    const bbNo = get("bbNo");
+    const kapiNo = get("kapiNo");
+    const nitelik = get("nitelik");
+    const konum = get("konum");
+    
+    // Cepheler
+    const cepheler = Array.isArray(data.cepheler) 
+      ? data.cepheler.join(", ") 
+      : "...";
 
-    const cepheler = Array.isArray(data.cepheler) ? data.cepheler : [];
-    const cepheText = cepheler.length ? cepheler.join(", ") : "...";
+    // Alanlar
+    const netAlan = getNum("alanNet");
+    const brutAlan = getNum("alanBrut");
+    const alanText = netAlan > 0 
+      ? `net ${netAlan} brüt ${brutAlan} m²` 
+      : `brüt ${brutAlan} m²`;
 
-    const net = num("alanNet");
-    const brut = num("alanBrut");
+    // Oda sayıları
+    const roomCounts = [
+      { key: "count_salon", name: "salon" },
+      { key: "count_oda", name: "oda" },
+      { key: "count_mutfak", name: "mutfak" },
+      { key: "count_banyo", name: "banyo" },
+      { key: "count_wc", name: "wc" },
+      { key: "count_antre", name: "antre/hol" },
+      { key: "count_balkon", name: "balkon" }
+    ].filter(({ key }) => getNum(key) > 0)
+     .map(({ key, name }) => `${getNum(key)} adet ${name}`)
+     .join(", ") || "...";
 
-    const netParca = (net > 0) ? `net ${net} ` : "";
-    const brutParca = `brüt ${brut} m²`;
+    // Diğer özellikler
+    const antreZemin = get("antreZemin");
+    const antreDuvar = get("antreDuvar");
+    const salonZemin = get("salonZemin");
+    const salonDuvar = get("salonDuvar");
+    const odaZemin = get("odaZemin");
+    const odaDuvar = get("odaDuvar");
+    const mutfakZemin = get("mutfakZemin");
+    const mutfakDuvar = get("mutfakDuvar");
+    const mutfakDolap = get("mutfakDolap");
+    const mutfakTezgah = get("mutfakTezgah");
+    const islakHacim = get("islakHacim");
+    const banyoDonanim = get("banyoDonanim");
+    const girisKapi = get("daireKapi");
+    const icKapi = get("icKapi");
+    const pencere = get("pencere");
+    const isitma = get("isitma");
 
-    const sayi = (k) => parseInt(v(k) || "0", 10) || 0;
-    const hacimler = [
-      sayi("count_salon")  ? `${sayi("count_salon")} adet salon` : "",
-      sayi("count_oda")    ? `${sayi("count_oda")} adet oda` : "",
-      sayi("count_mutfak") ? `${sayi("count_mutfak")} adet mutfak` : "",
-      sayi("count_banyo")  ? `${sayi("count_banyo")} adet banyo` : "",
-      sayi("count_wc")     ? `${sayi("count_wc")} adet wc` : "",
-      sayi("count_antre")  ? `${sayi("count_antre")} adet antre/hol` : "",
-      sayi("count_balkon") ? `${sayi("count_balkon")} adet balkon` : ""
-    ].filter(Boolean).join(", ") || "...";
-
-    const antreZemin = v("antreZemin") || "...";
-    const antreDuvar = v("antreDuvar") || "...";
-    const salonZemin = v("salonZemin") || "...";
-    const salonDuvar = v("salonDuvar") || "...";
-    const odaZemin = v("odaZemin") || "...";
-    const odaDuvar = v("odaDuvar") || "...";
-    const mutfakZemin = v("mutfakZemin") || "...";
-    const mutfakDuvar = v("mutfakDuvar") || "...";
-    const mutfakDolap = v("mutfakDolap") || "...";
-    const mutfakTezgah = v("mutfakTezgah") || "...";
-    const islakHacim = v("islakHacim") || "...";
-
-    const banyoDonanim = v("banyoDonanim") || "...";
-
-    const girisKapi = v("daireKapi") || "...";
-    const icKapi = v("icKapi") || "...";
-    const pencere = v("pencere") || "...";
-    const isitma = v("isitma") || "...";
-
-    const tesisatVar = (data.tesisatVar || "evet").toString();
-    const tesisatAciklama = v("tesisatAciklama");
-    const tesisatMetin = (tesisatVar === "evet")
+    // Tesisatlar
+    const tesisatVar = get("tesisatVar", "evet");
+    const tesisatAciklama = get("tesisatAciklama");
+    const tesisatMetin = tesisatVar === "evet"
       ? "mevcuttur"
       : (tesisatAciklama ? tesisatAciklama : "...");
 
-    return `Değerleme konusu taşınmaz binanın ${kat} katında yer alan ${bbNo} bağımsız bölüm ve ${kapiNo} kapı numaralı ${nitelik} nitelikli taşınmazdır. Bina girişine göre ${konum} yer almaktadır. ${cepheText} cephelidir. Projesinde ve yerinde yapılan tespit ve ölçümlere göre ${netParca}${brutParca} kullanım alanına sahiptir. Taşınmaz ${hacimler} hacimlerinden oluşmaktadır. Taşınmazın antre ve hol zeminleri ${antreZemin} duvarları ${antreDuvar}. Salon zemini ${salonZemin}, duvarları ${salonDuvar} oda zeminleri ${odaZemin} duvarları ${odaDuvar}. Mutfak zemini ${mutfakZemin} ve duvarları ${mutfakDuvar} malzemedir. Mutfak dolabı ${mutfakDolap} tezgâhı ${mutfakTezgah} malzemedir. Taşınmazın ıslak hacimlerin zeminleri ve duvarları ${islakHacim}. Banyoda ${banyoDonanim} bulunmaktadır. Taşınmazın giriş kapısı ${girisKapi} ve iç kapıları ${icKapi}. Pencereleri ise ${pencere} doğramadır. Elektrik, su ve haberleşme tesisatları ${tesisatMetin} durumdaki gayrimenkulün ısıtılması ${isitma} ile sağlanmaktadır.`;
+    // Metni oluştur
+    return `Değerleme konusu taşınmaz binanın ${kat} katında yer alan ${bbNo} bağımsız bölüm ve ${kapiNo} kapı numaralı ${nitelik} nitelikli taşınmazdır. Bina girişine göre ${konum} yer almaktadır. ${cepheler} cephelidir. Projesinde ve yerinde yapılan tespit ve ölçümlere göre ${alanText} kullanım alanına sahiptir. Taşınmaz ${roomCounts} hacimlerinden oluşmaktadır. Taşınmazın antre ve hol zeminleri ${antreZemin} duvarları ${antreDuvar}. Salon zemini ${salonZemin}, duvarları ${salonDuvar} oda zeminleri ${odaZemin} duvarları ${odaDuvar}. Mutfak zemini ${mutfakZemin} ve duvarları ${mutfakDuvar} malzemedir. Mutfak dolabı ${mutfakDolap} tezgâhı ${mutfakTezgah} malzemedir. Taşınmazın ıslak hacimlerin zeminleri ve duvarları ${islakHacim}. Banyoda ${banyoDonanim} bulunmaktadır. Taşınmazın giriş kapısı ${girisKapi} ve iç kapıları ${icKapi}. Pencereleri ise ${pencere} doğramadır. Elektrik, su ve haberleşme tesisatları ${tesisatMetin} durumdaki gayrimenkulün ısıtılması ${isitma} ile sağlanmaktadır.`;
   }
 
   function metinOlustur() {
@@ -547,16 +562,24 @@
     if (!r || !r.bbDetayList) return;
     const container = document.getElementById("topluMetinAlani");
     if (!container) return;
+    
     let html = "";
     r.bbDetayList.forEach((bb, idx) => {
-        let guncelMetin = "";
-        if (idx === activeBBIndex) {
-            guncelMetin = buildTextFromData(readForm());
-        } else {
-            guncelMetin = buildTextFromData(bb.bbDetay || {});
-        }
-        html += `<div class="toplu-bb-kart"><div style="font-weight:900; color:var(--primary); margin-bottom:8px;">📍 ${bb.baslik || (idx+1 + '. BB')}</div><div style="font-size:14px; line-height:1.6; color:#444;">${guncelMetin}</div></div>`;
+      // Mevcut BB'nin metnini oluştur
+      const metin = bb.taslakMetin || buildTextFromData(bb.bbDetay || {});
+      
+      html += `
+        <div class="toplu-bb-kart">
+          <div style="font-weight:900; color:var(--primary); margin-bottom:8px;">
+            📍 ${bb.baslik || (idx+1 + '. BB')}
+          </div>
+          <div style="font-size:14px; line-height:1.6; color:#444;">
+            ${metin}
+          </div>
+        </div>
+      `;
     });
+    
     container.innerHTML = html || "Henüz bölüm eklenmedi.";
   }
 
@@ -566,10 +589,8 @@
     ensureBBList(r);
     const bb = getActiveBB(r);
     bb.bbDetay = readForm();
-    // KRİTİK: Taslak metni hem bbDetay'a hem de bb'nin üstüne mühürlüyoruz
-    const uretilenMetin = document.getElementById("taslak")?.innerText || "";
-    bb.bbDetay.taslakMetin = uretilenMetin;
-    bb.taslakMetin = uretilenMetin; 
+    // Taslak metni kaydet
+    bb.bbDetay.taslakMetin = document.getElementById("taslak")?.innerText || "";
     persist(arr, i, r);
   }
 
@@ -643,8 +664,8 @@
     loadActiveBBFromReport();
   }
 
-  // ✅ BU FONKSİYONU GÜNCELLEDİM: Final Raporun tüm BB metinlerini görmesi için mühürleme yapar.
-  function kaydet(){
+  // GÜNCELLENMİŞ KAYDET FONKSİYONU
+  function kaydet() {
     if (isReportLocked()) return;
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) {
@@ -654,19 +675,18 @@
 
     saveActiveBBToReport(); // Aktif olanı kaydet
 
-    // Tüm BB listesini tara ve metinleri mühürle
+    // Tüm BB listesini tara ve metinleri oluştur
     ensureBBList(r);
-    r.bbDetayList.forEach((bbItem)=>{
-      const data = bbItem.bbDetay || {};
-      const metin = buildTextFromData(data);
-      // Final raporun aradığı 3 ana noktaya da metni yazıyoruz:
-      bbItem.bbDetay.taslakMetin = metin; // bbDetay içinde
-      bbItem.taslakMetin = metin;         // bbItem kökünde
-      bbItem.metin = metin;               // Alternatif olarak
+    r.bbDetayList.forEach((bbItem) => {
+      const metin = buildTextFromData(bbItem.bbDetay || {});
+      // Final raporun aradığı alanlara metni kaydet
+      bbItem.bbDetay.taslakMetin = metin;
+      bbItem.taslakMetin = metin;
+      bbItem.metin = metin;
     });
 
-    // Rapor seviyesindeki listeyi de tazele
-    r.bbMetinleri = r.bbDetayList.map((x, idx)=>({
+    // Rapor seviyesindeki listeyi güncelle
+    r.bbMetinleri = r.bbDetayList.map((x, idx) => ({
       bbid: x.bbid,
       baslik: x.baslik || `${idx+1}. BB`,
       metin: x.taslakMetin
