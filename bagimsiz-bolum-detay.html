@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Bağımsız Bölüm Detay</title>
 
-  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -81,7 +80,6 @@
     .btn-save{ background:#00c853; color:#fff; }
     .btn-save[disabled]{ opacity:.55; cursor:not-allowed; }
 
-    /* BB Tab Bar */
     .bbbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px; border:1px solid #e0e6ed; border-radius:14px; background:#fff; margin-bottom:12px; }
     .bbTabs{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .bbTab{ padding:10px 12px; border-radius:12px; border:1px solid #ddd; cursor:pointer; background:#fff; color:#333; font-weight:900; }
@@ -132,6 +130,23 @@
     }
 
     .hidden{ display:none !important; }
+
+    /* Yeni eklenen toplu görünüm stilleri */
+    .toplu-liste-konteyner {
+      margin-top: 30px;
+      padding: 20px;
+      background: #fafafa;
+      border: 2px solid #4a148c;
+      border-radius: 16px;
+    }
+    .toplu-bb-kart {
+      background: #fff;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      border-left: 5px solid #7c4dff;
+    }
   </style>
 
   <link rel="stylesheet" href="mobil-fix.css">
@@ -151,10 +166,9 @@
 
     <div class="infoNote">
       ✅ Burada <b>seçili BB</b>’nin metnini görürsün. <br>
-      🧾 <b>Rapor Oluştur</b> sayfasında ise <b>tüm BB metinleri</b> bir arada görünür.
+      🧾 Sayfanın en altında ise <b>eklediğin tüm bölümlerin</b> metinlerini toplu görebilirsin.
     </div>
 
-    <!-- BB Seçimi + Çoklu BB Aksiyonları -->
     <div class="bbbar">
       <div style="font-weight:900; color:var(--primary);">Bağımsız Bölüm:</div>
       <div class="bbTabs" id="bbTabs"></div>
@@ -165,7 +179,7 @@
         <button type="button" id="btnDelBB" class="bbMiniBtn danger" onclick="deleteBB()">🗑️ Sil</button>
       </div>
 
-      <div class="hint">Sekme değiştirince önceki BB otomatik kaydedilir. Böylece hiçbir metin kaybolmaz.</div>
+      <div class="hint">Sekme değiştirince önceki BB otomatik kaydedilir.</div>
     </div>
 
     <div class="section-title">1) Kimlik ve Alan Bilgileri</div>
@@ -277,6 +291,12 @@
 
     <div class="section-title">Seçili BB Taslak Metin</div>
     <div id="taslak" class="taslak"></div>
+
+    <div class="section-title" style="margin-top:40px; border-color: #ff9800; color: #e65100;">
+      📋 Tüm Bağımsız Bölümlerin Metin Özeti
+    </div>
+    <div id="topluMetinAlani" class="toplu-liste-konteyner">
+      </div>
   </div>
 
 <script>
@@ -304,7 +324,6 @@
   let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
   if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
 
-  // legacy ?id=INDEX -> ?rid=
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
     if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
@@ -325,7 +344,6 @@
     localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
   }
 
-  /* ========= FINAL Kilit ========= */
   function isReportLocked(){
     if (!rid) return false;
     return localStorage.getItem("report_locked_" + rid) === "1";
@@ -347,7 +365,6 @@
     if (note) note.classList.toggle("hidden", !disabled);
   }
 
-  /* ========= Çoklu BB ========= */
   let activeBBIndex = 0;
 
   function ensureBBList(report){
@@ -393,7 +410,6 @@
     persist(arr, i, r);
   }
 
-  /* ========= FORM MAP ========= */
   const FIELD_IDS = [
     "kat","bbNo","kapiNo","nitelik","alanNet","alanBrut","konum",
     "farkAciklama","ilaveBrut",
@@ -441,7 +457,6 @@
     document.querySelectorAll('input[name="cephe"]').forEach(cb=> cb.checked = set.has(cb.value));
   }
 
-  /* ========= UI ========= */
   function farkKontrol() {
     const isEvet = document.querySelector('input[name="farkVar"]:checked')?.value === 'evet';
     document.getElementById('farkDetay').classList.toggle('hidden', !isEvet);
@@ -459,7 +474,6 @@
     document.querySelectorAll('.oda-inputs').forEach(el => el.classList.toggle('hidden', oCount === 0));
   }
 
-  /* ========= METİN (SENİN ŞABLON) ========= */
   function buildTextFromData(data){
     data = data || {};
     const v = (k) => (data[k] ?? "").toString().trim();
@@ -527,16 +541,47 @@
     const metin = buildTextFromData(data);
     const out = document.getElementById("taslak");
     if (out) out.innerText = metin;
+
+    // YENİ: Her değişiklikte toplu görünümü tazele
+    topluListeyiGuncelle();
   }
 
-  /* ========= Sekme değiştirirken kaybetme: aktif BB'yi kaydet/yükle ========= */
+  // YENİ FONKSİYON: Tüm bölümleri alta listeler
+  function topluListeyiGuncelle() {
+    const { r } = getLatestData();
+    if (!r || !r.bbDetayList) return;
+
+    const container = document.getElementById("topluMetinAlani");
+    if (!container) return;
+
+    let html = "";
+    r.bbDetayList.forEach((bb, idx) => {
+        let guncelMetin = "";
+        if (idx === activeBBIndex) {
+            // Aktif sekme ise formdaki canlı veriyi kullan
+            guncelMetin = buildTextFromData(readForm());
+        } else {
+            // Diğer sekmeler ise kayıtlı veriyi kullan
+            guncelMetin = buildTextFromData(bb.bbDetay || {});
+        }
+
+        html += `
+            <div class="toplu-bb-kart">
+                <div style="font-weight:900; color:var(--primary); margin-bottom:8px;">📍 ${bb.baslik || (idx+1 + '. BB')}</div>
+                <div style="font-size:14px; line-height:1.6; color:#444;">${guncelMetin}</div>
+            </div>
+        `;
+    });
+    container.innerHTML = html || "Henüz bölüm eklenmedi.";
+  }
+
   function saveActiveBBToReport(){
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) return;
 
     ensureBBList(r);
     const bb = getActiveBB(r);
-    bb.bbDetay = readForm();         // aktif form verisini bbDetay'e bas
+    bb.bbDetay = readForm();
     bb.bbDetay.taslakMetin = document.getElementById("taslak")?.innerText || "";
     persist(arr, i, r);
   }
@@ -560,7 +605,6 @@
     const { r } = getLatestData();
     if (!r) return;
 
-    // sekme değişirken eskisini kaydet
     if (!isReportLocked()) saveActiveBBToReport();
 
     activeBBIndex = Math.max(0, Math.min(newIndex, (r.bbDetayList?.length || 1)-1));
@@ -568,10 +612,8 @@
     loadActiveBBFromReport();
   }
 
-  /* ========= BB aksiyonları ========= */
   function addBB(){
     if (isReportLocked()) return;
-
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) return;
 
@@ -589,7 +631,6 @@
 
   function renameBB(){
     if (isReportLocked()) return;
-
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) return;
 
@@ -604,11 +645,11 @@
 
     persist(arr, i, r);
     renderBBTabs();
+    topluListeyiGuncelle();
   }
 
   function deleteBB(){
     if (isReportLocked()) return;
-
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) return;
 
@@ -629,30 +670,24 @@
     loadActiveBBFromReport();
   }
 
-  /* ========= Kaydet (TÜM BB metinleri üret + rapora yaz) ========= */
   function kaydet(){
     if (isReportLocked()) return;
-
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) {
-      alert("Rapor bulunamadı. Menüden yeniden gir.");
+      alert("Rapor bulunamadı.");
       return;
     }
 
-    // önce aktif BB'yi yaz
     saveActiveBBToReport();
 
-    // sonra hepsinin taslak metnini üret
     ensureBBList(r);
     r.bbDetayList.forEach((bbItem)=>{
       const data = bbItem.bbDetay || {};
-      // metni her BB için rebuild et
       const metin = buildTextFromData(data);
       bbItem.bbDetay = data;
       bbItem.bbDetay.taslakMetin = metin;
     });
 
-    // rapor seviyesinde toplu metin alanı (rapor oluştur sayfası kolay çeksin diye)
     r.bbMetinleri = r.bbDetayList.map((x, idx)=>({
       bbid: x.bbid,
       baslik: x.baslik || `${idx+1}. BB`,
@@ -660,22 +695,15 @@
     }));
 
     persist(arr, i, r);
-
-    // ekranda seçili BB metnini de güncelle
     loadActiveBBFromReport();
-
     alert("Kaydedildi ✅ (Tüm BB metinleri üretildi)");
   }
 
-  /* ========= Header bilgi + init ========= */
   function fillHeaderInfo(){
     const { r } = getLatestData();
     const el = document.getElementById("raporBilgi");
     if (!el) return;
-
     if (!r) { el.innerText = "Rapor bulunamadı"; return; }
-
-    // varsa rapor başlık alanlarını kullan (senin rapor yapına göre esnek)
     const baslik = r.baslik || r.raporAdi || r.mulkAdi || r.ilce || "";
     const tarih = r.tarih || r.raporTarihi || "";
     const info = [baslik, tarih].filter(Boolean).join(" • ");
@@ -683,9 +711,6 @@
   }
 
   function anaMenuyeDon(){
-    // senin menü dosyana göre ayarla
-    // örnek: index.html / rapor-detay.html vs.
-    // burada en güvenlisi: tarayıcı geri
     try { history.back(); } catch(e) { location.href = "index.html"; }
   }
 
@@ -693,13 +718,11 @@
     const { r, arr, i } = getLatestData();
     if (!r || i < 0){
       fillHeaderInfo();
-      alert("Rapor bulunamadı. Menüden yeniden gir.");
+      alert("Rapor bulunamadı.");
       return;
     }
 
     ensureBBList(r);
-
-    // aktif sekmeyi rapordan hatırla (istersen)
     const savedIdx = Number(localStorage.getItem("active_bb_index_" + rid));
     if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < r.bbDetayList.length) {
       activeBBIndex = savedIdx;
@@ -715,7 +738,6 @@
     const locked = isReportLocked();
     setFormDisabled(locked);
 
-    // sekme indexini sürekli sakla
     window.addEventListener("beforeunload", ()=>{
       try{
         if (!isReportLocked()) saveActiveBBToReport();
@@ -724,7 +746,6 @@
     });
   }
 
-  // Sayfa yüklenince
   document.addEventListener("DOMContentLoaded", init);
 </script>
 
