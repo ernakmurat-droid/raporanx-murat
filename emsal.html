@@ -207,6 +207,10 @@
   </div>
 
   <script>
+window.addEventListener("error", (e) => {
+  alert("JS Hatası: " + (e.message || "Bilinmiyor"));
+});
+    
  const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -579,4 +583,5 @@ auth.onAuthStateChanged((user) => {
   <script src="mobil-fix.js"></script>
 </body>
 </html>
+
 
