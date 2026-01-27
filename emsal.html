@@ -92,8 +92,6 @@
     .bbTabs{ display:flex; gap:8px; flex-wrap:wrap; }
     .bbTab{ padding:10px 12px; border-radius:10px; border:1px solid #ddd; cursor:pointer; background:#fff; color:#333; font-weight:bold; }
     .bbTab.active{ background:var(--primary); color:#fff; border-color:transparent; }
-    .hint{ font-size:12px; color:#666; margin-top:6px; }
-    .mini-note{ font-size:12px; color:#666; margin-top:6px; }
   </style>
 
   <link rel="stylesheet" href="mobil-fix.css">
@@ -110,25 +108,25 @@
     <div class="bbbar">
       <div style="font-weight:bold; color:var(--primary);">Bağımsız Bölüm Seç:</div>
       <div class="bbTabs" id="bbTabs"></div>
-      <div class="hint">Emsaller ortaktır. Her BB için ayrı değer çıkarılır.</div>
+      <div class="hint" style="font-size:11px; color:#c62828; margin-top:5px; width:100%;">* Not: Her BB için birim fiyatı girip "Sisteme Kaydet" demelisiniz.</div>
     </div>
 
-    <div class="section-title">1. Kayıtlı Emsaller (ORTAK)</div>
+    <div class="section-title">1. Kayıtlı Emsaller (ORTAK HAVUZ)</div>
     <div id="emsalListesi"></div>
     <button class="btn btn-add" onclick="formuAc()">+ YENİ EMSAL ARAŞTIRMASI EKLE</button>
 
     <div id="emsalFormContainer" class="card" style="display:none; border-top:5px solid var(--primary);">
       <div class="section-title">Emsal Detay Girişi</div>
       <div class="grid-form">
-        <div class="input-group"><label>(1) Kaynağı</label><input type="text" id="f1" list="h_f1"></div>
-        <div class="input-group"><label>(2) İletişim Telefonu</label><input type="text" id="f2" oninput="formatPhone(this)"></div>
-        <div class="input-group"><label>(3) Konum/Yakınlık</label><input type="text" id="f3" list="h_f3"></div>
+        <div class="input-group"><label>(1) Kaynağı</label><input type="text" id="f1"></div>
+        <div class="input-item"><label>(2) İletişim Telefonu</label><input type="text" id="f2" oninput="formatPhone(this)"></div>
+        <div class="input-group"><label>(3) Konum/Yakınlık</label><input type="text" id="f3"></div>
         <div class="input-group"><label>(4) Bina Kat Sayısı</label><input type="number" id="f4"></div>
-        <div class="input-group"><label>(5) Bulunduğu Kat</label><input type="text" id="f5" list="h_f5"></div>
-        <div class="input-group"><label>(6) Oda Sayısı</label><input type="text" id="f6" list="h_f6"></div>
+        <div class="input-group"><label>(5) Bulunduğu Kat</label><input type="text" id="f5"></div>
+        <div class="input-group"><label>(6) Oda Sayısı</label><input type="text" id="f6"></div>
         <div class="input-group"><label>(7) Beyan Alan (m²)</label><input type="number" id="f7"></div>
         <div class="input-group"><label>(8) Tahmini Alan (m²)</label><input type="number" id="f8" oninput="hesapla()"></div>
-        <div class="input-group"><label>(9) Taşınmaz Cinsi</label><input type="text" id="f9" list="h_f9"></div>
+        <div class="input-group"><label>(9) Taşınmaz Cinsi</label><input type="text" id="f9"></div>
         <div class="input-group">
           <label>(10) İstenen Fiyat (TL)</label>
           <input type="text" id="f10_mask" oninput="formatMoneyInput(this); hesapla();">
@@ -144,12 +142,12 @@
         <div class="input-group"><label>(12) Şerefiye (+)</label><input type="number" id="f12" value="0" oninput="hesapla()"></div>
         <div class="input-group"><label>(13) Şerefiye (-)</label><input type="number" id="f13" value="0" oninput="hesapla()"></div>
         <div class="input-group" style="grid-column:span 2;">
-          <label>(17) Düzeltilmiş Birim Değer</label>
+          <label>(17) Düzeltilmiş Birim Değer (m²)</label>
           <input type="text" id="f17" readonly style="background:#e8f5e9; font-weight:bold; color:#2e7d32;">
         </div>
       </div>
       <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="btn btn-save-final" onclick="emsalKaydet()" style="flex:2; margin:0;">VERİYİ LİSTEYE İŞLE</button>
+        <button class="btn btn-save-final" onclick="emsalKaydet()" style="flex:2; margin:0;">VERİYİ HAVUZA EKLE</button>
         <button class="btn" onclick="formuKapat()" style="flex:1; background:#9e9e9e; color:white;">İPTAL</button>
       </div>
     </div>
@@ -170,39 +168,38 @@
     </div>
 
     <div class="card">
-      <div class="section-title">2. Değerleme ve Birim Analizi (SEÇİLİ BB İÇİN)</div>
+      <div class="section-title">2. Değerleme ve Birim Analizi (SEÇİLİ BB: <span id="activeBBTitle">...</span>)</div>
       <div class="grid-form">
-        <div class="input-group"><label>Bölge Alt Sınır (MANUEL)</label>
+        <div class="input-group"><label>Bölge Alt Sınır (Birim m²)</label>
           <input type="text" id="inp_dusuk_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_dusuk">
         </div>
-        <div class="input-group"><label>Bölge Üst Sınır (MANUEL)</label>
+        <div class="input-group"><label>Bölge Üst Sınır (Birim m²)</label>
           <input type="text" id="inp_yuksek_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_yuksek">
         </div>
-        <div class="input-group"><label>Uygulanan Yasal Birim</label>
+        <div class="input-group"><label>BU BB İÇİN UYGULANAN BİRİM (m²)</label>
           <input type="text" id="inp_uygulanan_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_uygulanan">
         </div>
         <div class="input-group"><label>Yasal Brüt Alan (m²)</label>
           <input type="text" id="res_brut" readonly style="background:#eee; font-weight:bold;">
         </div>
-        <div class="input-group"><label>İlave Alan (m²)</label><input type="number" id="inp_proje_disi" oninput="finalHesapla()"></div>
-        <div class="input-group"><label>İlave Birim Değeri</label>
+        <div class="input-group"><label>Varsa İlave Alan (m²)</label><input type="number" id="inp_proje_disi" oninput="finalHesapla()"></div>
+        <div class="input-group"><label>İlave Alan Birim Değeri (m²)</label>
           <input type="text" id="inp_proje_birim_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_proje_birim">
         </div>
       </div>
     </div>
 
-    <div class="section-title">3. Rapor Analiz Metni</div>
+    <div class="section-title">3. Özet Analiz Metni (TÜM BÖLÜMLER)</div>
     <div id="yorumMetni" class="final-box"></div>
 
-    <button class="btn btn-save-final" style="width:100%; padding:18px; font-size:18px; background:#2e7d32;" onclick="tumRaporuKaydet()">
-      ANALİZİ SİSTEME KAYDET VE BULUTA MÜHÜRLE
+    <button class="btn btn-save-final" style="width:100%; padding:22px; font-size:20px; background:#1a237e; border:4px solid #3f51b5; margin-top:30px;" onclick="tumRaporuKaydet()">
+      💾 TÜM BÖLÜMLERİ VE HESAPLARI SİSTEME MÜHÜRLE
     </button>
   </div>
 
   <script>
     const auth = firebase.auth();
     const db = firebase.firestore();
-
     const params = new URLSearchParams(window.location.search);
     let rid = params.get('rid');
 
@@ -249,7 +246,7 @@
     }
 
     function setActiveBB(idx){
-      saveBBSettingsToObject(); // eskini kaydet
+      saveBBSettingsToObject(); // Eskiyi kaydet
       activeBBIndex = idx;
       renderBBTabs();
       refreshActiveBBUI();
@@ -259,6 +256,7 @@
       const { r } = getLatestData();
       if (!r || !r.bbDetayList[activeBBIndex]) return;
       const bb = r.bbDetayList[activeBBIndex];
+      document.getElementById('activeBBTitle').innerText = bb.baslik || (activeBBIndex+1)+". BB";
       document.getElementById('res_brut').value = bb.bbDetay?.alanBrut || 0;
       
       const oz = bb.degerlemeOzet || {};
@@ -334,44 +332,46 @@
       let metin = `EMSAL BİLGİLERİ\n------------------------------------------\n`;
       (r.emsalHavuzu || []).forEach((e, idx) => { metin += `${idx+1}) ${emsalMetinUret(e)}\n\n`; });
 
+      metin += `EMSALLERİN YORUMU\n------------------------------------------\nTaşınmazın değer tespitinde "Emsal Karşılaştırma Yöntemi" kullanılmıştır. `;
       const dusuk = document.getElementById('inp_dusuk').value;
       const yuksek = document.getElementById('inp_yuksek').value;
-      metin += `EMSALLERİN YORUMU\n------------------------------------------\nTaşınmazın değer tespitinde "Emsal Karşılaştırma Yöntemi" kullanılmıştır. `;
       if (dusuk && yuksek) metin += `Bölgedeki emsal m² birim fiyatları ${formatLira0(dusuk)} - ${formatLira0(yuksek)} TL aralığındadır. `;
-      metin += `\n\n`;
+      metin += `\n\nDEĞERLEME SONUÇLARI\n------------------------------------------\n`;
 
       r.bbDetayList.forEach((bb) => {
         const oz = bb.degerlemeOzet || {};
         const alan = parseFloat(bb.bbDetay?.alanBrut) || 0;
         const uyg = parseFloat(oz.uygulananBirim) || 0;
+        
+        // Final Değer Hesabı
         const bitDeg = Math.round(uyg * alan + (parseFloat(oz.projeDisiAlan)||0)*(parseFloat(oz.projeDisiBirim)||0));
 
         if (oz.insaatAktif === "1") {
           const sev = parseFloat(oz.insaatSeviye) || 0;
           const eks = parseFloat(oz.eksikImalat) || 0;
           let son = Math.round(bitDeg * (sev/100) - eks);
-          metin += `${bb.baslik}: Seviye %${sev} → Değer: ~${formatLira0(son)} TL\n`;
+          metin += `■ ${bb.baslik}: Taşınmazın tamamlanmış değeri ${formatLira0(bitDeg)} TL olup, %${sev} inşaat seviyesine göre mevcut durum değeri ~${formatLira0(son)} TL olarak takdir edilmiştir.\n`;
         } else {
-          metin += `${bb.baslik}: Yasal Değer: ~${formatLira0(bitDeg)} TL\n`;
+          metin += `■ ${bb.baslik}: Taşınmazın m² birim değeri ${formatLira0(uyg)} TL takdir edilmiş olup, toplam yasal değeri ~${formatLira0(bitDeg)} TL'dir.\n`;
         }
       });
       
       document.getElementById('yorumMetni').innerText = metin;
     }
 
-    // ✅ KRİTİK DÜZELTME: Veriyi Final Raporun Göreceği Alanlara Mühürler
     async function tumRaporuKaydet() {
-      saveBBSettingsToObject();
+      saveBBSettingsToObject(); // Önce aktif olanı kaydet
       const { arr, i, r } = getLatestData();
       
-      // Üretilen metni ana raporun anlayacağı alanlara kopyala
       const uretilenMetin = document.getElementById('yorumMetni').innerText;
-      r.emsalFinalMetni = uretilenMetin; // Eski raporlar için
+      
+      // ✅ TÜM SİSTEMLERE MÜHÜRLE
+      r.emsalFinalMetni = uretilenMetin; 
       if(!r.modules) r.modules = {};
       if(!r.modules.emsal) r.modules.emsal = {};
-      r.modules.emsal.text = uretilenMetin; // Yeni sistem için
+      r.modules.emsal.text = uretilenMetin; 
 
-      // Her BB'nin içine de kendi özel analizini mühürle
+      // Her BB'nin içine de kopyala (Hata payını sıfırlamak için)
       r.bbDetayList.forEach(bb => {
           if(!bb.degerlemeOzet) bb.degerlemeOzet = {};
           bb.degerlemeOzet.emsalFinalMetni = uretilenMetin;
@@ -380,11 +380,17 @@
       persist(arr, i, r);
 
       if (auth.currentUser) {
-        await db.collection("users").doc(auth.currentUser.uid).set({ gayrimenkul_reports: arr }, { merge: true });
-        alert("✅ Veriler mühürlendi ve buluta kaydedildi!");
+        try {
+          await db.collection("users").doc(auth.currentUser.uid).set({ gayrimenkul_reports: arr }, { merge: true });
+          alert("✅ Başarılı! Tüm BB hesapları mühürlendi ve buluta işlendi.");
+        } catch(e) {
+          alert("Bulut hatası: " + e.message);
+        }
       } else {
-        alert("✅ Yerel kaydedildi!");
+        alert("✅ Yerel hafızaya kaydedildi.");
       }
+      
+      listele(); // UI Tazele
     }
 
     function emsalKaydet() {
@@ -423,15 +429,25 @@
       listele();
     }
 
+    function emsalSil(id) {
+        if(!confirm("Emsal silinsin mi?")) return;
+        const { arr, i, r } = getLatestData();
+        r.emsalHavuzu = r.emsalHavuzu.filter(x => x.emsalId !== id);
+        persist(arr, i, r);
+        listele();
+    }
+
     function formuAcById(id){
       const { r } = getLatestData();
       const e = r.emsalHavuzu.find(x => x.emsalId === id);
       document.getElementById('emsalFormContainer').style.display = 'block';
+      
       if(!document.getElementById('editEmsalId')){
         const h = document.createElement('input'); h.type='hidden'; h.id='editEmsalId'; document.body.appendChild(h);
       }
       document.getElementById('editEmsalId').value = id;
-      for(let k=1; k<=14; k++){ if(document.getElementById('f'+k)) document.getElementById('f'+k).value = e['f'+k]; }
+      
+      for(let k=1; k<=14; k++){ if(document.getElementById('f'+k)) document.getElementById('f'+k).value = e['f'+k] || ""; }
       setMoneyPair('f10','f10_mask', e.f10);
       hesapla();
     }
@@ -448,8 +464,12 @@
 
     auth.onAuthStateChanged((user) => {
       if (!user) { window.location.href = 'index.html'; return; }
-      renderBBTabs();
-      refreshActiveBBUI();
+      const { r } = getLatestData();
+      if(r) {
+          document.getElementById('raporBilgi').innerText = r.mulkAdi || r.propertyName || "Emsal Analizi";
+          renderBBTabs();
+          refreshActiveBBUI();
+      }
     });
   </script>
 </body>
