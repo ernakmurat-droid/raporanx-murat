@@ -206,10 +206,10 @@
   let rid = params.get("rid");
   let id  = params.get("id"); // eski sistem
 
-  // Storage (senin gerçek sistemin)
+  // Storage
   const STORAGE_KEY = "gayrimenkul_reports";
 
-  // küçük yardımcı: id farklı isimli olabilir diye (alt çizgili/çizgisiz)
+  // ===== Helpers =====
   function el(...ids){
     for(const x of ids){
       const n = document.getElementById(x);
@@ -246,41 +246,144 @@
     input.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '');
   }
 
-  // raporu storage'dan bul (id varsa direkt, yoksa rid ile tarar)
-  function loadAllReports(){
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  // ===== Robust storage load (array/object) =====
+  function loadAllReportsRaw(){
+    try{
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    }catch(e){
+      return null;
+    }
+  }
+  function toArray(raw){
+    if(Array.isArray(raw)) return raw;
+    if(raw && typeof raw === "object") return Object.values(raw);
+    return [];
+  }
+  function toObject(raw){
+    if(raw && typeof raw === "object" && !Array.isArray(raw)) return raw;
+    if(Array.isArray(raw)){
+      // array'ı object'e çevirmiyoruz; kaydederken array olarak geri yazacağız
+      return null;
+    }
+    return {};
   }
 
   function findReport(){
-    const reports = loadAllReports();
+    const raw = loadAllReportsRaw();
+    const arr = toArray(raw);
 
-    // 1) id ile
-    if(id && reports[id]) return { reports, key:id, report: reports[id] };
-
-    // 2) rid ile tarama (report.rid varsa)
+    // 1) rid ile bul
     if(rid){
-      const keys = Object.keys(reports);
-      for(const k of keys){
-        const r = reports[k];
-        if(r && r.rid === rid) return { reports, key:k, report:r };
-      }
+      const i = arr.findIndex(r => r && r.rid === rid);
+      if(i >= 0) return { raw, arr, i, report: arr[i] };
     }
 
-    return { reports, key:null, report:null };
+    // 2) id ile bul (legacy)
+    if(id){
+      // object key ise
+      if(raw && typeof raw === "object" && !Array.isArray(raw) && raw[id]){
+        return { raw, arr, i: -999, report: raw[id], key: id }; // -999: object-key mod
+      }
+      // array içinde id/legacyId ile bul
+      const j = arr.findIndex(r => r && (String(r.id) === String(id) || String(r.legacyId) === String(id)));
+      if(j >= 0) return { raw, arr, i: j, report: arr[j] };
+    }
+
+    return { raw, arr, i: -1, report: null };
   }
 
-  function saveReport(reports, key, report){
-    if(!key) return;
-    reports[key] = report;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+  function saveReport(updatedReport){
+    const found = findReport();
+    const raw = found.raw;
+
+    // object (id key'li) ise
+    if(raw && typeof raw === "object" && !Array.isArray(raw) && found.key){
+      raw[found.key] = updatedReport;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(raw));
+      return;
+    }
+
+    // array ise
+    const arr = found.arr || [];
+    if(found.i >= 0){
+      arr[found.i] = updatedReport;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+      return;
+    }
+
+    // hiçbir şey bulunamadı -> kaydetme yapmayalım
+    console.warn("saveReport: rapor bulunamadı, yazılmadı");
   }
 
+  // ===== Emsal pool unify =====
+  function getPool(report){
+    const pool =
+      (Array.isArray(report?.emsaller) ? report.emsaller : null) ||
+      (Array.isArray(report?.emsalHavuzu) ? report.emsalHavuzu : null) ||
+      [];
+    // iki alanı da aynı yap (uyumluluk)
+    report.emsaller = pool;
+    report.emsalHavuzu = pool;
+    return pool;
+  }
+
+  // ===== Active BB handling =====
+  let activeBBIndex = 0;
+
+  function getActiveBB(report){
+    const list = report?.bbDetayList;
+    if(Array.isArray(list) && list[activeBBIndex]) return list[activeBBIndex];
+    return null;
+  }
+
+  function getBrutFromReport(report){
+    const bb = getActiveBB(report);
+    return (
+      bb?.bbDetay?.alanBrut ??
+      bb?.bbDetay?.alan_brut ??
+      report?.tasinmazBrut ??
+      report?.tasinmaz_brut ??
+      0
+    );
+  }
+
+  function renderBBTabs(){
+    const tabs = el("bbTabs");
+    if(!tabs) return;
+
+    const { report } = findReport();
+    if(!report || !Array.isArray(report.bbDetayList) || report.bbDetayList.length === 0){
+      tabs.innerHTML = "";
+      return;
+    }
+
+    tabs.innerHTML = report.bbDetayList.map((bb, idx)=>{
+      const cls = (idx === activeBBIndex) ? "bbTab active" : "bbTab";
+      const title = bb.baslik || (idx+1)+". BB";
+      return `<button type="button" class="${cls}" onclick="setActiveBB(${idx})">${title}</button>`;
+    }).join("");
+  }
+
+  window.setActiveBB = function(idx){
+    activeBBIndex = idx;
+    renderBBTabs();
+
+    const { report } = findReport();
+    if(report){
+      const brut = getBrutFromReport(report);
+      setVal(brut, "res_brut","resbrut");
+    }
+    finalHesapla();
+  };
+
+  // ===== UI Status =====
   function veriKontrol(report){
     const bar = el("durumCubugu");
     if(!bar) return;
 
-    const count = (report.emsaller || []).length;
-    const check = val("inp_uygulanan","inpuygulanan");
+    const pool = getPool(report);
+    const count = pool.length;
+    const check = val("inp_uygulanan","inpuygulanan","inp_uygulananmask","inpuygulananmask");
 
     if(count >= 1 && parseFloat(check || 0) > 0){
       bar.textContent = "✅ ANALİZ PARAMETRELERİ TAMAMLANDI";
@@ -291,6 +394,7 @@
     }
   }
 
+  // ===== Emsal hesap =====
   function hesapla(){
     const fiyat = parseFloat(val("f10","f10")) || 0;
     const alan  = parseFloat(val("f8","f8")) || 1;
@@ -320,31 +424,33 @@
   }
 
   function finalHesapla(){
-    const { reports, key, report } = findReport();
+    const { report } = findReport();
     const out = el("yorumMetni","yorumMetni");
     if(!out) return;
 
     if(!report){
       out.innerText =
         "⚠️ RAPOR BULUNAMADI.\n\n" +
-        "Bu sayfa gayrimenkul_reports içinden rapor çekiyor.\n" +
-        "Muhtemel sebep: linkte id/rid yok veya kayıt başka cihazda.\n\n" +
+        "Muhtemel sebep: linkte id/rid yok veya kayıt başka cihazda.\n" +
         "Çözüm: Rapor Detay’dan bu modülü tekrar aç.";
       return;
     }
 
-    report.emsaller = report.emsaller || [];
+    const pool = getPool(report);
 
     const dusuk  = parseFloat(val("inp_dusuk","inpdusuk")) || 0;
     const yuksek = parseFloat(val("inp_yuksek","inpyuksek")) || 0;
     const uyg    = parseFloat(val("inp_uygulanan","inpuygulanan")) || 0;
-    const brut   = parseFloat(val("res_brut","resbrut")) || 0;
+
+    // ✅ Brüt alanı rapordan doğru BB'ye göre al
+    const brut   = parseFloat(val("res_brut","resbrut")) || parseFloat(getBrutFromReport(report) || 0) || 0;
+    setVal(brut, "res_brut","resbrut"); // ekranda da dursun
 
     let metin = `EMSAL BİLGİLERİ\n------------------------------------------\n`;
-    if(report.emsaller.length === 0){
+    if(pool.length === 0){
       metin += "Henüz emsal girilmemiştir.\n\n";
     }else{
-      report.emsaller.forEach((e, i) => {
+      pool.forEach((e, i) => {
         const built = emsalMetinUret(e);
         metin += `${i+1}) ${built.anaMetin}\n\n`;
       });
@@ -357,12 +463,12 @@
     }
 
     metin += `\n\nDEĞERLEME SONUÇLARI\n------------------------------------------\n`;
-    const toplam = Math.round(uyg * brut);
+    const toplam = Math.round((uyg || 0) * (brut || 0));
     metin += `■ Taşınmazın m² birim değeri ${formatLira0(uyg)} TL takdir edilmiş olup, ${brut} m² brüt alan üzerinden toplam değeri ~${formatLira0(toplam)} TL'dir.\n`;
 
     metin += `\nEMSAL HESAP SATIRLARI\n------------------------------------------\n`;
-    if(report.emsaller.length){
-      report.emsaller.forEach((e, i) => {
+    if(pool.length){
+      pool.forEach((e, i) => {
         const built = emsalMetinUret(e);
         metin += `- Emsal ${i+1}: ${built.hesapSatiri}\n`;
       });
@@ -373,7 +479,7 @@
   }
 
   function listele(){
-    const { reports, key, report } = findReport();
+    const { report } = findReport();
     const list = el("emsalListesi");
     if(!list) return;
 
@@ -383,10 +489,10 @@
       return;
     }
 
-    report.emsaller = report.emsaller || [];
-    list.innerHTML = "";
+    const pool = getPool(report);
 
-    report.emsaller.forEach((e, i) => {
+    list.innerHTML = "";
+    pool.forEach((e, i) => {
       list.innerHTML += `
         <div class="emsal-liste-item">
           <div><strong>Emsal ${i+1}</strong>: ${e.f1 || ""}</div>
@@ -401,7 +507,7 @@
     finalHesapla();
   }
 
-  // form aç/kapat eski düzenle uyumlu
+  // ===== Form open/close =====
   window.formuAc = function(index=-1){
     const box = el("emsalFormContainer");
     if(box) box.style.display = "block";
@@ -409,7 +515,8 @@
     setVal(String(index), "editIndex", "editEmsalId");
 
     const { report } = findReport();
-    const e = (report && report.emsaller && index >= 0) ? report.emsaller[index] : null;
+    const pool = report ? getPool(report) : [];
+    const e = (index >= 0 && pool[index]) ? pool[index] : null;
 
     for(let k=1; k<=14; k++){
       const idA = "f"+k;
@@ -418,7 +525,6 @@
       n.value = e ? (e[idA] || "") : (k===14 ? "5" : "");
     }
 
-    // fiyat mask uyumu
     const f10mask = el("f10_mask","f10mask");
     const f10 = el("f10");
     if(f10mask && f10){
@@ -436,13 +542,15 @@
   }
 
   window.emsalKaydet = async function(){
-    const { reports, key, report } = findReport();
+    const found = findReport();
+    const report = found.report;
     if(!report){ alert("Rapor bulunamadı."); return; }
 
-    report.emsaller = report.emsaller || [];
+    const pool = getPool(report);
 
     const idxRaw = val("editIndex","editEmsalId");
     const index = parseInt(idxRaw,10);
+
     let e = {};
     for(let k=1; k<=14; k++){
       const idA = "f"+k;
@@ -452,27 +560,34 @@
     e.f10 = val("f10","f10");
     e.f17 = val("f17","f17");
 
-    // metin alanlarını üret
     const built = emsalMetinUret(e);
     e.anaMetin = built.anaMetin;
     e.hesapSatiri = built.hesapSatiri;
 
-    if(index > -1 && report.emsaller[index]) report.emsaller[index] = e;
-    else report.emsaller.push(e);
+    if(index > -1 && pool[index]) pool[index] = e;
+    else pool.push(e);
 
-    saveReport(reports, key, report);
+    report.emsaller = pool;
+    report.emsalHavuzu = pool;
+
+    saveReport(report);
     window.formuKapat();
     listele();
   }
 
   window.emsalSil = async function(index){
-    const { reports, key, report } = findReport();
+    const found = findReport();
+    const report = found.report;
     if(!report) return;
     if(!confirm("Silinsin mi?")) return;
 
-    report.emsaller = report.emsaller || [];
-    report.emsaller.splice(index, 1);
-    saveReport(reports, key, report);
+    const pool = getPool(report);
+    pool.splice(index, 1);
+
+    report.emsaller = pool;
+    report.emsalHavuzu = pool;
+
+    saveReport(report);
     listele();
   }
 
@@ -484,7 +599,8 @@
   }
 
   window.tumRaporuKaydet = async function(){
-    const { reports, key, report } = findReport();
+    const found = findReport();
+    const report = found.report;
     if(!report){ alert("Rapor bulunamadı."); return; }
 
     const metin = (el("yorumMetni")?.innerText || "").trim();
@@ -493,12 +609,14 @@
     if(!report.modules.emsal) report.modules.emsal = {};
     report.modules.emsal.text = metin;
 
-    saveReport(reports, key, report);
+    saveReport(report);
 
     if(auth.currentUser){
       try{
+        // raw object/array fark etmesin diye aynı storage içeriğini gönderiyoruz:
+        const rawNow = loadAllReportsRaw();
         await db.collection("users").doc(auth.currentUser.uid).set({
-          gayrimenkul_reports: reports,
+          gayrimenkul_reports: rawNow,
           sonGuncelleme: new Date().toISOString()
         }, { merge:true });
         alert("✅ Kaydedildi ve buluta mühürlendi.");
@@ -511,7 +629,6 @@
   }
 
   window.anaMenuyeDon = function(){
-    // sende rapor-detay id ile çalışıyorsa:
     if(id) window.location.href = `rapor-detay.html?id=${encodeURIComponent(id)}`;
     else if(rid) window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
     else window.location.href = "rapor-detay.html";
@@ -528,25 +645,33 @@
   auth.onAuthStateChanged((user)=>{
     if(!user){ window.location.href = "index.html"; return; }
 
-    const { report } = findReport();
+    const found = findReport();
+    const report = found.report;
+
     const raporBilgi = el("raporBilgi");
     if(raporBilgi){
-      raporBilgi.textContent = (report && (report.propertyName || report.mulkAdi)) ? (report.propertyName || report.mulkAdi) : "Analiz Dosyası";
+      raporBilgi.textContent = (report && (report.propertyName || report.mulkAdi))
+        ? (report.propertyName || report.mulkAdi)
+        : "Analiz Dosyası";
     }
 
-    // brut alan id uyumu (dosyanda res_brut var :contentReference[oaicite:2]{index=2} )
+    // ✅ BB tabs varsa çiz, yoksa sorun değil
+    renderBBTabs();
+
+    // ✅ Brüt alanı doğru BB'den çek
     if(report){
-      const brut = report?.bbDetay?.alanBrut || report?.bbDetay?.alan_brut || report?.tasinmazBrut || 0;
+      const brut = getBrutFromReport(report);
       setVal(brut, "res_brut","resbrut");
     }
 
     listele();
     finalHesapla();
   });
-
 </script>
+
 
   <script src="mobil-fix.js"></script>
 </body>
 </html>
+
 
