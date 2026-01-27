@@ -131,7 +131,6 @@
 
     .hidden{ display:none !important; }
 
-    /* Yeni eklenen toplu görünüm stilleri */
     .toplu-liste-konteyner {
       margin-top: 30px;
       padding: 20px;
@@ -303,7 +302,6 @@
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  /* ========= RID + legacy id ========= */
   const params = new URLSearchParams(window.location.search);
   let rid = params.get('rid');
   const legacyId = params.get('id');
@@ -541,36 +539,23 @@
     const metin = buildTextFromData(data);
     const out = document.getElementById("taslak");
     if (out) out.innerText = metin;
-
-    // YENİ: Her değişiklikte toplu görünümü tazele
     topluListeyiGuncelle();
   }
 
-  // YENİ FONKSİYON: Tüm bölümleri alta listeler
   function topluListeyiGuncelle() {
     const { r } = getLatestData();
     if (!r || !r.bbDetayList) return;
-
     const container = document.getElementById("topluMetinAlani");
     if (!container) return;
-
     let html = "";
     r.bbDetayList.forEach((bb, idx) => {
         let guncelMetin = "";
         if (idx === activeBBIndex) {
-            // Aktif sekme ise formdaki canlı veriyi kullan
             guncelMetin = buildTextFromData(readForm());
         } else {
-            // Diğer sekmeler ise kayıtlı veriyi kullan
             guncelMetin = buildTextFromData(bb.bbDetay || {});
         }
-
-        html += `
-            <div class="toplu-bb-kart">
-                <div style="font-weight:900; color:var(--primary); margin-bottom:8px;">📍 ${bb.baslik || (idx+1 + '. BB')}</div>
-                <div style="font-size:14px; line-height:1.6; color:#444;">${guncelMetin}</div>
-            </div>
-        `;
+        html += `<div class="toplu-bb-kart"><div style="font-weight:900; color:var(--primary); margin-bottom:8px;">📍 ${bb.baslik || (idx+1 + '. BB')}</div><div style="font-size:14px; line-height:1.6; color:#444;">${guncelMetin}</div></div>`;
     });
     container.innerHTML = html || "Henüz bölüm eklenmedi.";
   }
@@ -578,22 +563,22 @@
   function saveActiveBBToReport(){
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) return;
-
     ensureBBList(r);
     const bb = getActiveBB(r);
     bb.bbDetay = readForm();
-    bb.bbDetay.taslakMetin = document.getElementById("taslak")?.innerText || "";
+    // KRİTİK: Taslak metni hem bbDetay'a hem de bb'nin üstüne mühürlüyoruz
+    const uretilenMetin = document.getElementById("taslak")?.innerText || "";
+    bb.bbDetay.taslakMetin = uretilenMetin;
+    bb.taslakMetin = uretilenMetin; 
     persist(arr, i, r);
   }
 
   function loadActiveBBFromReport(){
     const { r } = getLatestData();
     if (!r) return;
-
     ensureBBList(r);
     const bb = getActiveBB(r);
     const data = (bb && bb.bbDetay) ? bb.bbDetay : {};
-
     writeForm(data);
     farkKontrol();
     tesisatKontrol();
@@ -604,9 +589,7 @@
   function setActiveBB(newIndex){
     const { r } = getLatestData();
     if (!r) return;
-
     if (!isReportLocked()) saveActiveBBToReport();
-
     activeBBIndex = Math.max(0, Math.min(newIndex, (r.bbDetayList?.length || 1)-1));
     renderBBTabs();
     loadActiveBBFromReport();
@@ -616,13 +599,10 @@
     if (isReportLocked()) return;
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) return;
-
     saveActiveBBToReport();
     ensureBBList(r);
-
     const nextNo = r.bbDetayList.length + 1;
     r.bbDetayList.push({ bbid: "bb_" + nextNo + "_" + Date.now().toString(36), baslik: `${nextNo}. BB`, bbDetay:{} });
-
     activeBBIndex = r.bbDetayList.length - 1;
     persist(arr, i, r);
     renderBBTabs();
@@ -633,16 +613,13 @@
     if (isReportLocked()) return;
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) return;
-
     ensureBBList(r);
     const bb = getActiveBB(r);
     const mevcut = (bb.baslik || "").trim() || `${activeBBIndex+1}. BB`;
     const yeni = prompt("BB adı:", mevcut);
     if (yeni === null) return;
-
     const clean = yeni.toString().trim();
     bb.baslik = clean ? clean : `${activeBBIndex+1}. BB`;
-
     persist(arr, i, r);
     renderBBTabs();
     topluListeyiGuncelle();
@@ -652,24 +629,21 @@
     if (isReportLocked()) return;
     const { r, arr, i } = getLatestData();
     if (!r || i < 0) return;
-
     ensureBBList(r);
     if (r.bbDetayList.length <= 1) return;
-
     const bb = getActiveBB(r);
     const name = bb.baslik || `${activeBBIndex+1}. BB`;
     const ok = confirm(`"${name}" silinsin mi?`);
     if (!ok) return;
-
     r.bbDetayList.splice(activeBBIndex, 1);
     activeBBIndex = Math.max(0, activeBBIndex - 1);
-
     renumberBB(r);
     persist(arr, i, r);
     renderBBTabs();
     loadActiveBBFromReport();
   }
 
+  // ✅ BU FONKSİYONU GÜNCELLEDİM: Final Raporun tüm BB metinlerini görmesi için mühürleme yapar.
   function kaydet(){
     if (isReportLocked()) return;
     const { r, arr, i } = getLatestData();
@@ -678,20 +652,24 @@
       return;
     }
 
-    saveActiveBBToReport();
+    saveActiveBBToReport(); // Aktif olanı kaydet
 
+    // Tüm BB listesini tara ve metinleri mühürle
     ensureBBList(r);
     r.bbDetayList.forEach((bbItem)=>{
       const data = bbItem.bbDetay || {};
       const metin = buildTextFromData(data);
-      bbItem.bbDetay = data;
-      bbItem.bbDetay.taslakMetin = metin;
+      // Final raporun aradığı 3 ana noktaya da metni yazıyoruz:
+      bbItem.bbDetay.taslakMetin = metin; // bbDetay içinde
+      bbItem.taslakMetin = metin;         // bbItem kökünde
+      bbItem.metin = metin;               // Alternatif olarak
     });
 
+    // Rapor seviyesindeki listeyi de tazele
     r.bbMetinleri = r.bbDetayList.map((x, idx)=>({
       bbid: x.bbid,
       baslik: x.baslik || `${idx+1}. BB`,
-      metin: (x.bbDetay && x.bbDetay.taslakMetin) ? x.bbDetay.taslakMetin : buildTextFromData(x.bbDetay || {})
+      metin: x.taslakMetin
     }));
 
     persist(arr, i, r);
@@ -721,7 +699,6 @@
       alert("Rapor bulunamadı.");
       return;
     }
-
     ensureBBList(r);
     const savedIdx = Number(localStorage.getItem("active_bb_index_" + rid));
     if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < r.bbDetayList.length) {
@@ -729,12 +706,10 @@
     } else {
       activeBBIndex = 0;
     }
-
     persist(arr, i, r);
     renderBBTabs();
     loadActiveBBFromReport();
     fillHeaderInfo();
-
     const locked = isReportLocked();
     setFormDisabled(locked);
 
