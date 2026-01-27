@@ -508,6 +508,18 @@
 
     const data = readForm();
     bb.bbDetay = data;
+    // ✅ BRÜT/NET ALAN KÖPRÜSÜ (emsal modülü kaç farklı isimle arasa da bulsun)
+bb.bbDetay.alanBrut = String(bb.bbDetay.alanBrut || "");
+bb.bbDetay.alanNet  = String(bb.bbDetay.alanNet  || "");
+
+// bazı modüller alan_brut / alan_brüt gibi arayabiliyor:
+bb.bbDetay.alan_brut = bb.bbDetay.alanBrut;
+bb.bbDetay.alan_net  = bb.bbDetay.alanNet;
+
+// rapor seviyesinde de tut (bazı yerler buradan okuyor)
+r.tasinmazBrut = bb.bbDetay.alanBrut;
+r.tasinmazNet  = bb.bbDetay.alanNet;
+
     bb.taslakMetin = buildTextFromData(data);
 
     FIELD_IDS.forEach(id => {
@@ -650,3 +662,4 @@
 </script>
 </body>
 </html>
+
