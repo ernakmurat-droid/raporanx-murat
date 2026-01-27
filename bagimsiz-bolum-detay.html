@@ -539,7 +539,7 @@
   }
 
   /* ========= METİN OLUŞTUR (PARAGRAF) ========= */
- function metinOlustur() {
+function metinOlustur() {
   const v = (id) => (document.getElementById(id)?.value || "").toString().trim();
   const n = (id) => Number(v(id) || 0) || 0;
 
@@ -555,22 +555,15 @@
     .map(x => x.value).filter(Boolean);
   const cepheTxt = cepheler.length ? cepheler.join(", ") : "...";
 
-  const salon  = parseInt(v("count_salon") || "0", 10) || 0;
-  const oda    = parseInt(v("count_oda") || "0", 10) || 0;
-  const mutfak = parseInt(v("count_mutfak") || "0", 10) || 0;
-  const banyo  = parseInt(v("count_banyo") || "0", 10) || 0;
-  const wc     = parseInt(v("count_wc") || "0", 10) || 0;
-  const antre  = parseInt(v("count_antre") || "0", 10) || 0;
-  const balkon = parseInt(v("count_balkon") || "0", 10) || 0;
-
+  const sayi = (id) => parseInt(v(id) || "0", 10) || 0;
   const hacimler = [
-    salon  ? `${salon} adet salon` : "",
-    oda    ? `${oda} adet oda` : "",
-    mutfak ? `${mutfak} adet mutfak` : "",
-    banyo  ? `${banyo} adet banyo` : "",
-    wc     ? `${wc} adet wc` : "",
-    antre  ? `${antre} adet antre/hol` : "",
-    balkon ? `${balkon} adet balkon` : ""
+    sayi("count_salon")  ? `${sayi("count_salon")} adet salon` : "",
+    sayi("count_oda")    ? `${sayi("count_oda")} adet oda` : "",
+    sayi("count_mutfak") ? `${sayi("count_mutfak")} adet mutfak` : "",
+    sayi("count_banyo")  ? `${sayi("count_banyo")} adet banyo` : "",
+    sayi("count_wc")     ? `${sayi("count_wc")} adet wc` : "",
+    sayi("count_antre")  ? `${sayi("count_antre")} adet antre/hol` : "",
+    sayi("count_balkon") ? `${sayi("count_balkon")} adet balkon` : ""
   ].filter(Boolean).join(", ") || "...";
 
   const farkVar = (document.querySelector('input[name="farkVar"]:checked')?.value === "evet");
@@ -620,108 +613,6 @@ ${detayCumle}
   if (out) out.innerText = metin;
 }
 
-
-    const pickNum = (id, def=0) => {
-      const v = safe(id, "");
-      const n = Number(v);
-      return Number.isFinite(n) ? n : def;
-    };
-
-    const kat   = safe("kat");
-    const bbNo  = safe("bbNo");
-    const kapi  = safe("kapiNo");
-    const konum = safe("konum");
-
-    const aNet  = pickNum("alanNet", 0);
-    const aBrut = pickNum("alanBrut", 0);
-
-    const cepheler = Array.from(document.querySelectorAll('input[name="cephe"]:checked'))
-      .map(cb => cb.value)
-      .filter(Boolean);
-
-    const farkVar = (document.querySelector('input[name="farkVar"]:checked')?.value === 'evet');
-    const farkAciklama = safe("farkAciklama");
-    const ilaveBrut = pickNum("ilaveBrut", 0);
-
-    const sayi = (id, def=0) => parseInt(safe(id, String(def)), 10) || def;
-    const hacimlerArr = [
-      { id: 'count_salon',  label: 'salon' },
-      { id: 'count_oda',    label: 'oda' },
-      { id: 'count_mutfak', label: 'mutfak' },
-      { id: 'count_banyo',  label: 'banyo' },
-      { id: 'count_wc',     label: 'wc' },
-      { id: 'count_antre',  label: 'antre/hol' },
-      { id: 'count_balkon', label: 'balkon' },
-    ].map(x => {
-      const n = sayi(x.id, 0);
-      if (!n || n <= 0) return null;
-      return `${n} adet ${x.label}`;
-    }).filter(Boolean);
-
-    // Detaylar (boşları yazma)
-    const detayPairs = [
-      ["Antre zemini", safe("antreZemin")],
-      ["Antre duvarı", safe("antreDuvar")],
-      ["Salon zemini", safe("salonZemin")],
-      ["Salon duvarı", safe("salonDuvar")],
-      ["Oda zemini", safe("odaZemin")],
-      ["Oda duvarı", safe("odaDuvar")],
-      ["Mutfak zemini", safe("mutfakZemin")],
-      ["Mutfak duvarı", safe("mutfakDuvar")],
-      ["Mutfak dolabı", safe("mutfakDolap")],
-      ["Mutfak tezgahı", safe("mutfakTezgah")],
-      ["Islak hacim", safe("islakHacim")],
-      ["Giriş kapısı", safe("daireKapi")],
-      ["İç kapılar", safe("icKapi")],
-      ["Pencereler", safe("pencere")],
-      ["Isıtma sistemi", safe("isitma")],
-    ].filter(([_, v]) => (v || "").trim().length > 0);
-
-    const bbKimlik = [
-      bbNo ? `BB No ${bbNo}` : "",
-      kapi ? `Kapı No ${kapi}` : "",
-      kat ? `${kat}. kat` : ""
-    ].filter(Boolean).join(", ");
-
-    const alanCumle = (aNet || aBrut)
-      ? `Proje net alanı ${aNet || 0} m², proje brüt alanı ${aBrut || 0} m²’dir.`
-      : `Proje alan bilgisi girilmemiştir.`;
-
-    const cepheCumle = cepheler.length
-      ? `Bağımsız bölümün cepheleri ${cepheler.join(", ")} yönleridir.`
-      : `Cephe bilgisi girilmemiştir.`;
-
-    const konumCumle = konum
-      ? `Girişe göre konumu ${konum} olarak beyan edilmiştir.`
-      : ``;
-
-    const hacimCumle = hacimlerArr.length
-      ? `Taşınmaz hacimleri; ${hacimlerArr.join(", ")} şeklindedir.`
-      : `Hacim dağılımı bilgisi girilmemiştir.`;
-
-    const farkCumle = farkVar
-      ? `Projeye göre değişiklik bulunduğu beyan edilmiştir. ${farkAciklama ? `Açıklama: ${farkAciklama}.` : ""} ${ilaveBrut ? `İlave brüt alan ${ilaveBrut} m²’dir.` : ""}`.trim()
-      : `Projeye göre değişiklik bulunmadığı beyan edilmiştir.`;
-
-    const detayCumle = detayPairs.length
-      ? `Mahallin iç özellikleri; ${detayPairs.map(([k,v]) => `${k} ${v}`).join(", ")} olarak belirtilmiştir.`
-      : `İç özelliklere ilişkin detay bilgi girilmemiştir.`;
-
-    const metin = [
-      `BAĞIMSIZ BÖLÜM İNCELEME NOTU`,
-      ``,
-      `Rapor konusu taşınmaz ${bbKimlik || "bilgileri girilmemiş bir bağımsız bölüm"} olarak değerlendirilmiştir.`,
-      alanCumle,
-      konumCumle,
-      cepheCumle,
-      hacimCumle,
-      farkCumle,
-      detayCumle,
-    ].filter(Boolean).join("\n\n");
-
-    const out = document.getElementById("taslak");
-    if (out) out.innerText = metin;
-  }
 
   /* ========= LOAD / SAVE ========= */
   function veriYukle(){
@@ -823,4 +714,5 @@ ${detayCumle}
 <script src="mobil-fix.js"></script>
 </body>
 </html>
+
 
