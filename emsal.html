@@ -14,23 +14,25 @@
     :root { --primary:#1a237e; --secondary:#3f51b5; --success:#2e7d32; --bg:#f4f7f6; --danger:#c62828; }
     * { box-sizing:border-box; }
     body { font-family:'Segoe UI',Tahoma,sans-serif; background:var(--bg); margin:0; padding-bottom:120px; color:#333; }
-    .header { background:var(--primary); color:#fff; padding:25px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,.2); }
-    .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,.2); padding:8px 15px; border-radius:20px; color:#fff; text-decoration:none; font-weight:bold; cursor:pointer; border:none; }
+    .header { background:var(--primary); color:#fff; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; }
+    .back { position:absolute; left:15px; top:18px; background:rgba(255,255,255,.2); padding:8px 15px; border-radius:20px; color:#fff; border:none; cursor:pointer; }
     .container { max-width:980px; margin:20px auto; padding:0 20px; }
-    .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,.05); margin-bottom:20px; border:1px solid #e0e6ed; }
+    .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,.05); margin-bottom:20px; }
     .section-title { color:var(--primary); font-size:1.1rem; font-weight:bold; border-bottom:2px solid #eee; padding-bottom:8px; margin-bottom:15px; }
     .grid-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; }
     .input-group label { display:block; font-size:13px; font-weight:600; color:#555; margin-bottom:5px; }
-    .input-group input, .input-group select { width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; font-size:14px; outline:none; }
-    .btn { padding:12px 20px; border:none; border-radius:12px; cursor:pointer; font-weight:bold; transition:.2s; }
-    .btn-add { background:var(--success); color:#fff; width:100%; box-shadow:0 4px 10px rgba(46,125,50,.2); }
-    .btn-save-final { background:var(--primary); color:#fff; margin-top:15px; }
-    .final-box{ background:#fff; border:2px solid #ddd; padding:25px; border-radius:12px; white-space:pre-wrap; font-size:15px; line-height:1.8; color:#333; min-height:140px; }
-    .hidden{ display:none !important; }
-    .bbTabs{ display:flex; gap:8px; flex-wrap:wrap; margin:10px 0; }
-    .bbTab{ padding:10px 12px; border-radius:10px; border:1px solid #ddd; cursor:pointer; background:#fff; font-weight:bold; }
-    .bbTab.active{ background:var(--primary); color:#fff; }
-    .emsal-liste-item{ background:#f8f9fa; padding:12px; border-radius:8px; margin-bottom:8px; border-left:5px solid var(--primary); display:flex; justify-content:space-between; align-items:center; }
+    .input-group input { width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; }
+    .btn { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
+    .btn-save-final { background:var(--primary); color:#fff; width:100%; margin-top:20px; font-size:18px; }
+    .final-box { background:#fff; border:2px solid #ddd; padding:25px; border-radius:12px; white-space:pre-wrap; font-size:15px; line-height:1.8; }
+    
+    /* Tablo Tasarımı */
+    .hesap-tablosu { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+    .hesap-tablosu th, .hesap-tablosu td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    .hesap-tablosu th { background-color: #f2f2f2; color: var(--primary); }
+    .bbTab { padding:10px 15px; border-radius:8px; border:1px solid #ddd; cursor:pointer; background:#fff; margin-right:5px; font-weight:bold; }
+    .bbTab.active { background:var(--primary); color:#fff; }
+    .hidden { display:none !important; }
   </style>
 </head>
 
@@ -43,49 +45,45 @@
 
   <div class="container">
     <div class="card">
-      <div style="font-weight:bold; color:var(--primary);">Bağımsız Bölüm Seç:</div>
-      <div class="bbTabs" id="bbTabs"></div>
+      <div style="font-weight:bold; color:var(--primary); margin-bottom:10px;">Bağımsız Bölüm Seç:</div>
+      <div id="bbTabs"></div>
     </div>
 
-    <div class="section-title">1. Kayıtlı Emsaller (ORTAK)</div>
+    <div class="section-title">1. Kayıtlı Emsaller (ORTAK HAVUZ)</div>
     <div id="emsalListesi"></div>
-    <button class="btn btn-add" onclick="formuAc()">+ YENİ EMSAL ARAŞTIRMASI EKLE</button>
+    <button class="btn" style="background:var(--success); color:#fff; width:100%;" onclick="formuAc()">+ YENİ EMSAL ARAŞTIRMASI EKLE</button>
 
-    <div id="emsalFormContainer" class="card" style="display:none;">
+    <div id="emsalFormContainer" class="card" style="display:none; border:2px solid var(--primary);">
       <div class="grid-form">
         <div class="input-group"><label>Kaynağı</label><input type="text" id="f1"></div>
         <div class="input-group"><label>Telefon</label><input type="text" id="f2"></div>
         <div class="input-group"><label>Konum</label><input type="text" id="f3"></div>
         <div class="input-group"><label>Alan (m²)</label><input type="number" id="f8" oninput="hesapla()"></div>
-        <div class="input-group"><label>Fiyat (TL)</label>
-            <input type="text" id="f10_mask" oninput="formatMoneyInput(this); hesapla();">
-            <input type="hidden" id="f10">
-        </div>
+        <div class="input-group"><label>Fiyat (TL)</label><input type="text" id="f10_mask" oninput="formatMoneyInput(this); hesapla();"><input type="hidden" id="f10"></div>
         <div class="input-group"><label>Pazarlık %</label><input type="number" id="f14" value="5" oninput="hesapla()"></div>
-        <div class="input-group"><label>Düzeltilmiş Birim (m²)</label><input type="text" id="f17" readonly style="background:#e8f5e9;"></div>
+        <div class="input-group"><label>Birim Değer (m²)</label><input type="text" id="f17" readonly style="background:#e8f5e9;"></div>
       </div>
-      <button class="btn btn-save-final" onclick="emsalKaydet()">HAVUZA EKLE</button>
-      <button class="btn" onclick="formuKapat()">İPTAL</button>
+      <button class="btn btn-save-final" style="margin-top:15px;" onclick="emsalKaydet()">LİSTEYE EKLE</button>
+      <button class="btn" style="width:100%; margin-top:5px;" onclick="formuKapat()">İPTAL</button>
     </div>
 
     <div class="card">
-      <div class="section-title">2. Değerleme ve Birim Analizi (SEÇİLİ BB)</div>
+      <div class="section-title">2. Birim Değer Girişi (Seçili BB)</div>
       <div class="grid-form">
-        <div class="input-group"><label>Bölge Alt Sınır</label><input type="text" id="inp_dusuk_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_dusuk"></div>
-        <div class="input-group"><label>Bölge Üst Sınır</label><input type="text" id="inp_yuksek_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_yuksek"></div>
+        <div class="input-group"><label>Bölge Alt Sınır (m²)</label><input type="text" id="inp_dusuk_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_dusuk"></div>
+        <div class="input-group"><label>Bölge Üst Sınır (m²)</label><input type="text" id="inp_yuksek_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_yuksek"></div>
         <div class="input-group"><label>UYGULANAN BİRİM (m²)</label><input type="text" id="inp_uygulanan_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_uygulanan"></div>
         <div class="input-group"><label>Yasal Brüt Alan (m²)</label><input type="text" id="res_brut" readonly style="background:#eee;"></div>
         <div class="input-group"><label>İlave Alan (m²)</label><input type="number" id="inp_proje_disi" oninput="finalHesapla()" value="0"></div>
-        <div class="input-group"><label>İlave Alan Birim Değeri (m²)</label><input type="text" id="inp_proje_birim_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_proje_birim"></div>
+        <div class="input-group"><label>İlave Birim Değeri (m²)</label><input type="text" id="inp_proje_birim_mask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inp_proje_birim"></div>
       </div>
     </div>
 
-    <div class="section-title">3. Rapor Analiz Metni</div>
+    <div class="section-title">3. Rapor Analiz Metni ve Hesap Tablosu</div>
     <div id="yorumMetni" class="final-box"></div>
+    <div id="tabloAlani"></div>
 
-    <button class="btn btn-save-final" style="width:100%; padding:20px; background:#2e7d32;" onclick="tumRaporuKaydet()">
-      SİSTEME KAYDET VE BULUTA MÜHÜRLE
-    </button>
+    <button class="btn btn-save-final" style="background:var(--success);" onclick="tumRaporuKaydet()">📊 ANALİZİ VE TABLOYU MÜHÜRLE</button>
   </div>
 
 <script>
@@ -117,6 +115,7 @@
   function setActiveBB(idx){
     saveBBSettingsToObject();
     activeBBIndex = idx;
+    const { r } = getLatestData();
     renderBBTabs();
     refreshActiveBBUI();
   }
@@ -164,64 +163,82 @@
     const { r } = getLatestData();
     if(!r) return;
 
-    let metin = `Emsal Karşılaştırma Yöntemine Göre Değer Analizi\n`;
-    metin += `Taşınmazın değer tespitinde Emsal Karşılaştırma Yöntemi kullanılmıştır. Değerlemeye konu mülk ile emsal mülkler benzer özelliklerde ve birbirlerine baz alınabilecek niteliktedir. `;
+    let metin = `Emsal Karşılaştırma Yöntemine Göre Değer Analizi\n\n`;
+    
+    // 1. EMSAL METİNLERİ
+    (r.emsalHavuzu || []).forEach((e, idx) => {
+        const fy = e.f10 ? new Intl.NumberFormat('tr-TR').format(e.f10) : "...";
+        metin += `${idx+1}) ► ${(e.f1||'').toUpperCase()} (${e.f2||''}) Taşınmazla ${e.f3||''}, ${e.f8||''}m² alanlı gayrimenkul ${fy} TL ile satılıktır. (Birim: ${e.f17} TL/m²)\n`;
+    });
+    
+    metin += `\nTaşınmazın değer tespitinde Emsal Karşılaştırma Yöntemi kullanılmıştır. Değerlemeye konu mülk ile emsal mülkler benzer özelliklerde ve birbirlerine baz alınabilecek niteliktedir. `;
     
     const d = document.getElementById('inp_dusuk').value;
     const y = document.getElementById('inp_yuksek').value;
-    metin += `Emsal mülklerin m² birim fiyatları ${formatLira0(d)} TL ile ${formatLira0(y)} TL arasındadır. Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurulmuştur.\n\n`;
+    metin += `Emsal mülklerin m² birim fiyatları ${formatLira0(d)} TL ile ${formatLira0(y)} TL arasındadır.\n\n`;
+
+    let tabloHtml = `<table class="hesap-tablosu"><tr><th>Bölüm</th><th>Yasal Alan</th><th>Birim Fiyat</th><th>Yasal Değer</th><th>İlave Alan</th><th>Mevcut Değer</th></tr>`;
 
     r.bbDetayList.forEach((bb) => {
       const oz = bb.degerlemeOzet || {};
       const uyg = parseFloat(oz.uygulananBirim) || 0;
       const yasalAlan = parseFloat(bb.bbDetay?.alanBrut) || 0;
       const yasalDeger = Math.round(uyg * yasalAlan);
-      
       const ilaveAlan = parseFloat(oz.projeDisiAlan) || 0;
       const ilaveBirim = parseFloat(oz.projeDisiBirim) || 0;
       const ilaveFiyat = Math.round(ilaveAlan * ilaveBirim);
+      const toplamMevcut = yasalDeger + ilaveFiyat;
 
       metin += `📍 ${bb.baslik}:\n`;
-      metin += `Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden; ${formatLira0(uyg)} TL/m² x ${yasalAlan} m² = ${formatLira0(yasalDeger)} TL yasal değer takdir edilmiştir. `;
+      metin += `Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden; ${formatLira0(uyg)} TL/m² x ${yasalAlan} m² = ${formatLira0(yasalDeger)} TL yasal değer `;
 
       if (ilaveAlan > 0) {
-        const toplamMevcut = yasalDeger + ilaveFiyat;
-        metin += `Taşınmazın proje harici büyümesi ile birlikte; ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² = ${formatLira0(ilaveFiyat)} TL ilave değer hesaplanmış olup, ${formatLira0(yasalDeger)} TL + ${formatLira0(ilaveFiyat)} TL = ${formatLira0(toplamMevcut)} TL mevcut durum değeri uygun görülmüştür.`;
+        metin += `, proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² = ${formatLira0(ilaveFiyat)} TL ilave değer hesaplanmış olup; ${formatLira0(yasalDeger)} TL + ${formatLira0(ilaveFiyat)} TL = ${formatLira0(toplamMevcut)} TL mevcut durum değeri uygun görülmüştür.`;
       } else {
-        metin += `Taşınmazın mevcut durum değeri yasal değeri ile aynı olup ${formatLira0(yasalDeger)} TL olarak takdir edilmiştir.`;
+        metin += `yasal ve mevcut durum değeri takdir edilmiştir.`;
       }
       metin += `\n\n`;
+
+      tabloHtml += `<tr><td>${bb.baslik}</td><td>${yasalAlan} m²</td><td>${formatLira0(uyg)} TL</td><td>${formatLira0(yasalDeger)} TL</td><td>${ilaveAlan} m²</td><td>${formatLira0(toplamMevcut)} TL</td></tr>`;
     });
 
+    tabloHtml += `</table>`;
     document.getElementById('yorumMetni').innerText = metin;
+    document.getElementById('tabloAlani').innerHTML = tabloHtml;
   }
 
   async function tumRaporuKaydet() {
     saveBBSettingsToObject();
     const { arr, i, r } = getLatestData();
     const metin = document.getElementById('yorumMetni').innerText;
+    const tablo = document.getElementById('tabloAlani').innerHTML;
     
     if(!r.modules) r.modules = {};
     if(!r.modules.emsal) r.modules.emsal = {};
-    r.modules.emsal.text = metin;
-    r.emsalFinalMetni = metin;
+    // Hem metni hem tabloyu mühürle
+    r.modules.emsal.text = metin + "\n\nDEĞERLEME HESAP TABLOSU\n" + tablo;
+    r.emsalFinalMetni = r.modules.emsal.text;
 
     persist(arr, i, r);
-    if (auth.currentUser) {
-      await db.collection("users").doc(auth.currentUser.uid).set({ gayrimenkul_reports: arr }, { merge: true });
-    }
-    alert("✅ Tüm bölümler ve hesaplar mühürlendi!");
+    if (auth.currentUser) await db.collection("users").doc(auth.currentUser.uid).set({ gayrimenkul_reports: arr }, { merge: true });
+    alert("✅ Analiz ve Tablo Mühürlendi!");
   }
 
   function emsalKaydet() {
     const { arr, i, r } = getLatestData();
     if(!r.emsalHavuzu) r.emsalHavuzu = [];
+    const f = parseFloat(document.getElementById('f10').value) || 0;
+    const a = parseFloat(document.getElementById('f8').value) || 1;
+    const p = parseFloat(document.getElementById('f14').value) || 0;
+    const b = (f * (1 - p/100) / a);
+    
     r.emsalHavuzu.push({
-      emsalId: 'e_'+Date.now(),
       f1: document.getElementById('f1').value,
-      f8: document.getElementById('f8').value,
-      f10: document.getElementById('f10').value,
-      f17: document.getElementById('f17').value
+      f2: document.getElementById('f2').value,
+      f3: document.getElementById('f3').value,
+      f8: a,
+      f10: f,
+      f17: formatLira0(b)
     });
     persist(arr, i, r);
     formuKapat();
@@ -230,8 +247,7 @@
 
   function listele() {
     const { r } = getLatestData();
-    const list = document.getElementById('emsalListesi');
-    list.innerHTML = (r.emsalHavuzu || []).map((e, idx) => 
+    document.getElementById('emsalListesi').innerHTML = (r.emsalHavuzu || []).map((e, idx) => 
       `<div class="emsal-liste-item">Emsal ${idx+1}: ${formatLira0(e.f10)} TL → ${e.f17} TL/m²</div>`
     ).join("");
     finalHesapla();
@@ -241,8 +257,7 @@
     const f = parseFloat(document.getElementById('f10').value) || 0;
     const a = parseFloat(document.getElementById('f8').value) || 1;
     const p = parseFloat(document.getElementById('f14').value) || 0;
-    const b = (f * (1 - p/100) / a);
-    document.getElementById('f17').value = formatLira0(b);
+    document.getElementById('f17').value = formatLira0(f * (1 - p/100) / a);
   }
 
   function formuAc(){ document.getElementById('emsalFormContainer').style.display = 'block'; }
@@ -251,10 +266,7 @@
 
   window.onload = () => {
     const { r } = getLatestData();
-    if(r) {
-      renderBBTabs();
-      refreshActiveBBUI();
-    }
+    if(r) { renderBBTabs(); refreshActiveBBUI(); }
   };
 </script>
 </body>
