@@ -207,22 +207,57 @@
   </div>
 
   <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const params = new URLSearchParams(window.location.search);
-    let rid = params.get('rid');
+ const auth = firebase.auth();
+const db = firebase.firestore();
 
-    function getLatestData(){
-      const arr = JSON.parse(localStorage.getItem('gayrimenkulreports')) || [];
-      const i = arr.findIndex(r => r && r.rid === rid);
-      return { arr, i, r: (i >= 0 ? arr[i] : null) };
-    }
+const params = new URLSearchParams(window.location.search);
+let rid = params.get('rid');
+const legacyId = params.get('id');
 
-    function persist(arr, i, r){
-      if(i < 0) return;
-      arr[i] = r;
-      localStorage.setItem('gayrimenkulreports', JSON.stringify(arr));
+function genRid(){
+  try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+  return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+}
+
+// rid yoksa veya localStorage’da bulunamazsa: legacyId ile bul, rid üret, rapora yaz, URL'i düzelt
+function resolveRidAndMigrateIfNeeded(arr){
+  // 1) rid varsa ve bulunuyorsa ok
+  if (rid) {
+    const idx = arr.findIndex(r => r && r.rid === rid);
+    if (idx >= 0) return { arr, idx, report: arr[idx] };
+  }
+
+  // 2) rid yoksa / bulunamadıysa legacyId ile dene
+  if (legacyId) {
+    const idx2 = arr.findIndex(r => r && (r.id === legacyId || r.legacyId === legacyId));
+    if (idx2 >= 0) {
+      // rapora rid yoksa ekle
+      if (!arr[idx2].rid) arr[idx2].rid = genRid();
+      rid = arr[idx2].rid;
+
+      // URL'i rid ile yenile (kullanıcı fark etmez)
+      const newUrl = `${location.pathname}?rid=${encodeURIComponent(rid)}`;
+      history.replaceState(null, "", newUrl);
+
+      return { arr, idx: idx2, report: arr[idx2] };
     }
+  }
+
+  return { arr, idx: -1, report: null };
+}
+
+function getLatestData(){
+  const arr = JSON.parse(localStorage.getItem('gayrimenkulreports')) || [];
+  const resolved = resolveRidAndMigrateIfNeeded(arr);
+  return { arr: resolved.arr, i: resolved.idx, r: resolved.report };
+}
+
+function persist(arr, i, r){
+  if(i < 0) return;
+  arr[i] = r;
+  localStorage.setItem('gayrimenkulreports', JSON.stringify(arr));
+}
+
 
     let activeBBIndex = 0;
 
@@ -515,18 +550,33 @@
     function anaMenuyeDon() {
       window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid || "")}`;
     }
+auth.onAuthStateChanged((user) => {
+  if (!user) { window.location.href = 'index.html'; return; }
 
-    auth.onAuthStateChanged((user) => {
-      if (!user) { window.location.href = 'index.html'; return; }
-      const { r } = getLatestData();
-      if(r) {
-        document.getElementById('raporBilgi').innerText = r.mulkAdi || r.propertyName || "Emsal Analizi";
-        renderBBTabs();
-        refreshActiveBBUI();
-      }
-    });
+  const { r } = getLatestData();
+
+  if(!r){
+    document.getElementById('raporBilgi').innerText = "Rapor bulunamadı (rid/id).";
+    document.getElementById('yorumMetni').innerText =
+      "⚠️ Bu rapor bu cihazda bulunamadı. Muhtemelen linkte rid yok veya kayıt başka cihazda.\n\n" +
+      "Çözüm: Rapor Detay sayfasından tekrar Emsal modülünü aç (rid ile).";
+    return;
+  }
+
+  document.getElementById('raporBilgi').innerText = r.mulkAdi || r.propertyName || "Emsal Analizi";
+
+  // BB listesi yoksa da metin üretelim
+  if(!Array.isArray(r.bbDetayList)) r.bbDetayList = [];
+
+  renderBBTabs();
+  refreshActiveBBUI();
+  finalHesapla(); // <-- bunu özellikle ekledim
+});
+
+
   </script>
 
   <script src="mobil-fix.js"></script>
 </body>
 </html>
+
