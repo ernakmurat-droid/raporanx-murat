@@ -633,12 +633,46 @@
   }
 
   async function kaydet(){
-    if (isReportLocked()) { alert("Bu rapor FINAL. Kaydedilemez."); return; }
+  if (isReportLocked()) { alert("Bu rapor FINAL. Kaydedilemez."); return; }
 
-    const { r, arr, i } = getLatestData();
-    if (!r || i < 0) { alert("Rapor bulunamadı."); return; }
+  const { r, arr, i } = getLatestData();
+  if (!r || i < 0) { alert("Rapor bulunamadı."); return; }
 
-    ensureBBList(r);
+  ensureBBList(r);
+
+  // 1) aktif BB'yi kaydet
+  const active = getActiveBB(r);
+  active.bbDetay = readForm();
+
+  const activeText = buildTextFromData(active.bbDetay);
+  active.bbDetay.taslakMetin = activeText;
+  active.bbDetay.metin = activeText;      // ✅ rapor-oluştur bunu okuyor
+  active.bbDetay.tamMetin = activeText;   // ✅ rapor-oluştur bunu okuyor
+
+  // 2) tüm BB'lerin metnini üret
+  r.bbDetayList.forEach(bb=>{
+    bb.bbDetay = bb.bbDetay || {};
+
+    const t = buildTextFromData(bb.bbDetay);
+    bb.bbDetay.taslakMetin = t;
+    bb.bbDetay.metin = t;      // ✅
+    bb.bbDetay.tamMetin = t;   // ✅
+  });
+
+  // 3) modül özetini de doldur (rapor-oluştur için garanti)
+  r.modules = r.modules || {};
+  const allText = r.bbDetayList.map((bb, idx)=>{
+    const title = bb?.baslik || `${idx+1}. BB`;
+    const t = (bb?.bbDetay?.metin || bb?.bbDetay?.tamMetin || bb?.bbDetay?.taslakMetin || "").trim();
+    return `=== ${title} ===\n${t}`;
+  }).join("\n\n");
+
+  r.modules.bagimsizBolum = { text: allText, updatedAt: Date.now() };
+
+  persist(arr, i, r);
+  alert("Kaydedildi ✅ (Tüm BB metinleri hazırlandı)");
+}
+
 
     // 1) Önce aktif BB’yi kaydet
     const active = getActiveBB(r);
@@ -705,4 +739,5 @@
 <script src="mobil-fix.js"></script>
 </body>
 </html>
+
 
