@@ -539,13 +539,87 @@
   }
 
   /* ========= METİN OLUŞTUR (PARAGRAF) ========= */
-  function metinOlustur() {
-    const safe = (id, fallback="") => {
-      const el = document.getElementById(id);
-      if (!el) return fallback;
-      const val = (el.value || "").toString().trim();
-      return val ? val : fallback;
-    };
+ function metinOlustur() {
+  const v = (id) => (document.getElementById(id)?.value || "").toString().trim();
+  const n = (id) => Number(v(id) || 0) || 0;
+
+  const kat   = v("kat") || "...";
+  const bbNo  = v("bbNo") || "...";
+  const kapi  = v("kapiNo") || "...";
+  const konum = v("konum") || "...";
+
+  const alanNet  = n("alanNet");
+  const alanBrut = n("alanBrut");
+
+  const cepheler = Array.from(document.querySelectorAll('input[name="cephe"]:checked'))
+    .map(x => x.value).filter(Boolean);
+  const cepheTxt = cepheler.length ? cepheler.join(", ") : "...";
+
+  const salon  = parseInt(v("count_salon") || "0", 10) || 0;
+  const oda    = parseInt(v("count_oda") || "0", 10) || 0;
+  const mutfak = parseInt(v("count_mutfak") || "0", 10) || 0;
+  const banyo  = parseInt(v("count_banyo") || "0", 10) || 0;
+  const wc     = parseInt(v("count_wc") || "0", 10) || 0;
+  const antre  = parseInt(v("count_antre") || "0", 10) || 0;
+  const balkon = parseInt(v("count_balkon") || "0", 10) || 0;
+
+  const hacimler = [
+    salon  ? `${salon} adet salon` : "",
+    oda    ? `${oda} adet oda` : "",
+    mutfak ? `${mutfak} adet mutfak` : "",
+    banyo  ? `${banyo} adet banyo` : "",
+    wc     ? `${wc} adet wc` : "",
+    antre  ? `${antre} adet antre/hol` : "",
+    balkon ? `${balkon} adet balkon` : ""
+  ].filter(Boolean).join(", ") || "...";
+
+  const farkVar = (document.querySelector('input[name="farkVar"]:checked')?.value === "evet");
+  const farkAciklama = v("farkAciklama");
+  const ilaveBrut = n("ilaveBrut");
+
+  const farkCumle = farkVar
+    ? `Projeye göre değişiklik bulunduğu görülmüştür. ${farkAciklama ? `Açıklama: ${farkAciklama}.` : ""} ${ilaveBrut ? `İlave brüt alan: ${ilaveBrut} m²’dir.` : ""}`.trim()
+    : `Projeye göre değişiklik bulunmadığı görülmüştür.`;
+
+  const detay = [];
+  const pushDetay = (etiket, id) => { const val = v(id); if (val) detay.push(`${etiket} ${val}`); };
+
+  pushDetay("Antre zemin:", "antreZemin");
+  pushDetay("Antre duvar:", "antreDuvar");
+  pushDetay("Salon zemin:", "salonZemin");
+  pushDetay("Salon duvar:", "salonDuvar");
+  pushDetay("Oda zemin:", "odaZemin");
+  pushDetay("Oda duvar:", "odaDuvar");
+  pushDetay("Mutfak zemin:", "mutfakZemin");
+  pushDetay("Mutfak duvar:", "mutfakDuvar");
+  pushDetay("Mutfak dolabı:", "mutfakDolap");
+  pushDetay("Mutfak tezgahı:", "mutfakTezgah");
+  pushDetay("Islak hacim:", "islakHacim");
+  pushDetay("Giriş kapısı:", "daireKapi");
+  pushDetay("İç kapılar:", "icKapi");
+  pushDetay("Pencereler:", "pencere");
+  pushDetay("Isıtma:", "isitma");
+
+  const detayCumle = detay.length
+    ? `Mahallin iç özellikleri; ${detay.join(", ")} olarak belirtilmiştir.`
+    : `Mahallin iç özelliklerine ilişkin bilgi girilmemiştir.`;
+
+  const metin =
+`BAĞIMSIZ BÖLÜM İNCELEME ŞABLONU
+
+Rapor konusu taşınmaz; ${kat}. katta yer alan, BB No: ${bbNo} ve Kapı No: ${kapi} olan bağımsız bölümdür.
+Proje net alanı ${alanNet} m², proje brüt alanı ${alanBrut} m²’dir. Girişe göre konumu ${konum} olarak beyan edilmiştir.
+Bağımsız bölümün cepheleri ${cepheTxt} yönlerindedir. Hacim dağılımı ${hacimler} şeklindedir.
+
+${farkCumle}
+
+${detayCumle}
+`.trim();
+
+  const out = document.getElementById("taslak");
+  if (out) out.innerText = metin;
+}
+
 
     const pickNum = (id, def=0) => {
       const v = safe(id, "");
@@ -749,3 +823,4 @@
 <script src="mobil-fix.js"></script>
 </body>
 </html>
+
