@@ -195,7 +195,6 @@
       ANALİZİ KAYDET VE BULUTA YEDEKLE
     </button>
   </div>
-
 <script>
   // Firebase
   const auth = window.auth || firebase.auth();
@@ -246,46 +245,31 @@
     input.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '');
   }
 
-  // ===== Robust storage load (array/object) =====
+  // ===== Storage load (array/object) =====
   function loadAllReportsRaw(){
-    try{
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    }catch(e){
-      return null;
-    }
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }
+    catch(e){ return null; }
   }
   function toArray(raw){
     if(Array.isArray(raw)) return raw;
     if(raw && typeof raw === "object") return Object.values(raw);
     return [];
   }
-  function toObject(raw){
-    if(raw && typeof raw === "object" && !Array.isArray(raw)) return raw;
-    if(Array.isArray(raw)){
-      // array'ı object'e çevirmiyoruz; kaydederken array olarak geri yazacağız
-      return null;
-    }
-    return {};
-  }
 
   function findReport(){
     const raw = loadAllReportsRaw();
     const arr = toArray(raw);
 
-    // 1) rid ile bul
     if(rid){
       const i = arr.findIndex(r => r && r.rid === rid);
       if(i >= 0) return { raw, arr, i, report: arr[i] };
     }
 
-    // 2) id ile bul (legacy)
     if(id){
-      // object key ise
       if(raw && typeof raw === "object" && !Array.isArray(raw) && raw[id]){
-        return { raw, arr, i: -999, report: raw[id], key: id }; // -999: object-key mod
+        return { raw, arr, i: -999, report: raw[id], key: id };
       }
-      // array içinde id/legacyId ile bul
-      const j = arr.findIndex(r => r && (String(r.id) === String(id) || String(r.legacyId) === String(id)));
+      const j = arr.findIndex(r => r && (String(r.id)===String(id) || String(r.legacyId)===String(id)));
       if(j >= 0) return { raw, arr, i: j, report: arr[j] };
     }
 
@@ -296,14 +280,12 @@
     const found = findReport();
     const raw = found.raw;
 
-    // object (id key'li) ise
     if(raw && typeof raw === "object" && !Array.isArray(raw) && found.key){
       raw[found.key] = updatedReport;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(raw));
       return;
     }
 
-    // array ise
     const arr = found.arr || [];
     if(found.i >= 0){
       arr[found.i] = updatedReport;
@@ -311,41 +293,22 @@
       return;
     }
 
-    // hiçbir şey bulunamadı -> kaydetme yapmayalım
     console.warn("saveReport: rapor bulunamadı, yazılmadı");
   }
 
-  // ===== Emsal pool unify =====
+  // ===== Pool unify =====
   function getPool(report){
     const pool =
       (Array.isArray(report?.emsaller) ? report.emsaller : null) ||
       (Array.isArray(report?.emsalHavuzu) ? report.emsalHavuzu : null) ||
       [];
-    // iki alanı da aynı yap (uyumluluk)
     report.emsaller = pool;
     report.emsalHavuzu = pool;
     return pool;
   }
 
-  // ===== Active BB handling =====
+  // ===== Active BB (UI tabs varsa seçer, yoksa sadece 0) =====
   let activeBBIndex = 0;
-
-  function getActiveBB(report){
-    const list = report?.bbDetayList;
-    if(Array.isArray(list) && list[activeBBIndex]) return list[activeBBIndex];
-    return null;
-  }
-
-  function getBrutFromReport(report){
-    const bb = getActiveBB(report);
-    return (
-      bb?.bbDetay?.alanBrut ??
-      bb?.bbDetay?.alan_brut ??
-      report?.tasinmazBrut ??
-      report?.tasinmaz_brut ??
-      0
-    );
-  }
 
   function renderBBTabs(){
     const tabs = el("bbTabs");
@@ -367,24 +330,16 @@
   window.setActiveBB = function(idx){
     activeBBIndex = idx;
     renderBBTabs();
-
-    const { report } = findReport();
-    if(report){
-      const brut = getBrutFromReport(report);
-      setVal(brut, "res_brut","resbrut");
-    }
     finalHesapla();
   };
 
-  // ===== UI Status =====
+  // ===== Status =====
   function veriKontrol(report){
     const bar = el("durumCubugu");
     if(!bar) return;
-
     const pool = getPool(report);
     const count = pool.length;
-    const check = val("inp_uygulanan","inpuygulanan","inp_uygulananmask","inpuygulananmask");
-
+    const check = val("inp_uygulanan","inpuygulanan");
     if(count >= 1 && parseFloat(check || 0) > 0){
       bar.textContent = "✅ ANALİZ PARAMETRELERİ TAMAMLANDI";
       bar.className = "status-bar status-complete";
@@ -423,6 +378,25 @@
     return { anaMetin, hesapSatiri };
   }
 
+  // ===== TEK METİN ÜRETİMİ (İSTEDİĞİN YAPI) =====
+  function getBrut(bb, report){
+    return (
+      bb?.bbDetay?.alanBrut ??
+      bb?.bbDetay?.alan_brut ??
+      bb?.bbDetay?.alanBRUT ??
+      report?.tasinmazBrut ??
+      report?.tasinmaz_brut ??
+      0
+    );
+  }
+
+  function getOzetForBB(bb){
+    // Eğer değerleme özetlerini BB içine kaydediyorsan buradan alır.
+    // Yoksa sayfadaki inputlardan alınan değerleri "her BB için aynı" varsayar.
+    const oz = bb?.degerlemeOzet || bb?.degerleme || bb?.emsalOzet || null;
+    return oz;
+  }
+
   function finalHesapla(){
     const { report } = findReport();
     const out = el("yorumMetni","yorumMetni");
@@ -440,11 +414,6 @@
 
     const dusuk  = parseFloat(val("inp_dusuk","inpdusuk")) || 0;
     const yuksek = parseFloat(val("inp_yuksek","inpyuksek")) || 0;
-    const uyg    = parseFloat(val("inp_uygulanan","inpuygulanan")) || 0;
-
-    // ✅ Brüt alanı rapordan doğru BB'ye göre al
-    const brut   = parseFloat(val("res_brut","resbrut")) || parseFloat(getBrutFromReport(report) || 0) || 0;
-    setVal(brut, "res_brut","resbrut"); // ekranda da dursun
 
     let metin = `EMSAL BİLGİLERİ\n------------------------------------------\n`;
     if(pool.length === 0){
@@ -457,14 +426,62 @@
     }
 
     metin += `EMSALLERİN YORUMU\n------------------------------------------\n`;
+    metin += `Emsal Karşılaştırma Yöntemine Göre Değer Analizi\n`;
     metin += `Taşınmazın değer tespitinde "Emsal Karşılaştırma Yöntemi" kullanılmıştır. `;
+    metin += `Değerlemeye konu mülk ile emsal mülkler benzer özelliklerde ve birbirlerine baz alınabilecek niteliktedir. `;
     if(dusuk > 0 && yuksek > 0){
-      metin += `Bölgedeki emsal m² birim fiyatları ${formatLira0(dusuk)} TL ile ${formatLira0(yuksek)} TL aralığındadır. `;
+      metin += `Emsal mülklerin m² birim fiyatları ${formatLira0(dusuk)} TL ile ${formatLira0(yuksek)} TL arasındadır. `;
+    }else{
+      metin += `Emsal mülklerin m² birim fiyatları bölge alt/üst sınır aralığında değerlendirilmiştir. `;
+    }
+    metin += `Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurulmuştur.\n\n`;
+
+    metin += `DEĞERLEME SONUÇLARI\n------------------------------------------\n`;
+
+    // ✅ Çoklu değerleme: BB'leri alt alta yaz
+    const bbList = Array.isArray(report.bbDetayList) ? report.bbDetayList : [];
+    if(bbList.length === 0){
+      // yedek: tek BB yoksa sayfadaki brut'u kullan
+      const uyg = parseFloat(val("inp_uygulanan","inpuygulanan")) || 0;
+      const brutFallback = parseFloat(val("res_brut","resbrut")) || 0;
+      const yasalDeger = Math.round(uyg * brutFallback);
+      metin += `■ Taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden ${brutFallback} m² brüt alan dikkate alınarak ~${formatLira0(yasalDeger)} TL yasal değer takdir edilmiştir.\n`;
+      metin += `Sonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
+      out.innerText = metin;
+      veriKontrol(report);
+      return;
     }
 
-    metin += `\n\nDEĞERLEME SONUÇLARI\n------------------------------------------\n`;
-    const toplam = Math.round((uyg || 0) * (brut || 0));
-    metin += `■ Taşınmazın m² birim değeri ${formatLira0(uyg)} TL takdir edilmiş olup, ${brut} m² brüt alan üzerinden toplam değeri ~${formatLira0(toplam)} TL'dir.\n`;
+    bbList.forEach((bb, idx)=>{
+      const baslik = bb.baslik || (idx+1)+". BB";
+      const brut = parseFloat(getBrut(bb, report) || 0) || 0;
+
+      // Birim fiyat & ilave alanlar:
+      // 1) BB içinde özet varsa onu kullan
+      // 2) yoksa sayfadaki inputları "genel" kabul et
+      const oz = getOzetForBB(bb) || {};
+
+      const uyg = parseFloat(oz.uygulananBirim ?? oz.uygBirim ?? val("inp_uygulanan","inpuygulanan") ?? 0) || 0;
+      const ilaveAlan  = parseFloat(oz.projeDisiAlan ?? oz.ilaveAlan ?? val("inpprojedisi","inp_projedisi") ?? 0) || 0;
+      const ilaveBirim = parseFloat(oz.projeDisiBirim ?? oz.ilaveBirim ?? val("inpprojebirim","inp_projebirim") ?? 0) || 0;
+
+      const yasalDeger = Math.round(uyg * brut);
+      const ilaveDeger = Math.round(ilaveAlan * ilaveBirim);
+      const mevcutDeger = Math.round(yasalDeger + ilaveDeger);
+
+      // Metin: ilave alan yoksa ilave paragrafı hiç yazma
+      if(ilaveAlan > 0 && ilaveBirim > 0){
+        metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+        metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
+        metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL `;
+        metin += `eklenerek toplam mevcut değer ${formatLira0(mevcutDeger)} TL uygun görülmüştür.\n`;
+      }else{
+        metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+        metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer uygun görülmüştür.\n`;
+      }
+    });
+
+    metin += `\nSonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
 
     metin += `\nEMSAL HESAP SATIRLARI\n------------------------------------------\n`;
     if(pool.length){
@@ -490,8 +507,8 @@
     }
 
     const pool = getPool(report);
-
     list.innerHTML = "";
+
     pool.forEach((e, i) => {
       list.innerHTML += `
         <div class="emsal-liste-item">
@@ -542,8 +559,7 @@
   }
 
   window.emsalKaydet = async function(){
-    const found = findReport();
-    const report = found.report;
+    const { report } = findReport();
     if(!report){ alert("Rapor bulunamadı."); return; }
 
     const pool = getPool(report);
@@ -576,8 +592,7 @@
   }
 
   window.emsalSil = async function(index){
-    const found = findReport();
-    const report = found.report;
+    const { report } = findReport();
     if(!report) return;
     if(!confirm("Silinsin mi?")) return;
 
@@ -599,8 +614,7 @@
   }
 
   window.tumRaporuKaydet = async function(){
-    const found = findReport();
-    const report = found.report;
+    const { report } = findReport();
     if(!report){ alert("Rapor bulunamadı."); return; }
 
     const metin = (el("yorumMetni")?.innerText || "").trim();
@@ -613,7 +627,6 @@
 
     if(auth.currentUser){
       try{
-        // raw object/array fark etmesin diye aynı storage içeriğini gönderiyoruz:
         const rawNow = loadAllReportsRaw();
         await db.collection("users").doc(auth.currentUser.uid).set({
           gayrimenkul_reports: rawNow,
@@ -634,7 +647,7 @@
     else window.location.href = "rapor-detay.html";
   }
 
-  // input eventleri için global
+  // global
   window.formatMoneyInput = formatMoneyInput;
   window.formatPhone = formatPhone;
   window.hesapla = hesapla;
@@ -645,9 +658,7 @@
   auth.onAuthStateChanged((user)=>{
     if(!user){ window.location.href = "index.html"; return; }
 
-    const found = findReport();
-    const report = found.report;
-
+    const { report } = findReport();
     const raporBilgi = el("raporBilgi");
     if(raporBilgi){
       raporBilgi.textContent = (report && (report.propertyName || report.mulkAdi))
@@ -655,23 +666,15 @@
         : "Analiz Dosyası";
     }
 
-    // ✅ BB tabs varsa çiz, yoksa sorun değil
     renderBBTabs();
-
-    // ✅ Brüt alanı doğru BB'den çek
-    if(report){
-      const brut = getBrutFromReport(report);
-      setVal(brut, "res_brut","resbrut");
-    }
-
     listele();
     finalHesapla();
   });
 </script>
 
 
-  <script src="mobil-fix.js"></script>
 </body>
 </html>
+
 
 
