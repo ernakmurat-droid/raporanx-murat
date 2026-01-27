@@ -235,12 +235,19 @@ document.addEventListener("DOMContentLoaded", () => {
     return s.replace(/\r\n/g,"\n").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
   }
 
+  // GÜNCELLENDİ: Değer çekme fonksiyonu
   function pick(obj, ...paths){
     for (const p of paths){
       try{
-        const val = p.split(".").reduce((acc,k)=> (acc && acc[k] !== undefined ? acc[k] : undefined), obj);
-        if (val !== undefined && val !== null && String(val).trim() !== "") return val;
-      }catch{}
+        const keys = p.split('.');
+        let val = obj;
+        for (const key of keys) {
+          if (val === null || val === undefined) break;
+          val = val[key];
+        }
+        if (val !== null && val !== undefined && val !== '' && String(val).trim() !== "") 
+          return val;
+      }catch(e){}
     }
     return "";
   }
@@ -305,49 +312,44 @@ document.addEventListener("DOMContentLoaded", () => {
     return formatMetin(metin);
   }
 
-  // ✅ BU FONKSİYON TÜM BB METİNLERİNİ ÖZET ŞEKLİNDE GETİRİR
+  // TAMAMEN YENİLENDİ: Bağımsız bölüm metni oluşturma
   function getBagimsizBolumMetni(rep){
-    // Önce mühürlenen ana metne bak
-    const direct = formatMetin(pick(rep, "modules.bagimsizBolum.text", "bagimsizBolumMetni"));
-    if (direct) return direct;
+    // Toplu metin varsa onu kullan
+    const topluMetin = formatMetin(pick(rep, "modules.bagimsizBolum.text", "bagimsizBolumMetni"));
+    if (topluMetin) return topluMetin;
 
-    const list = rep?.bbDetayList || rep?.bbList;
-    if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
+    // BB listesini güvenli şekilde al
+    const list = Array.isArray(rep?.bbDetayList) ? rep.bbDetayList : 
+                 Array.isArray(rep?.bbList) ? rep.bbList : [];
 
-    // ✅ "Tüm Bağımsız Bölümlerin Metin Özeti" mantığıyla birleştirme yapıyoruz
-    const parts = list.map((bb,i)=>{
-      const baslik = bb?.baslik || bb?.title || `${i+1}. BB`;
+    if (list.length === 0) return "Bağımsız bölüm verisi bulunamadı";
+
+    // Her BB için metin oluştur
+    return list.map((bb, i) => {
+      const baslik = bb?.baslik || bb?.title || `${i+1}. Bağımsız Bölüm`;
       const d = bb?.bbDetay || bb || {};
       
-      // Kaydedilen taslak metni veya formdan üretilen metni al
-      const savedText = formatMetin(pick(bb, "taslakMetin", "metin", "bbDetay.taslakMetin", "bbDetay.metin"));
-      const finalText = savedText || buildBBTextFromDetay(d);
-
-      // 📍 Senin istediğin gibi: Başlık + Metin formatı
-      return `📍 ${baslik}\n${finalText}\n`;
-    });
-
-    return parts.join("\n------------------------------------------\n\n");
+      // Kaydedilmiş metin varsa onu kullan
+      const savedText = formatMetin(pick(bb, "taslakMetin", "metin", "bbDetay.taslakMetin"));
+      if (savedText) return `### ${baslik} ###\n${savedText}`;
+      
+      // Yoksa otomatik üret
+      return `### ${baslik} ###\n${buildBBTextFromDetay(d)}`;
+    }).join("\n\n");
   }
 
+  // YENİLENDİ: Emsal metni oluşturma
   function emsalMetni(rep){
     const modDirect = pick(rep, "modules.emsal.text", "emsalFinalMetni");
     if (modDirect) return formatMetin(modDirect);
 
-    const list = rep?.bbDetayList || rep?.bbList;
-    if (Array.isArray(list) && list.length){
-      const uniq = new Set(); 
-      const arr = [];
-      for (const bb of list){
-        const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni", "bbDetay.degerlemeOzet.emsalFinalMetni");
-        const ft = formatMetin(t);
-        if (!ft || uniq.has(ft)) continue;
-        uniq.add(ft); 
-        arr.push(`[${bb.baslik || 'BB'}] emsal analizi:\n${ft}`);
-      }
-      return arr.length ? arr.join("\n\n") : "Emsal analizi bulunamadı";
-    }
-    return "Emsal verisi yok";
+    const list = Array.isArray(rep?.bbDetayList) ? rep.bbDetayList : 
+                 Array.isArray(rep?.bbList) ? rep.bbList : [];
+
+    return list.map((bb, i) => {
+      const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni");
+      return t ? `[${bb.baslik || 'BB '+(i+1)}] emsal:\n${formatMetin(t)}` : null;
+    }).filter(Boolean).join("\n\n") || "Emsal analizi bulunamadı";
   }
 
   function render(r){
@@ -365,13 +367,11 @@ document.addEventListener("DOMContentLoaded", () => {
     $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin"));
     $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","binaMetni"));
 
-    // ✅ TÜM BB METİNLERİ BURADA BİRLEŞEREK GÖRÜNÜR
+    // YENİ FONKSİYONLARLA GÜNCELLENDİ
     $("bbMetin").textContent = getBagimsizBolumMetni(r);
-
     $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumMetni"));
     $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1"));
     $("tapuMetinB2").textContent = formatMetin(pick(r,"tapuMetniB2","tapu.b2"));
-
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
