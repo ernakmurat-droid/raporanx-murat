@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Bağımsız Bölüm Detay</title>
+  <title>Bağımsız Bölüm Detay - Raporan X</title>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -13,139 +13,35 @@
   <style>
     :root { --primary:#4a148c; --secondary:#7c4dff; --success:#00c853; --bg:#f0f2f5; }
     body{ font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:var(--bg); margin:0; padding-bottom:110px; color:#333; }
-
-    .header{
-      background:linear-gradient(135deg,#4a148c,#7c4dff);
-      color:#fff;
-      padding: calc(22px + env(safe-area-inset-top, 0px)) 25px 22px;
-      text-align:center;
-      position:sticky; top:0; z-index:1000;
-      box-shadow:0 2px 10px rgba(0,0,0,.2);
-    }
-    .back{
-      position:absolute; left:15px; top: calc(16px + env(safe-area-inset-top, 0px));
-      background:rgba(255,255,255,.2);
-      padding:8px 15px; border-radius:20px;
-      color:#fff; font-weight:bold; font-size:14px;
-      cursor:pointer; border:none;
-    }
-
-    .container{
-      max-width:900px; margin:16px auto; padding:16px;
-      background:#fff; border-radius:16px;
-      box-shadow:0 10px 30px rgba(0,0,0,.08);
-    }
-
-    .section-title{
-      border-bottom:2px solid #eee;
-      margin:18px 0 12px; padding-bottom:10px;
-      color:#4a148c; font-size:1.1em; font-weight:900;
-    }
-
-    .form-group{
-      margin-bottom:14px; padding:14px;
-      background:#fdfdfd; border:1px solid #f0f0f0;
-      border-radius:12px;
-    }
-
+    .header{ background:linear-gradient(135deg,#4a148c,#7c4dff); color:#fff; padding: calc(22px + env(safe-area-inset-top, 0px)) 25px 22px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,.2); }
+    .back{ position:absolute; left:15px; top: calc(16px + env(safe-area-inset-top, 0px)); background:rgba(255,255,255,.2); padding:8px 15px; border-radius:20px; color:#fff; font-weight:bold; font-size:14px; cursor:pointer; border:none; }
+    .container{ max-width:900px; margin:16px auto; padding:16px; background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.08); }
+    .section-title{ border-bottom:2px solid #eee; margin:18px 0 12px; padding-bottom:10px; color:#4a148c; font-size:1.1em; font-weight:900; }
+    .form-group{ margin-bottom:14px; padding:14px; background:#fdfdfd; border:1px solid #f0f0f0; border-radius:12px; }
     .input-item{ margin-bottom:12px; }
     .input-item label{ display:block; font-weight:700; margin-bottom:6px; font-size:13px; color:#555; }
-
-    input,select,textarea{
-      padding:12px; width:100%;
-      border:1.5px solid #dee2e6;
-      border-radius:10px; font-size:15px;
-      box-sizing:border-box; outline:none;
-      transition:.2s;
-    }
+    input,select,textarea{ padding:12px; width:100%; border:1.5px solid #dee2e6; border-radius:10px; font-size:15px; box-sizing:border-box; outline:none; transition:.2s; }
     input:focus, textarea:focus{ border-color:#7c4dff; background:#f9f7ff; }
-
     .grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
     .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     @media(max-width:720px){ .grid-3,.grid-2{ grid-template-columns:1fr; } }
-
     .hacim-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; margin-bottom:6px; }
     .hacim-card{ background:#fff; border:1px solid #eee; padding:10px; border-radius:10px; text-align:center; }
-
     .checkbox-group{ display:flex; flex-wrap:wrap; gap:8px; }
     .checkbox-group label{ background:#f0f0f0; padding:8px 14px; border-radius:999px; cursor:pointer; font-size:13px; user-select:none; }
     .checkbox-group input{ display:none; }
-    .checkbox-group input:checked + span{
-      background:#4a148c; color:#fff;
-      border-radius:999px; padding:8px 14px;
-      margin:-8px -14px; display:inline-block;
-    }
-
+    .checkbox-group input:checked + span{ background:#4a148c; color:#fff; border-radius:999px; padding:8px 14px; margin:-8px -14px; display:inline-block; }
     .btn{ padding:14px; border:none; border-radius:12px; font-size:16px; font-weight:900; cursor:pointer; width:100%; margin-top:10px; }
     .btn-save{ background:#00c853; color:#fff; }
-    .btn-save[disabled]{ opacity:.55; cursor:not-allowed; }
-
     .bbbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px; border:1px solid #e0e6ed; border-radius:14px; background:#fff; margin-bottom:12px; }
     .bbTabs{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .bbTab{ padding:10px 12px; border-radius:12px; border:1px solid #ddd; cursor:pointer; background:#fff; color:#333; font-weight:900; }
     .bbTab.active{ background:var(--primary); color:#fff; border-color:transparent; }
-    .hint{ font-size:12px; color:#666; margin-top:6px; width:100%; line-height:1.35; }
-
-    .bbActions{ margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .bbMiniBtn{
-      padding:10px 12px; border-radius:12px;
-      border:1px solid rgba(74,20,140,.25);
-      background:#f6f0ff; color:#4a148c;
-      font-weight:900; cursor:pointer;
-    }
-    .bbMiniBtn.danger{ background:#ffe9e9; border-color:rgba(198,40,40,.25); color:#c62828; }
-    .bbMiniBtn[disabled]{ opacity:.55; cursor:not-allowed; }
-
-    .taslak{
-      background:#fff8e1; padding:16px;
-      border-radius:14px; margin-top:16px;
-      border:2px dashed #ffb300;
-      font-size:15px; line-height:1.75;
-      white-space:pre-wrap; color:#333;
-      user-select:none;
-      transition:filter .2s ease;
-      min-height:120px;
-    }
+    .taslak{ background:#fff8e1; padding:16px; border-radius:14px; margin-top:16px; border:2px dashed #ffb300; font-size:15px; line-height:1.75; white-space:pre-wrap; color:#333; user-select:none; transition:filter .2s ease; min-height:120px; }
     .taslak:not(:hover){ filter:blur(1.5px); }
-
-    .lockedNote{
-      background:#ffe9e9;
-      border-left:6px solid #c62828;
-      padding:12px 14px;
-      border-radius:12px;
-      margin-bottom:12px;
-      font-weight:900;
-      color:#7a1b1b;
-    }
-
-    .infoNote{
-      background:#eef5ff;
-      border-left:6px solid #1e88e5;
-      padding:12px 14px;
-      border-radius:12px;
-      margin:12px 0;
-      font-weight:800;
-      color:#0d47a1;
-      line-height:1.45;
-    }
-
     .hidden{ display:none !important; }
-
-    .toplu-liste-konteyner {
-      margin-top: 30px;
-      padding: 20px;
-      background: #fafafa;
-      border: 2px solid #4a148c;
-      border-radius: 16px;
-    }
-    .toplu-bb-kart {
-      background: #fff;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      border-left: 5px solid #7c4dff;
-    }
+    .toplu-liste-konteyner { margin-top: 30px; padding: 20px; background: #fafafa; border: 2px solid #4a148c; border-radius: 16px; }
+    .toplu-bb-kart { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #7c4dff; }
   </style>
 
   <link rel="stylesheet" href="mobil-fix.css">
@@ -159,26 +55,12 @@
   </div>
 
   <div class="container">
-    <div id="lockNote" class="lockedNote hidden">
-      🔒 Bu rapor FINAL yapılmış. Bu modül kilitlidir (düzenleme yapılamaz).
-    </div>
-
-    <div class="infoNote">
-      ✅ Burada <b>seçili BB</b>’nin metnini görürsün. <br>
-      🧾 Sayfanın en altında ise <b>eklediğin tüm bölümlerin</b> metinlerini toplu görebilirsin.
-    </div>
-
     <div class="bbbar">
       <div style="font-weight:900; color:var(--primary);">Bağımsız Bölüm:</div>
       <div class="bbTabs" id="bbTabs"></div>
-
-      <div class="bbActions">
-        <button type="button" id="btnAddBB" class="bbMiniBtn" onclick="addBB()">+ Yeni BB</button>
-        <button type="button" id="btnRenameBB" class="bbMiniBtn" onclick="renameBB()">✏️ Ad</button>
-        <button type="button" id="btnDelBB" class="bbMiniBtn danger" onclick="deleteBB()">🗑️ Sil</button>
+      <div class="bbActions" style="margin-left:auto; display:flex; gap:8px;">
+        <button type="button" id="btnAddBB" class="btn" style="width:auto; margin:0; padding:8px 12px; background:#f6f0ff; color:#4a148c;" onclick="addBB()">+ Yeni BB</button>
       </div>
-
-      <div class="hint">Sekme değiştirince önceki BB otomatik kaydedilir.</div>
     </div>
 
     <div class="section-title">1) Kimlik ve Alan Bilgileri</div>
@@ -188,105 +70,31 @@
         <div class="input-item"><label>Bağımsız Bölüm No</label><input type="text" id="bbNo" oninput="metinOlustur()"></div>
         <div class="input-item"><label>Kapı No</label><input type="text" id="kapiNo" oninput="metinOlustur()"></div>
       </div>
-
       <div class="grid-2">
         <div class="input-item"><label>Nitelik</label><input type="text" id="nitelik" placeholder="mesken" oninput="metinOlustur()" list="h_nitelik"></div>
         <div class="input-item"><label>Girişe Göre Konumu</label><input type="text" id="konum" placeholder="sağ tarafta" oninput="metinOlustur()" list="h_konum"></div>
       </div>
-
       <div class="grid-2">
         <div class="input-item"><label>Net Alan (m²)</label><input type="number" id="alanNet" value="0" oninput="metinOlustur()"></div>
         <div class="input-item"><label>Brüt Alan (m²)</label><input type="number" id="alanBrut" value="0" oninput="metinOlustur()"></div>
       </div>
-
-      <div class="input-item">
-        <label>Cepheler</label>
-        <div class="checkbox-group">
-          <label><input type="checkbox" name="cephe" value="Kuzey" onchange="metinOlustur()"><span>Kuzey</span></label>
-          <label><input type="checkbox" name="cephe" value="Güney" onchange="metinOlustur()"><span>Güney</span></label>
-          <label><input type="checkbox" name="cephe" value="Doğu" onchange="metinOlustur()"><span>Doğu</span></label>
-          <label><input type="checkbox" name="cephe" value="Batı" onchange="metinOlustur()"><span>Batı</span></label>
-          <label><input type="checkbox" name="cephe" value="Kuzey-Doğu" onchange="metinOlustur()"><span>Kuzey-Doğu</span></label>
-          <label><input type="checkbox" name="cephe" value="Kuzey-Batı" onchange="metinOlustur()"><span>Kuzey-Batı</span></label>
-          <label><input type="checkbox" name="cephe" value="Güney-Doğu" onchange="metinOlustur()"><span>Güney-Doğu</span></label>
-          <label><input type="checkbox" name="cephe" value="Güney-Batı" onchange="metinOlustur()"><span>Güney-Batı</span></label>
-        </div>
-      </div>
     </div>
 
-    <div class="section-title">2) Proje Farkı (İstersen)</div>
-    <div class="form-group">
-      <label style="font-weight:900;">Projeye göre değişiklik var mı?</label>
-      <div style="display:flex; gap:18px; margin:10px 0; flex-wrap:wrap;">
-        <label style="cursor:pointer;"><input type="radio" name="farkVar" value="hayir" checked onchange="farkKontrol(); metinOlustur();"> Hayır</label>
-        <label style="cursor:pointer;"><input type="radio" name="farkVar" value="evet" onchange="farkKontrol(); metinOlustur();"> Evet</label>
-      </div>
-
-      <div id="farkDetay" class="hidden">
-        <div class="input-item"><label>İlave Açıklaması</label><textarea id="farkAciklama" oninput="metinOlustur()"></textarea></div>
-        <div class="input-item"><label>İlave Brüt Alan (m²)</label><input type="number" id="ilaveBrut" value="0" oninput="metinOlustur()"></div>
-      </div>
-    </div>
-
-    <div class="section-title">3) Hacimler</div>
-    <div class="form-group">
-      <div class="hacim-grid">
-        <div class="hacim-card"><label>Salon</label><input type="number" id="count_salon" value="1" oninput="hacimPanelKontrol(); metinOlustur();"></div>
-        <div class="hacim-card"><label>Oda</label><input type="number" id="count_oda" value="3" oninput="hacimPanelKontrol(); metinOlustur();"></div>
-        <div class="hacim-card"><label>Mutfak</label><input type="number" id="count_mutfak" value="1" oninput="metinOlustur()"></div>
-        <div class="hacim-card"><label>Banyo</label><input type="number" id="count_banyo" value="1" oninput="metinOlustur()"></div>
-        <div class="hacim-card"><label>WC</label><input type="number" id="count_wc" value="1" oninput="metinOlustur()"></div>
-        <div class="hacim-card"><label>Antre/Hol</label><input type="number" id="count_antre" value="1" oninput="metinOlustur()"></div>
-        <div class="hacim-card"><label>Balkon</label><input type="number" id="count_balkon" value="1" oninput="metinOlustur()"></div>
-      </div>
-    </div>
-
-    <div class="section-title">4) İç Özellikler</div>
+    <div class="section-title">2) İç Özellikler</div>
     <div class="form-group">
       <div class="grid-2">
-        <div class="input-item"><label>Antre Zemin</label><input type="text" id="antreZemin" oninput="metinOlustur()" list="h_zemin"></div>
-        <div class="input-item"><label>Antre Duvar</label><input type="text" id="antreDuvar" oninput="metinOlustur()" list="h_duvar"></div>
-
-        <div class="input-item salon-inputs"><label>Salon Zemin</label><input type="text" id="salonZemin" oninput="metinOlustur()" list="h_zemin"></div>
-        <div class="input-item salon-inputs"><label>Salon Duvar</label><input type="text" id="salonDuvar" oninput="metinOlustur()" list="h_duvar"></div>
-
-        <div class="input-item oda-inputs"><label>Oda Zemin</label><input type="text" id="odaZemin" oninput="metinOlustur()" list="h_zemin"></div>
-        <div class="input-item oda-inputs"><label>Oda Duvar</label><input type="text" id="odaDuvar" oninput="metinOlustur()" list="h_duvar"></div>
-
-        <div class="input-item"><label>Mutfak Zemin</label><input type="text" id="mutfakZemin" oninput="metinOlustur()" list="h_zemin"></div>
-        <div class="input-item"><label>Mutfak Duvar</label><input type="text" id="mutfakDuvar" oninput="metinOlustur()" list="h_duvar"></div>
-
-        <div class="input-item"><label>Mutfak Dolabı</label><input type="text" id="mutfakDolap" oninput="metinOlustur()" list="h_mutfakDolap"></div>
-        <div class="input-item"><label>Mutfak Tezgahı</label><input type="text" id="mutfakTezgah" oninput="metinOlustur()" list="h_mutfakTezgah"></div>
-
-        <div class="input-item"><label>Islak Hacim (zemin/duvar)</label><input type="text" id="islakHacim" oninput="metinOlustur()" list="h_zemin"></div>
-        <div class="input-item"><label>Banyoda Bulunan Donanımlar</label><input type="text" id="banyoDonanim" placeholder="klozet, lavabo, banyo dolabı..." oninput="metinOlustur()" list="h_banyoDonanim"></div>
-
-        <div class="input-item"><label>Giriş Kapısı</label><input type="text" id="daireKapi" oninput="metinOlustur()" list="h_kapi"></div>
-        <div class="input-item"><label>İç Kapılar</label><input type="text" id="icKapi" oninput="metinOlustur()" list="h_kapi"></div>
-
-        <div class="input-item"><label>Pencereler</label><input type="text" id="pencere" oninput="metinOlustur()" list="h_pencere"></div>
+        <div class="input-item"><label>Antre Zemin</label><input type="text" id="antreZemin" oninput="metinOlustur()" list="h_antreZemin"></div>
+        <div class="input-item"><label>Antre Duvar</label><input type="text" id="antreDuvar" oninput="metinOlustur()" list="h_antreDuvar"></div>
+        <div class="input-item"><label>Salon Zemin</label><input type="text" id="salonZemin" oninput="metinOlustur()" list="h_salonZemin"></div>
+        <div class="input-item"><label>Salon Duvar</label><input type="text" id="salonDuvar" oninput="metinOlustur()" list="h_salonDuvar"></div>
+        <div class="input-item"><label>Oda Zemin</label><input type="text" id="odaZemin" oninput="metinOlustur()" list="h_odaZemin"></div>
+        <div class="input-item"><label>Oda Duvar</label><input type="text" id="odaDuvar" oninput="metinOlustur()" list="h_odaDuvar"></div>
+        <div class="input-item"><label>Giriş Kapısı</label><input type="text" id="daireKapi" oninput="metinOlustur()" list="h_daireKapi"></div>
         <div class="input-item"><label>Isıtma</label><input type="text" id="isitma" oninput="metinOlustur()" list="h_isitma"></div>
       </div>
     </div>
 
-    <div class="section-title">5) Tesisatlar (Elektrik / Su / Haberleşme)</div>
-    <div class="form-group">
-      <label style="font-weight:900;">Tesisatlar mevcut mu?</label>
-      <div style="display:flex; gap:18px; margin:10px 0; flex-wrap:wrap;">
-        <label style="cursor:pointer;"><input type="radio" name="tesisatVar" value="evet" checked onchange="tesisatKontrol(); metinOlustur();"> Evet (mevcuttur)</label>
-        <label style="cursor:pointer;"><input type="radio" name="tesisatVar" value="hayir" onchange="tesisatKontrol(); metinOlustur();"> Hayır (açıklama)</label>
-      </div>
-
-      <div id="tesisatDetay" class="hidden">
-        <div class="input-item">
-          <label>Açıklama (metne “mevcuttur” yerine yazılır)</label>
-          <textarea id="tesisatAciklama" placeholder="Örn: Elektrik mevcut, su yoktur..." oninput="metinOlustur()"></textarea>
-        </div>
-      </div>
-    </div>
-
-    <button id="btnSave" class="btn btn-save" onclick="kaydet()">VERİLERİ KAYDET (TÜM BB METİNLERİ ÜRETİLİR)</button>
+    <button id="btnSave" class="btn btn-save" onclick="kaydet()">VERİLERİ KAYDET VE ÖĞREN</button>
 
     <div class="section-title">Seçili BB Taslak Metin</div>
     <div id="taslak" class="taslak"></div>
@@ -294,484 +102,183 @@
     <div class="section-title" style="margin-top:40px; border-color: #ff9800; color: #e65100;">
       📋 Tüm Bağımsız Bölümlerin Metin Özeti
     </div>
-    <div id="topluMetinAlani" class="toplu-liste-konteyner">
-    </div>
+    <div id="topluMetinAlani" class="toplu-liste-konteyner"></div>
   </div>
 
-  <datalist id="h_kat">
-    <option value="Zemin">
-    <option value="Normal">
-    <option value="Çatı">
-    <option value="Bodrum">
-  </datalist>
-  <datalist id="h_nitelik">
-    <option value="Mesken">
-    <option value="Dükkan">
-    <option value="Ofis">
-    <option value="Depo">
-  </datalist>
-  <datalist id="h_konum">
-    <option value="sağ tarafta">
-    <option value="sol tarafta">
-    <option value="ön tarafta">
-    <option value="arka tarafta">
-  </datalist>
-  <datalist id="h_zemin">
-    <option value="Laminat Parke">
-    <option value="Seramik">
-    <option value="Mermer">
-    <option value="Granit">
-    <option value="PVC">
-  </datalist>
-  <datalist id="h_duvar">
-    <option value="Saten Boya">
-    <option value="Duvar Kağıdı">
-    <option value="Plastik Boya">
-    <option value="Alçı Sıva üzeri Boya">
-  </datalist>
-  <datalist id="h_mutfakDolap">
-    <option value="Hazır Mutfak Dolabı">
-    <option value="MDF Lam">
-    <option value="Lake Boyalı">
-    <option value="Ahşap Kaplama">
-  </datalist>
-  <datalist id="h_mutfakTezgah">
-    <option value="Mermerit">
-    <option value="Granit">
-    <option value="Çimstone">
-    <option value="Ahşap">
-  </datalist>
-  <datalist id="h_banyoDonanim">
-    <option value="Klozet, Lavabo, Duşakabin">
-    <option value="Klozet, Lavabo, Küvet">
-    <option value="Klozet, Lavabo, Banyo Dolabı, Duşakabin">
-  </datalist>
-  <datalist id="h_kapi">
-    <option value="Çelik Kapı">
-    <option value="Amerikan Panel Kapı">
-    <option value="Mobilya Kapı">
-    <option value="PVC Kapı">
-  </datalist>
-  <datalist id="h_pencere">
-    <option value="PVC Doğrama">
-    <option value="Alüminyum Doğrama">
-    <option value="Isıcamlı PVC">
-  </datalist>
-  <datalist id="h_isitma">
-    <option value="Doğalgaz (Kombi)">
-    <option value="Merkezi Sistem">
-    <option value="Klima">
-    <option value="Soba">
-  </datalist>
+  <div id="datalistContainer">
+    <datalist id="h_kat"></datalist>
+    <datalist id="h_nitelik"></datalist>
+    <datalist id="h_konum"></datalist>
+    <datalist id="h_antreZemin"></datalist>
+    <datalist id="h_antreDuvar"></datalist>
+    <datalist id="h_salonZemin"></datalist>
+    <datalist id="h_salonDuvar"></datalist>
+    <datalist id="h_odaZemin"></datalist>
+    <datalist id="h_odaDuvar"></datalist>
+    <datalist id="h_daireKapi"></datalist>
+    <datalist id="h_isitma"></datalist>
+  </div>
 
 <script>
   const auth = firebase.auth();
   const db = firebase.firestore();
-
   const params = new URLSearchParams(window.location.search);
   let rid = params.get('rid');
-  const legacyId = params.get('id');
 
-  function genRid(){
-    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
-    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
-  }
-  function ensureRidMigration(arr){
-    let changed=false;
-    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
-    return changed;
-  }
-  function findIndexByRid(arr, rid){
-    return (arr||[]).findIndex(r => r && r.rid === rid);
+  /* ========= AKILLI HATIRLATICI (ÖĞRENME) MANTIĞI ========= */
+  const SUGGESTION_KEYS = ['kat', 'nitelik', 'konum', 'antreZemin', 'antreDuvar', 'salonZemin', 'salonDuvar', 'odaZemin', 'odaDuvar', 'daireKapi', 'isitma'];
+
+  function loadSuggestions() {
+    SUGGESTION_KEYS.forEach(key => {
+      const saved = JSON.parse(localStorage.getItem('suggest_' + key) || '[]');
+      const dl = document.getElementById('h_' + key);
+      if (dl) {
+        dl.innerHTML = '';
+        saved.forEach(val => {
+          const opt = document.createElement('option');
+          opt.value = val;
+          dl.appendChild(opt);
+        });
+      }
+    });
   }
 
-  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-  if (!rid && legacyId !== null && legacyId !== "") {
-    const idxLegacy = Number(legacyId);
-    if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
-      rid = reports[idxLegacy].rid;
-      const file = (location.pathname.split("/").pop() || "bagimsiz-bolum-detay.html");
-      window.location.replace(file + "?rid=" + encodeURIComponent(rid));
-    }
+  function saveNewSuggestions(data) {
+    SUGGESTION_KEYS.forEach(key => {
+      const val = data[key]?.trim();
+      if (val && val.length > 1) {
+        let saved = JSON.parse(localStorage.getItem('suggest_' + key) || '[]');
+        if (!saved.includes(val)) {
+          saved.push(val);
+          // Son 15 girişi hatırla
+          if (saved.length > 15) saved.shift();
+          localStorage.setItem('suggest_' + key, JSON.stringify(saved));
+        }
+      }
+    });
+    loadSuggestions();
   }
+
+  /* ========= ANA FONKSİYONLAR ========= */
+  let activeBBIndex = 0;
 
   function getLatestData(){
     const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    const i = rid ? findIndexByRid(arr, rid) : -1;
-    const r = (i >= 0) ? (arr[i] || null) : null;
-    return { arr, i, r };
+    const i = arr.findIndex(r => r && r.rid === rid);
+    return { arr, i, r: arr[i] || null };
   }
+
   function persist(arr, i, r){
     arr[i] = r;
     localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
   }
 
-  function isReportLocked(){
-    if (!rid) return false;
-    return localStorage.getItem("report_locked_" + rid) === "1";
-  }
-  function setFormDisabled(disabled){
-    document.querySelectorAll("input, select, textarea, button").forEach(el => {
-      if (el.classList.contains("back")) return;
-      if (el.id === "bbTabs") return;
-      if (el.closest && el.closest("#bbTabs")) return;
-      el.disabled = disabled;
-    });
-
-    ["btnSave","btnAddBB","btnRenameBB","btnDelBB"].forEach(id=>{
-      const b = document.getElementById(id);
-      if (b) b.disabled = disabled;
-    });
-
-    const note = document.getElementById("lockNote");
-    if (note) note.classList.toggle("hidden", !disabled);
+  function metinOlustur() {
+    const data = readForm();
+    const metin = buildTextFromData(data);
+    document.getElementById("taslak").innerText = metin;
+    topluListeyiGuncelle();
   }
 
-  let activeBBIndex = 0;
-
-  function ensureBBList(report){
-    if (!report.bbDetayList || !Array.isArray(report.bbDetayList) || report.bbDetayList.length === 0) {
-      report.bbDetayList = [ { bbid:"bb_1", baslik:"1. BB", bbDetay:{} } ];
-    }
-    report.bbDetayList.forEach((x, idx) => {
-      if (!x.bbid) x.bbid = "bb_" + (idx+1);
-      if (!x.baslik) x.baslik = `${idx+1}. BB`;
-      if (typeof x.bbDetay !== "object" || x.bbDetay === null) x.bbDetay = {};
-    });
+  function buildTextFromData(d) {
+    return `Taşınmaz ${d.kat || '...'} katında, ${d.bbNo || '...'} nolu ${d.nitelik || 'mesken'} nitelikli bölümdür. Zeminler ${d.salonZemin || '...'}, duvarlar ${d.salonDuvar || '...'} malzemedir. Isınma ${d.isitma || '...'} ile sağlanmaktadır.`;
   }
-
-  function renumberBB(report){
-    ensureBBList(report);
-    report.bbDetayList.forEach((x, idx)=>{
-      if (!x.baslik || /^\d+\. BB$/i.test(String(x.baslik).trim())) x.baslik = `${idx+1}. BB`;
-    });
-  }
-
-  function getActiveBB(report){
-    ensureBBList(report);
-    return report.bbDetayList[activeBBIndex] || report.bbDetayList[0];
-  }
-
-  function renderBBTabs(){
-    const { r, arr, i } = getLatestData();
-    if (!r) return;
-
-    ensureBBList(r);
-    renumberBB(r);
-
-    const el = document.getElementById("bbTabs");
-    el.innerHTML = r.bbDetayList.map((x, idx) => {
-      const active = idx === activeBBIndex ? "bbTab active" : "bbTab";
-      const label = (x.baslik || ((idx+1)+". BB"));
-      return `<button type="button" class="${active}" onclick="setActiveBB(${idx})">${label}</button>`;
-    }).join("");
-
-    const delBtn = document.getElementById("btnDelBB");
-    if (delBtn) delBtn.disabled = (r.bbDetayList.length <= 1) || isReportLocked();
-
-    persist(arr, i, r);
-  }
-
-  const FIELD_IDS = [
-    "kat","bbNo","kapiNo","nitelik","alanNet","alanBrut","konum",
-    "farkAciklama","ilaveBrut",
-    "count_salon","count_oda","count_mutfak","count_banyo","count_wc","count_antre","count_balkon",
-    "antreZemin","antreDuvar","salonZemin","salonDuvar","odaZemin","odaDuvar",
-    "mutfakZemin","mutfakDuvar","mutfakDolap","mutfakTezgah","islakHacim",
-    "banyoDonanim",
-    "daireKapi","icKapi","pencere","isitma",
-    "tesisatAciklama"
-  ];
 
   function readForm(){
     const obj = {};
-    FIELD_IDS.forEach(id=>{
+    const ids = ['kat','bbNo','kapiNo','nitelik','konum','alanNet','alanBrut','antreZemin','antreDuvar','salonZemin','salonDuvar','odaZemin','odaDuvar','daireKapi','isitma'];
+    ids.forEach(id => {
       const el = document.getElementById(id);
-      if (!el) return;
-      obj[id] = el.value;
+      if(el) obj[id] = el.value;
     });
-
-    obj.farkVar = document.querySelector('input[name="farkVar"]:checked')?.value || "hayir";
-    obj.cepheler = Array.from(document.querySelectorAll('input[name="cephe"]:checked')).map(x=>x.value);
-
-    obj.tesisatVar = document.querySelector('input[name="tesisatVar"]:checked')?.value || "evet";
-    obj.taslakMetin = document.getElementById("taslak")?.innerText || "";
-
     return obj;
   }
 
   function writeForm(obj){
-    FIELD_IDS.forEach(id=>{
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (obj && obj[id] !== undefined && obj[id] !== null) el.value = obj[id];
+    if(!obj) return;
+    Object.keys(obj).forEach(key => {
+      const el = document.getElementById(key);
+      if(el) el.value = obj[key];
     });
-
-    const fv = (obj && obj.farkVar) ? obj.farkVar : "hayir";
-    const radio = document.querySelector(`input[name="farkVar"][value="${fv}"]`);
-    if (radio) radio.checked = true;
-
-    const tv = (obj && obj.tesisatVar) ? obj.tesisatVar : "evet";
-    const radioT = document.querySelector(`input[name="tesisatVar"][value="${tv}"]`);
-    if (radioT) radioT.checked = true;
-
-    const set = new Set((obj && obj.cepheler) ? obj.cepheler : []);
-    document.querySelectorAll('input[name="cephe"]').forEach(cb=> cb.checked = set.has(cb.value));
   }
 
-  function farkKontrol() {
-    const isEvet = document.querySelector('input[name="farkVar"]:checked')?.value === 'evet';
-    document.getElementById('farkDetay').classList.toggle('hidden', !isEvet);
-  }
+  function kaydet() {
+    const { arr, i, r } = getLatestData();
+    if (!r) return;
 
-  function tesisatKontrol(){
-    const isHayir = document.querySelector('input[name="tesisatVar"]:checked')?.value === 'hayir';
-    document.getElementById('tesisatDetay').classList.toggle('hidden', !isHayir);
-  }
+    const currentData = readForm();
+    saveNewSuggestions(currentData); // ÖĞREN: Yeni girilenleri hafızaya al
 
-  function hacimPanelKontrol() {
-    const sCount = parseInt(document.getElementById('count_salon').value) || 0;
-    const oCount = parseInt(document.getElementById('count_oda').value) || 0;
-    document.querySelectorAll('.salon-inputs').forEach(el => el.classList.toggle('hidden', sCount === 0));
-    document.querySelectorAll('.oda-inputs').forEach(el => el.classList.toggle('hidden', oCount === 0));
-  }
+    const bb = r.bbDetayList[activeBBIndex];
+    bb.bbDetay = currentData;
+    const metin = buildTextFromData(currentData);
+    bb.taslakMetin = metin;
 
-  function buildTextFromData(data) {
-    const get = (key, defaultValue = "...") => 
-      data[key] !== undefined && data[key] !== null && data[key] !== "" 
-        ? data[key] 
-        : defaultValue;
-
-    const getNum = (key) => {
-      const val = get(key, "0");
-      const num = Number(val);
-      return Number.isFinite(num) ? num : 0;
-    };
-
-    const kat = get("kat");
-    const bbNo = get("bbNo");
-    const kapiNo = get("kapiNo");
-    const nitelik = get("nitelik");
-    const konum = get("konum");
+    // Rapor seviyesinde mühürle
+    if(!r.modules) r.modules = {};
+    if(!r.modules.bagimsizBolum) r.modules.bagimsizBolum = {};
     
-    const cepheler = Array.isArray(data.cepheler) ? data.cepheler.join(", ") : "...";
+    let toplu = "";
+    r.bbDetayList.forEach(b => {
+      toplu += `📍 ${b.baslik}\n${b.taslakMetin || ''}\n\n`;
+    });
+    r.modules.bagimsizBolum.text = toplu;
 
-    const netAlan = getNum("alanNet");
-    const brutAlan = getNum("alanBrut");
-    const alanText = netAlan > 0 ? `net ${netAlan} brüt ${brutAlan} m²` : `brüt ${brutAlan} m²`;
-
-    const roomCounts = [
-      { key: "count_salon", name: "salon" },
-      { key: "count_oda", name: "oda" },
-      { key: "count_mutfak", name: "mutfak" },
-      { key: "count_banyo", name: "banyo" },
-      { key: "count_wc", name: "wc" },
-      { key: "count_antre", name: "antre/hol" },
-      { key: "count_balkon", name: "balkon" }
-    ].filter(({ key }) => getNum(key) > 0)
-     .map(({ key, name }) => `${getNum(key)} adet ${name}`)
-     .join(", ") || "...";
-
-    return `Değerleme konusu taşınmaz binanın ${kat} katında yer alan ${bbNo} bağımsız bölüm ve ${kapiNo} kapı numaralı ${nitelik} nitelikli taşınmazdır. Bina girişine göre ${konum} yer almaktadır. ${cepheler} cephelidir. Projesinde ve yerinde yapılan tespit ve ölçümlere göre ${alanText} kullanım alanına sahiptir. Taşınmaz ${roomCounts} hacimlerinden oluşmaktadır. Taşınmazın antre ve hol zeminleri ${get("antreZemin")} duvarları ${get("antreDuvar")}. Salon zemini ${get("salonZemin")}, duvarları ${get("salonDuvar")} oda zeminleri ${get("odaZemin")} duvarları ${get("odaDuvar")}. Mutfak zemini ${get("mutfakZemin")} ve duvarları ${get("mutfakDuvar")} malzemedir. Mutfak dolabı ${get("mutfakDolap")} tezgâhı ${get("mutfakTezgah")} malzemedir. Taşınmazın ıslak hacimlerin zeminleri ve duvarları ${get("islakHacim")}. Banyoda ${get("banyoDonanim")} bulunmaktadır. Taşınmazın giriş kapısı ${get("daireKapi")} ve iç kapıları ${get("icKapi")}. Pencereleri ise ${get("pencere")} doğramadır. Elektrik, su ve haberleşme tesisatları ${get("tesisatVar", "evet") === "evet" ? "mevcuttur" : (get("tesisatAciklama") || "...")} durumdaki gayrimenkulün ısıtılması ${get("isitma")} ile sağlanmaktadır.`;
+    persist(arr, i, r);
+    alert("Kaydedildi ve tercihleriniz hatırlandı! ✅");
   }
 
-  function metinOlustur() {
-    const data = readForm();
-    const metin = buildTextFromData(data);
-    const out = document.getElementById("taslak");
-    if (out) out.innerText = metin;
-    topluListeyiGuncelle();
+  function renderBBTabs(){
+    const { r } = getLatestData();
+    if (!r || !r.bbDetayList) return;
+    const el = document.getElementById("bbTabs");
+    el.innerHTML = r.bbDetayList.map((x, idx) => {
+      const active = idx === activeBBIndex ? "bbTab active" : "bbTab";
+      return `<button type="button" class="${active}" onclick="setActiveBB(${idx})">${x.baslik}</button>`;
+    }).join("");
+  }
+
+  function setActiveBB(idx){
+    const { arr, i, r } = getLatestData();
+    r.bbDetayList[activeBBIndex].bbDetay = readForm(); // Geçerliyi kaydet
+    activeBBIndex = idx;
+    persist(arr, i, r);
+    renderBBTabs();
+    writeForm(r.bbDetayList[idx].bbDetay);
+    metinOlustur();
+  }
+
+  function addBB(){
+    const { arr, i, r } = getLatestData();
+    const next = r.bbDetayList.length + 1;
+    r.bbDetayList.push({ baslik: next + ". BB", bbDetay: {} });
+    persist(arr, i, r);
+    setActiveBB(r.bbDetayList.length - 1);
   }
 
   function topluListeyiGuncelle() {
     const { r } = getLatestData();
-    if (!r || !r.bbDetayList) return;
-    const container = document.getElementById("topluMetinAlani");
-    if (!container) return;
-    
+    if (!r) return;
     let html = "";
     r.bbDetayList.forEach((bb, idx) => {
-      const metin = (idx === activeBBIndex) ? buildTextFromData(readForm()) : (bb.taslakMetin || buildTextFromData(bb.bbDetay || {}));
-      
-      html += `
-        <div class="toplu-bb-kart">
-          <div style="font-weight:900; color:var(--primary); margin-bottom:8px;">
-            📍 ${bb.baslik || (idx+1 + '. BB')}
-          </div>
-          <div style="font-size:14px; line-height:1.6; color:#444;">
-            ${metin}
-          </div>
-        </div>
-      `;
+      const metin = (idx === activeBBIndex) ? buildTextFromData(readForm()) : (bb.taslakMetin || "...");
+      html += `<div class="toplu-bb-kart"><strong>${bb.baslik}</strong><br>${metin}</div>`;
     });
-    container.innerHTML = html || "Henüz bölüm eklenmedi.";
+    document.getElementById("topluMetinAlani").innerHTML = html;
   }
 
-  function saveActiveBBToReport(){
-    const { r, arr, i } = getLatestData();
-    if (!r || i < 0) return;
-    ensureBBList(r);
-    const bb = r.bbDetayList[activeBBIndex];
-    if(!bb) return;
+  function anaMenuyeDon() { window.location.href = `rapor-detay.html?rid=${rid}`; }
 
-    const data = readForm();
-    const metin = buildTextFromData(data);
-
-    bb.bbDetay = data;
-    bb.taslakMetin = metin;
-    bb.bbDetay.taslakMetin = metin;
-
-    persist(arr, i, r);
-  }
-
-  function loadActiveBBFromReport(){
+  window.onload = () => {
+    loadSuggestions(); // Başlangıçta eski hafızayı yükle
+    renderBBTabs();
     const { r } = getLatestData();
-    if (!r) return;
-    ensureBBList(r);
-    const bb = r.bbDetayList[activeBBIndex];
-    const data = (bb && bb.bbDetay) ? bb.bbDetay : {};
-    writeForm(data);
-    farkKontrol();
-    tesisatKontrol();
-    hacimPanelKontrol();
-    metinOlustur();
-  }
-
-  function setActiveBB(newIndex){
-    const { r } = getLatestData();
-    if (!r) return;
-    if (!isReportLocked()) saveActiveBBToReport();
-    activeBBIndex = Math.max(0, Math.min(newIndex, (r.bbDetayList?.length || 1)-1));
-    renderBBTabs();
-    loadActiveBBFromReport();
-  }
-
-  function addBB(){
-    if (isReportLocked()) return;
-    const { r, arr, i } = getLatestData();
-    if (!r || i < 0) return;
-    saveActiveBBToReport();
-    ensureBBList(r);
-    const nextNo = r.bbDetayList.length + 1;
-    r.bbDetayList.push({ bbid: "bb_" + nextNo + "_" + Date.now().toString(36), baslik: `${nextNo}. BB`, bbDetay:{} });
-    activeBBIndex = r.bbDetayList.length - 1;
-    persist(arr, i, r);
-    renderBBTabs();
-    loadActiveBBFromReport();
-  }
-
-  function renameBB(){
-    if (isReportLocked()) return;
-    const { r, arr, i } = getLatestData();
-    if (!r || i < 0) return;
-    ensureBBList(r);
-    const bb = r.bbDetayList[activeBBIndex];
-    const mevcut = (bb.baslik || "").trim() || `${activeBBIndex+1}. BB`;
-    const yeni = prompt("BB adı:", mevcut);
-    if (yeni === null) return;
-    const clean = yeni.toString().trim();
-    bb.baslik = clean ? clean : `${activeBBIndex+1}. BB`;
-    persist(arr, i, r);
-    renderBBTabs();
-    topluListeyiGuncelle();
-  }
-
-  function deleteBB(){
-    if (isReportLocked()) return;
-    const { r, arr, i } = getLatestData();
-    if (!r || i < 0) return;
-    ensureBBList(r);
-    if (r.bbDetayList.length <= 1) return;
-    const ok = confirm(`Bu BB silinsin mi?`);
-    if (!ok) return;
-    r.bbDetayList.splice(activeBBIndex, 1);
-    activeBBIndex = Math.max(0, activeBBIndex - 1);
-    renumberBB(r);
-    persist(arr, i, r);
-    renderBBTabs();
-    loadActiveBBFromReport();
-  }
-
-  function kaydet() {
-    if (isReportLocked()) return;
-    const { r, arr, i } = getLatestData();
-    if (!r || i < 0) {
-      alert("Rapor bulunamadı.");
-      return;
+    if(r) {
+        document.getElementById('raporBilgi').innerText = r.propertyName || "Rapor Detayı";
+        writeForm(r.bbDetayList[activeBBIndex].bbDetay);
+        metinOlustur();
     }
-
-    saveActiveBBToReport();
-
-    ensureBBList(r);
-    let topluMetin = "";
-
-    r.bbDetayList.forEach((bbItem) => {
-      const metin = buildTextFromData(bbItem.bbDetay || {});
-      bbItem.bbDetay.taslakMetin = metin;
-      bbItem.taslakMetin = metin;
-      bbItem.metin = metin;
-      topluMetin += `📍 ${bbItem.baslik}\n${metin}\n\n`;
-    });
-
-    if(!r.modules) r.modules = {};
-    if(!r.modules.bagimsizBolum) r.modules.bagimsizBolum = {};
-    r.modules.bagimsizBolum.text = topluMetin;
-
-    persist(arr, i, r);
-    loadActiveBBFromReport();
-    alert("Kaydedildi ✅ (Tüm BB metinleri mühürlendi)");
-  }
-
-  function fillHeaderInfo(){
-    const { r } = getLatestData();
-    const el = document.getElementById("raporBilgi");
-    if (!el) return;
-    if (!r) { el.innerText = "Rapor bulunamadı"; return; }
-    const baslik = r.baslik || r.raporAdi || r.mulkAdi || r.ilce || "";
-    const tarih = r.tarih || r.raporTarihi || "";
-    const info = [baslik, tarih].filter(Boolean).join(" • ");
-    el.innerText = info || ("RID: " + (rid || "-"));
-  }
-
-  function anaMenuyeDon(){
-    try { history.back(); } catch(e) { location.href = "index.html"; }
-  }
-
-  function init(){
-    const { r, arr, i } = getLatestData();
-    if (!r || i < 0){
-      fillHeaderInfo();
-      alert("Rapor bulunamadı.");
-      return;
-    }
-    ensureBBList(r);
-    const savedIdx = Number(localStorage.getItem("active_bb_index_" + rid));
-    if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < r.bbDetayList.length) {
-      activeBBIndex = savedIdx;
-    } else {
-      activeBBIndex = 0;
-    }
-    persist(arr, i, r);
-    renderBBTabs();
-    loadActiveBBFromReport();
-    fillHeaderInfo();
-    const locked = isReportLocked();
-    setFormDisabled(locked);
-
-    window.addEventListener("beforeunload", ()=>{
-      try{
-        if (!isReportLocked()) saveActiveBBToReport();
-        localStorage.setItem("active_bb_index_" + rid, String(activeBBIndex));
-      }catch(e){}
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded", init);
+  };
 </script>
-
-<script src="mobil-fix.js"></script>
 </body>
 </html>
-son olarak hatırtma fonksiyonu varmı bir bak istersen ekle istersen ekleme ama bak bir hatası olmasın herşey tam olsun
