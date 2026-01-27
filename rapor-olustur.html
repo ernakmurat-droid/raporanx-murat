@@ -22,10 +22,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   position:relative;
 }
 .header.locked{background:linear-gradient(135deg,#263238,#455a64);}
-.back{
-  position:absolute;left:20px;top: calc(25px + env(safe-area-inset-top, 0px));
-  background:rgba(255,255,255,.2);padding:8px 15px;border-radius:30px;color:#fff;border:none;cursor:pointer;
-}
+.back{position:absolute;left:20px;top: calc(25px + env(safe-area-inset-top, 0px));background:rgba(255,255,255,.2);padding:8px 15px;border-radius:30px;color:#fff;border:none;cursor:pointer;}
 .badge{
   display:none;
   margin:10px auto 0;
@@ -78,7 +75,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   .section{page-break-inside:avoid;}
 }
 </style>
-
 <link rel="stylesheet" href="mobil-fix.css">
 </head>
 <body>
@@ -249,9 +245,70 @@ document.addEventListener("DOMContentLoaded", () => {
     return "";
   }
 
-  // ✅ BAĞIMSIZ BÖLÜM: Öncelik modules -> sonra bbDetayList taslakMetin -> eski alanlar
+  // ✅ TASLAK BOŞSA: kayıtlı alanlardan şablon metni üret
+  function buildBBTextFromDetay(d){
+    d = d || {};
+    const v = (k) => (d[k] ?? "").toString().trim();
+    const n = (k) => {
+      const x = Number(v(k));
+      return Number.isFinite(x) ? x : 0;
+    };
+
+    const kat = v("kat") || "...";
+    const bbNo = v("bbNo") || "...";
+    const kapiNo = v("kapiNo") || "...";
+    const nitelik = v("nitelik") || "...";
+    const konum = v("konum") || "...";
+
+    const cepheler = Array.isArray(d.cepheler) ? d.cepheler : [];
+    const cepheText = cepheler.length ? cepheler.join(", ") : "...";
+
+    const net = n("alanNet");
+    const brut = n("alanBrut");
+    const netParca = net > 0 ? `net ${net} ` : "";
+    const brutParca = `brüt ${brut} m²`;
+
+    const sayi = (k) => parseInt(v(k) || "0", 10) || 0;
+    const hacimler = [
+      sayi("count_salon")  ? `${sayi("count_salon")} adet salon` : "",
+      sayi("count_oda")    ? `${sayi("count_oda")} adet oda` : "",
+      sayi("count_mutfak") ? `${sayi("count_mutfak")} adet mutfak` : "",
+      sayi("count_banyo")  ? `${sayi("count_banyo")} adet banyo` : "",
+      sayi("count_wc")     ? `${sayi("count_wc")} adet wc` : "",
+      sayi("count_antre")  ? `${sayi("count_antre")} adet antre/hol` : "",
+      sayi("count_balkon") ? `${sayi("count_balkon")} adet balkon` : ""
+    ].filter(Boolean).join(", ") || "...";
+
+    const antreZemin = v("antreZemin") || "...";
+    const antreDuvar = v("antreDuvar") || "...";
+    const salonZemin = v("salonZemin") || "...";
+    const salonDuvar = v("salonDuvar") || "...";
+    const odaZemin = v("odaZemin") || "...";
+    const odaDuvar = v("odaDuvar") || "...";
+    const mutfakZemin = v("mutfakZemin") || "...";
+    const mutfakDuvar = v("mutfakDuvar") || "...";
+    const mutfakDolap = v("mutfakDolap") || "...";
+    const mutfakTezgah = v("mutfakTezgah") || "...";
+    const islakHacim = v("islakHacim") || "...";
+    const banyoDonanim = v("banyoDonanim") || "...";
+    const girisKapi = v("daireKapi") || "...";
+    const icKapi = v("icKapi") || "...";
+    const pencere = v("pencere") || "...";
+    const isitma = v("isitma") || "...";
+
+    const tesisatVar = (d.tesisatVar || "evet").toString();
+    const tesisatAciklama = v("tesisatAciklama");
+    const tesisatMetin = (tesisatVar === "evet") ? "mevcuttur" : (tesisatAciklama || "...");
+
+    const metin =
+`Değerleme konusu taşınmaz binanın ${kat} katında yer alan ${bbNo} bağımsız bölüm ve ${kapiNo} kapı numaralı ${nitelik} nitelikli taşınmazdır. Bina girişine göre ${konum} yer almaktadır. ${cepheText} cephelidir. Projesinde ve yerinde yapılan tespit ve ölçümlere göre ${netParca}${brutParca} kullanım alanına sahiptir. Taşınmaz ${hacimler} hacimlerinden oluşmaktadır. Taşınmazın antre ve hol zeminleri ${antreZemin} duvarları ${antreDuvar}. Salon zemini ${salonZemin}, duvarları ${salonDuvar} oda zeminleri ${odaZemin} duvarları ${odaDuvar}. Mutfak zemini ${mutfakZemin} ve duvarları ${mutfakDuvar} malzemedir. Mutfak dolabı ${mutfakDolap} tezgâhı ${mutfakTezgah} malzemedir. Taşınmazın ıslak hacimlerin zeminleri ve duvarları ${islakHacim}. Banyoda ${banyoDonanim} bulunmaktadır. Taşınmazın giriş kapısı ${girisKapi} ve iç kapıları ${icKapi}. Pencereleri ise ${pencere} doğramadır. Elektrik, su ve haberleşme tesisatları ${tesisatMetin} durumdaki gayrimenkulün ısıtılması ${isitma} ile sağlanmaktadır.`;
+
+    return formatMetin(metin);
+  }
+
+  // ✅ BAĞIMSIZ BÖLÜM: Öncelik modules -> değilse her BB için taslakMetin, yoksa alanlardan üret
   function getBagimsizBolumMetni(rep){
-    const direct = formatMetin(pick(rep, "modules.bagimsizBolum.text", "modules.bb.text", "bagimsizBolumMetni"));
+    const direct = formatMetin(pick(rep, "modules.bagimsizBolum.text"));
     if (direct) return direct;
 
     const list = rep?.bbDetayList || rep?.bbList;
@@ -260,18 +317,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const parts = list.map((bb,i)=>{
       const baslik = bb?.baslik || bb?.title || `${i+1}. BB`;
 
-      // ✅ Senin BB modülünün kaydettiği alan:
-      const taslak = pick(bb,
+      const savedText = formatMetin(pick(bb,
         "bbDetay.taslakMetin",
+        "taslakMetin",
         "bbDetay.metin",
         "bbDetay.tamMetin",
-        "taslakMetin",
         "metin",
         "tamMetin"
-      );
+      ));
 
-      const metin = formatMetin(taslak);
-      return `=== ${baslik} ===\n${metin || "(Metin oluşturulmamış)"}`
+      const finalText = savedText || buildBBTextFromDetay(bb?.bbDetay || bb || {});
+      return `=== ${baslik} ===\n${finalText || "(Metin oluşturulmamış)"}`
     });
 
     return parts.join("\n\n");
@@ -310,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin"));
     $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","binaMetni"));
 
-    // ✅ DÜZELTİLEN YER
+    // ✅ FIX: tüm BB metinlerini üret/çek
     $("bbMetin").textContent = getBagimsizBolumMetni(r);
 
     $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumMetni"));
