@@ -317,34 +317,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const parts = list.map((bb,i)=>{
       const baslik = bb?.baslik || bb?.title || `${i+1}. BB`;
 
-      const savedText = formatMetin(pick(bb,
-        "bbDetay.taslakMetin",
-        "taslakMetin",
-        "bbDetay.metin",
-        "bbDetay.tamMetin",
-        "metin",
-        "tamMetin"
-      ));
+      // BB detaylarını çekmek için kapsamlı kontrol
+      const d = bb?.bbDetay || bb || {};
+      const savedText = formatMetin(pick(d, "taslakMetin", "metin", "tamMetin"));
 
-      const finalText = savedText || buildBBTextFromDetay(bb?.bbDetay || bb || {});
+      const finalText = savedText || buildBBTextFromDetay(d);
       return `=== ${baslik} ===\n${finalText || "(Metin oluşturulmamış)"}`
     });
 
     return parts.join("\n\n");
   }
 
+  // ✅ EMSAL: Tüm BB listesini tara ve her BB'nin emsalFinalMetni'ni topla
   function emsalMetni(rep){
-    const direct = pick(rep,"emsalFinalMetni","degerlemeOzet.emsalFinalMetni","modules.emsal.text");
-    if (direct) return formatMetin(direct);
+    // Eğer modülde doğrudan metin varsa onu al
+    const modDirect = pick(rep, "modules.emsal.text", "emsalFinalMetni");
+    if (modDirect) return formatMetin(modDirect);
 
-    const list = rep?.bbDetayList;
+    const list = rep?.bbDetayList || rep?.bbList;
     if (Array.isArray(list) && list.length){
-      const uniq = new Set(); const arr = [];
+      const uniq = new Set(); 
+      const arr = [];
       for (const bb of list){
-        const t = pick(bb,"degerlemeOzet.emsalFinalMetni","emsalFinalMetni");
+        // Her BB'nin kendi içindeki emsal metni yollarını kontrol et
+        const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni", "bbDetay.degerlemeOzet.emsalFinalMetni");
         const ft = formatMetin(t);
         if (!ft || uniq.has(ft)) continue;
-        uniq.add(ft); arr.push(ft);
+        uniq.add(ft); 
+        arr.push(`[${bb.baslik || 'BB'}] emsal analizi:\n${ft}`);
       }
       return arr.length ? arr.join("\n\n") : "Emsal analizi bulunamadı";
     }
@@ -373,6 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1"));
     $("tapuMetinB2").textContent = formatMetin(pick(r,"tapuMetniB2","tapu.b2"));
 
+    // ✅ FIX: emsal metinlerini topla
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
