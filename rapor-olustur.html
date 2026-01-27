@@ -305,29 +305,29 @@ document.addEventListener("DOMContentLoaded", () => {
     return formatMetin(metin);
   }
 
-  // ✅ KRİTİK DÜZELTME: Toplu özet metnine öncelik verir
+  // ✅ BU FONKSİYON TÜM BB METİNLERİNİ ÖZET ŞEKLİNDE GETİRİR
   function getBagimsizBolumMetni(rep){
-    // Önce mühürlediğimiz toplu metne bak (modules.bagimsizBolum.text)
-    const topluMetin = formatMetin(pick(rep, "modules.bagimsizBolum.text", "bagimsizBolumMetni"));
-    if (topluMetin) return topluMetin;
+    // Önce mühürlenen ana metne bak
+    const direct = formatMetin(pick(rep, "modules.bagimsizBolum.text", "bagimsizBolumMetni"));
+    if (direct) return direct;
 
-    // Eğer toplu metin yoksa, her BB'nin kendi taslak metnine bak
     const list = rep?.bbDetayList || rep?.bbList;
     if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
 
+    // ✅ "Tüm Bağımsız Bölümlerin Metin Özeti" mantığıyla birleştirme yapıyoruz
     const parts = list.map((bb,i)=>{
       const baslik = bb?.baslik || bb?.title || `${i+1}. BB`;
       const d = bb?.bbDetay || bb || {};
       
-      // Kaydedilen taslak metni al
-      const savedText = formatMetin(pick(bb, "taslakMetin", "metin", "bbDetay.taslakMetin"));
-
-      // Eğer kayıtlı metin de yoksa, o zaman sıfırdan üret
+      // Kaydedilen taslak metni veya formdan üretilen metni al
+      const savedText = formatMetin(pick(bb, "taslakMetin", "metin", "bbDetay.taslakMetin", "bbDetay.metin"));
       const finalText = savedText || buildBBTextFromDetay(d);
-      return `=== ${baslik} ===\n${finalText || "(Metin oluşturulmamış)"}`
+
+      // 📍 Senin istediğin gibi: Başlık + Metin formatı
+      return `📍 ${baslik}\n${finalText}\n`;
     });
 
-    return parts.join("\n\n");
+    return parts.join("\n------------------------------------------\n\n");
   }
 
   function emsalMetni(rep){
@@ -365,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin"));
     $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","binaMetni"));
 
-    // ✅ YENİLENEN FONKSİYON: Artık en son mühürlediğin metni getirir.
+    // ✅ TÜM BB METİNLERİ BURADA BİRLEŞEREK GÖRÜNÜR
     $("bbMetin").textContent = getBagimsizBolumMetni(r);
 
     $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumMetni"));
