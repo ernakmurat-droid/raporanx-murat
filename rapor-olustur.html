@@ -245,7 +245,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return "";
   }
 
-  // ✅ TASLAK BOŞSA: kayıtlı alanlardan şablon metni üret
   function buildBBTextFromDetay(d){
     d = d || {};
     const v = (k) => (d[k] ?? "").toString().trim();
@@ -306,21 +305,24 @@ document.addEventListener("DOMContentLoaded", () => {
     return formatMetin(metin);
   }
 
-  // ✅ BAĞIMSIZ BÖLÜM: Öncelik modules -> değilse her BB için taslakMetin, yoksa alanlardan üret
+  // ✅ KRİTİK DÜZELTME: Toplu özet metnine öncelik verir
   function getBagimsizBolumMetni(rep){
-    const direct = formatMetin(pick(rep, "modules.bagimsizBolum.text"));
-    if (direct) return direct;
+    // Önce mühürlediğimiz toplu metne bak (modules.bagimsizBolum.text)
+    const topluMetin = formatMetin(pick(rep, "modules.bagimsizBolum.text", "bagimsizBolumMetni"));
+    if (topluMetin) return topluMetin;
 
+    // Eğer toplu metin yoksa, her BB'nin kendi taslak metnine bak
     const list = rep?.bbDetayList || rep?.bbList;
     if (!Array.isArray(list) || list.length === 0) return "Bağımsız bölüm verisi yok";
 
     const parts = list.map((bb,i)=>{
       const baslik = bb?.baslik || bb?.title || `${i+1}. BB`;
-
-      // BB detaylarını çekmek için kapsamlı kontrol
       const d = bb?.bbDetay || bb || {};
-      const savedText = formatMetin(pick(d, "taslakMetin", "metin", "tamMetin"));
+      
+      // Kaydedilen taslak metni al
+      const savedText = formatMetin(pick(bb, "taslakMetin", "metin", "bbDetay.taslakMetin"));
 
+      // Eğer kayıtlı metin de yoksa, o zaman sıfırdan üret
       const finalText = savedText || buildBBTextFromDetay(d);
       return `=== ${baslik} ===\n${finalText || "(Metin oluşturulmamış)"}`
     });
@@ -328,9 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return parts.join("\n\n");
   }
 
-  // ✅ EMSAL: Tüm BB listesini tara ve her BB'nin emsalFinalMetni'ni topla
   function emsalMetni(rep){
-    // Eğer modülde doğrudan metin varsa onu al
     const modDirect = pick(rep, "modules.emsal.text", "emsalFinalMetni");
     if (modDirect) return formatMetin(modDirect);
 
@@ -339,7 +339,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const uniq = new Set(); 
       const arr = [];
       for (const bb of list){
-        // Her BB'nin kendi içindeki emsal metni yollarını kontrol et
         const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni", "bbDetay.degerlemeOzet.emsalFinalMetni");
         const ft = formatMetin(t);
         if (!ft || uniq.has(ft)) continue;
@@ -366,14 +365,13 @@ document.addEventListener("DOMContentLoaded", () => {
     $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin"));
     $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","binaMetni"));
 
-    // ✅ FIX: tüm BB metinlerini üret/çek
+    // ✅ YENİLENEN FONKSİYON: Artık en son mühürlediğin metni getirir.
     $("bbMetin").textContent = getBagimsizBolumMetni(r);
 
     $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumMetni"));
     $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1"));
     $("tapuMetinB2").textContent = formatMetin(pick(r,"tapuMetniB2","tapu.b2"));
 
-    // ✅ FIX: emsal metinlerini topla
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
@@ -396,37 +394,28 @@ document.addEventListener("DOMContentLoaded", () => {
   async function finalizeFlow(user){
     if (finalizing) return;
     finalizing = true;
-
     try{
       let rep = loadReportLocal() || await loadReportRemote(user.uid);
       if (!rep){ setStatus("❌ Rapor yok.", "rid bulunamadı."); return; }
-
       render(rep);
-
       const locked = isLockedLocal() || await isLockedRemote(user.uid);
       if (locked){
         setLockedLocal();
         setStatus("🔒 Zaten kilitli.", "Final yapılmış.");
         return;
       }
-
       if (!confirmParam){
         if (!confirm("Final rapor oluşturulduğunda hak düşebilir ve rapor kilitlenir. Devam?")) return;
       }
-
       setStatus("💳 Hak düşürülüyor…", "Cüzdan kontrolü yapılıyor.");
       const res = await Wallet.consumeReport(user.uid, rid);
-
       if (!res){
         setStatus("❌ Başarısız!", "Hak/Bakiye yetersiz veya işlem başarısız.");
         return;
       }
-
       setLockedLocal();
       await setLockedRemote(user.uid);
-
-      setStatus("✅ Kilitlendi.", "Rapor final yapıldı. Diğer modüller kilitlenmiş olmalı.");
-
+      setStatus("✅ Kilitlendi.", "Rapor final yapıldı.");
     } finally {
       finalizing = false;
     }
@@ -435,12 +424,9 @@ document.addEventListener("DOMContentLoaded", () => {
   async function boot(){
     const user = await new Promise((resolve)=> auth.onAuthStateChanged(u=> resolve(u)));
     if (!user){ alert("Giriş yok!"); return; }
-
     let rep = loadReportLocal() || await loadReportRemote(user.uid);
     if (!rep){ setStatus("❌ Rapor yok.", `rid: ${rid}`); return; }
-
     render(rep);
-
     if (isLockedLocal() || await isLockedRemote(user.uid)){
       setLockedLocal();
       setStatus("🔒 Kilitli.", "Bu rapor final yapılmış.");
@@ -450,10 +436,8 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.disabled = false;
       btn.onclick = () => finalizeFlow(user);
     }
-
     if (confirmParam) setTimeout(()=> finalizeFlow(user), 150);
   }
-
   boot().catch(console.error);
 });
 </script>
