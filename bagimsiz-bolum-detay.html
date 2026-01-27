@@ -400,7 +400,26 @@
     persist(arr, i, r);
   }
 
+  // ✅ Sekme değiştirirken aktif BB verisini kaybetme: otomatik kaydet (sessiz)
+  function saveActiveBBToReport(silent=true){
+    const { r, arr, i } = getLatestData();
+    if (!r || i < 0) return;
+    ensureBBList(r);
+
+    const bb = getActiveBB(r);
+    bb.bbDetay = readForm();
+    // aktif ekranda görünen metni de bbDetay içine yaz
+    bb.bbDetay.taslakMetin = document.getElementById("taslak")?.innerText || bb.bbDetay.taslakMetin || "";
+
+    persist(arr, i, r);
+    if (!silent) alert("Kaydedildi ✅");
+  }
+
   function setActiveBB(idx){
+    if (!isReportLocked()) {
+      // sekme değişmeden önce mevcut sekmeyi kaydet
+      saveActiveBBToReport(true);
+    }
     activeBBIndex = idx;
     renderBBTabs();
     veriYukle();
@@ -412,6 +431,9 @@
     if (!r) return;
 
     ensureBBList(r);
+    // önce mevcut sekmeyi kaydet
+    saveActiveBBToReport(true);
+
     const n = r.bbDetayList.length + 1;
     r.bbDetayList.push({ bbid:"bb_" + n, baslik:n + ". BB", bbDetay:{} });
 
@@ -528,30 +550,29 @@
   }
 
   /* ========= METİN (SENİN ŞABLON) ========= */
-  function metinOlustur() {
-    const val = (id) => (document.getElementById(id)?.value || "").toString().trim();
-    const num = (id) => {
-      const x = Number(val(id));
+  function buildTextFromData(data){
+    data = data || {};
+    const v = (k) => (data[k] ?? "").toString().trim();
+    const num = (k) => {
+      const x = Number(v(k));
       return Number.isFinite(x) ? x : 0;
     };
 
-    const kat = val("kat") || "...";
-    const bbNo = val("bbNo") || "...";
-    const kapiNo = val("kapiNo") || "...";
-    const nitelik = val("nitelik") || "...";
-    const konum = val("konum") || "...";
+    const kat = v("kat") || "...";
+    const bbNo = v("bbNo") || "...";
+    const kapiNo = v("kapiNo") || "...";
+    const nitelik = v("nitelik") || "...";
+    const konum = v("konum") || "...";
 
-    const cepheler = Array.from(document.querySelectorAll('input[name="cephe"]:checked'))
-      .map(x => x.value).filter(Boolean);
+    const cepheler = Array.isArray(data.cepheler) ? data.cepheler : [];
     const cepheText = cepheler.length ? cepheler.join(", ") : "...";
 
     const net = num("alanNet");
     const brut = num("alanBrut");
-
     const netParca = net > 0 ? `net ${net} ` : "";
     const brutParca = `brüt ${brut} m²`;
 
-    const sayi = (id) => parseInt(val(id) || "0", 10) || 0;
+    const sayi = (k) => parseInt(v(k) || "0", 10) || 0;
     const hacimler = [
       sayi("count_salon")  ? `${sayi("count_salon")} adet salon` : "",
       sayi("count_oda")    ? `${sayi("count_oda")} adet oda` : "",
@@ -562,34 +583,36 @@
       sayi("count_balkon") ? `${sayi("count_balkon")} adet balkon` : ""
     ].filter(Boolean).join(", ") || "...";
 
-    const antreZemin = val("antreZemin") || "...";
-    const antreDuvar = val("antreDuvar") || "...";
-    const salonZemin = val("salonZemin") || "...";
-    const salonDuvar = val("salonDuvar") || "...";
-    const odaZemin = val("odaZemin") || "...";
-    const odaDuvar = val("odaDuvar") || "...";
-    const mutfakZemin = val("mutfakZemin") || "...";
-    const mutfakDuvar = val("mutfakDuvar") || "...";
-    const mutfakDolap = val("mutfakDolap") || "...";
-    const mutfakTezgah = val("mutfakTezgah") || "...";
-    const islakHacim = val("islakHacim") || "...";
+    const antreZemin = v("antreZemin") || "...";
+    const antreDuvar = v("antreDuvar") || "...";
+    const salonZemin = v("salonZemin") || "...";
+    const salonDuvar = v("salonDuvar") || "...";
+    const odaZemin = v("odaZemin") || "...";
+    const odaDuvar = v("odaDuvar") || "...";
+    const mutfakZemin = v("mutfakZemin") || "...";
+    const mutfakDuvar = v("mutfakDuvar") || "...";
+    const mutfakDolap = v("mutfakDolap") || "...";
+    const mutfakTezgah = v("mutfakTezgah") || "...";
+    const islakHacim = v("islakHacim") || "...";
+    const banyoDonanim = v("banyoDonanim") || "...";
+    const girisKapi = v("daireKapi") || "...";
+    const icKapi = v("icKapi") || "...";
+    const pencere = v("pencere") || "...";
+    const isitma = v("isitma") || "...";
 
-    const banyoDonanim = val("banyoDonanim") || "...";
-
-    const girisKapi = val("daireKapi") || "...";
-    const icKapi = val("icKapi") || "...";
-    const pencere = val("pencere") || "...";
-    const isitma = val("isitma") || "...";
-
-    const tesisatVar = document.querySelector('input[name="tesisatVar"]:checked')?.value || "evet";
-    const tesisatAciklama = val("tesisatAciklama");
+    const tesisatVar = (data.tesisatVar || "evet").toString();
+    const tesisatAciklama = v("tesisatAciklama");
     const tesisatMetin = (tesisatVar === "evet")
       ? "mevcuttur"
       : (tesisatAciklama ? tesisatAciklama : "...");
 
-    const metin =
-`Değerleme konusu taşınmaz binanın ${kat} katında yer alan ${bbNo} bağımsız bölüm ve ${kapiNo} kapı numaralı ${nitelik} nitelikli taşınmazdır. Bina girişine göre ${konum} yer almaktadır. ${cepheText} cephelidir. Projesinde ve yerinde yapılan tespit ve ölçümlere göre ${netParca}${brutParca} kullanım alanına sahiptir. Taşınmaz ${hacimler} hacimlerinden oluşmaktadır. Taşınmazın antre ve hol zeminleri ${antreZemin} duvarları ${antreDuvar}. Salon zemini ${salonZemin}, duvarları ${salonDuvar} oda zeminleri ${odaZemin} duvarları ${odaDuvar}. Mutfak zemini ${mutfakZemin} ve duvarları ${mutfakDuvar} malzemedir. Mutfak dolabı ${mutfakDolap} tezgâhı ${mutfakTezgah} malzemedir. Taşınmazın ıslak hacimlerin zeminleri ve duvarları ${islakHacim}. Banyoda ${banyoDonanim} bulunmaktadır. Taşınmazın giriş kapısı ${girisKapi} ve iç kapıları ${icKapi}. Pencereleri ise ${pencere} doğramadır. Elektrik, su ve haberleşme tesisatları ${tesisatMetin} durumdaki gayrimenkulün ısıtılması ${isitma} ile sağlanmaktadır.`;
+    return `Değerleme konusu taşınmaz binanın ${kat} katında yer alan ${bbNo} bağımsız bölüm ve ${kapiNo} kapı numaralı ${nitelik} nitelikli taşınmazdır. Bina girişine göre ${konum} yer almaktadır. ${cepheText} cephelidir. Projesinde ve yerinde yapılan tespit ve ölçümlere göre ${netParca}${brutParca} kullanım alanına sahiptir. Taşınmaz ${hacimler} hacimlerinden oluşmaktadır. Taşınmazın antre ve hol zeminleri ${antreZemin} duvarları ${antreDuvar}. Salon zemini ${salonZemin}, duvarları ${salonDuvar} oda zeminleri ${odaZemin} duvarları ${odaDuvar}. Mutfak zemini ${mutfakZemin} ve duvarları ${mutfakDuvar} malzemedir. Mutfak dolabı ${mutfakDolap} tezgâhı ${mutfakTezgah} malzemedir. Taşınmazın ıslak hacimlerin zeminleri ve duvarları ${islakHacim}. Banyoda ${banyoDonanim} bulunmaktadır. Taşınmazın giriş kapısı ${girisKapi} ve iç kapıları ${icKapi}. Pencereleri ise ${pencere} doğramadır. Elektrik, su ve haberleşme tesisatları ${tesisatMetin} durumdaki gayrimenkulün ısıtılması ${isitma} ile sağlanmaktadır.`;
+  }
 
+  function metinOlustur() {
+    // ekrandaki inputlardan oku
+    const data = readForm();
+    const metin = buildTextFromData(data);
     const out = document.getElementById("taslak");
     if (out) out.innerText = metin;
   }
@@ -616,12 +639,33 @@
     if (!r || i < 0) { alert("Rapor bulunamadı."); return; }
 
     ensureBBList(r);
-    const bb = getActiveBB(r);
 
-    bb.bbDetay = readForm();
+    // 1) Önce aktif BB’yi kaydet
+    const active = getActiveBB(r);
+    active.bbDetay = readForm();
+    // aktif metni kesin yaz
+    active.bbDetay.taslakMetin = buildTextFromData(active.bbDetay);
+
+    // 2) Sonra tüm BB’lerin metnini otomatik üret (sekmeye girilmemiş olsa bile)
+    r.bbDetayList.forEach(bb=>{
+      bb.bbDetay = bb.bbDetay || {};
+      // bbDetay içinde metin yoksa bile, verilerden üret
+      bb.bbDetay.taslakMetin = buildTextFromData(bb.bbDetay);
+    });
+
+    // 3) Rapor oluşturun tek yerden okuması için birleştir
+    r.modules = r.modules || {};
+    const allText = r.bbDetayList.map((bb, idx)=>{
+      const title = bb?.baslik || `${idx+1}. BB`;
+      const t = (bb?.bbDetay?.taslakMetin || "").trim();
+      return `=== ${title} ===\n${t}`;
+    }).join("\n\n");
+
+    r.modules.bagimsizBolum = { text: allText, updatedAt: Date.now() };
+
     persist(arr, i, r);
 
-    alert("Kaydedildi ✅");
+    alert("Kaydedildi ✅ (Tüm BB metinleri hazırlandı)");
   }
 
   function anaMenuyeDon(){
@@ -661,3 +705,4 @@
 <script src="mobil-fix.js"></script>
 </body>
 </html>
+
