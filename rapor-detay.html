@@ -51,6 +51,12 @@
       color:white;
       font-weight:900;
       z-index: 1000000;
+      position: relative;
+display: inline-block;
+margin: 10px auto 0;
+left: auto;
+top: auto;
+
 
       /* Mobilde başlığın üstüne taşma olmasın */
       max-width: 44vw;
@@ -217,8 +223,7 @@ Devam etmek istiyor musunuz?`;
 </script>
 
   <div class="header">
-    <a href="index.html" class="back">← Ana Sayfa</a>
-    <div id="baslik">Gayrimenkul Raporu</div>
+        <div id="baslik">Gayrimenkul Raporu</div>
   </div>
 
   <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüller görüntüleme modunda.</div>
@@ -232,6 +237,7 @@ Devam etmek istiyor musunuz?`;
       <div id="walletSub" class="wallet-sub">Bakiye gizlidir. Görmek için karta tıkla.</div>
     </div>
   </div>
+  <a href="index.html" class="back">← Ana Sayfa</a>
 
   <div class="menu">
     <button class="btn btn-main-feature modül-btn" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
@@ -326,5 +332,6 @@ Devam etmek istiyor musunuz?`;
 <script src="mobil-fix.js"></script>
 </body>
 </html>
+
 
 
