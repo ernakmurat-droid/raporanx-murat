@@ -145,6 +145,39 @@
       margin-bottom: 15px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
       border-left: 5px solid #7c4dff;
+      /* === MOBİL SABİT GERİ DÖN === */
+.mobile-back-fixed{
+  display:none;
+}
+
+@media (max-width: 768px){
+  .mobile-back-fixed{
+    display:flex;
+    position:fixed;
+    bottom: env(safe-area-inset-bottom, 10px);
+    left:10px;
+    right:10px;
+    z-index:2000;
+  }
+
+  .mobile-back-fixed button{
+    width:100%;
+    background:#d32f2f;
+    color:white;
+    border:none;
+    padding:14px;
+    border-radius:16px;
+    font-weight:900;
+    font-size:16px;
+    box-shadow:0 6px 20px rgba(211,47,47,.45);
+  }
+
+  /* içerik alta yapışmasın */
+  body{
+    padding-bottom:160px;
+  }
+}
+
     }
   </style>
 
@@ -660,6 +693,11 @@ r.tasinmazNet  = bb.bbDetay.alanNet;
 
   document.addEventListener("DOMContentLoaded", init);
 </script>
+<div class="mobile-back-fixed">
+  <button onclick="anaMenuyeDon()">← ANA MENÜYE DÖN</button>
+</div>
+
 </body>
 </html>
+
 
