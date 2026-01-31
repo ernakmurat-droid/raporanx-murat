@@ -339,77 +339,82 @@
     rows.forEach(row => { row.querySelector('.m-pay').value = `1/${rows.length || 1}`; });
   }
 
-  function guncelle() {
-    const tVal = document.getElementById('tarihInput').value;
-    const tarihTakbis = tVal ? tVal.split('-').reverse().join('.') : "....";
-    const saatTakbis = document.getElementById('saatInput').value || "....";
+  <script>
+function guncelle() {
+  const tVal = document.getElementById('tarihInput').value;
+  const tarihTakbis = tVal ? tVal.split('-').reverse().join('.') : "....";
+  const saatTakbis = document.getElementById('saatInput').value || "....";
 
-    const satisEngelOlmayan = [];
-    const satisEngelOlabilecek = [];
+  const tumTakyidatlar = [];
+  const satisEngelOlan = [];
 
-    document.querySelectorAll('#tabloGövde tr').forEach(row => {
-      const tur = row.querySelector('.t-tur').value.trim();
-      const acik = row.querySelector('.t-acik').value.trim();
-      const tar = row.querySelector('.t-tar').value.trim();
-      const say = row.querySelector('.t-say').value.trim();
-      const engelMi = row.querySelector('.t-engel').value;
-      const engelAcik = row.querySelector('.t-engel-acik') ? row.querySelector('.t-engel-acik').value.trim() : "";
+  document.querySelectorAll('#tabloGövde tr').forEach(row => {
+    const tur = row.querySelector('.t-tur').value.trim();
+    const acik = row.querySelector('.t-acik').value.trim();
+    const tar = row.querySelector('.t-tar').value.trim();
+    const say = row.querySelector('.t-say').value.trim();
+    const engelMi = row.querySelector('.t-engel').value;
+    const engelAcik = row.querySelector('.t-engel-acik')
+      ? row.querySelector('.t-engel-acik').value.trim()
+      : "";
 
-      if(tur || acik) {
-        let detay = `${tur} ${acik}`.trim();
-        if(tar) detay += ` Tarih: ${tar}`;
-        if(say) detay += ` Sayı: ${say}`;
-        if(engelMi === 'evet' && engelAcik) detay += ` (Engel Açıklaması: ${engelAcik})`;
+    if (tur || acik) {
+      let detay = `${tur} ${acik}`.trim();
+      if (tar) detay += ` | Tarih: ${tar}`;
+      if (say) detay += ` | Sayı: ${say}`;
+      if (engelMi === 'evet' && engelAcik) detay += ` | Açıklama: ${engelAcik}`;
 
-        if(engelMi === 'evet') satisEngelOlabilecek.push(detay);
-        else satisEngelOlmayan.push(detay);
+      tumTakyidatlar.push(detay);
+
+      if (engelMi === 'evet') {
+        satisEngelOlan.push(detay);
       }
-    });
+    }
+  });
 
-    let malikMetni = "";
-    document.querySelectorAll('#malikGövde tr').forEach(row => {
-      const ad = row.querySelector('.m-ad').value.trim();
-      if(ad) malikMetni += `- ${ad} (Hisse: ${row.querySelector('.m-pay').value})\n`;
-    });
+  let malikMetni = "";
+  document.querySelectorAll('#malikGövde tr').forEach(row => {
+    const ad = row.querySelector('.m-ad').value.trim();
+    if (ad) {
+      malikMetni += `- ${ad} (Hisse: ${row.querySelector('.m-pay').value})\n`;
+    }
+  });
 
-    let b1 =
-`YASAL KISITLAMALAR (Şerh, Rehin, Beyan, İpotek, Haciz ve Diğer Haklar)
+  const tumTakyidatMetni = tumTakyidatlar.length
+    ? tumTakyidatlar.map(x => `- ${x}`).join("\n")
+    : "Herhangi bir takyidat kaydı bulunmamaktadır.";
 
-TKGM Portal Takbis Sisteminden Takbis Tarihi: ${tarihTakbis} tarihinde İnceleme Saati: ${saatTakbis} itibariyle yapılan incelemede konu taşınmazın tapu kaydı üzerinde aşağıdaki bilgilere ulaşılmıştır:
+  const engelBlok = satisEngelOlan.length
+    ? `\nSATIŞA ENGEL TEŞKİL EDEBİLECEK TAKYİDATLAR:\n- ${satisEngelOlan.join("\n- ")}\n`
+    : "";
 
-SATIŞA ENGEL OLMAYAN TAKYİDATLAR:
-${satisEngelOlmayan.length ? "- " + satisEngelOlmayan.join("\n- ") : "Herhangi bir kayıt bulunmamaktadır."}
+  const tekMetin =
+`YASAL KISITLAMALAR VE TAPU İNCELEMESİ
 
-SATIŞA ENGEL TEŞKİL EDEBİLECEK TAKYİDATLAR (Engel?=Evet):
-${satisEngelOlabilecek.length ? "- " + satisEngelOlabilecek.join("\n- ") : "Engel?=Evet olarak işaretlenen kayıt bulunmamaktadır."}
+TKGM Portal Takbis Sisteminden;
+Takbis Tarihi: ${tarihTakbis}
+İnceleme Saati: ${saatTakbis}
 
-Not: 'Engel?=Evet' seçilen kayıtlar satışa engel teşkil edebilir; nihai değerlendirme banka/hukuk birimi tarafından yapılmalıdır.
+TAKYİDAT BİLGİLERİ:
+${tumTakyidatMetni}
 
 MALİK BİLGİLERİ:
-${malikMetni || "Girilmedi."}`;
+${malikMetni || "Bilgi girilmemiştir."}
+${engelBlok}
+Not: Satışa engel teşkil edebilecek takyidatlar bulunması halinde nihai değerlendirme banka ve/veya ilgili hukuk birimleri tarafından yapılmalıdır.`;
 
-    let b2 =
-`TAPU KAYIT VE TAKYİDAT ANALİZİ
+  document.getElementById('tek_sonuc').innerText = tekMetin;
+  document.getElementById('b1_sonuc').innerText = tekMetin;
+  document.getElementById('b2_sonuc').innerText = tekMetin;
 
-Takbis Tarihi: ${tarihTakbis} / İnceleme Saati: ${saatTakbis}
+  return {
+    tek: tekMetin,
+    b1: tekMetin,
+    b2: tekMetin
+  };
+}
+</script>
 
-SATIŞA ENGEL OLMAYAN TAKYİDATLAR:
-${satisEngelOlmayan.length ? satisEngelOlmayan.map(x => "• " + x).join("\n") : "- Kayıt Yok"}
-
-SATIŞA ENGEL TEŞKİL EDEBİLECEK TAKYİDATLAR (Engel?=Evet):
-${satisEngelOlabilecek.length ? satisEngelOlabilecek.map(x => "• " + x).join("\n") : "- Yok"}
-
-MÜLKİYET YAPISI:
-${malikMetni || "- Bilgi Yok"}`;
-
-    const tek = b1 + "\n\n----------------------------------------\n\n" + b2;
-
-    document.getElementById('b1_sonuc').innerText = b1;
-    document.getElementById('b2_sonuc').innerText = b2;
-    document.getElementById('tek_sonuc').innerText = tek;
-
-    return { b1, b2, tek };
-  }
 
   async function kaydet() {
     const metinler = guncelle();
