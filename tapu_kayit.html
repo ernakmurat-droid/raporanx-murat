@@ -104,32 +104,30 @@
     margin-top:25px;
   }
 
-  @media (max-width:768px){
-    body{ padding:15px; }
+ @media (max-width:768px){
+  body{ padding:15px; }
 
-    .mobile-back-wrap{
-      display:block;
-    }
+  .mobile-back-wrap{ display:block; }
 
-    .mobile-back-btn{
-      width:100%;
-      background:#d32f2f;
-      color:white;
-      border:none;
-      padding:14px;
-      border-radius:14px;
-      font-weight:bold;
-      font-size:1.05rem;
-      box-shadow:0 4px 15px rgba(211,47,47,.35);
-    }
-      @media (max-width: 768px){
+  .mobile-back-btn{
+    width:100%;
+    background:#d32f2f;
+    color:white;
+    border:none;
+    padding:14px;
+    border-radius:14px;
+    font-weight:bold;
+    font-size:1.05rem;
+    box-shadow:0 4px 15px rgba(211,47,47,.35);
+  }
+
+  /* Mobilde B1/B2 gizle */
   #label_b1, #label_b2,
   #b1_sonuc, #b2_sonuc{
     display:none !important;
   }
 }
 
-    }
 
 </style>
 
@@ -339,7 +337,6 @@
     rows.forEach(row => { row.querySelector('.m-pay').value = `1/${rows.length || 1}`; });
   }
 
-  <script>
 function guncelle() {
   const tVal = document.getElementById('tarihInput').value;
   const tarihTakbis = tVal ? tVal.split('-').reverse().join('.') : "....";
@@ -365,19 +362,14 @@ function guncelle() {
       if (engelMi === 'evet' && engelAcik) detay += ` | Açıklama: ${engelAcik}`;
 
       tumTakyidatlar.push(detay);
-
-      if (engelMi === 'evet') {
-        satisEngelOlan.push(detay);
-      }
+      if (engelMi === 'evet') satisEngelOlan.push(detay);
     }
   });
 
   let malikMetni = "";
   document.querySelectorAll('#malikGövde tr').forEach(row => {
     const ad = row.querySelector('.m-ad').value.trim();
-    if (ad) {
-      malikMetni += `- ${ad} (Hisse: ${row.querySelector('.m-pay').value})\n`;
-    }
+    if (ad) malikMetni += `- ${ad} (Hisse: ${row.querySelector('.m-pay').value})\n`;
   });
 
   const tumTakyidatMetni = tumTakyidatlar.length
@@ -388,6 +380,7 @@ function guncelle() {
     ? `\nSATIŞA ENGEL TEŞKİL EDEBİLECEK TAKYİDATLAR:\n- ${satisEngelOlan.join("\n- ")}\n`
     : "";
 
+  // TEK METİN (ana çıktı)
   const tekMetin =
 `YASAL KISITLAMALAR VE TAPU İNCELEMESİ
 
@@ -403,17 +396,13 @@ ${malikMetni || "Bilgi girilmemiştir."}
 ${engelBlok}
 Not: Satışa engel teşkil edebilecek takyidatlar bulunması halinde nihai değerlendirme banka ve/veya ilgili hukuk birimleri tarafından yapılmalıdır.`;
 
+  // Masaüstünde üçü de aynı metni gösterebilir (mobilde B1/B2 gizleniyor zaten)
   document.getElementById('tek_sonuc').innerText = tekMetin;
   document.getElementById('b1_sonuc').innerText = tekMetin;
   document.getElementById('b2_sonuc').innerText = tekMetin;
 
-  return {
-    tek: tekMetin,
-    b1: tekMetin,
-    b2: tekMetin
-  };
+  return { tek: tekMetin, b1: tekMetin, b2: tekMetin };
 }
-</script>
 
 
   async function kaydet() {
