@@ -13,26 +13,126 @@
   <script src="firebase-config.js"></script>
 
   <style>
-    body { background-color: #f8f9fa; padding: 25px; font-family: 'Segoe UI', sans-serif; }
-    .card { border-radius: 15px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 30px; }
+  body{
+    background-color:#f8f9fa;
+    padding:25px;
+    font-family:'Segoe UI',sans-serif;
+  }
 
-    .result-body{
-      background:white; border:2px solid #dee2e6; padding:20px; border-radius:10px;
-      white-space:pre-wrap; font-size:13px; margin-bottom:25px;
-      filter: blur(2.5px); transition:.3s; cursor:text; line-height:1.6;
-      -webkit-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none;
+  .card{
+    border-radius:15px;
+    border:none;
+    box-shadow:0 5px 20px rgba(0,0,0,0.1);
+    margin-bottom:30px;
+  }
+
+  .result-body{
+    background:white;
+    border:2px solid #dee2e6;
+    padding:20px;
+    border-radius:10px;
+    white-space:pre-wrap;
+    font-size:13px;
+    margin-bottom:25px;
+    filter:blur(2.5px);
+    transition:.3s;
+    cursor:text;
+    line-height:1.6;
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none;
+  }
+  .result-body:hover{ filter:blur(0); }
+
+  .engel-evet{ background-color:#fff0f0 !important; }
+
+  .btn-geri{
+    background:#d32f2f;
+    color:white;
+    border:none;
+    padding:10px 20px;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+
+  .btn-save-final{
+    background:#198754;
+    color:white;
+    padding:20px;
+    font-size:1.2rem;
+    font-weight:bold;
+    border-radius:12px;
+    box-shadow:0 4px 15px rgba(25,135,84,.3);
+    border:none;
+    width:100%;
+    margin-top:30px;
+  }
+
+  .save-status{
+    display:none;
+    color:#198754;
+    font-weight:bold;
+    margin-top:10px;
+    text-align:center;
+    border:1px solid #198754;
+    padding:10px;
+    border-radius:8px;
+    background:#e8f5e9;
+  }
+
+  .format-label{
+    font-weight:bold;
+    color:#4a148c;
+    margin-bottom:5px;
+    display:block;
+    text-decoration:underline;
+  }
+
+  .engel-aciklama{
+    margin-top:6px;
+    display:none;
+  }
+  .engel-aciklama input{ font-size:12.5px; }
+
+  /* ===============================
+     📱 MOBİL GERİ DÖN BUTONU
+     =============================== */
+  .mobile-back-wrap{
+    display:none;
+    margin-top:25px;
+  }
+
+  @media (max-width:768px){
+    body{ padding:15px; }
+
+    .mobile-back-wrap{
+      display:block;
     }
-    .result-body:hover{ filter: blur(0); }
 
-    .engel-evet{ background-color:#fff0f0 !important; }
-    .btn-geri{ background:#d32f2f; color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:bold; cursor:pointer; }
-    .btn-save-final{ background:#198754; color:white; padding:20px; font-size:1.2rem; font-weight:bold; border-radius:12px; box-shadow:0 4px 15px rgba(25,135,84,.3); border:none; width:100%; margin-top:30px; }
-    .save-status{ display:none; color:#198754; font-weight:bold; margin-top:10px; text-align:center; border:1px solid #198754; padding:10px; border-radius:8px; background:#e8f5e9; }
+    .mobile-back-btn{
+      width:100%;
+      background:#d32f2f;
+      color:white;
+      border:none;
+      padding:14px;
+      border-radius:14px;
+      font-weight:bold;
+      font-size:1.05rem;
+      box-shadow:0 4px 15px rgba(211,47,47,.35);
+    }
+      @media (max-width: 768px){
+  #label_b1, #label_b2,
+  #b1_sonuc, #b2_sonuc{
+    display:none !important;
+  }
+}
 
-    .format-label{ font-weight:bold; color:#4a148c; margin-bottom:5px; display:block; text-decoration:underline; }
-    .engel-aciklama{ margin-top:6px; display:none; }
-    .engel-aciklama input{ font-size: 12.5px; }
-  </style>
+    }
+
+</style>
+
   <link rel="stylesheet" href="mobil-fix.css">
 </head>
 
@@ -94,16 +194,22 @@
     <button class="btn btn-save-final" onclick="kaydet()">TAPU VERİLERİNİ VE METİNLERİ KAYDET</button>
     <div id="saveStatus" class="save-status">✅ Kaydedildi ve Buluta Senkronize Edildi!</div>
   </div>
-
-  <span class="format-label">📄 TEK METİN (B1 + B2)</span>
-  <div class="result-body" id="tek_sonuc" oncopy="return false"></div>
-
-  <span class="format-label">📄 BANKA FORMATI B1</span>
-  <div class="result-body" id="b1_sonuc" oncopy="return false"></div>
-
-  <span class="format-label">📄 BANKA FORMATI B2</span>
-  <div class="result-body" id="b2_sonuc" oncopy="return false"></div>
+<div class="mobile-back-wrap">
+  <button class="mobile-back-btn" onclick="anaMenuyeDon()">
+    ← ANA MENÜYE DÖN
+  </button>
 </div>
+
+<span id="label_tek" class="format-label">📄 TEK METİN (B1 + B2)</span>
+<div class="result-body" id="tek_sonuc" oncopy="return false"></div>
+
+<span id="label_b1" class="format-label">📄 BANKA FORMATI B1</span>
+<div class="result-body" id="b1_sonuc" oncopy="return false"></div>
+
+<span id="label_b2" class="format-label">📄 BANKA FORMATI B2</span>
+<div class="result-body" id="b2_sonuc" oncopy="return false"></div>
+</div>
+
 
 <script>
   const auth = firebase.auth();
@@ -384,3 +490,4 @@ ${malikMetni || "- Bilgi Yok"}`;
 <script src="mobil-fix.js"></script>
 </body>
 </html>
+
