@@ -56,64 +56,56 @@
     }
     .final-box:not(:hover){ filter:blur(2px); }
 
-    .emsal-liste-item{
-      background:#f8f9fa; padding:12px; border-radius:8px; margin-bottom:8px;
-      border-left:5px solid var(--primary); display:flex; justify-content:space-between; align-items:center;
-      gap:12px; font-size:14px;
-    }
-    .emsal-liste-item button{
-      padding:8px 10px; border:none; border-radius:8px; cursor:pointer;
-      background:var(--primary); color:#fff; font-weight:900;
-    }
-    .emsal-liste-item .del{ background:var(--danger); margin-left:6px; }
-
-    .bbbar{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-      padding:12px; border:1px solid #e0e6ed; border-radius:12px; background:#fff; margin-bottom:16px;
-    }
-    .bbTabs{ display:flex; gap:8px; flex-wrap:wrap; }
-    .bbTab{ padding:10px 12px; border-radius:10px; border:1px solid #ddd; cursor:pointer; background:#fff; color:#333; font-weight:900; }
-    .bbTab.active{ background:var(--primary); color:#fff; border-color:transparent; }
-
-    .hidden{ display:none !important; }
-    .insaat-toggle{
-      background:#fff3e0; border:1px solid #ffe0b2; padding:15px; border-radius:8px; margin-bottom:15px;
-      display:flex; align-items:center; gap:10px; font-weight:900; color:#e65100;
-    /* === MOBİL FORM DÜZELTME === */
-@media (max-width: 768px){
-  .grid-form{
-    grid-template-columns: 1fr !important;  /* tek sütun */
-  }
-  .input-group input,
-  .input-group select{
-    font-size:16px; /* iOS otomatik zoom olmasın + daha okunaklı */
-  }
+   .emsal-liste-item{
+  background:#f8f9fa; padding:12px; border-radius:8px; margin-bottom:8px;
+  border-left:5px solid var(--primary); display:flex; justify-content:space-between; align-items:center;
+  gap:12px; font-size:14px;
 }
+.emsal-liste-item button{
+  padding:8px 10px; border:none; border-radius:8px; cursor:pointer;
+  background:var(--primary); color:#fff; font-weight:900;
+}
+.emsal-liste-item .del{ background:var(--danger); margin-left:6px; }
+
+.bbbar{
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  padding:12px; border:1px solid #e0e6ed; border-radius:12px; background:#fff; margin-bottom:16px;
+}
+.bbTabs{ display:flex; gap:8px; flex-wrap:wrap; }
+.bbTab{ padding:10px 12px; border-radius:10px; border:1px solid #ddd; cursor:pointer; background:#fff; color:#333; font-weight:900; }
+.bbTab.active{ background:var(--primary); color:#fff; border-color:transparent; }
+
+.hidden{ display:none !important; }
+
+.insaat-toggle{
+  background:#fff3e0; border:1px solid #ffe0b2; padding:15px; border-radius:8px; margin-bottom:15px;
+  display:flex; align-items:center; gap:10px; font-weight:900; color:#e65100;
+}
+
 /* === MOBİLDE EMSAL FORMU TEK SÜTUN (KESİN) === */
 @media (max-width: 768px){
 
   /* Emsal formunun içindeki grid'i tek sütuna kilitle */
   #emsalFormContainer .grid-form{
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:12px !important;
   }
 
   /* Grid içindeki span 2 gibi şeyleri iptal et */
   #emsalFormContainer .grid-form > .input-group{
-    grid-column: auto !important;
+    grid-column:auto !important;
   }
 
   /* Inputları okunaklı yap (iOS zoomu da keser) */
   #emsalFormContainer .input-group input,
   #emsalFormContainer .input-group select{
-    width: 100% !important;
-    font-size: 16px !important;
+    width:100% !important;
+    font-size:16px !important;
   }
 }
 
-}
-  </style>
+  </style>@media (max-width: 768px){
 </head>
 
 <body oncontextmenu="return false;">
