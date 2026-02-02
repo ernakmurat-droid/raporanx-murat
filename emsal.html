@@ -134,11 +134,16 @@
 </head>
 
 <body oncontextmenu="return false;">
-  <div class="header">
-    <button onclick="anaMenuyeDon()" class="back">← Menü</button>
-    <h1>EMSAL ANALİZİ VE DEĞERLEME</h1>
-    <div id="raporBilgi">Yükleniyor...</div>
-  </div>
+ <!-- ✅ MOBİL GARANTİ GERİ BAR -->
+<div class="mobile-topbar">
+  <button type="button" class="mobile-back" onclick="anaMenuyeDon()">← Menü</button>
+</div>
+
+<div class="header">
+  <h1>EMSAL ANALİZİ VE DEĞERLEME</h1>
+  <div id="raporBilgi">Yükleniyor...</div>
+</div>
+
 
   <div id="durumCubugu" class="status-bar status-incomplete">
     ⚠️ Analiz İçin Veri Girişi Bekleniyor...
