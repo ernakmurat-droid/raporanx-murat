@@ -79,7 +79,17 @@
     .insaat-toggle{
       background:#fff3e0; border:1px solid #ffe0b2; padding:15px; border-radius:8px; margin-bottom:15px;
       display:flex; align-items:center; gap:10px; font-weight:900; color:#e65100;
-    }
+    /* === MOBİL FORM DÜZELTME === */
+@media (max-width: 768px){
+  .grid-form{
+    grid-template-columns: 1fr !important;  /* tek sütun */
+  }
+  .input-group input,
+  .input-group select{
+    font-size:16px; /* iOS otomatik zoom olmasın + daha okunaklı */
+  }
+}
+}
   </style>
 </head>
 
@@ -504,12 +514,30 @@
       const yasalDeger  = Math.round(uyg * brut);
       const ilaveDeger  = Math.round(ilaveAlan * ilaveBirim);
       const mevcutDeger = Math.round(yasalDeger + ilaveDeger);
+      // === İNŞAAT SEVİYELİ MOD (MEVCUT DURUM) ===
+const insaatMod = !!el("chkinsaat")?.checked;
+const seviyePct = toNum(val("inpseviye")) || 0;          // %
+const eksikTL   = toNum(val("inpeksik")) || 0;           // TL
+
+let mevcutDurumDeger = mevcutDeger;
+
+if(insaatMod){
+  const sev = Math.max(0, Math.min(100, seviyePct)) / 100;  // 0..1
+  // mantık: tamamlanmış değerin seviye kadarı - eksik imalat bedeli
+  mevcutDurumDeger = Math.round((mevcutDeger * sev) - eksikTL);
+}
+
 
       if(ilaveAlan > 0 && ilaveBirim > 0){
         metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
         metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
         metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL `;
-        metin += `eklenerek toplam mevcut değer ${formatLira0(mevcutDeger)} TL uygun görülmüştür.\n`;
+       if(insaatMod){
+  metin += `... toplam TAMAMLANMIŞ değer ${formatLira0(mevcutDeger)} TL olup, mevcut inşaat seviyesi %${seviyePct} ve eksik imalat ${formatLira0(eksikTL)} TL dikkate alındığında MEVCUT DURUM değeri ${formatLira0(mevcutDurumDeger)} TL uygun görülmüştür.\n`;
+}else{
+  
+}
+
       }else{
         metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
         metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer uygun görülmüştür.\n`;
@@ -716,6 +744,7 @@
 
 </body>
 </html>
+
 
 
 
