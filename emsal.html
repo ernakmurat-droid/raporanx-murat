@@ -525,6 +525,7 @@
    
 
 // ✅ Çoklu BB: alt alta
+// ✅ Çoklu BB: alt alta (İNŞAAT MODUNDA "yasal değer..." cümlesi YOK, "■" YOK)
 report.bbDetayList.forEach((bb, idx)=>{
   const baslik = bb.baslik || (idx+1)+". BB";
   const oz = getOzetForBB(bb) || {};
@@ -537,50 +538,38 @@ report.bbDetayList.forEach((bb, idx)=>{
 
   const yasalDeger  = Math.round(uyg * brut);
   const ilaveDeger  = Math.round(ilaveAlan * ilaveBirim);
-  const tamamlanmisDeger = Math.round(yasalDeger + ilaveDeger);
+  const tamamlanmisDeger = Math.round(yasalDeger + ilaveDeger); // %100 tamamlanmış (bilgi amaçlı)
 
   const insaatMod = !!el("chkinsaat")?.checked;
   const seviyePct = Math.max(0, Math.min(100, toNum(val("inpseviye")) || 0));
   const eksikTL   = toNum(val("inpeksik")) || 0;
 
+  // Senin şablon: mevcut = tamamlanmış - eksik imalat
   const mevcutDurumDeger = Math.round(tamamlanmisDeger - eksikTL);
 
-  if (ilaveAlan > 0 && ilaveBirim > 0) {
+  // --- METİN ---
+  if(insaatMod){
+    // ✅ İnşaat modunda sadece şablon metni (yasal değer cümlesi yok)
+    metin += `${baslik}: Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurularak `;
+    metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)} TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
+    metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup `;
+    metin += `(~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+    return;
+  }
+
+  // ✅ Normal mod (inşaat kapalı)
+  if(ilaveAlan > 0 && ilaveBirim > 0){
     metin += `${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
     metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
     metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
-
-    if (insaatMod) {
-  // ✅ İnşaat modunda: “birim fiyat üzerinden ... yasal değer” cümlesi YOK
-  metin += `■ ${baslik}: Yapılan analizler sonucunda konu mülkün tüm özellikleri dikkate alınarak, `;
-  metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)} TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
-  metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup `;
-  metin += `(~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
-} else {
-  // ✅ Normal mod (ilave alan varsa da yoksa da) eski düzen devam edebilir
-  if (ilaveAlan > 0 && ilaveBirim > 0) {
-    metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
-    metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
-    metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
-    metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL mevcut değer uygun görülmüştür.\n`;
-  } else {
-    metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+    metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL uygun görülmüştür.\n`;
+  }else{
+    metin += `${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
     metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer uygun görülmüştür.\n`;
   }
-}
+});
 
-  } else {
-    metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
-    metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer `;
-
-    if (insaatMod) {
-      metin += `olmak üzere, taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(yasalDeger)} TL değer takdir edilmiştir. `;
-      metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
-    } else {
-      metin += `uygun görülmüştür.\n`;
-    }
-  }
-}); // ✅ forEach kapanışı
+// ✅ forEach kapanışı
 
 metin += `\nSonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
 
@@ -748,11 +737,12 @@ window.tumRaporuKaydet = async function(){
 }
 
 
-  window.anaMenuyeDon = function(){
-    if(id) window.location.href = `rapor-detay.html?id=${encodeURIComponent(id)}`;
-    else if(rid) window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-    else window.location.href = "rapor-detay.html";
-  }
+ window.anaMenuyeDon = function(){
+  saveActiveBBPricing(); // 👈 çıkmadan önce BB fiyatlarını yaz
+  if(id) window.location.href = `rapor-detay.html?id=${encodeURIComponent(id)}`;
+  else if(rid) window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+  else window.location.href = "rapor-detay.html";
+}
 
   // global
   window.formatMoneyInput = formatMoneyInput;
