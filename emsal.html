@@ -89,6 +89,29 @@
     font-size:16px; /* iOS otomatik zoom olmasın + daha okunaklı */
   }
 }
+/* === MOBİLDE EMSAL FORMU TEK SÜTUN (KESİN) === */
+@media (max-width: 768px){
+
+  /* Emsal formunun içindeki grid'i tek sütuna kilitle */
+  #emsalFormContainer .grid-form{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Grid içindeki span 2 gibi şeyleri iptal et */
+  #emsalFormContainer .grid-form > .input-group{
+    grid-column: auto !important;
+  }
+
+  /* Inputları okunaklı yap (iOS zoomu da keser) */
+  #emsalFormContainer .input-group input,
+  #emsalFormContainer .input-group select{
+    width: 100% !important;
+    font-size: 16px !important;
+  }
+}
+
 }
   </style>
 </head>
