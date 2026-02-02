@@ -522,74 +522,66 @@
     }
     metin += `Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurulmuştur.\n\n`;
 
-    metin += `DEĞERLEME SONUÇLARI\n------------------------------------------\n`;
+   metin += `DEĞERLEME SONUÇLARI\n------------------------------------------\n`;
 
-    // ✅ Çoklu BB: alt alta
-    report.bbDetayList.forEach((bb, idx)=>{
-      const baslik = bb.baslik || (idx+1)+". BB";
+// ✅ Çoklu BB: alt alta
+report.bbDetayList.forEach((bb, idx)=>{
+  const baslik = bb.baslik || (idx+1)+". BB";
+  const oz = getOzetForBB(bb) || {};
 
-      const oz = getOzetForBB(bb) || {};
+  const uyg = toNum(oz.uygulananBirim ?? oz.uygBirim ?? val("inp_uygulanan","inpuygulanan") ?? 0);
+  const ilaveAlan  = toNum(oz.projeDisiAlan ?? oz.ilaveAlan ?? val("inpprojedisi","inp_projedisi") ?? 0);
+  const ilaveBirim = toNum(oz.projeDisiBirim ?? oz.ilaveBirim ?? val("inpprojebirim","inp_projebirim") ?? 0);
 
-      // Birim fiyat: BB özetinde varsa onu al, yoksa sayfadaki inputu al
-      const uyg = toNum(oz.uygulananBirim ?? oz.uygBirim ?? val("inp_uygulanan","inpuygulanan") ?? 0);
+  const brut = getBrutAny(bb, report);
 
-      // İlave alan: BB özetinde varsa onu al, yoksa sayfadaki inputu al
-      const ilaveAlan  = toNum(oz.projeDisiAlan ?? oz.ilaveAlan ?? val("inpprojedisi","inp_projedisi") ?? 0);
-      const ilaveBirim = toNum(oz.projeDisiBirim ?? oz.ilaveBirim ?? val("inpprojebirim","inp_projebirim") ?? 0);
+  const yasalDeger  = Math.round(uyg * brut);
+  const ilaveDeger  = Math.round(ilaveAlan * ilaveBirim);
+  const tamamlanmisDeger = Math.round(yasalDeger + ilaveDeger);
 
-      const brut = getBrutAny(bb, report);
+  const insaatMod = !!el("chkinsaat")?.checked;
+  const seviyePct = Math.max(0, Math.min(100, toNum(val("inpseviye")) || 0));
+  const eksikTL   = toNum(val("inpeksik")) || 0;
 
-      const yasalDeger  = Math.round(uyg * brut);
-const ilaveDeger  = Math.round(ilaveAlan * ilaveBirim);
-const tamamlanmisDeger = Math.round(yasalDeger + ilaveDeger); // %100 tamamlanmış (bilgi amaçlı)
+  const mevcutDurumDeger = Math.round(tamamlanmisDeger - eksikTL);
 
-// === İNŞAAT SEVİYELİ MOD (MEVCUT DURUM) ===
-const insaatMod = !!el("chkinsaat")?.checked;
-const seviyePct = Math.max(0, Math.min(100, toNum(val("inpseviye")) || 0)); // %
-const eksikTL   = toNum(val("inpeksik")) || 0;                               // TL
+  if (ilaveAlan > 0 && ilaveBirim > 0) {
+    metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+    metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
+    metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
 
-// ✅ Senin istediğin şablon: mevcut = tamamlanmış - eksik
-const mevcutDurumDeger = Math.round(tamamlanmisDeger - eksikTL);
-
-// --- BB satırı ---
-if (ilaveAlan > 0 && ilaveBirim > 0) {
-  metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
-  metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
-  metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
-
-  if (insaatMod) {
-    metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
-    metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+    if (insaatMod) {
+      metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
+      metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+    } else {
+      metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL uygun görülmüştür.\n`;
+    }
   } else {
-    metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL uygun görülmüştür.\n`;
-  }
+    metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+    metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer `;
 
-} else {
-  metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
-  metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer `;
-
-  if (insaatMod) {
-    metin += `olmak üzere, taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(yasalDeger)} TL değer takdir edilmiştir. `;
-    metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
-  } else {
-    metin += `uygun görülmüştür.\n`;
+    if (insaatMod) {
+      metin += `olmak üzere, taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(yasalDeger)} TL değer takdir edilmiştir. `;
+      metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+    } else {
+      metin += `uygun görülmüştür.\n`;
+    }
   }
+}); // ✅ forEach kapanışı
+
+metin += `\nSonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
+
+metin += `\nEMSAL HESAP SATIRLARI\n------------------------------------------\n`;
+if(pool.length){
+  pool.forEach((e, i) => {
+    const built = emsalMetinUret(e);
+    metin += `- Emsal ${i+1}: ${built.hesapSatiri}\n`;
+  });
 }
 
+out.innerText = metin;
+veriKontrol(report);
 
-
-    metin += `\nSonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
-
-    metin += `\nEMSAL HESAP SATIRLARI\n------------------------------------------\n`;
-    if(pool.length){
-      pool.forEach((e, i) => {
-        const built = emsalMetinUret(e);
-        metin += `- Emsal ${i+1}: ${built.hesapSatiri}\n`;
-      });
-    }
-
-    out.innerText = metin;
-    veriKontrol(report);
   }
 
   function listele(){
