@@ -540,42 +540,42 @@
       const brut = getBrutAny(bb, report);
 
       const yasalDeger  = Math.round(uyg * brut);
-      const ilaveDeger  = Math.round(ilaveAlan * ilaveBirim);
-      const mevcutDeger = Math.round(yasalDeger + ilaveDeger);
-      // === İNŞAAT SEVİYELİ MOD (MEVCUT DURUM) ===
+const ilaveDeger  = Math.round(ilaveAlan * ilaveBirim);
+const tamamlanmisDeger = Math.round(yasalDeger + ilaveDeger); // %100 tamamlanmış (bilgi amaçlı)
+
+// === İNŞAAT SEVİYELİ MOD (MEVCUT DURUM) ===
 const insaatMod = !!el("chkinsaat")?.checked;
-const seviyePct = toNum(val("inpseviye")) || 0;          // %
-const eksikTL   = toNum(val("inpeksik")) || 0;           // TL
+const seviyePct = Math.max(0, Math.min(100, toNum(val("inpseviye")) || 0)); // %
+const eksikTL   = toNum(val("inpeksik")) || 0;                               // TL
 
-let mevcutDurumDeger = mevcutDeger;
+// ✅ Senin istediğin şablon: mevcut = tamamlanmış - eksik
+const mevcutDurumDeger = Math.round(tamamlanmisDeger - eksikTL);
 
-if(insaatMod){
-  metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(mevcutDeger)} TL değer takdir edilmiştir. `;
-  metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
-}else{
-  metin += `... toplam değer ${formatLira0(mevcutDeger)} TL uygun görülmüştür.\n`;
-}
+// --- BB satırı ---
+if (ilaveAlan > 0 && ilaveBirim > 0) {
+  metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+  metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
+  metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
 
+  if (insaatMod) {
+    metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
+    metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+  } else {
+    metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL uygun görülmüştür.\n`;
+  }
 
-
-
-      if(ilaveAlan > 0 && ilaveBirim > 0){
-        metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
-        metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
-        metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL `;
-       if(insaatMod){
-  metin += `... toplam TAMAMLANMIŞ değer ${formatLira0(mevcutDeger)} TL olup, mevcut inşaat seviyesi %${seviyePct} ve eksik imalat ${formatLira0(eksikTL)} TL dikkate alındığında MEVCUT DURUM değeri ${formatLira0(mevcutDurumDeger)} TL uygun görülmüştür.\n`;
-}else{
+} else {
   metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
   metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer `;
 
-  if(insaatMod){
+  if (insaatMod) {
     metin += `olmak üzere, taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(yasalDeger)} TL değer takdir edilmiştir. `;
     metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
-  }else{
+  } else {
     metin += `uygun görülmüştür.\n`;
   }
 }
+
 
 
     metin += `\nSonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
