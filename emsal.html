@@ -522,7 +522,7 @@
     }
     metin += `Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurulmuştur.\n\n`;
 
-   metin += `DEĞERLEME SONUÇLARI\n------------------------------------------\n`;
+   
 
 // ✅ Çoklu BB: alt alta
 report.bbDetayList.forEach((bb, idx)=>{
@@ -546,16 +546,29 @@ report.bbDetayList.forEach((bb, idx)=>{
   const mevcutDurumDeger = Math.round(tamamlanmisDeger - eksikTL);
 
   if (ilaveAlan > 0 && ilaveBirim > 0) {
-    metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+    metin += `${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
     metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
     metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
 
     if (insaatMod) {
-      metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
-      metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
-    } else {
-      metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL uygun görülmüştür.\n`;
-    }
+  // ✅ İnşaat modunda: “birim fiyat üzerinden ... yasal değer” cümlesi YOK
+  metin += `■ ${baslik}: Yapılan analizler sonucunda konu mülkün tüm özellikleri dikkate alınarak, `;
+  metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)} TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
+  metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup `;
+  metin += `(~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+} else {
+  // ✅ Normal mod (ilave alan varsa da yoksa da) eski düzen devam edebilir
+  if (ilaveAlan > 0 && ilaveBirim > 0) {
+    metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+    metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
+    metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
+    metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL uygun görülmüştür.\n`;
+  } else {
+    metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+    metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer uygun görülmüştür.\n`;
+  }
+}
+
   } else {
     metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
     metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer `;
@@ -703,33 +716,37 @@ veriKontrol(report);
     finalHesapla();
   }
 
-  window.tumRaporuKaydet = async function(){
-    const { report } = findReport();
-    if(!report){ alert("Rapor bulunamadı."); return; }
+window.tumRaporuKaydet = async function(){
+  const { report } = findReport();
+  if(!report){ alert("Rapor bulunamadı."); return; }
 
-    const metin = (el("yorumMetni")?.innerText || "").trim();
-    report.emsalFinalMetni = metin;
-    if(!report.modules) report.modules = {};
-    if(!report.modules.emsal) report.modules.emsal = {};
-    report.modules.emsal.text = metin;
+  // ✅ EN KRİTİK SATIR: aktif BB fiyatlarını da rapora yaz
+  saveActiveBBPricing();
 
-    saveReport(report);
+  const metin = (el("yorumMetni")?.innerText || "").trim();
+  report.emsalFinalMetni = metin;
+  if(!report.modules) report.modules = {};
+  if(!report.modules.emsal) report.modules.emsal = {};
+  report.modules.emsal.text = metin;
 
-    if(auth.currentUser){
-      try{
-        const rawNow = loadAllReportsRaw();
-        await db.collection("users").doc(auth.currentUser.uid).set({
-          gayrimenkul_reports: rawNow,
-          sonGuncelleme: new Date().toISOString()
-        }, { merge:true });
-        alert("✅ Kaydedildi ve buluta mühürlendi.");
-      }catch(e){
-        alert("Bulut hatası: " + (e.message || e));
-      }
-    }else{
-      alert("✅ Yerel hafızaya kaydedildi.");
+  saveReport(report);
+
+  if(auth.currentUser){
+    try{
+      const rawNow = loadAllReportsRaw();
+      await db.collection("users").doc(auth.currentUser.uid).set({
+        gayrimenkul_reports: rawNow,
+        sonGuncelleme: new Date().toISOString()
+      }, { merge:true });
+      alert("✅ Kaydedildi ve buluta mühürlendi.");
+    }catch(e){
+      alert("Bulut hatası: " + (e.message || e));
     }
+  }else{
+    alert("✅ Yerel hafızaya kaydedildi.");
   }
+}
+
 
   window.anaMenuyeDon = function(){
     if(id) window.location.href = `rapor-detay.html?id=${encodeURIComponent(id)}`;
