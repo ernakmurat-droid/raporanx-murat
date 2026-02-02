@@ -105,7 +105,7 @@
   }
 }
 
-  </style>@media (max-width: 768px){
+  </style>
 </head>
 
 <body oncontextmenu="return false;">
@@ -406,14 +406,27 @@
   }
 
   window.setActiveBB = function(idx){
-    activeBBIndex = idx;
-    renderBBTabs();
+  // ✅ önce eski BB'nin fiyatlarını kaydet
+  saveActiveBBPricing();
 
-    const { report } = findReport();
-    if(report) setBrutToUI(report);
+  activeBBIndex = idx;
+  renderBBTabs();
 
-    finalHesapla();
-  };
+  const { report } = findReport();
+  if(report){
+    setBrutToUI(report);
+    // ✅ yeni BB'nin fiyatlarını yükle
+    loadActiveBBPricing();
+
+    const t = report.bbDetayList?.[activeBBIndex]?.baslik || (activeBBIndex+1)+". BB";
+    const titleEl = el("activeBBTitle");
+    if(titleEl) titleEl.textContent = t;
+  }
+
+  finalHesapla();
+};
+
+  
 
   // ===== Status =====
   function veriKontrol(report){
@@ -754,6 +767,81 @@ if(insaatMod){
     listele();
     finalHesapla();
   });
+  function getBBPricingFromUI(){
+  const obj = {
+    dusuk:  toNum(val("inpdusuk","inp_dusuk")),
+    yuksek: toNum(val("inpyuksek","inp_yuksek")),
+    uyg:    toNum(val("inpuygulanan","inp_uygulanan")),
+    ilaveAlan:  toNum(val("inpprojedisi","inp_projedisi")),
+    ilaveBirim: toNum(val("inpprojebirim","inp_projebirim")),
+
+    insaatAktif: !!el("chkinsaat")?.checked,
+    insaatSeviye: toNum(val("inpseviye")),
+    eksikImlat: toNum(val("inpeksik","inp_eksik"))
+  };
+  return obj;
+}
+
+function applyBBPricingToUI(p){
+  if(!p) return;
+
+  // hidden inputlara set
+  setVal(p.dusuk || "", "inpdusuk","inp_dusuk");
+  setVal(p.yuksek || "", "inpyuksek","inp_yuksek");
+  setVal(p.uyg   || "", "inpuygulanan","inp_uygulanan");
+  setVal(p.ilaveAlan  || "", "inpprojedisi","inp_projedisi");
+  setVal(p.ilaveBirim || "", "inpprojebirim","inp_projebirim");
+
+  // mask inputları da görsel olarak doldur
+  const dusukMask  = el("inpdusukmask","inp_dusukmask");
+  const yuksekMask = el("inpyuksekmask","inp_yuksekmask");
+  const uygMask    = el("inpuygulananmask","inp_uygulananmask");
+  const ilaveBirimMask = el("inpprojebirimmask","inp_projebirimmask");
+  if(dusukMask) dusukMask.value = p.dusuk ? new Intl.NumberFormat("tr-TR").format(p.dusuk) : "";
+  if(yuksekMask) yuksekMask.value = p.yuksek ? new Intl.NumberFormat("tr-TR").format(p.yuksek) : "";
+  if(uygMask) uygMask.value = p.uyg ? new Intl.NumberFormat("tr-TR").format(p.uyg) : "";
+  if(ilaveBirimMask) ilaveBirimMask.value = p.ilaveBirim ? new Intl.NumberFormat("tr-TR").format(p.ilaveBirim) : "";
+
+  // inşaat
+  const chk = el("chkinsaat");
+  if(chk) chk.checked = !!p.insaatAktif;
+  setVal(p.insaatSeviye ?? 0, "inpseviye");
+  setVal(p.eksikImlat ?? "", "inpeksik","inp_eksik");
+
+  // inpeksikmask da doldur
+  const eksikMask = el("inpeksikmask","inp_eksikmask");
+  if(eksikMask) eksikMask.value = p.eksikImlat ? new Intl.NumberFormat("tr-TR").format(p.eksikImlat) : "";
+
+  // paneli aç/kapat
+  toggleInsaat();
+}
+
+function saveActiveBBPricing(){
+  const found = findReport();
+  const report = found.report;
+  if(!report) return;
+
+  ensureBBList(report);
+  const bb = getActiveBB(report);
+  if(!bb) return;
+
+  bb.degerlemeOzet = bb.degerlemeOzet || {};
+  bb.degerlemeOzet = { ...bb.degerlemeOzet, ...getBBPricingFromUI() };
+
+  saveReport(report);
+}
+
+function loadActiveBBPricing(){
+  const { report } = findReport();
+  if(!report) return;
+
+  ensureBBList(report);
+  const bb = getActiveBB(report);
+  if(!bb) return;
+
+  applyBBPricingToUI(bb.degerlemeOzet || {});
+}
+
 </script>
 
 
