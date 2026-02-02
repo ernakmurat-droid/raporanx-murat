@@ -550,10 +550,13 @@ const eksikTL   = toNum(val("inpeksik")) || 0;           // TL
 let mevcutDurumDeger = mevcutDeger;
 
 if(insaatMod){
-  const sev = Math.max(0, Math.min(100, seviyePct)) / 100;  // 0..1
-  // mantık: tamamlanmış değerin seviye kadarı - eksik imalat bedeli
-  mevcutDurumDeger = Math.round((mevcutDeger * sev) - eksikTL);
+  metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(mevcutDeger)} TL değer takdir edilmiştir. `;
+  metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+}else{
+  metin += `... toplam değer ${formatLira0(mevcutDeger)} TL uygun görülmüştür.\n`;
 }
+
+
 
 
       if(ilaveAlan > 0 && ilaveBirim > 0){
@@ -563,14 +566,17 @@ if(insaatMod){
        if(insaatMod){
   metin += `... toplam TAMAMLANMIŞ değer ${formatLira0(mevcutDeger)} TL olup, mevcut inşaat seviyesi %${seviyePct} ve eksik imalat ${formatLira0(eksikTL)} TL dikkate alındığında MEVCUT DURUM değeri ${formatLira0(mevcutDurumDeger)} TL uygun görülmüştür.\n`;
 }else{
-  
+  metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+  metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer `;
+
+  if(insaatMod){
+    metin += `olmak üzere, taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)}-TL/m² x ${brut} m² = ${formatLira(yasalDeger)} TL değer takdir edilmiştir. `;
+    metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup (~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+  }else{
+    metin += `uygun görülmüştür.\n`;
+  }
 }
 
-      }else{
-        metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
-        metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer uygun görülmüştür.\n`;
-      }
-    });
 
     metin += `\nSonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
 
