@@ -562,7 +562,7 @@ report.bbDetayList.forEach((bb, idx)=>{
     metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
     metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
     metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
-    metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL uygun görülmüştür.\n`;
+    metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL mevcut değer uygun görülmüştür.\n`;
   } else {
     metin += `■ ${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
     metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer uygun görülmüştür.\n`;
@@ -774,10 +774,13 @@ window.tumRaporuKaydet = async function(){
     }
 
     if(report){
-      ensureBBList(report);
-      renderBBTabs();
-      setBrutToUI(report);
-    }
+  ensureBBList(report);
+  renderBBTabs();
+  setBrutToUI(report);
+
+  loadActiveBBPricing();   // 👈 BU SATIR
+}
+
 
     listele();
     finalHesapla();
