@@ -463,22 +463,47 @@ function toArray(raw){
   let isCloudWriting = false;
 
 /* ========= Cloud write ========= */
+// ✅ Cloud write (loop + kilitlenme önleyici)
+let isCloudWriting = false;
+let lastCloudWriteSig = ""; // aynı veriyi tekrar yazma engeli
+
+function makeSig(reportsArr, deletedArr){
+  try{
+    // küçük signature: uzun JSON yerine kısa kontrol
+    return JSON.stringify([
+      (reportsArr||[]).length,
+      (deletedArr||[]).length,
+      (reportsArr||[]).map(r => r?.rid || "").slice(0, 20) // ilk 20 rid
+    ]);
+  }catch(e){
+    return String(Date.now());
+  }
+}
+
 async function writeCloudState(user, reportsArr, deletedRidsArr){
   if (!user) return;
-  if (isCloudWriting) return;
+
+  const rep = safeArray(reportsArr);
+  const del = safeArray(deletedRidsArr);
+
+  const sig = makeSig(rep, del);
+  if (sig === lastCloudWriteSig) return;  // ✅ aynı şeyi tekrar yazma
+  if (isCloudWriting) return;            // ✅ yazma sırasında tekrar yazma yok
 
   isCloudWriting = true;
+  lastCloudWriteSig = sig;
 
   try{
     await db.collection("users").doc(user.uid).set({
-      gayrimenkul_reports: reportsArr,
-      deletedRids: deletedRidsArr,
-      sonGuncelleme: new Date().toISOString()
+      gayrimenkul_reports: rep,
+      deletedRids: del,
+      lastUpdate: new Date().toISOString()
     }, { merge:true });
-  }finally{
+  } finally {
     isCloudWriting = false;
   }
 }
+
 
 
     /* ========= Action Sheet ========= */
