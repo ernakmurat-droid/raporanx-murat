@@ -462,7 +462,7 @@ function toArray(raw){
 
 /* ========= Cloud write ========= */
 // ✅ Cloud write (loop + kilitlenme önleyici)
-let isCloudWriting = false;
+
 let lastCloudWriteSig = ""; // aynı veriyi tekrar yazma engeli
 
 function makeSig(reportsArr, deletedArr){
@@ -478,31 +478,44 @@ function makeSig(reportsArr, deletedArr){
   }
 }
 
-async function writeCloudState(user, reportsArr, deletedRidsArr){
-  if (!user) return;
+/* ========= Cloud write (KİLİTSİZ, KUYRUKLU, DEBOUNCE) ========= */
 
-  const rep = safeArray(reportsArr);
-  const del = safeArray(deletedRidsArr);
+let cloudWriteChain = Promise.resolve();
+let cloudWriteTimer = null;
+let lastCloudSig = "";
 
-  const sig = makeSig(rep, del);
-  if (sig === lastCloudWriteSig) return;  // ✅ aynı şeyi tekrar yazma
-  if (isCloudWriting) return;            // ✅ yazma sırasında tekrar yazma yok
-
-  isCloudWriting = true;
-  lastCloudWriteSig = sig;
-
+function stableStringify(x){
   try{
-    await db.collection("users").doc(user.uid).set({
-      gayrimenkul_reports: rep,
-      deletedRids: del,
-      lastUpdate: new Date().toISOString()
-    }, { merge:true });
-  } finally {
-    isCloudWriting = false;
+    return JSON.stringify(x, Object.keys(x).sort());
+  }catch(e){
+    return String(Date.now());
   }
 }
 
+function scheduleCloudWrite(user, reportsArr, deletedRidsArr){
+  if(!user) return;
 
+  // aynı anda 20 yerden çağrılınca tek yazmaya indir
+  if (cloudWriteTimer) clearTimeout(cloudWriteTimer);
+
+  cloudWriteTimer = setTimeout(() => {
+    const payload = {
+      gayrimenkul_reports: safeArray(reportsArr),
+      deletedRids: safeArray(deletedRidsArr),
+      lastUpdate: new Date().toISOString()
+    };
+
+    const sig = stableStringify(payload);
+    if (sig === lastCloudSig) return; // aynı veriyi tekrar yazma
+    lastCloudSig = sig;
+
+    // yazma kuyruğu (sıralı)
+    cloudWriteChain = cloudWriteChain
+      .then(() => db.collection("users").doc(user.uid).set(payload, { merge: true }))
+      .catch(err => console.warn("Cloud write error:", err));
+
+  }, 250); // 250ms debounce
+}
 
     /* ========= Action Sheet ========= */
     const sheetBackdrop = document.getElementById("sheetBackdrop");
@@ -638,8 +651,8 @@ function closeSheet(){
           reports = localReports;
           setLocalReports(reports);
           loadReports();
-          try{ await writeCloudState(user, reports, mergedDeleted); }catch(e){}
-          return;
+      scheduleCloudWrite(user, reports, mergedDeleted);
+    return;
         }
 
         const merged = mergeByRid(localReports, cloudReports);
@@ -651,8 +664,8 @@ function closeSheet(){
           const d = doc.data() || {};
           const old = safeArray(d.deletedRids);
           if (old.length !== mergedDeleted.length){
-            try{ await writeCloudState(user, reports, mergedDeleted); }catch(e){}
-          }
+         scheduleCloudWrite(user, reports, mergedDeleted);
+ }
         }
       }, (error)=>{
         reports = filterDeleted(getLocalReports(), getDeletedRids());
