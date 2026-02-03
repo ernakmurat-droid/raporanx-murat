@@ -285,7 +285,7 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     let reports = [];
-let isCloudWriting = false;
+
 
     // Google Login
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -341,14 +341,15 @@ let isCloudWriting = false;
     function safeArray(x){ return Array.isArray(x) ? x : []; }
 
     function getLocalReports(){
-      try{
-        const raw = localStorage.getItem("gayrimenkul_reports");
-        const arr = raw ? JSON.parse(raw) : [];
-        return safeArray(arr);
-      }catch(e){
-        return [];
-      }
-    }
+  try{
+    const raw = localStorage.getItem("gayrimenkul_reports");
+    const parsed = raw ? JSON.parse(raw) : [];
+    return toArray(parsed); // ✅ safeArray değil
+  }catch(e){
+    return [];
+  }
+}
+
 function toArray(raw){
   if (Array.isArray(raw)) return raw;
   if (raw && typeof raw === "object") return Object.values(raw);
@@ -459,9 +460,13 @@ function toArray(raw){
       return out;
     }
 
-    /* ========= Cloud write ========= */
-    async function writeCloudState(user, reportsArr, deletedRidsArr){
+  let isCloudWriting = false;
+
+/* ========= Cloud write ========= */
+async function writeCloudState(user, reportsArr, deletedRidsArr){
+  if (!user) return;
   if (isCloudWriting) return;
+
   isCloudWriting = true;
   try{
     await db.collection("users").doc(user.uid).set({
@@ -469,11 +474,10 @@ function toArray(raw){
       deletedRids: safeArray(deletedRidsArr),
       lastUpdate: new Date().toISOString()
     }, { merge: true });
-  } finally {
+  }finally{
     isCloudWriting = false;
   }
 }
-
 
     /* ========= Action Sheet ========= */
     const sheetBackdrop = document.getElementById("sheetBackdrop");
@@ -567,26 +571,34 @@ function closeSheet(){
   });
 }
 
-    async function deleteReportByRid(rid){
-      if (!confirm("Silmek istediğine emin misin?")) return;
+   async function deleteReportByRid(rid){
+  if (!confirm("Silmek istediğine emin misin?")) return;
 
-      addDeletedRid(rid);
-      reports = safeArray(reports).filter(r => String(r?.rid) !== String(rid));
-      setLocalReports(reports);
-      localStorage.removeItem("rapor_" + rid);
-      localStorage.removeItem("report_locked_" + rid);
-      loadReports();
+  addDeletedRid(rid);
 
-      const user = auth.currentUser;
-      if (user){
-        try{
-          await writeCloudState(user, reports, getDeletedRids());
-        }catch(e){
-          console.warn("Cloud silme yazma hatası:", e);
-          alert("⚠️ Silindi ama buluta yazılamadı.");
-        }
-      }
+  reports = safeArray(reports).filter(r => String(r?.rid) !== String(rid));
+  setLocalReports(reports);
+
+  localStorage.removeItem("rapor_" + rid);
+  localStorage.removeItem("report_locked_" + rid);
+
+  loadReports();
+
+  const user = auth.currentUser;
+  if (user){
+    try{
+      await Promise.race([
+        writeCloudState(user, reports, getDeletedRids()),
+        new Promise((_, rej) =>
+          setTimeout(() => rej(new Error("timeout")), 4000)
+        )
+      ]);
+    }catch(e){
+      console.warn("Cloud silme yazma hatası:", e);
+      alert("⚠️ Silindi ama buluta yazılamadı (bağlantı/timeout).");
     }
+  }
+}
 
     /* ========= BOOT + SNAPSHOT ========= */
     auth.onAuthStateChanged((user)=>{
