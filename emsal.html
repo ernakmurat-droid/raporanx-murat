@@ -772,10 +772,13 @@ window.tumRaporuKaydet = async function(){
   if(auth.currentUser){
     try{
       const rawNow = loadAllReportsRaw();
-      await db.collection("users").doc(auth.currentUser.uid).set({
-        gayrimenkul_reports: rawNow,
-        sonGuncelleme: new Date().toISOString()
-      }, { merge:true });
+const arrNow = toArray(rawNow); // ✅ her zaman ARRAY yaz
+
+await db.collection("users").doc(auth.currentUser.uid).set({
+  gayrimenkul_reports: arrNow,
+  sonGuncelleme: new Date().toISOString()
+}, { merge:true });
+
       alert("✅ Kaydedildi ve buluta mühürlendi.");
     }catch(e){
       alert("Bulut hatası: " + (e.message || e));
@@ -920,6 +923,7 @@ function loadActiveBBPricing(){
 
 </body>
 </html>
+
 
 
 
