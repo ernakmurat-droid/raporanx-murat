@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RaporanX</title>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <!-- Tek kaynak config -->
   <script src="firebase-config.js"></script>
 
   <style>
@@ -228,7 +231,6 @@
       .login-container{ margin: 60px auto; padding: 30px 20px; }
     }
   </style>
-  
 </head>
 
 <body>
@@ -266,6 +268,7 @@
     </div>
   </div>
 
+  <!-- Action Sheet -->
   <div id="sheetBackdrop" class="sheet-backdrop" role="dialog" aria-modal="true">
     <div class="sheet">
       <div class="sheet-head">
@@ -282,173 +285,154 @@
   </div>
 
   <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    /* ========= Firebase instances ========= */
+    const auth = window.auth || firebase.auth();
+    const db   = window.db   || firebase.firestore();
+
     let reports = [];
 
-
-    // Google Login
+    /* ========= Google login ========= */
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
 
     document.getElementById("googleBtn").onclick = async () => {
-  const btn = document.getElementById("googleBtn");
-  btn.textContent = "Yükleniyor...";
-
-  try {
-    await auth.signInWithPopup(provider);
-  } catch (err) {
-    // Mobilde popup kapanır/engellenirse redirect'e düş
-    const code = (err && err.code) ? String(err.code) : "";
-    const msg  = (err && err.message) ? String(err.message) : "";
-
-    const popupBlocked =
-      code.includes("popup") || msg.toLowerCase().includes("popup") || msg.toLowerCase().includes("blocked");
-
-    if (popupBlocked) {
-      try {
-        await auth.signInWithRedirect(provider);
-        return;
-      } catch (e2) {
-        alert("Giriş hatası: " + (e2.message || e2));
+      const btn = document.getElementById("googleBtn");
+      btn.textContent = "Yükleniyor...";
+      try{
+        await auth.signInWithPopup(provider);
+      }catch(err){
+        const code = String(err?.code || "");
+        const msg  = String(err?.message || "");
+        const popupBlocked = code.includes("popup") || msg.toLowerCase().includes("popup") || msg.toLowerCase().includes("blocked");
+        if (popupBlocked){
+          try{
+            await auth.signInWithRedirect(provider);
+            return;
+          }catch(e2){
+            alert("Giriş hatası: " + (e2.message || e2));
+          }
+        }else{
+          alert("Giriş hatası: " + msg);
+        }
+        btn.textContent = "Google ile Giriş Yap";
       }
-    } else {
-      alert("Giriş hatası: " + msg);
+    };
+
+    /* ========= Helpers ========= */
+    function safeArray(x){ return Array.isArray(x) ? x : []; }
+
+    function toArray(raw){
+      if (Array.isArray(raw)) return raw;
+      if (raw && typeof raw === "object") return Object.values(raw);
+      return [];
     }
 
-    btn.textContent = "Google ile Giriş Yap";
-  }
-};
-
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
 
     /* ========= RID helpers ========= */
     function genRid(){
-      try{
-        if (crypto && crypto.randomUUID) return crypto.randomUUID();
-      }catch(e){}
+      try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
       return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
     }
 
     function ensureRidMigration(arr){
-      let changed = false;
-      (arr || []).forEach(r => {
-        if (r && !r.rid) { r.rid = genRid(); changed = true; }
+      let changed=false;
+      (arr||[]).forEach(r=>{
+        if(r && !r.rid){ r.rid = genRid(); changed=true; }
       });
       return changed;
     }
 
-    /* ========= Local storage helpers ========= */
-    
-
+    /* ========= Local storage ========= */
     function getLocalReports(){
-  try{
-    const raw = localStorage.getItem("gayrimenkul_reports");
-    const parsed = raw ? JSON.parse(raw) : [];
-    return toArray(parsed); // ✅ safeArray değil
-  }catch(e){
-    return [];
-  }
-}
-
-function toArray(raw){
-  if (Array.isArray(raw)) return raw;
-  if (raw && typeof raw === "object") return Object.values(raw);
-  return [];
-}
+      try{
+        const raw = localStorage.getItem("gayrimenkul_reports");
+        return toArray(raw ? JSON.parse(raw) : []);
+      }catch(e){
+        return [];
+      }
+    }
 
     function setLocalReports(arr){
       localStorage.setItem("gayrimenkul_reports", JSON.stringify(safeArray(arr)));
       localStorage.setItem("gayrimenkul_reports_lastUpdate", new Date().toISOString());
     }
 
-    function getLocalLastUpdate(){
-      return localStorage.getItem("gayrimenkul_reports_lastUpdate") || "";
-    }
-
-    /* ========= ✅ DELETED (tombstone) ========= */
+    /* ========= Tombstone (deleted) ========= */
     function getDeletedRids(){
-      try{
-        return safeArray(JSON.parse(localStorage.getItem("deleted_rids") || "[]"));
-      }catch(e){
-        return [];
-      }
+      try{ return safeArray(JSON.parse(localStorage.getItem("deleted_rids") || "[]")); }
+      catch(e){ return []; }
     }
     function setDeletedRids(arr){
       localStorage.setItem("deleted_rids", JSON.stringify(safeArray(arr)));
     }
     function addDeletedRid(rid){
-      const s = new Set(getDeletedRids());
+      const s = new Set(getDeletedRids().map(String));
       s.add(String(rid));
       setDeletedRids(Array.from(s));
     }
     function filterDeleted(arr, deletedArr){
-      const del = new Set(safeArray(deletedArr).map(x=>String(x)));
+      const del = new Set(safeArray(deletedArr).map(String));
       return safeArray(arr).filter(r=>{
         const rid = String(r?.rid||"");
         return rid && !del.has(rid);
       });
     }
 
-    /* ========= RID bazlı MERGE ========= */
+    /* ========= Merge ========= */
     function parseTime(s){
-      if (!s) return 0;
+      if(!s) return 0;
       const t = Date.parse(s);
       return Number.isFinite(t) ? t : 0;
     }
-
     function reportUpdatedAt(r){
       return parseTime(r?.updatedAt) || parseTime(r?.createdAt) || 0;
     }
-
     function completenessScore(r){
-      if (!r) return 0;
-      let s = 0;
-      if (r.propertyName) s += 3;
-      if (r.il) s += 2;
-      if (r.ilce) s += 1;
-      if (r.ada) s += 1;
-      if (r.parsel) s += 1;
-      if (r.belgelerMetni) s += 2;
-      if (r.belgeler && (r.belgeler.belgelerMetni || r.belgeler.tamMetin)) s += 2;
-      if (r.imar && Object.keys(r.imar||{}).length) s += 2;
-      if (r.tapu && Object.keys(r.tapu||{}).length) s += 2;
-      if (r.konumCevre && Object.keys(r.konumCevre||{}).length) s += 2;
-      if (r.bina && Object.keys(r.bina||{}).length) s += 2;
-      if (Array.isArray(r.bbDetayList) && r.bbDetayList.length) s += 2;
+      if(!r) return 0;
+      let s=0;
+      if(r.propertyName) s+=3;
+      if(r.il) s+=2;
+      if(r.ilce) s+=1;
+      if(r.ada) s+=1;
+      if(r.parsel) s+=1;
+      if(r.belgelerMetni) s+=2;
+      if(r.imar && Object.keys(r.imar||{}).length) s+=2;
+      if(r.tapu && Object.keys(r.tapu||{}).length) s+=2;
+      if(r.konumCevre && Object.keys(r.konumCevre||{}).length) s+=2;
+      if(r.bina && Object.keys(r.bina||{}).length) s+=2;
+      if(Array.isArray(r.bbDetayList) && r.bbDetayList.length) s+=2;
       return s;
     }
-
     function mergeByRid(localArr, cloudArr){
       const L = safeArray(localArr);
       const C = safeArray(cloudArr);
       const map = new Map();
 
-      for (const r of C){
-        if (!r) continue;
-        const rid = String(r.rid || "").trim();
-        if (!rid) continue;
-        map.set(rid, r);
+      for(const r of C){
+        const rid = String(r?.rid||"").trim();
+        if(rid) map.set(rid, r);
       }
-
-      for (const lr of L){
-        if (!lr) continue;
-        const rid = String(lr.rid || "").trim();
-        if (!rid) continue;
+      for(const lr of L){
+        const rid = String(lr?.rid||"").trim();
+        if(!rid) continue;
 
         const cr = map.get(rid);
-        if (!cr){
-          map.set(rid, lr);
-          continue;
-        }
+        if(!cr){ map.set(rid, lr); continue; }
 
         const lt = reportUpdatedAt(lr);
         const ct = reportUpdatedAt(cr);
 
-        if (lt > ct){
-          map.set(rid, { ...cr, ...lr });
-        } else if (ct > lt){
-          map.set(rid, { ...lr, ...cr });
-        } else {
+        if(lt > ct) map.set(rid, { ...cr, ...lr });
+        else if(ct > lt) map.set(rid, { ...lr, ...cr });
+        else{
           const ls = completenessScore(lr);
           const cs = completenessScore(cr);
           map.set(rid, (ls >= cs) ? ({...cr, ...lr}) : ({...lr, ...cr}));
@@ -456,66 +440,47 @@ function toArray(raw){
       }
 
       const out = Array.from(map.values());
-      out.sort((a,b)=> (reportUpdatedAt(b) - reportUpdatedAt(a)));
+      out.sort((a,b)=> reportUpdatedAt(b) - reportUpdatedAt(a));
       return out;
     }
 
-/* ========= Cloud write ========= */
-// ✅ Cloud write (loop + kilitlenme önleyici)
+    /* ========= Cloud write: debounce + queue ========= */
+    let cloudWriteChain = Promise.resolve();
+    let cloudWriteTimer = null;
+    let lastCloudSig = "";
 
-let lastCloudWriteSig = ""; // aynı veriyi tekrar yazma engeli
+    function stableStringify(obj){
+      try{
+        const allKeys = [];
+        JSON.stringify(obj, (k,v)=>{ allKeys.push(k); return v; });
+        allKeys.sort();
+        return JSON.stringify(obj, allKeys);
+      }catch(e){
+        return String(Date.now());
+      }
+    }
 
-function makeSig(reportsArr, deletedArr){
-  try{
-    // küçük signature: uzun JSON yerine kısa kontrol
-    return JSON.stringify([
-      (reportsArr||[]).length,
-      (deletedArr||[]).length,
-      (reportsArr||[]).map(r => r?.rid || "").slice(0, 20) // ilk 20 rid
-    ]);
-  }catch(e){
-    return String(Date.now());
-  }
-}
+    function scheduleCloudWrite(user, reportsArr, deletedRidsArr){
+      if(!user) return;
 
-/* ========= Cloud write (KİLİTSİZ, KUYRUKLU, DEBOUNCE) ========= */
+      if(cloudWriteTimer) clearTimeout(cloudWriteTimer);
 
-let cloudWriteChain = Promise.resolve();
-let cloudWriteTimer = null;
-let lastCloudSig = "";
+      cloudWriteTimer = setTimeout(()=>{
+        const payload = {
+          gayrimenkul_reports: safeArray(reportsArr),
+          deletedRids: safeArray(deletedRidsArr),   // ✅ TEK İSİM: deletedRids
+          lastUpdate: new Date().toISOString()
+        };
 
-function stableStringify(x){
-  try{
-    return JSON.stringify(x, Object.keys(x).sort());
-  }catch(e){
-    return String(Date.now());
-  }
-}
+        const sig = stableStringify(payload);
+        if(sig === lastCloudSig) return;
+        lastCloudSig = sig;
 
-function scheduleCloudWrite(user, reportsArr, deletedRidsArr){
-  if(!user) return;
-
-  // aynı anda 20 yerden çağrılınca tek yazmaya indir
-  if (cloudWriteTimer) clearTimeout(cloudWriteTimer);
-
-  cloudWriteTimer = setTimeout(() => {
-    const payload = {
-      gayrimenkul_reports: safeArray(reportsArr),
-      deletedRids: safeArray(deletedRidsArr),
-      lastUpdate: new Date().toISOString()
-    };
-
-    const sig = stableStringify(payload);
-    if (sig === lastCloudSig) return; // aynı veriyi tekrar yazma
-    lastCloudSig = sig;
-
-    // yazma kuyruğu (sıralı)
-    cloudWriteChain = cloudWriteChain
-      .then(() => db.collection("users").doc(user.uid).set(payload, { merge: true }))
-      .catch(err => console.warn("Cloud write error:", err));
-
-  }, 250); // 250ms debounce
-}
+        cloudWriteChain = cloudWriteChain
+          .then(()=> db.collection("users").doc(user.uid).set(payload, { merge:true }))
+          .catch(err => console.warn("Cloud write error:", err));
+      }, 250);
+    }
 
     /* ========= Action Sheet ========= */
     const sheetBackdrop = document.getElementById("sheetBackdrop");
@@ -526,93 +491,127 @@ function scheduleCloudWrite(user, reportsArr, deletedRidsArr){
     const sheetDeleteBtn = document.getElementById("sheetDeleteBtn");
     const sheetCancelBtn = document.getElementById("sheetCancelBtn");
 
-  let activeRid = null;
+    let activeRid = null;
 
-function openSheet(rid, report){
-  activeRid = rid;
-
-  sheetName.textContent = report?.propertyName || "İsimsiz Rapor";
-  sheetSub.textContent =
-    `${report?.il || ""}${report?.ilce ? " / " + report.ilce : ""} • Ada:${report?.ada || "-"} Parsel:${report?.parsel || "-"}`;
-
-  sheetBackdrop.style.display = "flex";
-  document.body.style.overflow = "hidden";
-
-  history.pushState({ sheetOpen: true }, "");
-}
-
-function closeSheet(){
-  sheetBackdrop.style.display = "none";
-  document.body.style.overflow = "";
-  activeRid = null;
-
- window.addEventListener("popstate", () => {
-  if (sheetBackdrop.style.display === "flex") {
-    closeSheet();
-  }
-});
-
-}
-
-
-
-    /* ========= UI render ========= */
-    function escapeHtml(str){
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+    function isSheetOpen(){
+      return sheetBackdrop.style.display === "flex";
     }
 
-   function loadReports(){
-  const list = document.getElementById("reportsList");
-  list.innerHTML = "";
+    function openSheet(rid, report){
+      activeRid = rid;
 
-  if (!reports || reports.length === 0){
-    list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
-    return;
-  }
+      sheetName.textContent = report?.propertyName || "İsimsiz Rapor";
+      sheetSub.textContent =
+        `${report?.il || ""}${report?.ilce ? " / " + report.ilce : ""} • Ada:${report?.ada || "-"} Parsel:${report?.parsel || "-"}`;
 
-  reports.forEach((report)=>{
-    const rid = report.rid;
+      sheetBackdrop.style.display = "flex";
+      document.body.style.overflow = "hidden";
 
-    const card = document.createElement("div");
-    card.className = "report-card";
+      // ✅ sadece ilk açılışta history ekle
+      if(!history.state || !history.state.sheetOpen){
+        history.pushState({ sheetOpen:true }, "");
+      }
+    }
 
-    card.innerHTML = `
-      <button class="kebab" type="button" aria-label="Menü">⋮</button>
-      <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}</div>
-      <div class="report-meta">
-        ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
-        <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
-      </div>
-    `;
+    function closeSheet(){
+      sheetBackdrop.style.display = "none";
+      document.body.style.overflow = "";
+      activeRid = null;
+    }
 
-    card.addEventListener("click", ()=>{
+    // ✅ geri tuşu: sheet açıksa kapat
+    window.addEventListener("popstate", ()=>{
+      if(isSheetOpen()) closeSheet();
+    });
+
+    sheetBackdrop.addEventListener("click", (e)=>{
+      if(e.target === sheetBackdrop) closeSheet();
+    });
+    sheetCancelBtn.addEventListener("click", closeSheet);
+
+    sheetOpenBtn.addEventListener("click", ()=>{
+      if(!activeRid) return;
+      const rid = activeRid;
+      closeSheet();
       window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
     });
 
-    const kebab = card.querySelector(".kebab");
-
-    kebab.addEventListener("pointerdown", (e)=>{ 
-      e.stopPropagation(); 
+    sheetEditBtn.addEventListener("click", ()=>{
+      if(!activeRid) return;
+      const rid = activeRid;
+      closeSheet();
+      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
     });
 
-    kebab.addEventListener("click", (e)=>{
-      e.stopPropagation();
-      openSheet(rid, report);
+    /* ========= Delete (tombstone + sync) ========= */
+    async function deleteReportByRid(rid){
+      if(!confirm("Silmek istediğine emin misin?")) return;
+
+      addDeletedRid(rid);
+
+      reports = safeArray(reports).filter(r => String(r?.rid) !== String(rid));
+      setLocalReports(reports);
+
+      localStorage.removeItem("rapor_" + rid);
+      localStorage.removeItem("report_locked_" + rid);
+
+      loadReports();
+
+      const user = auth.currentUser;
+      if(user){
+        scheduleCloudWrite(user, reports, getDeletedRids());
+      }
+    }
+
+    sheetDeleteBtn.addEventListener("click", async ()=>{
+      if(!activeRid) return;
+      const rid = activeRid;
+      closeSheet();
+      await deleteReportByRid(rid);
     });
 
-    list.appendChild(card);
-  });
-}
+    /* ========= UI render ========= */
+    function loadReports(){
+      const list = document.getElementById("reportsList");
+      list.innerHTML = "";
 
+      if(!reports || reports.length === 0){
+        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
+        return;
+      }
+
+      reports.forEach((report)=>{
+        const rid = report.rid;
+
+        const card = document.createElement("div");
+        card.className = "report-card";
+        card.innerHTML = `
+          <button class="kebab" type="button" aria-label="Menü">⋮</button>
+          <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}</div>
+          <div class="report-meta">
+            ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
+            <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
+          </div>
+        `;
+
+        card.addEventListener("click", ()=>{
+          window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+        });
+
+        const kebab = card.querySelector(".kebab");
+        kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
+        kebab.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          openSheet(rid, report);
+        });
+
+        list.appendChild(card);
+      });
+    }
 
     /* ========= BOOT + SNAPSHOT ========= */
     auth.onAuthStateChanged((user)=>{
-      if (!user){
+      if(!user){
         document.getElementById("loginSection").style.display = "block";
         document.getElementById("mainSection").style.display = "none";
         document.getElementById("statusInfoLogin").textContent = "Giriş yapın";
@@ -623,36 +622,48 @@ function closeSheet(){
       document.getElementById("mainSection").style.display = "block";
       document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + user.email;
 
+      // önce local göster
       let localReports = getLocalReports();
-      if (ensureRidMigration(localReports)) setLocalReports(localReports);
-      let deletedLocal = getDeletedRids();
-      localReports = filterDeleted(localReports, deletedLocal);
-      reports = localReports;
+      if(ensureRidMigration(localReports)) setLocalReports(localReports);
+
+      const deletedLocal = getDeletedRids();
+      reports = filterDeleted(localReports, deletedLocal);
       loadReports();
 
+      // sonra cloud snapshot
       db.collection("users").doc(user.uid).onSnapshot(async (doc)=>{
         let cloudReports = [];
         let cloudDeleted = [];
-        if (doc.exists){
+
+        if(doc.exists){
           const d = doc.data() || {};
-          cloudReports = safeArray(d.gayrimenkul_reports);
-          cloudDeleted = safeArray(d.deletedRids);
+          cloudReports = toArray(d.gayrimenkul_reports);          // ✅ object/array fark etmez
+          cloudDeleted = safeArray(d.deletedRids);                // ✅ TEK İSİM: deletedRids
         }
+
         ensureRidMigration(cloudReports);
+
         localReports = getLocalReports();
         ensureRidMigration(localReports);
-        const delSet = new Set([...getDeletedRids().map(String), ...cloudDeleted.map(String)]);
+
+        // deleted merge
+        const delSet = new Set([
+          ...getDeletedRids().map(String),
+          ...cloudDeleted.map(String)
+        ]);
         const mergedDeleted = Array.from(delSet);
         setDeletedRids(mergedDeleted);
+
         localReports = filterDeleted(localReports, mergedDeleted);
         cloudReports = filterDeleted(cloudReports, mergedDeleted);
 
-        if ((cloudReports.length === 0) && (localReports.length > 0)){
+        // cloud boş ama local doluysa: local'i buluta yaz
+        if(cloudReports.length === 0 && localReports.length > 0){
           reports = localReports;
           setLocalReports(reports);
           loadReports();
-      scheduleCloudWrite(user, reports, mergedDeleted);
-    return;
+          scheduleCloudWrite(user, reports, mergedDeleted);
+          return;
         }
 
         const merged = mergeByRid(localReports, cloudReports);
@@ -660,14 +671,16 @@ function closeSheet(){
         setLocalReports(reports);
         loadReports();
 
-        if (mergedDeleted.length && doc.exists){
+        // deleted list farklıysa buluta yaz
+        if(doc.exists){
           const d = doc.data() || {};
           const old = safeArray(d.deletedRids);
-          if (old.length !== mergedDeleted.length){
-         scheduleCloudWrite(user, reports, mergedDeleted);
- }
+          if(old.length !== mergedDeleted.length){
+            scheduleCloudWrite(user, reports, mergedDeleted);
+          }
         }
       }, (error)=>{
+        console.warn("onSnapshot error:", error);
         reports = filterDeleted(getLocalReports(), getDeletedRids());
         ensureRidMigration(reports);
         setLocalReports(reports);
@@ -676,10 +689,5 @@ function closeSheet(){
       });
     });
   </script>
-  
 </body>
 </html>
-
-
-
-
