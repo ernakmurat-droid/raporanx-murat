@@ -349,6 +349,11 @@ let isCloudWriting = false;
         return [];
       }
     }
+function toArray(raw){
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") return Object.values(raw);
+  return [];
+}
 
     function setLocalReports(arr){
       localStorage.setItem("gayrimenkul_reports", JSON.stringify(safeArray(arr)));
@@ -608,7 +613,8 @@ function closeSheet(){
         let cloudDeleted = [];
         if (doc.exists){
           const d = doc.data() || {};
-          cloudReports = safeArray(d.gayrimenkul_reports);
+          cloudReports = toArray(d.gayrimenkul_reports);
+
           cloudDeleted = safeArray(d.deletedRids);
         }
         ensureRidMigration(cloudReports);
@@ -652,5 +658,6 @@ function closeSheet(){
   
 </body>
 </html>
+
 
 
