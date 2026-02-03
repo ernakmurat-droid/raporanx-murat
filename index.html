@@ -338,7 +338,7 @@
     }
 
     /* ========= Local storage helpers ========= */
-    function safeArray(x){ return Array.isArray(x) ? x : []; }
+    
 
     function getLocalReports(){
   try{
@@ -624,8 +624,7 @@ function closeSheet(){
         let cloudDeleted = [];
         if (doc.exists){
           const d = doc.data() || {};
-          cloudReports = toArray(d.gayrimenkul_reports);
-
+          cloudReports = safeArray(d.gayrimenkul_reports);
           cloudDeleted = safeArray(d.deletedRids);
         }
         ensureRidMigration(cloudReports);
@@ -669,6 +668,7 @@ function closeSheet(){
   
 </body>
 </html>
+
 
 
 
