@@ -468,16 +468,18 @@ async function writeCloudState(user, reportsArr, deletedRidsArr){
   if (isCloudWriting) return;
 
   isCloudWriting = true;
+
   try{
     await db.collection("users").doc(user.uid).set({
-      gayrimenkul_reports: safeArray(reportsArr),
-      deletedRids: safeArray(deletedRidsArr),
-      lastUpdate: new Date().toISOString()
-    }, { merge: true });
+      gayrimenkul_reports: reportsArr,
+      deletedRids: deletedRidsArr,
+      sonGuncelleme: new Date().toISOString()
+    }, { merge:true });
   }finally{
     isCloudWriting = false;
   }
 }
+
 
     /* ========= Action Sheet ========= */
     const sheetBackdrop = document.getElementById("sheetBackdrop");
@@ -571,34 +573,31 @@ function closeSheet(){
   });
 }
 
-   async function deleteReportByRid(rid){
+  async function deleteReportByRid(rid){
   if (!confirm("Silmek istediğine emin misin?")) return;
 
+  // 1️⃣ deleted listesine ekle
   addDeletedRid(rid);
 
+  // 2️⃣ local raporlardan sil
   reports = safeArray(reports).filter(r => String(r?.rid) !== String(rid));
   setLocalReports(reports);
 
+  // 3️⃣ rapor cache temizle
   localStorage.removeItem("rapor_" + rid);
   localStorage.removeItem("report_locked_" + rid);
 
+  // 4️⃣ UI yenile
   loadReports();
 
+  // 5️⃣ cloud’a yaz (bloklamadan)
   const user = auth.currentUser;
   if (user){
-    try{
-      await Promise.race([
-        writeCloudState(user, reports, getDeletedRids()),
-        new Promise((_, rej) =>
-          setTimeout(() => rej(new Error("timeout")), 4000)
-        )
-      ]);
-    }catch(e){
-      console.warn("Cloud silme yazma hatası:", e);
-      alert("⚠️ Silindi ama buluta yazılamadı (bağlantı/timeout).");
-    }
+    writeCloudState(user, reports, getDeletedRids())
+      .catch(e => console.warn("Cloud delete sync error:", e));
   }
-}
+} 
+
 
     /* ========= BOOT + SNAPSHOT ========= */
     auth.onAuthStateChanged((user)=>{
