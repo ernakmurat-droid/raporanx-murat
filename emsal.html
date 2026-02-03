@@ -133,7 +133,8 @@
   </style>
 </head>
 
-<body oncontextmenu="return false;">
+<body>
+
  <!-- ✅ MOBİL GARANTİ GERİ BAR -->
 <div class="mobile-topbar">
   <button type="button" class="mobile-back" onclick="anaMenuyeDon()">← Menü</button>
@@ -261,7 +262,8 @@
     </div>
 
     <div class="section-title">3. Özet Analiz Metni (TÜM BÖLÜMLER)</div>
-    <div id="yorumMetni" class="final-box" oncopy="return false"></div>
+    <div id="yorumMetni" class="final-box"></div>
+
 
     <button class="btn btn-save-final" onclick="tumRaporuKaydet()">
       ANALİZİ KAYDET VE BULUTA YEDEKLE
@@ -896,12 +898,29 @@ function loadActiveBBPricing(){
 
   applyBBPricingToUI(bb.degerlemeOzet || {});
 }
+// ✅ Kopyala/Yapıştır serbest — sadece metin kutusu (yorumMetni) kopyalanamaz
+(function(){
+  const metinEl = document.getElementById("yorumMetni");
+  if(!metinEl) return;
+
+  // Metin kutusunda sağ tık menüsünü kapat
+  metinEl.addEventListener("contextmenu", (e)=> e.preventDefault());
+
+  // Metin kutusundan kopyalamayı engelle
+  document.addEventListener("copy", (e)=>{
+    const t = e.target;
+    if (t && (t.closest?.("#yorumMetni") || t === metinEl)) {
+      e.preventDefault();
+    }
+  });
+})();
 
 </script>
 
 
 </body>
 </html>
+
 
 
 
