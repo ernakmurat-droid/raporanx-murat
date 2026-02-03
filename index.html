@@ -460,8 +460,6 @@ function toArray(raw){
       return out;
     }
 
-  let isCloudWriting = false;
-
 /* ========= Cloud write ========= */
 // ✅ Cloud write (loop + kilitlenme önleyici)
 let isCloudWriting = false;
@@ -597,31 +595,6 @@ function closeSheet(){
     list.appendChild(card);
   });
 }
-
-  async function deleteReportByRid(rid){
-  if (!confirm("Silmek istediğine emin misin?")) return;
-
-  // 1️⃣ deleted listesine ekle
-  addDeletedRid(rid);
-
-  // 2️⃣ local raporlardan sil
-  reports = safeArray(reports).filter(r => String(r?.rid) !== String(rid));
-  setLocalReports(reports);
-
-  // 3️⃣ rapor cache temizle
-  localStorage.removeItem("rapor_" + rid);
-  localStorage.removeItem("report_locked_" + rid);
-
-  // 4️⃣ UI yenile
-  loadReports();
-
-  // 5️⃣ cloud’a yaz (bloklamadan)
-  const user = auth.currentUser;
-  if (user){
-    writeCloudState(user, reports, getDeletedRids())
-      .catch(e => console.warn("Cloud delete sync error:", e));
-  }
-} 
 
 
     /* ========= BOOT + SNAPSHOT ========= */
