@@ -954,7 +954,50 @@
   window.hesapla = hesapla;
   window.finalHesapla = finalHesapla;
   window.listele = listele;
+  /* ===== FİYATLAMA AUTO-SAVE (AKTİF BB) — EN SONA KOY ===== */
+(function(){
+  let t = null;
+
+  function schedulePriceSave(){
+    if(t) clearTimeout(t);
+    t = setTimeout(()=>{
+      try{ if (typeof saveActiveBBPricing === "function") saveActiveBBPricing(); }catch(e){}
+    }, 400);
+  }
+
+  function hookPricingAutosave(){
+    const ids = [
+      "inpdusukmask","inpyuksekmask","inpuygulananmask",
+      "inpprojedisi","inpprojebirimmask",
+      "chkinsaat","inpseviye","inpeksikmask"
+    ];
+    ids.forEach(id=>{
+      const n = document.getElementById(id);
+      if(!n) return;
+      n.addEventListener("input", schedulePriceSave);
+      n.addEventListener("change", schedulePriceSave);
+    });
+
+    // formatMoneyInput varsa içine dokunmadan, event üzerinden zaten yakalıyoruz.
+  }
+
+  // DOM hazır olunca bağla (fonksiyonların hepsi tanımlanmış olacak)
+  document.addEventListener("DOMContentLoaded", hookPricingAutosave);
+
+  // BB değişince de garanti kaydet (sekme geçişlerinde kaybolmasın)
+  const _oldSetActiveBB = window.setActiveBB;
+  if(typeof _oldSetActiveBB === "function"){
+    window.setActiveBB = function(idx){
+      try{ if (typeof saveActiveBBPricing==="function") saveActiveBBPricing(); }catch(e){}
+      const r = _oldSetActiveBB(idx);
+      try{ if (typeof loadActiveBBPricing==="function") loadActiveBBPricing(); }catch(e){}
+      return r;
+    };
+  }
+})();
+
 </script>
 
 </body>
 </html>
+
