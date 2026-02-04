@@ -273,6 +273,64 @@
   // Firebase
   const auth = window.auth || firebase.auth();
   const db   = window.db   || firebase.firestore();
+  /* ================== BULUT SENKRON (QUEUE + DEBOUNCE) ================== */
+const CLOUD_DEBOUNCE_MS = 450;
+let cloudWriteChain = Promise.resolve();
+let cloudWriteTimer = null;
+let lastCloudSig = "";
+
+function safeArray(x){ return Array.isArray(x) ? x : []; }
+function toArray(raw){
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") return Object.values(raw);
+  return [];
+}
+function stableStringify(obj){
+  try{
+    const keys = [];
+    JSON.stringify(obj, (k,v)=>{ keys.push(k); return v; });
+    keys.sort();
+    return JSON.stringify(obj, keys);
+  }catch(e){
+    return String(Date.now());
+  }
+}
+function getLocalReportsArray(){
+  try{
+    const raw = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "null");
+    return toArray(raw);
+  }catch(e){
+    return [];
+  }
+}
+function getDeletedRidsLocal(){
+  try{ return safeArray(JSON.parse(localStorage.getItem("deleted_rids") || "[]")); }
+  catch(e){ return []; }
+}
+function scheduleCloudWriteNow(){
+  const user = auth.currentUser;
+  if(!user) return;
+
+  if(cloudWriteTimer) clearTimeout(cloudWriteTimer);
+
+  cloudWriteTimer = setTimeout(()=>{
+    const payload = {
+      gayrimenkul_reports: getLocalReportsArray(), // ✅ her zaman array
+      deletedRids: getDeletedRidsLocal(),          // ✅ bulutta tek isim
+      lastUpdate: new Date().toISOString()
+    };
+
+    const sig = stableStringify(payload);
+    if(sig === lastCloudSig) return;
+    lastCloudSig = sig;
+
+    cloudWriteChain = cloudWriteChain
+      .then(()=> db.collection("users").doc(user.uid).set(payload, { merge:true }))
+      .catch(err => console.warn("Cloud write error:", err));
+  }, CLOUD_DEBOUNCE_MS);
+}
+/* ===================================================================== */
+
 
   // URL
   const params = new URLSearchParams(window.location.search);
@@ -361,24 +419,31 @@
   }
 
   function saveReport(updatedReport){
-    const found = findReport();
-    const raw = found.raw;
+  const found = findReport();
+  const raw = found.raw;
 
-    if(raw && typeof raw === "object" && !Array.isArray(raw) && found.key){
-      raw[found.key] = updatedReport;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(raw));
-      return;
+  // ✅ her zaman array'e çevir
+  const arr = toArray(raw);
+  let idx = found.i;
+
+  // eski object-key sistemi varsa, doğru index'i tekrar bul
+  if(idx === -999 && found.key){
+    const ridNow = updatedReport?.rid;
+    idx = arr.findIndex(x => x && (x.rid === ridNow));
+    if(idx < 0){
+      arr.push(updatedReport);
+    }else{
+      arr[idx] = updatedReport;
     }
-
-    const arr = found.arr || [];
-    if(found.i >= 0){
-      arr[found.i] = updatedReport;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-      return;
-    }
-
-    console.warn("saveReport: rapor bulunamadı, yazılmadı");
+  }else if(idx >= 0){
+    arr[idx] = updatedReport;
+  }else{
+    // bulunamadıysa push
+    arr.push(updatedReport);
   }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
 
   // ===== Pool unify =====
   function getPool(report){
@@ -728,6 +793,7 @@ veriKontrol(report);
     report.emsalHavuzu = pool;
 
     saveReport(report);
+    scheduleCloudWriteNow();
     window.formuKapat();
     listele();
   }
@@ -744,6 +810,7 @@ veriKontrol(report);
     report.emsalHavuzu = pool;
 
     saveReport(report);
+    scheduleCloudWriteNow();
     listele();
   }
 
@@ -768,7 +835,7 @@ window.tumRaporuKaydet = async function(){
   report.modules.emsal.text = metin;
 
   saveReport(report);
-
+scheduleCloudWriteNow();
   if(auth.currentUser){
     try{
       const rawNow = loadAllReportsRaw();
@@ -923,6 +990,7 @@ function loadActiveBBPricing(){
 
 </body>
 </html>
+
 
 
 
