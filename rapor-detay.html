@@ -258,6 +258,51 @@ Devam etmek istiyor musunuz?`;
 <script>
   const auth = firebase.auth();
   const db = firebase.firestore();
+  /* ===== Rapor Detay - Cloud Sync (mobil güncelleme) ===== */
+
+function rerenderReportDetail(){
+  if (typeof renderReportDetail === "function") return renderReportDetail();
+  if (typeof renderReport === "function") return renderReport();
+  if (typeof renderPage === "function") return renderPage();
+  if (typeof init === "function") return init();
+  if (typeof loadReport === "function") return loadReport();
+}
+
+async function syncReportDetailFromCloud(){
+  try{
+    const user = firebase.auth().currentUser;
+    if(!user) return;
+
+    const p = new URLSearchParams(location.search);
+    const rid = p.get("rid");
+    const legacyId = p.get("id");
+    const docId = rid || legacyId;
+    if(!docId) return;
+
+    const ref = db.collection("users").doc(user.uid).collection("reports").doc(docId);
+    const snap = await ref.get();
+    if(!snap.exists) return;
+
+    const cloudReport = snap.data();
+
+    let arr = [];
+    try{ arr = JSON.parse(localStorage.getItem("reports") || "[]"); }catch(e){ arr=[]; }
+
+    let idx = -1;
+    if(rid) idx = arr.findIndex(x => x && x.rid === rid);
+    if(idx === -1 && legacyId) idx = arr.findIndex(x => x && (x.id === legacyId || x.legacyId === legacyId));
+
+    if(idx === -1) arr.unshift(cloudReport);
+    else arr[idx] = cloudReport;
+
+    localStorage.setItem("reports", JSON.stringify(arr));
+
+    rerenderReportDetail();
+  }catch(err){
+    console.warn("syncReportDetailFromCloud:", err);
+  }
+}
+
 
   const params = new URLSearchParams(location.search);
   let rid = (params.get("rid") || "").toString().trim();
@@ -322,7 +367,7 @@ Devam etmek istiyor musunuz?`;
 
     document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
     await loadWallet(user);
-
+await syncReportDetailFromCloud(); // 👈 SADECE BU SATIR
     const lockedLocal = (report.isLocked === true || report.locked === true || report.final === true);
     const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
 
@@ -332,6 +377,7 @@ Devam etmek istiyor musunuz?`;
 
 </body>
 </html>
+
 
 
 
