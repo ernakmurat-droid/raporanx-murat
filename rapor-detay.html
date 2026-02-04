@@ -258,6 +258,34 @@ Devam etmek istiyor musunuz?`;
 <script>
   const auth = firebase.auth();
   const db = firebase.firestore();
+  // ✅ CANLI SENKRON (çok basit)
+// Başka cihazdan rapor değişince bu sayfa otomatik güncellenecek.
+
+let _unsubReport = null;
+
+function startLiveSync(user, rid){
+  try{ if(_unsubReport) _unsubReport(); }catch(e){}
+  const ref = db.collection("users").doc(user.uid).collection("reports").doc(rid);
+
+  _unsubReport = ref.onSnapshot((snap)=>{
+    if(!snap.exists) return;
+    const cloudReport = snap.data();
+
+    // localStorage "reports" dizisini güncelle
+    let arr = [];
+    try{ arr = JSON.parse(localStorage.getItem("reports") || "[]"); }catch(e){ arr=[]; }
+    const idx = (arr||[]).findIndex(x => x && x.rid === rid);
+    if(idx === -1) arr.unshift(cloudReport);
+    else arr[idx] = cloudReport;
+    localStorage.setItem("reports", JSON.stringify(arr));
+
+    // ekranı yenile (sende hangisi varsa onu çağırır)
+    if (typeof renderReportDetail === "function") renderReportDetail();
+    else if (typeof renderReport === "function") renderReport();
+    else if (typeof init === "function") init();
+  });
+}
+
   /* ===== Rapor Detay - Cloud Sync (mobil güncelleme) ===== */
 
 function rerenderReportDetail(){
@@ -361,6 +389,7 @@ async function syncReportDetailFromCloud(){
 
   auth.onAuthStateChanged(async (user)=>{
     if (!user || !rid) { location.href="index.html"; return; }
+    startLiveSync(user, rid);
     const reports = readReports();
     const report = findByRid(reports, rid);
     if (!report) { location.href="index.html"; return; }
