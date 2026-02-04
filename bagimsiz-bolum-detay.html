@@ -148,34 +148,37 @@
     border-left: 5px solid #7c4dff;
   }
 
-  /* === MOBİL SABİT GERİ DÖN === */
-  .mobile-back-fixed{ display:none; }
+  /* === MOBİL SABİT AKSİYON BAR (KAYDET + ANA MENÜ) === */
+.mobile-action-bar{ display:none; }
 
-  @media (max-width: 768px){
-    .mobile-back-fixed{
-      display:flex;
-      position:fixed;
-      bottom: env(safe-area-inset-bottom, 10px);
-      left:10px;
-      right:10px;
-      z-index:2000;
-    }
-
-    .mobile-back-fixed button{
-      width:100%;
-      background:#d32f2f;
-      color:white;
-      border:none;
-      padding:14px;
-      border-radius:16px;
-      font-weight:900;
-      font-size:16px;
-      box-shadow:0 6px 20px rgba(211,47,47,.45);
-    }
-
-    /* içerik alta yapışmasın */
-    body{ padding-bottom:160px; }
+@media (max-width: 768px){
+  .mobile-action-bar{
+    display:flex;
+    position:fixed;
+    bottom: env(safe-area-inset-bottom, 10px);
+    left:10px;
+    right:10px;
+    gap:10px;
+    z-index:3000;
   }
+
+  .mobile-action-bar button{
+    flex:1;
+    border:none;
+    padding:16px;
+    border-radius:16px;
+    font-weight:900;
+    font-size:16px;
+    box-shadow:0 6px 20px rgba(0,0,0,.18);
+  }
+
+  .mobile-action-bar .m-save{ background:#00c853; color:white; }
+  .mobile-action-bar .m-back{ background:#d32f2f; color:white; }
+
+  /* içerik alta yapışmasın */
+  body{ padding-bottom:190px; }
+}
+
 
   /* === TASLAK METNİ HER YERDE GİZLE === */
   #taslak,
@@ -776,10 +779,13 @@ scheduleCloudWriteNow();
 
   document.addEventListener("DOMContentLoaded", init);
 </script>
-<div class="mobile-back-fixed">
-  <button onclick="anaMenuyeDon()">← ANA MENÜYE DÖN</button>
+<div class="mobile-action-bar">
+  <button class="m-save" onclick="kaydet()">💾 KAYDET</button>
+  <button class="m-back" onclick="anaMenuyeDon()">← ANA MENÜ</button>
 </div>
+
 
 </body>
 </html>
+
 
