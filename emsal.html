@@ -13,8 +13,6 @@
   <!-- Senin tek kaynak config'in -->
   <script src="firebase-config.js"></script>
 
-  
-
   <style>
     :root { --primary:#1a237e; --secondary:#3f51b5; --success:#2e7d32; --bg:#f4f7f6; --danger:#c62828; --warning:#fbc02d; }
     * { box-sizing:border-box; }
@@ -56,281 +54,204 @@
     }
     .final-box:not(:hover){ filter:blur(2px); }
 
-   .emsal-liste-item{
-  background:#f8f9fa; padding:12px; border-radius:8px; margin-bottom:8px;
-  border-left:5px solid var(--primary); display:flex; justify-content:space-between; align-items:center;
-  gap:12px; font-size:14px;
-}
-.emsal-liste-item button{
-  padding:8px 10px; border:none; border-radius:8px; cursor:pointer;
-  background:var(--primary); color:#fff; font-weight:900;
-}
-.emsal-liste-item .del{ background:var(--danger); margin-left:6px; }
+    .emsal-liste-item{
+      background:#f8f9fa; padding:12px; border-radius:8px; margin-bottom:8px;
+      border-left:5px solid var(--primary); display:flex; justify-content:space-between; align-items:center;
+      gap:12px; font-size:14px;
+    }
+    .emsal-liste-item button{
+      padding:8px 10px; border:none; border-radius:8px; cursor:pointer;
+      background:var(--primary); color:#fff; font-weight:900;
+    }
+    .emsal-liste-item .del{ background:var(--danger); margin-left:6px; }
 
-.bbbar{
-  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-  padding:12px; border:1px solid #e0e6ed; border-radius:12px; background:#fff; margin-bottom:16px;
-}
-.bbTabs{ display:flex; gap:8px; flex-wrap:wrap; }
-.bbTab{ padding:10px 12px; border-radius:10px; border:1px solid #ddd; cursor:pointer; background:#fff; color:#333; font-weight:900; }
-.bbTab.active{ background:var(--primary); color:#fff; border-color:transparent; }
+    .bbbar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      padding:12px; border:1px solid #e0e6ed; border-radius:12px; background:#fff; margin-bottom:16px;
+    }
+    .bbTabs{ display:flex; gap:8px; flex-wrap:wrap; }
+    .bbTab{ padding:10px 12px; border-radius:10px; border:1px solid #ddd; cursor:pointer; background:#fff; color:#333; font-weight:900; }
+    .bbTab.active{ background:var(--primary); color:#fff; border-color:transparent; }
+    .hidden{ display:none !important; }
 
-.hidden{ display:none !important; }
+    .insaat-toggle{
+      background:#fff3e0; border:1px solid #ffe0b2; padding:15px; border-radius:8px; margin-bottom:15px;
+      display:flex; align-items:center; gap:10px; font-weight:900; color:#e65100;
+    }
 
-.insaat-toggle{
-  background:#fff3e0; border:1px solid #ffe0b2; padding:15px; border-radius:8px; margin-bottom:15px;
-  display:flex; align-items:center; gap:10px; font-weight:900; color:#e65100;
-}
+    /* === MOBİLDE EMSAL FORMU TEK SÜTUN (KESİN) === */
+    @media (max-width: 768px){
+      #emsalFormContainer .grid-form{
+        display:grid !important;
+        grid-template-columns:1fr !important;
+        gap:12px !important;
+      }
+      #emsalFormContainer .grid-form > .input-group{
+        grid-column:auto !important;
+      }
+      #emsalFormContainer .input-group input,
+      #emsalFormContainer .input-group select{
+        width:100% !important;
+        font-size:16px !important;
+      }
+    }
 
-/* === MOBİLDE EMSAL FORMU TEK SÜTUN (KESİN) === */
-@media (max-width: 768px){
-
-  /* Emsal formunun içindeki grid'i tek sütuna kilitle */
-  #emsalFormContainer .grid-form{
-    display:grid !important;
-    grid-template-columns:1fr !important;
-    gap:12px !important;
-  }
-
-  /* Grid içindeki span 2 gibi şeyleri iptal et */
-  #emsalFormContainer .grid-form > .input-group{
-    grid-column:auto !important;
-  }
-
-  /* Inputları okunaklı yap (iOS zoomu da keser) */
-  #emsalFormContainer .input-group input,
-  #emsalFormContainer .input-group select{
-    width:100% !important;
-    font-size:16px !important;
-  }
-}
-/* ✅ MOBİLDE GERİ BUTONUNU SABİTLE (GÖRÜNÜR) */
-@media (max-width: 768px){
-  .header{ 
-    padding-top: calc(18px + env(safe-area-inset-top, 0px)) !important;
-  }
-
-  .container{ padding-top: 8px; }
-
-  .back{
-    position: fixed !important;
-    left: 12px !important;
-    top: calc(12px + env(safe-area-inset-top, 0px)) !important;
-    z-index: 99999 !important;
-
-    padding: 10px 14px !important;
-    border-radius: 14px !important;
-    background: rgba(0,0,0,.55) !important;
-    color: #fff !important;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    box-shadow: 0 6px 18px rgba(0,0,0,.25);
-  }
-}
-
-
-
+    /* ✅ MOBİLDE GERİ BUTONUNU SABİTLE (GÖRÜNÜR) */
+    @media (max-width: 768px){
+      .header{
+        padding-top: calc(18px + env(safe-area-inset-top, 0px)) !important;
+      }
+      .container{ padding-top: 8px; }
+      .back{
+        position: fixed !important;
+        left: 12px !important;
+        top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+        z-index: 99999 !important;
+        padding: 10px 14px !important;
+        border-radius: 14px !important;
+        background: rgba(0,0,0,.55) !important;
+        color: #fff !important;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        box-shadow: 0 6px 18px rgba(0,0,0,.25);
+      }
+    }
   </style>
 </head>
 
 <body>
-
- <!-- ✅ MOBİL GARANTİ GERİ BAR -->
-<div class="mobile-topbar">
-  <button type="button" class="mobile-back" onclick="anaMenuyeDon()">← Menü</button>
-</div>
 
 <div class="header">
   <h1>EMSAL ANALİZİ VE DEĞERLEME</h1>
   <div id="raporBilgi">Yükleniyor...</div>
 </div>
 
+<div id="durumCubugu" class="status-bar status-incomplete">
+  ⚠️ Analiz İçin Veri Girişi Bekleniyor...
+</div>
 
-  <div id="durumCubugu" class="status-bar status-incomplete">
-    ⚠️ Analiz İçin Veri Girişi Bekleniyor...
+<div class="container">
+  <div class="bb-back-wrap">
+    <button class="bb-back-btn"
+      onclick="anaMenuyeDon()"
+      style="
+        font-size:18px;
+        padding:18px;
+        background:linear-gradient(135deg,#1a237e,#3f51b5);
+        color:#fff;
+        font-weight:900;
+        border-radius:18px;
+        box-shadow:0 8px 20px rgba(0,0,0,.25);
+      ">
+      ⬅️ MENÜYE DÖN
+    </button>
   </div>
 
-  <div class="container">
-   <div class="bb-back-wrap">
-  <button class="bb-back-btn"
-    onclick="anaMenuyeDon()"
-    style="
-      font-size:18px;
-      padding:18px;
-      background:linear-gradient(135deg,#1a237e,#3f51b5);
-      color:#fff;
-      font-weight:900;
-      border-radius:18px;
-      box-shadow:0 8px 20px rgba(0,0,0,.25);
-    ">
-    ⬅️ MENÜYE DÖN
+  <div class="bbbar">
+    <div style="font-weight:900; color:var(--primary);">Bağımsız Bölüm Seç:</div>
+    <div class="bbTabs" id="bbTabs"></div>
+    <div class="hint" style="font-size:11px; color:#c62828; margin-top:5px; width:100%;">
+      Not: Her BB için birim fiyatı girip “Analizi Kaydet” demelisiniz.
+    </div>
+  </div>
+
+  <div class="section-title">1. Kayıtlı Emsaller (ORTAK HAVUZ)</div>
+  <div id="emsalListesi"></div>
+  <button class="btn btn-add" onclick="formuAc()">+ YENİ EMSAL ARAŞTIRMASI EKLE</button>
+
+  <div id="emsalFormContainer" class="card" style="display:none; border-top:5px solid var(--primary);">
+    <div class="section-title">Emsal Detay Girişi</div>
+    <input type="hidden" id="editEmsalId" value="">
+
+    <div class="grid-form">
+      <div class="input-group"><label>(1) Kaynağı</label><input type="text" id="f1" onfocus="this.select();"></div>
+      <div class="input-group"><label>(2) İletişim Telefonu</label><input type="text" id="f2" oninput="formatPhone(this)"></div>
+      <div class="input-group"><label>(3) Konum/Yakınlık</label><input type="text" id="f3" onfocus="this.select();"></div>
+      <div class="input-group"><label>(4) Bina Kat Sayısı</label><input type="number" id="f4"></div>
+      <div class="input-group"><label>(5) Bulunduğu Kat</label><input type="text" id="f5" onfocus="this.select();"></div>
+      <div class="input-group"><label>(6) Oda Sayısı</label><input type="text" id="f6" onfocus="this.select();"></div>
+      <div class="input-group"><label>(7) Beyan Alan (m²)</label><input type="number" id="f7"></div>
+      <div class="input-group"><label>(8) Tahmini Alan (m²)</label><input type="number" id="f8" oninput="hesapla()"></div>
+      <div class="input-group"><label>(9) Taşınmaz Cinsi</label><input type="text" id="f9" placeholder="Örn: daire"></div>
+
+      <div class="input-group">
+        <label>(10) İstenen Fiyat (TL)</label>
+        <input type="text" id="f10mask" oninput="formatMoneyInput(this); hesapla();">
+        <input type="hidden" id="f10">
+      </div>
+
+      <div class="input-group"><label>(11) Durumu</label>
+        <select id="f11">
+          <option value="satılıktır">Satılıktır</option>
+          <option value="kiralıktır">Kiralıktır</option>
+        </select>
+      </div>
+
+      <div class="input-group"><label>(14) Pazarlık Payı % (-)</label><input type="number" id="f14" value="5" oninput="hesapla()"></div>
+      <div class="input-group"><label>(12) Şerefiye Olumlu % (+)</label><input type="number" id="f12" value="0" oninput="hesapla()"></div>
+      <div class="input-group"><label>(13) Şerefiye Olumsuz % (-)</label><input type="number" id="f13" value="0" oninput="hesapla()"></div>
+
+      <div class="input-group" style="grid-column:span 2;">
+        <label>(17) Düzeltilmiş Birim Değer (m²)</label>
+        <input type="text" id="f17" readonly style="background:#e8f5e9; font-weight:900; color:#2e7d32;">
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:20px;">
+      <button class="btn btn-save-final" onclick="emsalKaydet()" style="flex:2; margin:0;">LİSTEYE İŞLE VE MÜHÜRLE</button>
+      <button class="btn" onclick="formuKapat()" style="flex:1; background:#9e9e9e; color:white;">İPTAL</button>
+    </div>
+  </div>
+
+  <div class="insaat-toggle">
+    <input type="checkbox" id="chkinsaat" onchange="toggleInsaat(); finalHesapla();">
+    <label for="chkinsaat" style="cursor:pointer;">İnşaat Seviyeli (Mevcut Durum) Değerleme Yap</label>
+  </div>
+
+  <div id="insaatdetay" class="card hidden">
+    <div class="grid-form">
+      <div class="input-group"><label>Mevcut İnşaat Seviyesi (%)</label><input type="number" id="inpseviye" value="81" oninput="finalHesapla()"></div>
+      <div class="input-group"><label>Eksik İmalat (TL)</label>
+        <input type="text" id="inpeksikmask" oninput="formatMoneyInput(this); finalHesapla();">
+        <input type="hidden" id="inpeksik">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">2. Değerleme ve Birim Analizi (SEÇİLİ BB: <span id="activeBBTitle">...</span>)</div>
+    <div class="grid-form">
+      <div class="input-group"><label>Bölge Alt Sınır (TL/m²)</label>
+        <input type="text" id="inpdusukmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpdusuk">
+      </div>
+      <div class="input-group"><label>Bölge Üst Sınır (TL/m²)</label>
+        <input type="text" id="inpyuksekmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpyuksek">
+      </div>
+      <div class="input-group"><label>Uygulanan Birim (TL/m²)</label>
+        <input type="text" id="inpuygulananmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpuygulanan">
+      </div>
+      <div class="input-group"><label>Yasal Brüt Alan (m²)</label>
+        <input type="text" id="resbrut" readonly style="background:#eee; font-weight:900;">
+      </div>
+      <div class="input-group"><label>Proje Dışı İlave Alan (m²)</label><input type="number" id="inpprojedisi" oninput="finalHesapla()"></div>
+      <div class="input-group"><label>İlave Alan Birim Değeri (TL/m²)</label>
+        <input type="text" id="inpprojebirimmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpprojebirim">
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">3. Özet Analiz Metni (TÜM BÖLÜMLER)</div>
+  <div id="yorumMetni" class="final-box"></div>
+
+  <button class="btn btn-save-final" onclick="tumRaporuKaydet()">
+    ANALİZİ KAYDET VE BULUTA YEDEKLE
   </button>
 </div>
 
-
-    <div class="bbbar">
-      <div style="font-weight:900; color:var(--primary);">Bağımsız Bölüm Seç:</div>
-      <div class="bbTabs" id="bbTabs"></div>
-      <div class="hint" style="font-size:11px; color:#c62828; margin-top:5px; width:100%;">
-        Not: Her BB için birim fiyatı girip “Sisteme Kaydet” demelisiniz.
-      </div>
-    </div>
-
-    <div class="section-title">1. Kayıtlı Emsaller (ORTAK HAVUZ)</div>
-    <div id="emsalListesi"></div>
-    <button class="btn btn-add" onclick="formuAc()">+ YENİ EMSAL ARAŞTIRMASI EKLE</button>
-
-    <div id="emsalFormContainer" class="card" style="display:none; border-top:5px solid var(--primary);">
-      <div class="section-title">Emsal Detay Girişi</div>
-      <input type="hidden" id="editEmsalId" value="">
-
-      <div class="grid-form">
-        <div class="input-group"><label>(1) Kaynağı</label><input type="text" id="f1" onfocus="this.select();"></div>
-        <div class="input-group"><label>(2) İletişim Telefonu</label><input type="text" id="f2" oninput="formatPhone(this)"></div>
-        <div class="input-group"><label>(3) Konum/Yakınlık</label><input type="text" id="f3" onfocus="this.select();"></div>
-        <div class="input-group"><label>(4) Bina Kat Sayısı</label><input type="number" id="f4"></div>
-        <div class="input-group"><label>(5) Bulunduğu Kat</label><input type="text" id="f5" onfocus="this.select();"></div>
-        <div class="input-group"><label>(6) Oda Sayısı</label><input type="text" id="f6" onfocus="this.select();"></div>
-        <div class="input-group"><label>(7) Beyan Alan (m²)</label><input type="number" id="f7"></div>
-        <div class="input-group"><label>(8) Tahmini Alan (m²)</label><input type="number" id="f8" oninput="hesapla()"></div>
-        <div class="input-group"><label>(9) Taşınmaz Cinsi</label><input type="text" id="f9" placeholder="Örn: daire"></div>
-
-        <div class="input-group">
-          <label>(10) İstenen Fiyat (TL)</label>
-          <input type="text" id="f10mask" oninput="formatMoneyInput(this); hesapla();">
-          <input type="hidden" id="f10">
-        </div>
-
-        <div class="input-group"><label>(11) Durumu</label>
-          <select id="f11">
-            <option value="satılıktır">Satılıktır</option>
-            <option value="kiralıktır">Kiralıktır</option>
-          </select>
-        </div>
-
-        <div class="input-group"><label>(14) Pazarlık Payı % (-)</label><input type="number" id="f14" value="5" oninput="hesapla()"></div>
-        <div class="input-group"><label>(12) Şerefiye Olumlu % (+)</label><input type="number" id="f12" value="0" oninput="hesapla()"></div>
-        <div class="input-group"><label>(13) Şerefiye Olumsuz % (-)</label><input type="number" id="f13" value="0" oninput="hesapla()"></div>
-
-        <div class="input-group" style="grid-column:span 2;">
-          <label>(17) Düzeltilmiş Birim Değer (m²)</label>
-          <input type="text" id="f17" readonly style="background:#e8f5e9; font-weight:900; color:#2e7d32;">
-        </div>
-      </div>
-
-      <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="btn btn-save-final" onclick="emsalKaydet()" style="flex:2; margin:0;">LİSTEYE İŞLE VE MÜHÜRLE</button>
-        <button class="btn" onclick="formuKapat()" style="flex:1; background:#9e9e9e; color:white;">İPTAL</button>
-      </div>
-    </div>
-
-    <div class="insaat-toggle">
-      <input type="checkbox" id="chkinsaat" onchange="toggleInsaat(); finalHesapla();">
-      <label for="chkinsaat" style="cursor:pointer;">İnşaat Seviyeli (Mevcut Durum) Değerleme Yap</label>
-    </div>
-
-    <div id="insaatdetay" class="card hidden">
-      <div class="grid-form">
-        <div class="input-group"><label>Mevcut İnşaat Seviyesi (%)</label><input type="number" id="inpseviye" value="81" oninput="finalHesapla()"></div>
-        <div class="input-group"><label>Eksik İmalat (TL)</label>
-          <input type="text" id="inpeksikmask" oninput="formatMoneyInput(this); finalHesapla();">
-          <input type="hidden" id="inpeksik">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-title">2. Değerleme ve Birim Analizi (SEÇİLİ BB: <span id="activeBBTitle">...</span>)</div>
-      <div class="grid-form">
-        <div class="input-group"><label>Bölge Alt Sınır (TL/m²)</label>
-          <input type="text" id="inpdusukmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpdusuk">
-        </div>
-        <div class="input-group"><label>Bölge Üst Sınır (TL/m²)</label>
-          <input type="text" id="inpyuksekmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpyuksek">
-        </div>
-        <div class="input-group"><label>Uygulanan Birim (TL/m²)</label>
-          <input type="text" id="inpuygulananmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpuygulanan">
-        </div>
-        <div class="input-group"><label>Yasal Brüt Alan (m²)</label>
-          <input type="text" id="resbrut" readonly style="background:#eee; font-weight:900;">
-        </div>
-        <div class="input-group"><label>Proje Dışı İlave Alan (m²)</label><input type="number" id="inpprojedisi" oninput="finalHesapla()"></div>
-        <div class="input-group"><label>İlave Alan Birim Değeri (TL/m²)</label>
-          <input type="text" id="inpprojebirimmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpprojebirim">
-        </div>
-      </div>
-    </div>
-
-    <div class="section-title">3. Özet Analiz Metni (TÜM BÖLÜMLER)</div>
-    <div id="yorumMetni" class="final-box"></div>
-
-
-    <button class="btn btn-save-final" onclick="tumRaporuKaydet()">
-      ANALİZİ KAYDET VE BULUTA YEDEKLE
-    </button>
-  </div>
 <script>
   // Firebase
   const auth = window.auth || firebase.auth();
   const db   = window.db   || firebase.firestore();
-  /* ================== BULUT SENKRON (QUEUE + DEBOUNCE) ================== */
-const CLOUD_DEBOUNCE_MS = 450;
-let cloudWriteChain = Promise.resolve();
-let cloudWriteTimer = null;
-let lastCloudSig = "";
-
-function safeArray(x){ return Array.isArray(x) ? x : []; }
-function toArray(raw){
-  if (Array.isArray(raw)) return raw;
-  if (raw && typeof raw === "object") return Object.values(raw);
-  return [];
-}
-function stableStringify(obj){
-  try{
-    const keys = [];
-    JSON.stringify(obj, (k,v)=>{ keys.push(k); return v; });
-    keys.sort();
-    return JSON.stringify(obj, keys);
-  }catch(e){
-    return String(Date.now());
-  }
-}
-function getLocalReportsArray(){
-  try{
-    const raw = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "null");
-    return toArray(raw);
-  }catch(e){
-    return [];
-  }
-}
-function getDeletedRidsLocal(){
-  try{ return safeArray(JSON.parse(localStorage.getItem("deleted_rids") || "[]")); }
-  catch(e){ return []; }
-}
-function scheduleCloudWriteNow(){
-  const user = auth.currentUser;
-  if(!user) return;
-
-  if(cloudWriteTimer) clearTimeout(cloudWriteTimer);
-
-  cloudWriteTimer = setTimeout(()=>{
-    const payload = {
-      gayrimenkul_reports: getLocalReportsArray(), // ✅ her zaman array
-      deletedRids: getDeletedRidsLocal(),          // ✅ bulutta tek isim
-      lastUpdate: new Date().toISOString()
-    };
-
-    const sig = stableStringify(payload);
-    if(sig === lastCloudSig) return;
-    lastCloudSig = sig;
-
-    cloudWriteChain = cloudWriteChain
-      .then(()=> db.collection("users").doc(user.uid).set(payload, { merge:true }))
-      .catch(err => console.warn("Cloud write error:", err));
-  }, CLOUD_DEBOUNCE_MS);
-}
-/* ===================================================================== */
-
 
   // URL
   const params = new URLSearchParams(window.location.search);
@@ -339,6 +260,65 @@ function scheduleCloudWriteNow(){
 
   // Storage
   const STORAGE_KEY = "gayrimenkul_reports";
+
+  // ========= TEK DOĞRU BULUT KAYDI (PC/MOBİL AYRIMI YOK) =========
+  async function cloudSaveReport(reportObj){
+    try{
+      const user = auth.currentUser;
+      if(!user || !reportObj || !reportObj.rid) return;
+
+      await db.collection("users").doc(user.uid)
+        .collection("reports").doc(String(reportObj.rid))
+        .set(
+          {
+            ...reportObj,
+            rid: String(reportObj.rid),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          },
+          { merge:true }
+        );
+    }catch(e){
+      console.warn("cloudSaveReport:", e);
+    }
+  }
+
+  async function cloudLoadReportOnce(uid, rid){
+    try{
+      const snap = await db.collection("users").doc(uid).collection("reports").doc(String(rid)).get();
+      if(!snap.exists) return null;
+      return snap.data() || null;
+    }catch(e){
+      console.warn("cloudLoadReportOnce:", e);
+      return null;
+    }
+  }
+
+  let _unsubLive = null;
+  function startLiveSync(uid, rid){
+    try{ if(_unsubLive) _unsubLive(); }catch(e){}
+    if(!uid || !rid) return;
+
+    const ref = db.collection("users").doc(uid).collection("reports").doc(String(rid));
+    _unsubLive = ref.onSnapshot((snap)=>{
+      if(!snap.exists) return;
+      const cloudReport = snap.data() || {};
+      upsertLocalReport(cloudReport);
+
+      // ekranda anlık yenile
+      renderBBTabs();
+      loadActiveBBPricing();
+      listele();
+      finalHesapla();
+
+      const raporBilgi = el("raporBilgi");
+      if(raporBilgi){
+        raporBilgi.textContent = (cloudReport && (cloudReport.propertyName || cloudReport.mulkAdi))
+          ? (cloudReport.propertyName || cloudReport.mulkAdi)
+          : "Analiz Dosyası";
+      }
+    });
+  }
+  // =============================================================
 
   // ===== Helpers =====
   function el(...ids){
@@ -361,7 +341,6 @@ function scheduleCloudWriteNow(){
     if(x === null || x === undefined) return 0;
     const s = String(x).trim();
     if(!s) return 0;
-    // "1.234.567" / "1.234,5" / "1234,5" vs.
     const cleaned = s.replace(/\s/g,'').replace(/\./g,'').replace(',', '.');
     const n = parseFloat(cleaned);
     return isNaN(n) ? 0 : n;
@@ -397,20 +376,32 @@ function scheduleCloudWriteNow(){
     if(raw && typeof raw === "object") return Object.values(raw);
     return [];
   }
+  function saveAllReportsArray(arr){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr || []));
+  }
+  function upsertLocalReport(reportObj){
+    if(!reportObj) return;
+    const arr = toArray(loadAllReportsRaw());
+    const rrid = String(reportObj.rid || "");
+    if(!rrid) return;
+
+    const idx = arr.findIndex(x => x && String(x.rid) === rrid);
+    if(idx === -1) arr.unshift(reportObj);
+    else arr[idx] = reportObj;
+
+    saveAllReportsArray(arr);
+  }
 
   function findReport(){
     const raw = loadAllReportsRaw();
     const arr = toArray(raw);
 
     if(rid){
-      const i = arr.findIndex(r => r && r.rid === rid);
+      const i = arr.findIndex(r => r && String(r.rid) === String(rid));
       if(i >= 0) return { raw, arr, i, report: arr[i] };
     }
 
     if(id){
-      if(raw && typeof raw === "object" && !Array.isArray(raw) && raw[id]){
-        return { raw, arr, i: -999, report: raw[id], key: id };
-      }
       const j = arr.findIndex(r => r && (String(r.id)===String(id) || String(r.legacyId)===String(id)));
       if(j >= 0) return { raw, arr, i: j, report: arr[j] };
     }
@@ -419,31 +410,27 @@ function scheduleCloudWriteNow(){
   }
 
   function saveReport(updatedReport){
-  const found = findReport();
-  const raw = found.raw;
+    const found = findReport();
+    const raw = found.raw;
 
-  // ✅ her zaman array'e çevir
-  const arr = toArray(raw);
-  let idx = found.i;
+    const arr = toArray(raw);
+    let idx = found.i;
 
-  // eski object-key sistemi varsa, doğru index'i tekrar bul
-  if(idx === -999 && found.key){
-    const ridNow = updatedReport?.rid;
-    idx = arr.findIndex(x => x && (x.rid === ridNow));
-    if(idx < 0){
-      arr.push(updatedReport);
-    }else{
+    if(idx >= 0){
       arr[idx] = updatedReport;
+    }else{
+      arr.push(updatedReport);
     }
-  }else if(idx >= 0){
-    arr[idx] = updatedReport;
-  }else{
-    // bulunamadıysa push
-    arr.push(updatedReport);
-  }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-}
+    // local timestamp
+    updatedReport.updatedAt = new Date().toISOString();
+    updatedReport.updatedAtMs = Date.now();
+
+    saveAllReportsArray(arr);
+
+    // ✅ buluta tek rapor yaz
+    cloudSaveReport(updatedReport);
+  }
 
   // ===== Pool unify =====
   function getPool(report){
@@ -491,7 +478,6 @@ function scheduleCloudWriteNow(){
     const fromObj = toNum(v);
     if(fromObj > 0) return fromObj;
 
-    // son çare: ekrandaki input (resbrut/res_brut)
     const inputBrut = toNum(val("resbrut","res_brut"));
     return inputBrut;
   }
@@ -517,30 +503,32 @@ function scheduleCloudWriteNow(){
       const title = bb.baslik || (idx+1)+". BB";
       return `<button type="button" class="${cls}" onclick="setActiveBB(${idx})">${title}</button>`;
     }).join("");
-  }
-
-  window.setActiveBB = function(idx){
-  // ✅ önce eski BB'nin fiyatlarını kaydet
-  saveActiveBBPricing();
-
-  activeBBIndex = idx;
-  renderBBTabs();
-
-  const { report } = findReport();
-  if(report){
-    setBrutToUI(report);
-    // ✅ yeni BB'nin fiyatlarını yükle
-    loadActiveBBPricing();
 
     const t = report.bbDetayList?.[activeBBIndex]?.baslik || (activeBBIndex+1)+". BB";
     const titleEl = el("activeBBTitle");
     if(titleEl) titleEl.textContent = t;
   }
 
-  finalHesapla();
-};
+  window.setActiveBB = function(idx){
+    // ✅ önce eski BB'nin fiyatlarını kaydet
+    saveActiveBBPricing();
 
-  
+    activeBBIndex = idx;
+    renderBBTabs();
+
+    const { report } = findReport();
+    if(report){
+      setBrutToUI(report);
+      // ✅ yeni BB'nin fiyatlarını yükle
+      loadActiveBBPricing();
+
+      const t = report.bbDetayList?.[activeBBIndex]?.baslik || (activeBBIndex+1)+". BB";
+      const titleEl = el("activeBBTitle");
+      if(titleEl) titleEl.textContent = t;
+    }
+
+    finalHesapla();
+  };
 
   // ===== Status =====
   function veriKontrol(report){
@@ -548,7 +536,7 @@ function scheduleCloudWriteNow(){
     if(!bar) return;
     const pool = getPool(report);
     const count = pool.length;
-    const check = val("inp_uygulanan","inpuygulanan");
+    const check = val("inpuygulanan","inp_uygulanan");
     if(count >= 1 && toNum(check) > 0){
       bar.textContent = "✅ ANALİZ PARAMETRELERİ TAMAMLANDI";
       bar.className = "status-bar status-complete";
@@ -560,14 +548,14 @@ function scheduleCloudWriteNow(){
 
   // ===== Emsal hesap =====
   function hesapla(){
-    const fiyat = toNum(val("f10","f10")) || 0;
-    const alan  = toNum(val("f8","f8")) || 1;
-    const paz   = toNum(val("f14","f14")) || 0;
-    const sP    = toNum(val("f12","f12")) || 0;
-    const sM    = toNum(val("f13","f13")) || 0;
+    const fiyat = toNum(val("f10")) || 0;
+    const alan  = toNum(val("f8")) || 1;
+    const paz   = toNum(val("f14")) || 0;
+    const sP    = toNum(val("f12")) || 0;
+    const sM    = toNum(val("f13")) || 0;
 
     const birim = (fiyat * (1 - paz/100) / alan) * (1 + (sP - sM)/100);
-    setVal(formatLira(birim) + " TL/m²", "f17","f17");
+    setVal(formatLira(birim) + " TL/m²", "f17");
   }
 
   function emsalMetinUret(e){
@@ -589,7 +577,6 @@ function scheduleCloudWriteNow(){
 
   // ===== TEK METİN ÜRETİMİ =====
   function getOzetForBB(bb){
-    // varsa BB içine kaydedilmiş değerleme özetleri
     return bb?.degerlemeOzet || bb?.degerleme || bb?.emsalOzet || null;
   }
 
@@ -612,8 +599,8 @@ function scheduleCloudWriteNow(){
     // UI brütü güncel tut
     setBrutToUI(report);
 
-    const dusuk  = toNum(val("inp_dusuk","inpdusuk"));
-    const yuksek = toNum(val("inp_yuksek","inpyuksek"));
+    const dusuk  = toNum(val("inpdusuk"));
+    const yuksek = toNum(val("inpyuksek"));
 
     let metin = `EMSAL BİLGİLERİ\n------------------------------------------\n`;
     if(pool.length === 0){
@@ -636,68 +623,57 @@ function scheduleCloudWriteNow(){
     }
     metin += `Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurulmuştur.\n\n`;
 
-   
+    report.bbDetayList.forEach((bb, idx)=>{
+      const baslik = bb.baslik || (idx+1)+". BB";
+      const oz = getOzetForBB(bb) || {};
 
-// ✅ Çoklu BB: alt alta
-// ✅ Çoklu BB: alt alta (İNŞAAT MODUNDA "yasal değer..." cümlesi YOK, "■" YOK)
-report.bbDetayList.forEach((bb, idx)=>{
-  const baslik = bb.baslik || (idx+1)+". BB";
-  const oz = getOzetForBB(bb) || {};
+      const uyg = toNum(oz.uyg ?? oz.uygulananBirim ?? oz.uygBirim ?? val("inpuygulanan") ?? 0);
+      const ilaveAlan  = toNum(oz.ilaveAlan ?? oz.projeDisiAlan ?? val("inpprojedisi") ?? 0);
+      const ilaveBirim = toNum(oz.ilaveBirim ?? oz.projeDisiBirim ?? val("inpprojebirim") ?? 0);
 
-  const uyg = toNum(oz.uygulananBirim ?? oz.uygBirim ?? val("inp_uygulanan","inpuygulanan") ?? 0);
-  const ilaveAlan  = toNum(oz.projeDisiAlan ?? oz.ilaveAlan ?? val("inpprojedisi","inp_projedisi") ?? 0);
-  const ilaveBirim = toNum(oz.projeDisiBirim ?? oz.ilaveBirim ?? val("inpprojebirim","inp_projebirim") ?? 0);
+      const brut = getBrutAny(bb, report);
 
-  const brut = getBrutAny(bb, report);
+      const yasalDeger  = Math.round(uyg * brut);
+      const ilaveDeger  = Math.round(ilaveAlan * ilaveBirim);
+      const tamamlanmisDeger = Math.round(yasalDeger + ilaveDeger);
 
-  const yasalDeger  = Math.round(uyg * brut);
-  const ilaveDeger  = Math.round(ilaveAlan * ilaveBirim);
-  const tamamlanmisDeger = Math.round(yasalDeger + ilaveDeger); // %100 tamamlanmış (bilgi amaçlı)
+      const insaatMod = !!el("chkinsaat")?.checked;
+      const seviyePct = Math.max(0, Math.min(100, toNum(val("inpseviye")) || 0));
+      const eksikTL   = toNum(val("inpeksik")) || 0;
 
-  const insaatMod = !!el("chkinsaat")?.checked;
-  const seviyePct = Math.max(0, Math.min(100, toNum(val("inpseviye")) || 0));
-  const eksikTL   = toNum(val("inpeksik")) || 0;
+      const mevcutDurumDeger = Math.round(tamamlanmisDeger - eksikTL);
 
-  // Senin şablon: mevcut = tamamlanmış - eksik imalat
-  const mevcutDurumDeger = Math.round(tamamlanmisDeger - eksikTL);
+      if(insaatMod){
+        metin += `${baslik}: Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurularak `;
+        metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)} TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
+        metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup `;
+        metin += `(~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+        return;
+      }
 
-  // --- METİN ---
-  if(insaatMod){
-    // ✅ İnşaat modunda sadece şablon metni (yasal değer cümlesi yok)
-    metin += `${baslik}: Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurularak `;
-    metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)} TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
-    metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup `;
-    metin += `(~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
-    return;
-  }
+      if(ilaveAlan > 0 && ilaveBirim > 0){
+        metin += `${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+        metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
+        metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
+        metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL uygun görülmüştür.\n`;
+      }else{
+        metin += `${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
+        metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer uygun görülmüştür.\n`;
+      }
+    });
 
-  // ✅ Normal mod (inşaat kapalı)
-  if(ilaveAlan > 0 && ilaveBirim > 0){
-    metin += `${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
-    metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer, `;
-    metin += `proje harici büyüme ile birlikte ${ilaveAlan} m² x ${formatLira0(ilaveBirim)} TL/m² : ${formatLira0(ilaveDeger)} TL ilave değer olmak üzere `;
-    metin += `toplam değer ${formatLira0(tamamlanmisDeger)} TL uygun görülmüştür.\n`;
-  }else{
-    metin += `${baslik}: Konu taşınmaza ${formatLira0(uyg)} TL/m² birim fiyatı üzerinden `;
-    metin += `${formatLira0(uyg)} TL/m² x ${brut} m² : ${formatLira0(yasalDeger)} TL yasal değer uygun görülmüştür.\n`;
-  }
-});
+    metin += `\nSonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
 
-// ✅ forEach kapanışı
+    metin += `\nEMSAL HESAP SATIRLARI\n------------------------------------------\n`;
+    if(pool.length){
+      pool.forEach((e, i) => {
+        const built = emsalMetinUret(e);
+        metin += `- Emsal ${i+1}: ${built.hesapSatiri}\n`;
+      });
+    }
 
-metin += `\nSonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
-
-metin += `\nEMSAL HESAP SATIRLARI\n------------------------------------------\n`;
-if(pool.length){
-  pool.forEach((e, i) => {
-    const built = emsalMetinUret(e);
-    metin += `- Emsal ${i+1}: ${built.hesapSatiri}\n`;
-  });
-}
-
-out.innerText = metin;
-veriKontrol(report);
-
+    out.innerText = metin;
+    veriKontrol(report);
   }
 
   function listele(){
@@ -735,7 +711,7 @@ veriKontrol(report);
     const box = el("emsalFormContainer");
     if(box) box.style.display = "block";
 
-    setVal(String(index), "editIndex", "editEmsalId");
+    setVal(String(index), "editEmsalId");
 
     const { report } = findReport();
     const pool = report ? getPool(report) : [];
@@ -748,7 +724,7 @@ veriKontrol(report);
       n.value = e ? (e[idA] || "") : (k===14 ? "5" : "");
     }
 
-    const f10mask = el("f10_mask","f10mask");
+    const f10mask = el("f10mask");
     const f10 = el("f10");
     if(f10mask && f10){
       const v = e ? (e.f10 || "") : "";
@@ -770,7 +746,7 @@ veriKontrol(report);
 
     const pool = getPool(report);
 
-    const idxRaw = val("editIndex","editEmsalId");
+    const idxRaw = val("editEmsalId");
     const index = parseInt(idxRaw,10);
 
     let e = {};
@@ -779,8 +755,8 @@ veriKontrol(report);
       const n = el(idA);
       if(n) e[idA] = n.value;
     }
-    e.f10 = val("f10","f10");
-    e.f17 = val("f17","f17");
+    e.f10 = val("f10");
+    e.f17 = val("f17");
 
     const built = emsalMetinUret(e);
     e.anaMetin = built.anaMetin;
@@ -793,7 +769,6 @@ veriKontrol(report);
     report.emsalHavuzu = pool;
 
     saveReport(report);
-    scheduleCloudWriteNow();
     window.formuKapat();
     listele();
   }
@@ -810,7 +785,6 @@ veriKontrol(report);
     report.emsalHavuzu = pool;
 
     saveReport(report);
-    scheduleCloudWriteNow();
     listele();
   }
 
@@ -821,60 +795,139 @@ veriKontrol(report);
     finalHesapla();
   }
 
-window.tumRaporuKaydet = async function(){
-  const { report } = findReport();
-  if(!report){ alert("Rapor bulunamadı."); return; }
+  window.tumRaporuKaydet = async function(){
+    const { report } = findReport();
+    if(!report){ alert("Rapor bulunamadı."); return; }
 
-  // ✅ EN KRİTİK SATIR: aktif BB fiyatlarını da rapora yaz
-  saveActiveBBPricing();
+    // aktif BB fiyatlarını rapora yaz
+    saveActiveBBPricing();
 
-  const metin = (el("yorumMetni")?.innerText || "").trim();
-  report.emsalFinalMetni = metin;
-  if(!report.modules) report.modules = {};
-  if(!report.modules.emsal) report.modules.emsal = {};
-  report.modules.emsal.text = metin;
+    const metin = (el("yorumMetni")?.innerText || "").trim();
+    report.emsalFinalMetni = metin;
+    if(!report.modules) report.modules = {};
+    if(!report.modules.emsal) report.modules.emsal = {};
+    report.modules.emsal.text = metin;
 
-  saveReport(report);
-scheduleCloudWriteNow();
-  if(auth.currentUser){
-    try{
-      const rawNow = loadAllReportsRaw();
-const arrNow = toArray(rawNow); // ✅ her zaman ARRAY yaz
-
-await db.collection("users").doc(auth.currentUser.uid).set({
-  gayrimenkul_reports: arrNow,
-  sonGuncelleme: new Date().toISOString()
-}, { merge:true });
-
-      alert("✅ Kaydedildi ve buluta mühürlendi.");
-    }catch(e){
-      alert("Bulut hatası: " + (e.message || e));
-    }
-  }else{
-    alert("✅ Yerel hafızaya kaydedildi.");
+    saveReport(report);
+    alert("✅ Kaydedildi ve buluta mühürlendi.");
   }
-}
 
+  window.anaMenuyeDon = function(){
+    saveActiveBBPricing(); // çıkmadan önce BB fiyatlarını yaz
 
- window.anaMenuyeDon = function(){
-  saveActiveBBPricing(); // 👈 çıkmadan önce BB fiyatlarını yaz
-  if(id) window.location.href = `rapor-detay.html?id=${encodeURIComponent(id)}`;
-  else if(rid) window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-  else window.location.href = "rapor-detay.html";
-}
+    if(id) window.location.href = `rapor-detay.html?id=${encodeURIComponent(id)}`;
+    else if(rid) window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+    else window.location.href = "rapor-detay.html";
+  }
 
-  // global
-  window.formatMoneyInput = formatMoneyInput;
-  window.formatPhone = formatPhone;
-  window.hesapla = hesapla;
-  window.finalHesapla = finalHesapla;
-  window.listele = listele;
+  // ===== BB pricing per tab =====
+  function getBBPricingFromUI(){
+    return {
+      dusuk:  toNum(val("inpdusuk")),
+      yuksek: toNum(val("inpyuksek")),
+      uyg:    toNum(val("inpuygulanan")),
+      ilaveAlan:  toNum(val("inpprojedisi")),
+      ilaveBirim: toNum(val("inpprojebirim")),
+      insaatAktif: !!el("chkinsaat")?.checked,
+      insaatSeviye: toNum(val("inpseviye")),
+      eksikImlat: toNum(val("inpeksik"))
+    };
+  }
+
+  function applyBBPricingToUI(p){
+    if(!p) return;
+
+    setVal(p.dusuk || "", "inpdusuk");
+    setVal(p.yuksek || "", "inpyuksek");
+    setVal(p.uyg   || "", "inpuygulanan");
+    setVal(p.ilaveAlan  || "", "inpprojedisi");
+    setVal(p.ilaveBirim || "", "inpprojebirim");
+
+    const dusukMask  = el("inpdusukmask");
+    const yuksekMask = el("inpyuksekmask");
+    const uygMask    = el("inpuygulananmask");
+    const ilaveBirimMask = el("inpprojebirimmask");
+
+    if(dusukMask) dusukMask.value = p.dusuk ? new Intl.NumberFormat("tr-TR").format(p.dusuk) : "";
+    if(yuksekMask) yuksekMask.value = p.yuksek ? new Intl.NumberFormat("tr-TR").format(p.yuksek) : "";
+    if(uygMask) uygMask.value = p.uyg ? new Intl.NumberFormat("tr-TR").format(p.uyg) : "";
+    if(ilaveBirimMask) ilaveBirimMask.value = p.ilaveBirim ? new Intl.NumberFormat("tr-TR").format(p.ilaveBirim) : "";
+
+    const chk = el("chkinsaat");
+    if(chk) chk.checked = !!p.insaatAktif;
+    setVal(p.insaatSeviye ?? 0, "inpseviye");
+    setVal(p.eksikImlat ?? "", "inpeksik");
+
+    const eksikMask = el("inpeksikmask");
+    if(eksikMask) eksikMask.value = p.eksikImlat ? new Intl.NumberFormat("tr-TR").format(p.eksikImlat) : "";
+
+    toggleInsaat();
+  }
+
+  function saveActiveBBPricing(){
+    const found = findReport();
+    const report = found.report;
+    if(!report) return;
+
+    ensureBBList(report);
+    const bb = getActiveBB(report);
+    if(!bb) return;
+
+    bb.degerlemeOzet = bb.degerlemeOzet || {};
+    bb.degerlemeOzet = { ...bb.degerlemeOzet, ...getBBPricingFromUI() };
+
+    saveReport(report);
+  }
+
+  function loadActiveBBPricing(){
+    const { report } = findReport();
+    if(!report) return;
+
+    ensureBBList(report);
+    const bb = getActiveBB(report);
+    if(!bb) return;
+
+    applyBBPricingToUI(bb.degerlemeOzet || {});
+  }
+
+  // ✅ Kopyala/Yapıştır serbest — sadece metin kutusu (yorumMetni) kopyalanamaz
+  (function(){
+    const metinEl = document.getElementById("yorumMetni");
+    if(!metinEl) return;
+    metinEl.addEventListener("contextmenu", (e)=> e.preventDefault());
+    document.addEventListener("copy", (e)=>{
+      const t = e.target;
+      if (t && (t.closest?.("#yorumMetni") || t === metinEl)) {
+        e.preventDefault();
+      }
+    });
+  })();
 
   // INIT
-  auth.onAuthStateChanged((user)=>{
+  auth.onAuthStateChanged(async (user)=>{
     if(!user){ window.location.href = "index.html"; return; }
+    if(!rid && id){
+      // emsal linki eskiyse id ile de çalışsın ama asıl hedef rid
+      // raporu localden bulacağız, bulamazsak buluttan çekip rid ile devam edeceğiz.
+    }
+    if(!rid && !id){ window.location.href = "index.html"; return; }
 
-    const { report } = findReport();
+    // 1) önce localden bulmayı dene
+    let found = findReport();
+
+    // 2) yoksa buluttan rid ile çek (rid varsa)
+    if(!found.report && rid){
+      const cloud = await cloudLoadReportOnce(user.uid, rid);
+      if(cloud){
+        upsertLocalReport(cloud);
+        found = findReport();
+      }
+    }
+
+    // 3) hala yoksa (eski id ile açılmış olabilir) -> localde id ile bul
+    // (burada cloud fallback yok, çünkü cloud doc id’si artık rid)
+    const report = found.report;
+
     const raporBilgi = el("raporBilgi");
     if(raporBilgi){
       raporBilgi.textContent = (report && (report.propertyName || report.mulkAdi))
@@ -883,120 +936,25 @@ await db.collection("users").doc(auth.currentUser.uid).set({
     }
 
     if(report){
-  ensureBBList(report);
-  renderBBTabs();
-  setBrutToUI(report);
-
-  loadActiveBBPricing();   // 👈 BU SATIR
-}
-
+      ensureBBList(report);
+      renderBBTabs();
+      setBrutToUI(report);
+      loadActiveBBPricing();
+      // ✅ canlı senkron (PC/mobil aynı doc)
+      startLiveSync(user.uid, report.rid || rid);
+    }
 
     listele();
     finalHesapla();
   });
-  function getBBPricingFromUI(){
-  const obj = {
-    dusuk:  toNum(val("inpdusuk","inp_dusuk")),
-    yuksek: toNum(val("inpyuksek","inp_yuksek")),
-    uyg:    toNum(val("inpuygulanan","inp_uygulanan")),
-    ilaveAlan:  toNum(val("inpprojedisi","inp_projedisi")),
-    ilaveBirim: toNum(val("inpprojebirim","inp_projebirim")),
 
-    insaatAktif: !!el("chkinsaat")?.checked,
-    insaatSeviye: toNum(val("inpseviye")),
-    eksikImlat: toNum(val("inpeksik","inp_eksik"))
-  };
-  return obj;
-}
-
-function applyBBPricingToUI(p){
-  if(!p) return;
-
-  // hidden inputlara set
-  setVal(p.dusuk || "", "inpdusuk","inp_dusuk");
-  setVal(p.yuksek || "", "inpyuksek","inp_yuksek");
-  setVal(p.uyg   || "", "inpuygulanan","inp_uygulanan");
-  setVal(p.ilaveAlan  || "", "inpprojedisi","inp_projedisi");
-  setVal(p.ilaveBirim || "", "inpprojebirim","inp_projebirim");
-
-  // mask inputları da görsel olarak doldur
-  const dusukMask  = el("inpdusukmask","inp_dusukmask");
-  const yuksekMask = el("inpyuksekmask","inp_yuksekmask");
-  const uygMask    = el("inpuygulananmask","inp_uygulananmask");
-  const ilaveBirimMask = el("inpprojebirimmask","inp_projebirimmask");
-  if(dusukMask) dusukMask.value = p.dusuk ? new Intl.NumberFormat("tr-TR").format(p.dusuk) : "";
-  if(yuksekMask) yuksekMask.value = p.yuksek ? new Intl.NumberFormat("tr-TR").format(p.yuksek) : "";
-  if(uygMask) uygMask.value = p.uyg ? new Intl.NumberFormat("tr-TR").format(p.uyg) : "";
-  if(ilaveBirimMask) ilaveBirimMask.value = p.ilaveBirim ? new Intl.NumberFormat("tr-TR").format(p.ilaveBirim) : "";
-
-  // inşaat
-  const chk = el("chkinsaat");
-  if(chk) chk.checked = !!p.insaatAktif;
-  setVal(p.insaatSeviye ?? 0, "inpseviye");
-  setVal(p.eksikImlat ?? "", "inpeksik","inp_eksik");
-
-  // inpeksikmask da doldur
-  const eksikMask = el("inpeksikmask","inp_eksikmask");
-  if(eksikMask) eksikMask.value = p.eksikImlat ? new Intl.NumberFormat("tr-TR").format(p.eksikImlat) : "";
-
-  // paneli aç/kapat
-  toggleInsaat();
-}
-
-function saveActiveBBPricing(){
-  const found = findReport();
-  const report = found.report;
-  if(!report) return;
-
-  ensureBBList(report);
-  const bb = getActiveBB(report);
-  if(!bb) return;
-
-  bb.degerlemeOzet = bb.degerlemeOzet || {};
-  bb.degerlemeOzet = { ...bb.degerlemeOzet, ...getBBPricingFromUI() };
-
-  saveReport(report);
-}
-
-function loadActiveBBPricing(){
-  const { report } = findReport();
-  if(!report) return;
-
-  ensureBBList(report);
-  const bb = getActiveBB(report);
-  if(!bb) return;
-
-  applyBBPricingToUI(bb.degerlemeOzet || {});
-}
-// ✅ Kopyala/Yapıştır serbest — sadece metin kutusu (yorumMetni) kopyalanamaz
-(function(){
-  const metinEl = document.getElementById("yorumMetni");
-  if(!metinEl) return;
-
-  // Metin kutusunda sağ tık menüsünü kapat
-  metinEl.addEventListener("contextmenu", (e)=> e.preventDefault());
-
-  // Metin kutusundan kopyalamayı engelle
-  document.addEventListener("copy", (e)=>{
-    const t = e.target;
-    if (t && (t.closest?.("#yorumMetni") || t === metinEl)) {
-      e.preventDefault();
-    }
-  });
-})();
-
+  // globals
+  window.formatMoneyInput = formatMoneyInput;
+  window.formatPhone = formatPhone;
+  window.hesapla = hesapla;
+  window.finalHesapla = finalHesapla;
+  window.listele = listele;
 </script>
-
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
