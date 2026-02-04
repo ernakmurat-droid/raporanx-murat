@@ -339,7 +339,65 @@
 
 <script>
   const auth = firebase.auth();
-  const db = firebase.firestore();
+  const db = firebase.firestore();  
+  /* ================== BULUT SENKRON (QUEUE + DEBOUNCE) ================== */
+const CLOUD_DEBOUNCE_MS = 450;
+let cloudWriteChain = Promise.resolve();
+let cloudWriteTimer = null;
+let lastCloudSig = "";
+
+function safeArray(x){ return Array.isArray(x) ? x : []; }
+function toArray(raw){
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") return Object.values(raw);
+  return [];
+}
+function stableStringify(obj){
+  try{
+    const keys = [];
+    JSON.stringify(obj, (k,v)=>{ keys.push(k); return v; });
+    keys.sort();
+    return JSON.stringify(obj, keys);
+  }catch(e){
+    return String(Date.now());
+  }
+}
+function getLocalReportsArray(){
+  try{
+    const raw = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "null");
+    return toArray(raw);
+  }catch(e){
+    return [];
+  }
+}
+function getDeletedRidsLocal(){
+  try{ return safeArray(JSON.parse(localStorage.getItem("deleted_rids") || "[]")); }
+  catch(e){ return []; }
+}
+function scheduleCloudWriteNow(){
+  const user = auth.currentUser;
+  if(!user) return;
+
+  if(cloudWriteTimer) clearTimeout(cloudWriteTimer);
+
+  cloudWriteTimer = setTimeout(()=>{
+    const payload = {
+      gayrimenkul_reports: getLocalReportsArray(),
+      deletedRids: getDeletedRidsLocal(),
+      lastUpdate: new Date().toISOString()
+    };
+
+    const sig = stableStringify(payload);
+    if(sig === lastCloudSig) return;
+    lastCloudSig = sig;
+
+    cloudWriteChain = cloudWriteChain
+      .then(()=> db.collection("users").doc(user.uid).set(payload, { merge:true }))
+      .catch(err => console.warn("Cloud write error:", err));
+  }, CLOUD_DEBOUNCE_MS);
+}
+/* ===================================================================== */
+
 
   const params = new URLSearchParams(window.location.search);
   let rid = params.get('rid');
@@ -445,6 +503,13 @@
       history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    // ✅ merge düzgün olsun
+r.updatedAt = new Date().toISOString();
+r.updatedAtMs = Date.now();
+
+// ✅ local yazıldıktan sonra buluta da yolla (kuyruklu)
+scheduleCloudWriteNow();
+
   }
   // =========================================
 
@@ -568,6 +633,7 @@ r.tasinmazNet  = bb.bbDetay.alanNet;
     });
 
     persist(arr, i, r);
+    scheduleCloudWriteNow();
   }
 
   function setActiveBB(idx){
@@ -599,6 +665,8 @@ r.tasinmazNet  = bb.bbDetay.alanNet;
     activeBBIndex = r.bbDetayList.length - 1;
     persist(arr, i, r);
     setActiveBB(activeBBIndex);
+    scheduleCloudWriteNow();
+
   }
 
   function renameBB(){
@@ -612,6 +680,7 @@ r.tasinmazNet  = bb.bbDetay.alanNet;
     persist(arr, i, r);
     renderBBTabs();
     topluListeyiGuncelle();
+    scheduleCloudWriteNow();
   }
 
   function deleteBB(){
@@ -627,27 +696,34 @@ r.tasinmazNet  = bb.bbDetay.alanNet;
     renderBBTabs();
     writeForm(r.bbDetayList[activeBBIndex].bbDetay);
     metinOlustur();
+scheduleCloudWriteNow();
   }
 
-  function kaydet() {
-    if (isReportLocked()) return;
-    saveActiveBBToReport();
-    const { r, arr, i } = getLatestData();
-    if(!r) return;
+ function kaydet() {
+  if (isReportLocked()) return;
 
-    let topluMetin = "";
-    r.bbDetayList.forEach(bb => {
-      const m = buildTextFromData(bb.bbDetay || {});
-      bb.taslakMetin = m;
-      topluMetin += `📍 ${bb.baslik}\n${m}\n\n`;
-    });
+  saveActiveBBToReport();
+  const { r, arr, i } = getLatestData();
+  if(!r) return;
 
-    if(!r.modules) r.modules = {};
-    r.modules.bagimsizBolum = { text: topluMetin };
+  let topluMetin = "";
+  r.bbDetayList.forEach(bb => {
+    const m = buildTextFromData(bb.bbDetay || {});
+    bb.taslakMetin = m;
+    topluMetin += `📍 ${bb.baslik}\n${m}\n\n`;
+  });
 
-    persist(arr, i, r);
-    alert("Kaydedildi ✅ Tüm veriler ve hatırlatıcılar güncellendi.");
-  }
+  if(!r.modules) r.modules = {};
+  r.modules.bagimsizBolum = { text: topluMetin };
+
+  persist(arr, i, r);
+
+  // ✅ bulut tetikle
+  scheduleCloudWriteNow();
+
+  alert("Kaydedildi ✅ Tüm veriler ve hatırlatıcılar güncellendi.");
+}
+
 
   // KONTROLLER
   function farkKontrol() {
@@ -706,3 +782,4 @@ r.tasinmazNet  = bb.bbDetay.alanNet;
 
 </body>
 </html>
+
