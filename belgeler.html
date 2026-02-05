@@ -36,7 +36,6 @@
     .conditional { display:none; margin-top:10px; }
     .property-name { font-weight: bold; margin-top: 5px; color: #ffd700; }
   </style>
-  
 </head>
 
 <body oncontextmenu="return false;">
@@ -141,7 +140,11 @@
 
 <script>
   const auth = firebase.auth();
-  const db = firebase.firestore();
+  const db   = firebase.firestore();
+
+  // =========================
+  // === RID + STORAGE FIX ===
+  const STORAGE_KEY = "gayrimenkul_reports";
   const urlParams = new URLSearchParams(window.location.search);
   let rid = urlParams.get('rid');
   const legacyId = urlParams.get('id');
@@ -150,31 +153,73 @@
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
   }
-  function ensureRidMigration(arr){
-    let changed = false;
-    (arr || []).forEach(r => { if (r && !r.rid) { r.rid = genRid(); changed = true; }});
-    return changed;
-  }
-  function findIndexByRid(arr, rid){
-    return (arr || []).findIndex(r => r && r.rid === rid);
+
+  function toArrayIfObject(data){
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object") return Object.values(data);
+    return [];
   }
 
-  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+  function resolveRidAndMigrateIfNeeded(arr){
+    if (rid) {
+      const idx = arr.findIndex(x => x && x.rid === rid);
+      if (idx >= 0) return { arr, i: idx, r: arr[idx] };
+    }
+    if (legacyId) {
+      const idx2 = arr.findIndex(x => x && (String(x.id) === String(legacyId) || String(x.legacyId) === String(legacyId)));
+      if (idx2 >= 0) {
+        if (!arr[idx2].rid) arr[idx2].rid = genRid();
+        rid = arr[idx2].rid;
+        history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+        return { arr, i: idx2, r: arr[idx2] };
+      }
+    }
+    return { arr, i: -1, r: null };
+  }
 
-  if (!rid && legacyId !== null && legacyId !== "") {
-    const idxLegacy = Number(legacyId);
-    if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
-      rid = reports[idxLegacy].rid;
-      window.location.replace("belgeler.html?rid=" + encodeURIComponent(rid));
+  function getLatestData(){
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    const arr = toArrayIfObject(raw);
+    return resolveRidAndMigrateIfNeeded(arr);
+  }
+
+  // ✅ TEK DOĞRU BULUT KAYDI: users/{uid}/reports/{rid}
+  async function cloudSaveReport(reportObj){
+    try{
+      const user = auth.currentUser;
+      if(!user || !reportObj || !reportObj.rid) return;
+
+      await db.collection("users").doc(user.uid)
+        .collection("reports").doc(String(reportObj.rid))
+        .set(
+          { ...reportObj, rid:String(reportObj.rid), updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+          { merge:true }
+        );
+    }catch(e){
+      console.warn("cloudSaveReport:", e);
     }
   }
 
-  const idx = rid ? findIndexByRid(reports, rid) : -1;
-  let report = (idx >= 0) ? (reports[idx] || {}) : null;
+  function persist(arr, i, r){
+    if(!r) return;
 
-  if(document.getElementById('propertyName')) document.getElementById('propertyName').textContent = report?.propertyName || "İsimsiz";
+    if(i >= 0) arr[i] = r;
+    else {
+      if(!r.rid) r.rid = rid || genRid();
+      rid = r.rid;
+      arr.push(r);
+      history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+    }
 
+    r.updatedAt   = new Date().toISOString();
+    r.updatedAtMs = Date.now();
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    cloudSaveReport(r);
+  }
+  // =========================
+
+  // === UI helper ===
   const fieldsToRemember = ['belediye','il','ilce','projeTarihiText','denetimFirma','yikimAciklamaInput','uyumAciklama','arsivAda','arsivParsel'];
 
   document.addEventListener('keydown', function(e) {
@@ -182,7 +227,7 @@
   });
 
   function checkBila() {
-    const textVal = document.getElementById('projeTarihiText').value.toLowerCase();
+    const textVal = (document.getElementById('projeTarihiText').value || "").toLowerCase();
     const dateInput = document.getElementById('projeTarihi');
     if (textVal.includes('bila')) { dateInput.disabled = true; dateInput.value = ''; }
     else { dateInput.disabled = false; }
@@ -208,7 +253,7 @@
     fieldsToRemember.forEach(fid => {
       let h = JSON.parse(localStorage.getItem('h_belgeler_' + fid)) || [];
       const dl = document.getElementById('h_belgeler_' + fid);
-      if (dl) dl.innerHTML = h.map(val => `<option value="${val}">`).join('');
+      if (dl) dl.innerHTML = h.map(val => `<option value="${String(val).replaceAll('"','&quot;')}">`).join('');
     });
   }
 
@@ -217,7 +262,6 @@
     const box = document.getElementById('farkliParselDetay');
     if(box) box.style.display = evet ? 'flex' : 'none';
   }
-
   document.querySelectorAll('input[name="farkliParsel"]').forEach(r => r.onchange = toggleFarkliParsel);
 
   document.querySelectorAll('input[name="iskanVar"]').forEach(r => r.onchange = () => {
@@ -228,11 +272,13 @@
   });
 
   document.querySelectorAll('input[name="denetimDevam"]').forEach(r => r.onchange = () => {
-    document.getElementById('denetimEvet').style.display = (document.querySelector('input[name="denetimDevam"]:checked')?.value === 'evet') ? 'block' : 'none';
+    document.getElementById('denetimEvet').style.display =
+      (document.querySelector('input[name="denetimDevam"]:checked')?.value === 'evet') ? 'block' : 'none';
   });
 
   document.querySelectorAll('input[name="yikim"]').forEach(r => r.onchange = () => {
-    document.getElementById('yikimAciklamaInput').style.display = (document.querySelector('input[name="yikim"]:checked')?.value === 'evet') ? 'block' : 'none';
+    document.getElementById('yikimAciklamaInput').style.display =
+      (document.querySelector('input[name="yikim"]:checked')?.value === 'evet') ? 'block' : 'none';
   });
 
   document.querySelectorAll('input[name="uyum"]').forEach(r => r.onchange = () => {
@@ -262,7 +308,7 @@
         <label><input type="radio" name="rk-${uid}" value="kismi" ${kapsamType === 'kismi' ? 'checked' : ''}> Kısmi</label>
       </div>
       <div class="kismi-box" style="display:${kapsamType === 'kismi' ? 'block' : 'none'}; width:100%;">
-        <input type="text" class="r-kismi" placeholder="Kısmi açıklama..." value="${kismiText}">
+        <input type="text" class="r-kismi" placeholder="Kısmi açıklama..." value="${String(kismiText).replaceAll('"','&quot;')}">
       </div>
       <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
     `;
@@ -290,7 +336,7 @@
         <label><input type="radio" name="ik-${uid}" value="kismi" ${kapsamType === 'kismi' ? 'checked' : ''}> Kısmi</label>
       </div>
       <div class="kismi-box" style="display:${kapsamType === 'kismi' ? 'block' : 'none'}; width:100%;">
-        <input type="text" class="i-kismi" placeholder="Kısmi açıklama..." value="${kismiText}">
+        <input type="text" class="i-kismi" placeholder="Kısmi açıklama..." value="${String(kismiText).replaceAll('"','&quot;')}">
       </div>
       <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
     `;
@@ -301,7 +347,10 @@
   }
 
   function kaydetVeIsle() {
-    if (!report) { alert("Rapor bulunamadı!"); return; }
+    const { r, arr, i } = getLatestData();
+    if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
+    if(!r.modules) r.modules = {};
+
     const belediye = formatBelediye(document.getElementById('belediye').value);
     const il = document.getElementById('il').value || "...";
     const ilce = document.getElementById('ilce').value || "...";
@@ -309,11 +358,14 @@
     const aAda = document.getElementById('arsivAda').value.trim();
     const aParsel = document.getElementById('arsivParsel').value.trim();
     const pTarInput = document.getElementById('projeTarihi').value;
-    const pTarText = document.getElementById('projeTarihiText').value;
-    const pTar = (pTarText.toLowerCase().includes('bila')) ? pTarText : (pTarInput ? new Date(pTarInput).toLocaleDateString('tr-TR') : (pTarText || "..."));
+    const pTarText = document.getElementById('projeTarihiText').value || "";
+    const pTar = (pTarText.toLowerCase().includes('bila')) ? pTarText
+      : (pTarInput ? new Date(pTarInput).toLocaleDateString('tr-TR') : (pTarText || "..."));
+
     const uyum = document.querySelector('input[name="uyum"]:checked')?.value || "evet";
     const uyumDurumText = (uyum === 'evet') ? 'uyumludur' : (uyum === 'hayir' ? 'uyumlu değildir' : 'kısmen uyumludur');
     const teyit = document.querySelector('input[name="belgeGoruldumu"]:checked')?.value || "görüldü";
+
     const ruhsatlar = Array.from(document.querySelectorAll('#ruhsatList .dynamic-item')).map((el) => {
       const uid = el.dataset.uid;
       const tarih_raw = el.querySelector('.r-tarih').value;
@@ -325,6 +377,7 @@
       const kapsam = (kapsam_type === 'tam') ? 'binanın tamı için' : (kismi_text || 'kısmi');
       return { uid, tarih_raw, tarih, no, amac, kapsam_type, kismi_text, kapsam };
     });
+
     const iskanVar = document.querySelector('input[name="iskanVar"]:checked')?.value === 'evet';
     const iskanlar = iskanVar ? Array.from(document.querySelectorAll('#iskanList .dynamic-item')).map((el) => {
       const uid = el.dataset.uid;
@@ -337,6 +390,7 @@
       const kapsam = (kapsam_type === 'tam') ? 'binanın tamı için' : (kismi_text || 'kısmi');
       return { uid, tarih_raw, tarih, no, amac, kapsam_type, kismi_text, kapsam };
     }) : [];
+
     const yikimVar = document.querySelector('input[name="yikim"]:checked')?.value === 'evet';
     const yikimAciklama = document.getElementById('yikimAciklamaInput').value.trim();
     const denetimDevam = document.querySelector('input[name="denetimDevam"]:checked')?.value || 'hayir';
@@ -346,26 +400,39 @@
     let metin = "";
     metin += `${belediye} İmar ve Şehircilik Müdürlüğü'nden alınan bilgilere göre, rapora konu ana taşınmazın konumu uygundur. `;
     metin += `İmar paftasıyla, bağımsız bölüm bazında taşınmazın bina içindeki konumu ve büyüklüğü; ${ilce} Tapu Müdürlüğü Web Tapu sistemi ve ${belediye}'nde bulunan ${pTar} tarihli mimari projesiyle ${uyumDurumText}. `;
+
     const belgeCumleleri = [];
-    ruhsatlar.forEach(r => belgeCumleleri.push(`${r.tarih} tarih ${r.no} sayılı ${r.kapsam} düzenlenmiş ${r.amac} yapı ruhsatı`));
-    if (iskanVar) iskanlar.forEach(i => belgeCumleleri.push(`${i.tarih} tarih ${i.no} sayılı ${i.kapsam} düzenlenmiş ${i.amac}`));
-    if (belgeCumleleri.length > 0) { metin += `Yapı için; ${belgeCumleleri.join(", ")} ${teyit}. `; }
+    ruhsatlar.forEach(rr => belgeCumleleri.push(`${rr.tarih} tarih ${rr.no} sayılı ${rr.kapsam} düzenlenmiş ${rr.amac} yapı ruhsatı`));
+    if (iskanVar) iskanlar.forEach(ii => belgeCumleleri.push(`${ii.tarih} tarih ${ii.no} sayılı ${ii.kapsam} düzenlenmiş ${ii.amac}`));
+
+    if (belgeCumleleri.length > 0) metin += `Yapı için; ${belgeCumleleri.join(", ")} ${teyit}. `;
+
     if (!iskanVar) {
       metin += `Taşınmazın Yapı Kullanma İzin Belgesi (İskân) bulunmamaktadır. `;
-      if (denetimDevam === 'evet') { metin += `Yapının yapı denetimi ${denetimFirma || "..."} şirketi tarafından devam ettiği, bitmişlik oranının %${bitmislikOrani || "..."} olduğu ilgili belediyesinden öğrenilmiştir. `; }
+      if (denetimDevam === 'evet') {
+        metin += `Yapının yapı denetimi ${denetimFirma || "..."} şirketi tarafından devam ettiği, bitmişlik oranının %${bitmislikOrani || "..."} olduğu ilgili belediyesinden öğrenilmiştir. `;
+      }
     }
-    metin += yikimVar ? `Belediye arşivinde ${yikimAciklama || "..."} olumsuz karar ve tespit tutanağı olduğu görülmüştür. ` : `Belediye arşivinde herhangi bir olumsuz karar ve tespit tutanağına rastlanmamıştır. `;
-    if (farkliParsel && aAda && aParsel) { metin += `Taşınmaza ait belgeler ${aAda} ada ${aParsel} parsel için düzenlenmiştir. `; }
+
+    metin += yikimVar
+      ? `Belediye arşivinde ${yikimAciklama || "..."} olumsuz karar ve tespit tutanağı olduğu görülmüştür. `
+      : `Belediye arşivinde herhangi bir olumsuz karar ve tespit tutanağına rastlanmamıştır. `;
+
+    if (farkliParsel && aAda && aParsel) metin += `Taşınmaza ait belgeler ${aAda} ada ${aParsel} parsel için düzenlenmiştir. `;
+
     let altListe = "\n\nBELGE ÖZETLERİ:\n";
-    if (belgeCumleleri.length > 0) { altListe += belgeCumleleri.map(c => "- " + c.charAt(0).toUpperCase() + c.slice(1)).join(".\n") + "."; } else { altListe += "- (Belge eklenmedi)"; }
+    if (belgeCumleleri.length > 0) altListe += belgeCumleleri.map(c => "- " + c.charAt(0).toUpperCase() + c.slice(1)).join(".\n") + ".";
+    else altListe += "- (Belge eklenmedi)";
+
     const finalMetin = metin + altListe;
+
     document.getElementById('taslak').innerText = finalMetin;
     document.getElementById('taslak').style.display = 'block';
 
-    report.belgeler = {
-      belediye: document.getElementById('belediye').value,
-      il: document.getElementById('il').value,
-      ilce: document.getElementById('ilce').value,
+    const payload = {
+      belediye: (document.getElementById('belediye').value || ""),
+      il: (document.getElementById('il').value || ""),
+      ilce: (document.getElementById('ilce').value || ""),
       farkliParsel: farkliParsel ? 'evet' : 'hayir',
       arsivAda: aAda,
       arsivParsel: aParsel,
@@ -382,10 +449,19 @@
       teyit: teyit,
       yikim: yikimVar ? 'evet' : 'hayir',
       yikimAciklama: yikimAciklama,
-      belgelerMetni: finalMetin
+      belgelerMetni: finalMetin,
+      metin: finalMetin
     };
-    report.belgelerMetni = finalMetin;
 
+    // ✅ Standard: modules.belgeler
+    r.modules.belgeler = payload;
+    r.modules.belgelerMetni = finalMetin;
+
+    // ✅ Geriye uyumluluk
+    r.belgeler = payload;
+    r.belgelerMetni = finalMetin;
+
+    // Hafıza
     fieldsToRemember.forEach(fid => {
       const el = document.getElementById(fid);
       if (!el) return;
@@ -398,8 +474,8 @@
       }
     });
 
-    reports[idx] = report;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+    persist(arr, i, r);
+
     alert("✅ Veriler başarıyla kaydedildi!");
     initAutocomplete();
   }
@@ -409,76 +485,103 @@
     window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
   }
 
-  window.onload = () => {
+  function fillFromSaved(){
+    const { r } = getLatestData();
+    if(!r) return;
+
+    // ✅ önce yeni yer, sonra eski yer
+    const saved = (r.modules && r.modules.belgeler) ? r.modules.belgeler : (r.belgeler || null);
+
+    if(document.getElementById('propertyName')) document.getElementById('propertyName').textContent = r?.propertyName || "İsimsiz";
+
     initAutocomplete();
     toggleFarkliParsel();
-    if (!report) { window.location.href = 'index.html'; return; }
-    if (report.belgeler) {
-      const b = report.belgeler;
-      document.getElementById('belediye').value = b.belediye || "";
-      document.getElementById('il').value = b.il || "";
-      document.getElementById('ilce').value = b.ilce || "";
-      if (b.farkliParsel === 'evet') {
-        const rad = document.querySelector('input[name="farkliParsel"][value="evet"]');
-        if(rad) rad.checked = true;
-        toggleFarkliParsel();
-        document.getElementById('arsivAda').value = b.arsivAda || "";
-        document.getElementById('arsivParsel').value = b.arsivParsel || "";
-      }
-      document.getElementById('projeTarihi').value = b.projeTarihi || "";
-      document.getElementById('projeTarihiText').value = b.projeTarihiText || "";
-      checkBila();
-      if (b.uyum) {
-        const uy = document.querySelector(`input[name="uyum"][value="${b.uyum}"]`);
-        if (uy) uy.checked = true;
-        document.getElementById('uyumAciklama').style.display = (b.uyum === 'hayir' || b.uyum === 'kismen') ? 'block' : 'none';
-        document.getElementById('uyumAciklama').value = b.uyumAciklama || "";
-      }
-      const rl = b.ruhsatlar || [];
-      if (rl.length > 0) rl.forEach(r => addRuhsat(r)); else addRuhsat();
-      if (b.iskanVar) {
-        const rad = document.querySelector('input[name="iskanVar"][value="evet"]');
-        if(rad) rad.checked = true;
-        document.getElementById('iskanSection').style.display = 'block';
-        document.getElementById('yapiDenetimSection').style.display = 'none';
-        const ilist = b.iskanlar || [];
-        if (ilist.length > 0) ilist.forEach(i => addIskan(i)); else addIskan();
-      } else {
-        const rad = document.querySelector('input[name="iskanVar"][value="hayir"]');
-        if(rad) rad.checked = true;
-        document.getElementById('iskanSection').style.display = 'none';
-        document.getElementById('yapiDenetimSection').style.display = 'block';
-      }
-      if (b.denetimDevam) {
-        const d = document.querySelector(`input[name="denetimDevam"][value="${b.denetimDevam}"]`);
-        if (d) d.checked = true;
-        document.getElementById('denetimEvet').style.display = (b.denetimDevam === 'evet') ? 'block' : 'none';
-        document.getElementById('denetimFirma').value = b.denetimFirma || "";
-        document.getElementById('bitmislikOrani').value = b.bitmislikOrani || "";
-      }
-      if (b.teyit) {
-        const t = document.querySelector(`input[name="belgeGoruldumu"][value="${b.teyit}"]`);
-        if (t) t.checked = true;
-      }
-      if (b.yikim === 'evet') {
-        const rad = document.querySelector('input[name="yikim"][value="evet"]');
-        if(rad) rad.checked = true;
-        document.getElementById('yikimAciklamaInput').style.display = 'block';
-        document.getElementById('yikimAciklamaInput').value = b.yikimAciklama || "";
-      } else {
-        const rad = document.querySelector('input[name="yikim"][value="hayir"]');
-        if(rad) rad.checked = true;
-        document.getElementById('yikimAciklamaInput').style.display = 'none';
-      }
-      if (b.belgelerMetni) {
-        document.getElementById('taslak').innerText = b.belgelerMetni;
-        document.getElementById('taslak').style.display = 'block';
-      }
-    } else {
+
+    if (!saved) {
       addRuhsat();
+      return;
     }
-  };
+
+    document.getElementById('belediye').value = saved.belediye || "";
+    document.getElementById('il').value = saved.il || "";
+    document.getElementById('ilce').value = saved.ilce || "";
+
+    if (saved.farkliParsel === 'evet') {
+      const rad = document.querySelector('input[name="farkliParsel"][value="evet"]');
+      if(rad) rad.checked = true;
+      toggleFarkliParsel();
+      document.getElementById('arsivAda').value = saved.arsivAda || "";
+      document.getElementById('arsivParsel').value = saved.arsivParsel || "";
+    }
+
+    document.getElementById('projeTarihi').value = saved.projeTarihi || "";
+    document.getElementById('projeTarihiText').value = saved.projeTarihiText || "";
+    checkBila();
+
+    if (saved.uyum) {
+      const uy = document.querySelector(`input[name="uyum"][value="${saved.uyum}"]`);
+      if (uy) uy.checked = true;
+      document.getElementById('uyumAciklama').style.display = (saved.uyum === 'hayir' || saved.uyum === 'kismen') ? 'block' : 'none';
+      document.getElementById('uyumAciklama').value = saved.uyumAciklama || "";
+    }
+
+    const rl = saved.ruhsatlar || [];
+    if (rl.length > 0) rl.forEach(x => addRuhsat(x)); else addRuhsat();
+
+    if (saved.iskanVar) {
+      const rad = document.querySelector('input[name="iskanVar"][value="evet"]');
+      if(rad) rad.checked = true;
+      document.getElementById('iskanSection').style.display = 'block';
+      document.getElementById('yapiDenetimSection').style.display = 'none';
+      const ilist = saved.iskanlar || [];
+      if (ilist.length > 0) ilist.forEach(x => addIskan(x)); else addIskan();
+    } else {
+      const rad = document.querySelector('input[name="iskanVar"][value="hayir"]');
+      if(rad) rad.checked = true;
+      document.getElementById('iskanSection').style.display = 'none';
+      document.getElementById('yapiDenetimSection').style.display = 'block';
+    }
+
+    if (saved.denetimDevam) {
+      const d = document.querySelector(`input[name="denetimDevam"][value="${saved.denetimDevam}"]`);
+      if (d) d.checked = true;
+      document.getElementById('denetimEvet').style.display = (saved.denetimDevam === 'evet') ? 'block' : 'none';
+      document.getElementById('denetimFirma').value = saved.denetimFirma || "";
+      document.getElementById('bitmislikOrani').value = saved.bitmislikOrani || "";
+    }
+
+    if (saved.teyit) {
+      const t = document.querySelector(`input[name="belgeGoruldumu"][value="${saved.teyit}"]`);
+      if (t) t.checked = true;
+    }
+
+    if (saved.yikim === 'evet') {
+      const rad = document.querySelector('input[name="yikim"][value="evet"]');
+      if(rad) rad.checked = true;
+      document.getElementById('yikimAciklamaInput').style.display = 'block';
+      document.getElementById('yikimAciklamaInput').value = saved.yikimAciklama || "";
+    } else {
+      const rad = document.querySelector('input[name="yikim"][value="hayir"]');
+      if(rad) rad.checked = true;
+      document.getElementById('yikimAciklamaInput').style.display = 'none';
+    }
+
+    if (saved.belgelerMetni) {
+      document.getElementById('taslak').innerText = saved.belgelerMetni;
+      document.getElementById('taslak').style.display = 'block';
+    }
+  }
+
+  auth.onAuthStateChanged((user) => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    const { r, arr, i } = getLatestData();
+    if (!r || i < 0) { window.location.href = 'index.html'; return; }
+    if(!r.modules) r.modules = {};
+    // küçük bir persist: rid sabit + local/bulut güncel
+    persist(arr, i, r);
+    fillFromSaved();
+  });
+
 </script>
 </body>
 </html>
-
