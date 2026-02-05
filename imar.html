@@ -157,6 +157,15 @@
 <script>
   const auth = firebase.auth();
   const db = firebase.firestore();
+window.addEventListener("error", (e) => {
+  console.error("JS ERROR:", e.error || e.message, e.filename, e.lineno);
+  alert("İmar kaydetme hatası: " + (e.error?.message || e.message));
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  console.error("PROMISE ERROR:", e.reason);
+  alert("İmar kaydetme promise hatası: " + (e.reason?.message || e.reason));
+});
 
   const ANA_MENU_DOSYASI = 'rapor-detay.html';
   const STORAGE_KEY = 'gayrimenkul_reports';
@@ -428,34 +437,56 @@
 
   function anaMenuyeDon() { location.href = `${ANA_MENU_DOSYASI}?rid=${encodeURIComponent(rid)}`; }
 
-  async function kaydet() {
+async function kaydet() {
+  try{
     const veriler = formVerileriniAl();
     otomatikMetinOlustur();
 
     const imarMetni = document.getElementById('rapor-metni-output').textContent || "";
     const imarTablo = buildImarTableHTML(veriler);
 
-    const { arr, i, r } = getLatestData();
-    if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
-    if(!r.modules) r.modules = {};
+    const raw = JSON.parse(localStorage.getItem('gayrimenkul_reports') || "[]");
+    const arr = Array.isArray(raw) ? raw : [];
+    const i = arr.findIndex(x => x && x.rid === rid);
+    const r = (i >= 0) ? (arr[i] || {}) : (currentReport || {});
 
-    // ✅ Standard
+    if(!r.rid) r.rid = rid;
+
+    if(!r.modules) r.modules = {};
     r.modules.imar = veriler;
     r.modules.imarMetni = imarMetni;
     r.modules.imarTablo = imarTablo;
-    r.modules.imar_tamamlandi = !!(veriler.nizam && veriler.kat && veriler.lejant && veriler.taks && veriler.kaks);
 
-    // ✅ Legacy
+    // legacy alanlar
     r.imarDurumu = veriler;
     r.imarMetni = imarMetni;
     r.imarTablo = imarTablo;
 
-    persist(arr, i, r);
+    if(i >= 0) arr[i] = r; else arr.push(r);
 
-    let durum = r.modules.imar_tamamlandi ? 2 : (veriler.nizam || veriler.kat || veriler.lejant || veriler.taks || veriler.kaks ? 1 : 0);
-    alert("İmar Durumu Kaydedildi!");
-    location.href = `${ANA_MENU_DOSYASI}?update=imarDurumu&status=${durum}&rid=${encodeURIComponent(rid)}`;
+    // ✅ kesin local kayıt
+    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+
+    // bulut (hata olsa da local kalsın)
+    try{
+      const user = auth.currentUser;
+      if(user && r.rid){
+        await db.collection("users").doc(user.uid)
+          .collection("reports").doc(String(r.rid))
+          .set({ ...r, rid:String(r.rid), updatedAt: new Date().toISOString() }, { merge:true });
+      }
+    }catch(e){
+      console.warn("Cloud save failed:", e);
+    }
+
+    alert("✅ İmar Durumu Kaydedildi!");
+    location.href = `rapor-detay.html?update=imarDurumu&status=2&rid=${encodeURIComponent(rid)}`;
+  }catch(e){
+    console.error("KAYDET ERROR:", e);
+    alert("Kaydetme sırasında hata: " + (e?.message || e));
   }
+}
+
 
   // Events
   katSayisiInput.addEventListener('input', hmaxHesapla);
@@ -492,3 +523,4 @@
 
 </body>
 </html>
+
