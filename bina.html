@@ -143,6 +143,7 @@
 <datalist id="h_hangiBlok"></datalist><datalist id="h_blokKonum"></datalist>
 
 <script>
+   const STORAGE_KEY = "gayrimenkul_reports";
   const auth = firebase.auth();
   const db = firebase.firestore();
 
@@ -163,8 +164,10 @@
     return (arr || []).findIndex(r => r && r.rid === rid);
   }
 
-  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
+  let reports = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+  if (ensureRidMigration(reports)) localStorage.setItem(STORAGE_KEY, JSON.stringify(allReports));
+
 
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
@@ -222,17 +225,7 @@
   function toggleBlokFields() {
     const isCok = document.querySelector('input[name="binaTipi"][value="cok"]').checked;
     document.getElementById('blokAlanlari').classList.toggle('hidden', !isCok);
-  }
-
-  function bulutaGonder() {
-    const user = auth.currentUser;
-    if (!user) return Promise.resolve();
-    const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    return db.collection("users").doc(user.uid).set({
-      gayrimenkul_reports: arr,
-      lastUpdate: new Date().toISOString()
-    }, { merge: true });
-  }
+  } 
 
   function taslakOlustur() {
     const { report: r } = getLatestData();
@@ -293,7 +286,9 @@
       if(!confirm(hata + "\nSARI BAYRAK ile kaydedilsin mi?")) return;
     }
 
-    allReports[i].bina = {
+    if(!allReports[i].modules) allReports[i].modules = {};
+allReports[i].modules.bina = {
+
       binaTipi: document.querySelector('input[name="binaTipi"]:checked').value,
       arsaAlani: arsa,
       nizam: nizam,
@@ -316,11 +311,12 @@
       toplamBagimsizBolum: bbSayisi
     };
 
-    allReports[i].bina_tamamlandi = !eksikVar;
-    allReports[i].binaMetni = metin;
+    allReports[i].modules.bina_tamamlandi = !eksikVar;
+allReports[i].modules.binaMetni = metin;
+
     localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
 
-    try { await bulutaGonder(); } catch (e) { alert("Bulut hatası: " + e.message); }
+    try { scheduleCloudWriteNow(); } catch (e) {}
 
     const box = document.getElementById('statusBox');
     box.style.display = 'block';
@@ -384,4 +380,5 @@
 
 </body>
 </html>
+
 
