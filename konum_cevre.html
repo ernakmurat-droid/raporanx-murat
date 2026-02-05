@@ -38,7 +38,6 @@
   .disabled-input { background:#eee; cursor:not-allowed; opacity:.7; }
   .locked-note { display:none; background:#fff3cd; color:#856404; padding:15px; border-radius:10px; margin-bottom:15px; font-weight:900; text-align:center; border:1px solid #ffeeba; }
 </style>
-
 </head>
 
 <body>
@@ -92,11 +91,10 @@
     </form>
 
     <div class="section-title">👀 CANLI ÖNİZLEME</div>
-    
     <div class="preview-box" id="livePreview">Veri bekleniyor...</div>
 
-    <button id="saveBtn" class="btn-save" onclick="verileriKaydet()">VERİLERİ KAYDET</button>
-    <button class="btn-back" onclick="anaMenuyeDon()">MENÜYE DÖN</button>
+    <button id="saveBtn" class="btn-save" type="button" onclick="verileriKaydet()">VERİLERİ KAYDET</button>
+    <button class="btn-back" type="button" onclick="anaMenuyeDon()">MENÜYE DÖN</button>
   </div>
 </div>
 
@@ -112,16 +110,99 @@
 
 <script>
   const auth = firebase.auth();
-  const urlParams = new URLSearchParams(window.location.search);
-  const rid = (urlParams.get("rid") || "").trim();
+  const db = firebase.firestore();
+
+  const STORAGE_KEY = "gayrimenkul_reports";
+  const params = new URLSearchParams(location.search);
+  let rid = (params.get("rid") || "").toString().trim();
+  const legacyId = (params.get("id") || "").toString().trim();
 
   const inputIds = [
     'v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16',
     'ulasimTarifi','ulasimOlanaklari','altyapiAciklama'
   ];
 
-  function getReports(){ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
+  // ===== RID helpers (imar ile aynı mantık) =====
+  function genRid(){
+    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
+  }
 
+  function toArrayIfObject(data){
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object") return Object.values(data);
+    return [];
+  }
+
+  function resolveRidAndMigrateIfNeeded(arr){
+    if (rid) {
+      const idx = arr.findIndex(x => x && String(x.rid) === String(rid));
+      if (idx >= 0) return { arr, i: idx, r: arr[idx] };
+    }
+    if (legacyId) {
+      // legacyId bazen index bazen eski id olabilir
+      const n = Number(legacyId);
+      if (!Number.isNaN(n) && arr[n]) {
+        if (!arr[n].rid) arr[n].rid = genRid();
+        rid = arr[n].rid;
+        history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+        return { arr, i: n, r: arr[n] };
+      }
+
+      const idx2 = arr.findIndex(x =>
+        x && (String(x.id) === String(legacyId) || String(x.legacyId) === String(legacyId))
+      );
+      if (idx2 >= 0) {
+        if (!arr[idx2].rid) arr[idx2].rid = genRid();
+        rid = arr[idx2].rid;
+        history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+        return { arr, i: idx2, r: arr[idx2] };
+      }
+    }
+    return { arr, i: -1, r: null };
+  }
+
+  function getLatestData(){
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    const arr = toArrayIfObject(raw);
+    return resolveRidAndMigrateIfNeeded(arr);
+  }
+
+  async function cloudSaveReport(reportObj){
+    try{
+      const user = auth.currentUser;
+      if(!user || !reportObj || !reportObj.rid) return;
+
+      await db.collection("users").doc(user.uid)
+        .collection("reports").doc(String(reportObj.rid))
+        .set(
+          { ...reportObj, rid:String(reportObj.rid), updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+          { merge:true }
+        );
+    }catch(e){
+      console.warn("cloudSaveReport:", e);
+    }
+  }
+
+  function persist(arr, i, r){
+    if(!r) return;
+
+    if(i >= 0) arr[i] = r;
+    else {
+      if(!r.rid) r.rid = rid || genRid();
+      rid = r.rid;
+      arr.push(r);
+      history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+    }
+
+    r.updatedAt   = new Date().toISOString();
+    r.updatedAtMs = Date.now();
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    cloudSaveReport(r);
+  }
+
+  // ===== UI helpers =====
   function lockPreviewCopy(){
     const el = document.getElementById("livePreview");
     if(!el) return;
@@ -138,12 +219,19 @@
     if(!dl) return;
     dl.innerHTML = "";
     const set = new Set();
-    getReports().forEach(r => {
-      const val = (r?.konumCevre && r.konumCevre[el.id]) ? String(r.konumCevre[el.id]).trim() : "";
+
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const arr = Array.isArray(raw) ? raw : toArrayIfObject(raw);
+
+    arr.forEach(r => {
+      const obj = (r?.modules?.konumCevre) || (r?.konumCevre) || null;
+      const val = (obj && obj[el.id] != null) ? String(obj[el.id]).trim() : "";
       if(val && val !== "...") set.add(val);
     });
+
     set.forEach(v => { dl.innerHTML += `<option value="${String(v).replaceAll('"','&quot;')}">`; });
   }
+  window.showList = showList;
 
   function toggleAltyapi(isEvet){
     const inp = document.getElementById('altyapiAciklama');
@@ -158,13 +246,16 @@
     }
     guncelleOnizleme();
   }
+  window.toggleAltyapi = toggleAltyapi;
 
   function guncelleOnizleme(){
     let vData = {};
-    inputIds.forEach(id => { vData[id] = document.getElementById(id).value || "..."; });
+    inputIds.forEach(id => { vData[id] = (document.getElementById(id)?.value ?? "") || "..."; });
+
     let yapiTipi = (vData.v13 || "").trim();
     let yapiTipiMetni = (yapiTipi !== "..." && !yapiTipi.toLowerCase().includes("tip")) ? yapiTipi + " tipi yapılar" : yapiTipi;
-    const altyapiTik = document.querySelector('input[name="altyapi"]:checked').value;
+
+    const altyapiTik = (document.querySelector('input[name="altyapi"]:checked')?.value || "Evet");
     const altyapiMetni = altyapiTik === "Evet" ? "alt yapısı tamamlanmıştır" : (vData.altyapiAciklama || "...");
 
     let tablo = "------------------------------------------\n ÇEVRESEL ÖZELLİKLER TABLOSU\n------------------------------------------\n";
@@ -180,55 +271,117 @@
     return sonuc;
   }
 
+  // ===== Load / Save (STANDARD) =====
+  let currentReport = null;
+
+  function applyLockedUI(){
+    document.getElementById('lockedNote').style.display = "block";
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = "KİLİTLİ";
+    document.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
+  }
+
   function loadData(){
-    const reports = getReports();
-    const report = reports.find(r => r && String(r.rid) === String(rid));
-    if(!report){ alert("Rapor bulunamadı!"); location.href="index.html"; return; }
-    document.getElementById('raporBilgi').textContent = `${report.propertyName || "Rapor"} • RID: ${rid}`;
-    if(!document.getElementById('v4').value) document.getElementById('v4').value = report.il || "";
-    if(!document.getElementById('v5').value) document.getElementById('v5').value = report.ilce || "";
-    if(!document.getElementById('v6').value) document.getElementById('v6').value = report.mahalle || "";
-    if(report.konumCevre){
+    const { r } = getLatestData();
+    if(!r){ alert("Rapor bulunamadı!"); location.href="index.html"; return; }
+
+    currentReport = r;
+    if(!currentReport.modules) currentReport.modules = {};
+
+    document.getElementById('raporBilgi').textContent =
+      `${currentReport.propertyName || "Rapor"} • RID: ${rid}`;
+
+    // il/ilçe/mahalle default
+    if(!document.getElementById('v4').value) document.getElementById('v4').value = currentReport.il || "";
+    if(!document.getElementById('v5').value) document.getElementById('v5').value = currentReport.ilce || "";
+    if(!document.getElementById('v6').value) document.getElementById('v6').value = currentReport.mahalle || "";
+
+    // önce modules.konumCevre, yoksa legacy konumCevre
+    const obj = (currentReport?.modules?.konumCevre) || (currentReport?.konumCevre) || null;
+
+    if(obj && typeof obj === "object"){
       inputIds.forEach(id => {
-        if(report.konumCevre[id] !== undefined && report.konumCevre[id] !== null && String(report.konumCevre[id]).trim() !== ""){
-          document.getElementById(id).value = report.konumCevre[id];
+        if(obj[id] !== undefined && obj[id] !== null && String(obj[id]).trim() !== ""){
+          const el = document.getElementById(id);
+          if(el) el.value = obj[id];
         }
       });
-      if(report.konumCevre.altyapiTik === "Hayır"){
-        document.querySelector('input[name="altyapi"][value="Hayır"]').checked = true;
+
+      if(obj.altyapiTik === "Hayır"){
+        const rb = document.querySelector('input[name="altyapi"][value="Hayır"]');
+        if(rb) rb.checked = true;
         toggleAltyapi(false);
+      }else{
+        const rb2 = document.querySelector('input[name="altyapi"][value="Evet"]');
+        if(rb2) rb2.checked = true;
+        toggleAltyapi(true);
       }
     }
+
     guncelleOnizleme();
-    if(report.isLocked || report.locked || report.final){
-      document.getElementById('lockedNote').style.display = "block";
-      document.getElementById('saveBtn').disabled = true;
-      document.getElementById('saveBtn').textContent = "KİLİTLİ";
-      document.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
+
+    // kilit
+    if(currentReport.isLocked || currentReport.locked || currentReport.final){
+      applyLockedUI();
     }
   }
 
-  function verileriKaydet(){
-    const reports = getReports();
-    const idx = reports.findIndex(r => r && String(r.rid) === String(rid));
-    if(idx < 0) return;
-    let vData = {};
-    inputIds.forEach(id => { vData[id] = document.getElementById(id).value; });
-    reports[idx].konumCevre = {
-      ...vData,
-      altyapiTik: document.querySelector('input[name="altyapi"]:checked').value,
-      tamMetin: guncelleOnizleme(),
-      updatedAt: Date.now()
-    };
-    localStorage.setItem("gayrimenkul_reports", JSON.stringify(reports));
-    alert("✅ Veriler Kaydedildi!");
-  }
+  async function verileriKaydet(){
+    try{
+      const { arr, i, r } = getLatestData();
+      if(!r || i < 0){ alert("Rapor bulunamadı!"); return; }
 
-  function anaMenuyeDon(){ location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid); }
+      let vData = {};
+      inputIds.forEach(id => { vData[id] = document.getElementById(id).value; });
+
+      const payload = {
+        ...vData,
+        altyapiTik: document.querySelector('input[name="altyapi"]:checked').value,
+        tamMetin: guncelleOnizleme(),
+        updatedAt: Date.now()
+      };
+
+      if(!arr[i].modules) arr[i].modules = {};
+      arr[i].modules.konumCevre = payload;
+
+      // legacy (geri uyumluluk)
+      arr[i].konumCevre = payload;
+
+      persist(arr, i, arr[i]);
+
+      alert("✅ Veriler Kaydedildi!");
+    }catch(e){
+      console.error("Konum kaydetme hatası:", e);
+      alert("Kaydetme hatası: " + (e?.message || e));
+    }
+  }
+  window.verileriKaydet = verileriKaydet;
+
+  function anaMenuyeDon(){
+    if(!rid){ location.href = "index.html"; return; }
+    location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
+  }
+  window.anaMenuyeDon = anaMenuyeDon;
+
+  // ===== Init =====
+  lockPreviewCopy();
 
   auth.onAuthStateChanged(user => {
-    if(!user || !rid) { location.href="index.html"; return; }
-    lockPreviewCopy();
+    if(!user){ location.href="index.html"; return; }
+
+    const { r, arr, i } = getLatestData();
+    if(!rid || !r || i < 0){
+      // legacy id ile gelmiş olabilir: resolveRidAndMigrateIfNeeded zaten denedi.
+      location.href="index.html";
+      return;
+    }
+
+    // raporu stabilize et (rid migration + updatedAt)
+    currentReport = r;
+    if(!currentReport.modules) currentReport.modules = {};
+    persist(arr, i, currentReport);
+
     loadData();
   });
 
@@ -240,5 +393,3 @@
 
 </body>
 </html>
-
-
