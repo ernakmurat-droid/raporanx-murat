@@ -143,7 +143,8 @@
 <datalist id="h_hangiBlok"></datalist><datalist id="h_blokKonum"></datalist>
 
 <script>
-   const STORAGE_KEY = "gayrimenkul_reports";
+  const STORAGE_KEY = "gayrimenkul_reports";
+
   const auth = firebase.auth();
   const db = firebase.firestore();
 
@@ -165,9 +166,7 @@
   }
 
   let reports = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-
-  if (ensureRidMigration(reports)) localStorage.setItem(STORAGE_KEY, JSON.stringify(allReports));
-
+  if (ensureRidMigration(reports)) localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
 
   if (!rid && legacyId !== null && legacyId !== "") {
     const idxLegacy = Number(legacyId);
@@ -201,10 +200,11 @@
   });
 
   function getLatestData() {
-    const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
+    const arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     const i = rid ? findIndexByRid(arr, rid) : -1;
-    const r = (i >= 0) ? (arr[i] || { bina: {} }) : { bina: {} };
-    return { reports: arr, report: r, idx: i };
+    const r = (i >= 0) ? (arr[i] || {}) : {};
+    if(!r.modules) r.modules = {};
+    return { arr, i, r };
   }
 
   function showList(input) {
@@ -225,10 +225,40 @@
   function toggleBlokFields() {
     const isCok = document.querySelector('input[name="binaTipi"][value="cok"]').checked;
     document.getElementById('blokAlanlari').classList.toggle('hidden', !isCok);
-  } 
+  }
+
+  // Bu sayfada mevcut buluta atma (geriye uyumluluk)
+  function bulutaGonder() {
+    const user = auth.currentUser;
+    if (!user) return Promise.resolve();
+    const arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    return db.collection("users").doc(user.uid).set({
+      gayrimenkul_reports: arr,
+      lastUpdate: new Date().toISOString()
+    }, { merge: true });
+  }
+
+  // Standart isim: varsa dışarıdaki scheduleCloudWriteNow'ı çağırır, yoksa buradaki bulutaGonder'ı kullanır.
+  function scheduleCloudWriteNow(){
+    try{
+      if (typeof window.scheduleCloudWriteNow === "function" && window.scheduleCloudWriteNow !== scheduleCloudWriteNow) {
+        return window.scheduleCloudWriteNow();
+      }
+    }catch(e){}
+    return bulutaGonder();
+  }
+
+  function getBinaObj(r){
+    // Önce yeni yer: modules.bina
+    if(r && r.modules && r.modules.bina) return r.modules.bina;
+    // Sonra eski yer: r.bina
+    if(r && r.bina) return r.bina;
+    return null;
+  }
 
   function taslakOlustur() {
-    const { report: r } = getLatestData();
+    const { r } = getLatestData();
+
     const bT = document.querySelector('input[name="binaTipi"]:checked').value;
     const aA = document.getElementById('arsaAlani').value || "...";
     const nizam = document.getElementById('nizam').value || "...";
@@ -240,7 +270,9 @@
     const toplamKat = parseInt(bodrum || "0", 10) + 1 + parseInt(normal || "0", 10);
     const asansor = document.getElementById('asansor').value;
     const katMetni = r.katDetayMetni || "KAT DETAYI GİRİLMEDİ";
-    const bbSayisi = parseInt(r.bina?.toplamBagimsizBolum || 0, 10) || 0;
+
+    const binaObj = getBinaObj(r) || {};
+    const bbSayisi = parseInt(binaObj.toplamBagimsizBolum || 0, 10) || parseInt(r.bina?.toplamBagimsizBolum || 0, 10) || 0;
 
     let metin = "";
     const ortak = `${r.il || '...'} İli, ${r.ilce || '...'} ilçesi, ${r.mahalle || '...'} Mahallesinde ${r.ada || '...'} Ada ${r.parsel || '...'} Nolu Parselde konumlu ${aA} m² arsa üzerinde ${nizam} nizamda `;
@@ -256,9 +288,12 @@
   }
 
   async function kaydet() {
-    const { reports: allReports, report: r, idx: i } = getLatestData();
+    const { arr: allReports, r, i } = getLatestData();
     if (i < 0) { alert("Rapor bulunamadı!"); return; }
+
     const metin = taslakOlustur();
+
+    // Hafıza kayıt
     hafizaInputlar.forEach(alanId => {
       const el = document.getElementById(alanId);
       if(!el) return;
@@ -273,7 +308,11 @@
     const nizam = document.getElementById('nizam').value;
     const yapiS = document.getElementById('yapiSinifi').value;
     const disCephe = document.getElementById('disCephe').value;
-    const bbSayisi = parseInt(r.bina?.toplamBagimsizBolum) || 0;
+
+    // bbSayisi: kat-detay’dan geliyor olabilir, bina objesinde saklıyoruz
+    const mevcutBina = getBinaObj(r) || {};
+    const bbSayisi = parseInt(mevcutBina.toplamBagimsizBolum || r.bina?.toplamBagimsizBolum || 0, 10) || 0;
+
     const eksikVar = (!arsa || !nizam || !yapiS || !disCephe || bbSayisi === 0);
 
     if (eksikVar) {
@@ -286,9 +325,9 @@
       if(!confirm(hata + "\nSARI BAYRAK ile kaydedilsin mi?")) return;
     }
 
+    // ✅ Standard: modules.bina
     if(!allReports[i].modules) allReports[i].modules = {};
-allReports[i].modules.bina = {
-
+    allReports[i].modules.bina = {
       binaTipi: document.querySelector('input[name="binaTipi"]:checked').value,
       arsaAlani: arsa,
       nizam: nizam,
@@ -312,17 +351,25 @@ allReports[i].modules.bina = {
     };
 
     allReports[i].modules.bina_tamamlandi = !eksikVar;
-allReports[i].modules.binaMetni = metin;
+    allReports[i].modules.binaMetni = metin;
 
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(allReports));
+    // ✅ Geriye uyumluluk: eski alanları da bozmadan güncel tut
+    allReports[i].bina = { ...(allReports[i].bina || {}), ...(allReports[i].modules.bina || {}) };
+    allReports[i].bina_tamamlandi = !eksikVar;
+    allReports[i].binaMetni = metin;
 
-    try { scheduleCloudWriteNow(); } catch (e) {}
+    // ✅ kaydetmenin asıl noktası: localStorage
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(allReports));
+
+    // ✅ buluta bas
+    try { await scheduleCloudWriteNow(); } catch (e) {}
 
     const box = document.getElementById('statusBox');
     box.style.display = 'block';
     box.style.backgroundColor = eksikVar ? '#fff3cd' : '#d1e7dd';
     box.textContent = eksikVar ? "⚠️ EKSİK VERİYLE KAYDEDİLDİ" : "✅ BİNA VERİLERİ MÜHÜRLENDİ";
     setTimeout(() => box.style.display = 'none', 3000);
+
     hafizaYukle();
   }
 
@@ -330,38 +377,43 @@ allReports[i].modules.binaMetni = metin;
   function anaMenuyeDon() { window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`; }
 
   function initPage(){
-    const { report } = getLatestData();
-    document.getElementById('propertyInfo').textContent = (report.propertyName || "Rapor Bilgisi");
-    document.getElementById('il').value = report.il || '';
-    document.getElementById('ilce').value = report.ilce || '';
-    document.getElementById('mahalle').value = report.mahalle || '';
-    document.getElementById('ada').value = report.ada || '';
-    document.getElementById('parsel').value = report.parsel || '';
+    const { r } = getLatestData();
 
-    if (report.bina) {
-      const b = report.bina;
-      const targetRadio = document.querySelector(`input[name="binaTipi"][value="${b.binaTipi || 'tek'}"]`);
+    document.getElementById('propertyInfo').textContent = (r.propertyName || "Rapor Bilgisi");
+    document.getElementById('il').value = r.il || '';
+    document.getElementById('ilce').value = r.ilce || '';
+    document.getElementById('mahalle').value = r.mahalle || '';
+    document.getElementById('ada').value = r.ada || '';
+    document.getElementById('parsel').value = r.parsel || '';
+
+    const bObj = getBinaObj(r) || {};
+    if (bObj) {
+      const targetRadio = document.querySelector(`input[name="binaTipi"][value="${bObj.binaTipi || 'tek'}"]`);
       if(targetRadio) targetRadio.checked = true;
-      document.getElementById('arsaAlani').value = b.arsaAlani || '';
-      document.getElementById('nizam').value = b.nizam || '';
-      document.getElementById('blokSayisi').value = b.blokSayisi || '';
-      document.getElementById('yapiSinifi').value = b.yapiSinifi || '';
-      document.getElementById('yapiSinifiDiger').value = b.yapiSinifiDiger || '';
-      document.getElementById('hangiBlok').value = b.hangiBlok || '';
-      document.getElementById('blokKonum').value = b.blokKonum || '';
-      document.getElementById('bodrumKatSayisi').value = b.bodrumKatSayisi || '0';
-      document.getElementById('normalKatSayisi').value = b.normalKatSayisi || '0';
-      document.getElementById('girisKotu').value = b.girisKotu || '';
-      document.getElementById('girisCephe').value = b.girisCephe || '';
-      document.getElementById('girisKapi').value = b.girisKapi || '';
-      document.getElementById('merdivenZemin').value = b.merdivenZemin || '';
-      document.getElementById('disCephe').value = b.disCephe || '';
-      document.getElementById('asansor').value = b.asansor || 'yoktur';
-      document.getElementById('isinma').value = b.isinma || '';
-      if(b.yapiSinifi === 'diger') document.getElementById('yapiSinifiDiger').classList.remove('hidden');
-      const m = b.binaMetni || b.metin || report.binaMetni || "";
+
+      document.getElementById('arsaAlani').value = bObj.arsaAlani || '';
+      document.getElementById('nizam').value = bObj.nizam || '';
+      document.getElementById('blokSayisi').value = bObj.blokSayisi || '';
+      document.getElementById('yapiSinifi').value = bObj.yapiSinifi || '';
+      document.getElementById('yapiSinifiDiger').value = bObj.yapiSinifiDiger || '';
+      document.getElementById('hangiBlok').value = bObj.hangiBlok || '';
+      document.getElementById('blokKonum').value = bObj.blokKonum || '';
+      document.getElementById('bodrumKatSayisi').value = bObj.bodrumKatSayisi || '0';
+      document.getElementById('normalKatSayisi').value = bObj.normalKatSayisi || '0';
+      document.getElementById('girisKotu').value = bObj.girisKotu || '';
+      document.getElementById('girisCephe').value = bObj.girisCephe || '';
+      document.getElementById('girisKapi').value = bObj.girisKapi || '';
+      document.getElementById('merdivenZemin').value = bObj.merdivenZemin || '';
+      document.getElementById('disCephe').value = bObj.disCephe || '';
+      document.getElementById('asansor').value = bObj.asansor || 'yoktur';
+      document.getElementById('isinma').value = bObj.isinma || '';
+
+      if(bObj.yapiSinifi === 'diger') document.getElementById('yapiSinifiDiger').classList.remove('hidden');
+
+      const m = bObj.binaMetni || bObj.metin || r.binaMetni || "";
       if (m) document.getElementById('taslak').innerText = m;
     }
+
     toggleBlokFields();
     hafizaYukle();
     taslakOlustur();
@@ -370,15 +422,13 @@ allReports[i].modules.binaMetni = metin;
       document.getElementById('yapiSinifiDiger').classList.toggle('hidden', this.value !== "diger");
       taslakOlustur();
     });
-    document.querySelectorAll('input[name="binaTipi"]').forEach(r => r.addEventListener('change', () => {
+
+    document.querySelectorAll('input[name="binaTipi"]').forEach(rr => rr.addEventListener('change', () => {
       toggleBlokFields();
       taslakOlustur();
     }));
   }
 </script>
 
-
 </body>
 </html>
-
-
