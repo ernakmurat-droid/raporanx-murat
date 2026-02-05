@@ -149,147 +149,176 @@
   const db = firebase.firestore();
 
   const urlParams = new URLSearchParams(window.location.search);
-  let rid = urlParams.get('rid');
-  const legacyId = urlParams.get('id');
+  let rid = urlParams.get("rid");
+  const legacyId = urlParams.get("id");
+
+  // ✅ TEK DOĞRU BULUT KAYDI: users/{uid}/reports/{rid}
+  async function cloudSaveReport(reportObj){
+    try{
+      const user = auth.currentUser;
+      if(!user || !reportObj || !reportObj.rid) return;
+
+      await db.collection("users").doc(user.uid)
+        .collection("reports").doc(String(reportObj.rid))
+        .set(
+          { ...reportObj, rid:String(reportObj.rid), updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+          { merge:true }
+        );
+    }catch(e){
+      console.warn("cloudSaveReport:", e);
+    }
+  }
 
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
   }
-  function ensureRidMigration(arr){
-    let changed = false;
-    (arr || []).forEach(r => { if (r && !r.rid) { r.rid = genRid(); changed = true; }});
-    return changed;
-  }
-  function findIndexByRid(arr, rid){
-    return (arr || []).findIndex(r => r && r.rid === rid);
+
+  function toArrayIfObject(data){
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object") return Object.values(data);
+    return [];
   }
 
-  let reports = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  if (ensureRidMigration(reports)) localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-
-  if (!rid && legacyId !== null && legacyId !== "") {
-    const idxLegacy = Number(legacyId);
-    if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
-      rid = reports[idxLegacy].rid;
-      window.location.replace("bina.html?rid=" + encodeURIComponent(rid));
+  function resolveRidAndMigrateIfNeeded(arr){
+    // 1) rid ile bul
+    if (rid) {
+      const idx = arr.findIndex(x => x && String(x.rid) === String(rid));
+      if (idx >= 0) return { arr, i: idx, r: arr[idx] };
     }
+
+    // 2) legacy id ile bul → rid üret → URL güncelle
+    if (legacyId) {
+      const idx2 = arr.findIndex(x => x && (String(x.id) === String(legacyId) || String(x.legacyId) === String(legacyId)));
+      if (idx2 >= 0) {
+        if (!arr[idx2].rid) arr[idx2].rid = genRid();
+        rid = arr[idx2].rid;
+        history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+        return { arr, i: idx2, r: arr[idx2] };
+      }
+    }
+
+    return { arr, i: -1, r: null };
   }
 
-  const idx = rid ? findIndexByRid(reports, rid) : -1;
-  let report = (idx >= 0) ? (reports[idx] || {}) : null;
+  function getLatestData(){
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    const arr = toArrayIfObject(raw);
+    const found = resolveRidAndMigrateIfNeeded(arr);
+    if(found.r && !found.r.modules) found.r.modules = {};
+    return found;
+  }
 
-  const hafizaInputlar = ['girisKotu', 'girisCephe', 'girisKapi', 'merdivenZemin', 'disCephe', 'isinma', 'hangiBlok', 'blokKonum'];
+  function persist(arr, i, r){
+    if (!r) return;
 
-  document.addEventListener('contextmenu', (e) => {
-    const isInput = e.target.closest('input, textarea, select');
+    if (i >= 0) {
+      arr[i] = r;
+    } else {
+      if (!r.rid) r.rid = rid || genRid();
+      rid = r.rid;
+      arr.push(r);
+      history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+    }
+
+    // ✅ timestamp (local)
+    r.updatedAt = new Date().toISOString();
+    r.updatedAtMs = Date.now();
+
+    // ✅ local yaz
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+
+    // ✅ buluta yaz
+    cloudSaveReport(r);
+  }
+
+  // -----------------------------
+  // Sayfaya özel mevcut fonksiyonlar
+  // -----------------------------
+
+  const hafizaInputlar = ["girisKotu","girisCephe","girisKapi","merdivenZemin","disCephe","isinma","hangiBlok","blokKonum"];
+
+  document.addEventListener("contextmenu", (e) => {
+    const isInput = e.target.closest("input, textarea, select");
     if (isInput) return;
     e.preventDefault();
   });
 
-  document.addEventListener('keydown', (e) => {
+  document.addEventListener("keydown", (e) => {
     const t = e.target;
-    const isInput = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+    const isInput = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
     if (isInput) return;
-    if (e.ctrlKey && (e.key.toLowerCase() === 'c')) e.preventDefault();
+    if (e.ctrlKey && (e.key.toLowerCase() === "c")) e.preventDefault();
   });
-
-  auth.onAuthStateChanged((user) => {
-    if (!user || !rid || !report) { window.location.href = 'index.html'; return; }
-    initPage();
-  });
-
-  function getLatestData() {
-    const arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    const i = rid ? findIndexByRid(arr, rid) : -1;
-    const r = (i >= 0) ? (arr[i] || {}) : {};
-    if(!r.modules) r.modules = {};
-    return { arr, i, r };
-  }
 
   function showList(input) {
-    input.setAttribute('autocomplete', 'off');
-    const val = input.value;
-    input.value = '';
-    setTimeout(() => { input.value = val; }, 1);
+    input.setAttribute("autocomplete", "off");
+    const v = input.value;
+    input.value = "";
+    setTimeout(() => { input.value = v; }, 1);
   }
+  window.showList = showList;
 
   function hafizaYukle() {
     hafizaInputlar.forEach(alanId => {
-      let gecmis = JSON.parse(localStorage.getItem('h_bina_' + alanId)) || [];
-      const dl = document.getElementById('h_' + alanId);
-      if(dl) dl.innerHTML = gecmis.map(item => `<option value="${String(item).replaceAll('"','&quot;')}">`).join('');
+      let gecmis = JSON.parse(localStorage.getItem("h_bina_" + alanId) || "[]");
+      const dl = document.getElementById("h_" + alanId);
+      if(dl) dl.innerHTML = gecmis.map(item => `<option value="${String(item).replaceAll('"','&quot;')}">`).join("");
     });
   }
 
   function toggleBlokFields() {
     const isCok = document.querySelector('input[name="binaTipi"][value="cok"]').checked;
-    document.getElementById('blokAlanlari').classList.toggle('hidden', !isCok);
-  }
-
-  // Bu sayfada mevcut buluta atma (geriye uyumluluk)
-  function bulutaGonder() {
-    const user = auth.currentUser;
-    if (!user) return Promise.resolve();
-    const arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    return db.collection("users").doc(user.uid).set({
-      gayrimenkul_reports: arr,
-      lastUpdate: new Date().toISOString()
-    }, { merge: true });
-  }
-
-  // Standart isim: varsa dışarıdaki scheduleCloudWriteNow'ı çağırır, yoksa buradaki bulutaGonder'ı kullanır.
-  function scheduleCloudWriteNow(){
-    try{
-      if (typeof window.scheduleCloudWriteNow === "function" && window.scheduleCloudWriteNow !== scheduleCloudWriteNow) {
-        return window.scheduleCloudWriteNow();
-      }
-    }catch(e){}
-    return bulutaGonder();
+    document.getElementById("blokAlanlari").classList.toggle("hidden", !isCok);
   }
 
   function getBinaObj(r){
-    // Önce yeni yer: modules.bina
     if(r && r.modules && r.modules.bina) return r.modules.bina;
-    // Sonra eski yer: r.bina
     if(r && r.bina) return r.bina;
     return null;
   }
 
   function taslakOlustur() {
     const { r } = getLatestData();
+    if(!r) return "";
 
     const bT = document.querySelector('input[name="binaTipi"]:checked').value;
-    const aA = document.getElementById('arsaAlani').value || "...";
-    const nizam = document.getElementById('nizam').value || "...";
-    const yS = (document.getElementById('yapiSinifi').value === "diger")
-      ? (document.getElementById('yapiSinifiDiger').value || "")
-      : document.getElementById('yapiSinifi').value;
-    const bodrum = document.getElementById('bodrumKatSayisi').value || "0";
-    const normal = document.getElementById('normalKatSayisi').value || "0";
+    const aA = document.getElementById("arsaAlani").value || "...";
+    const nizam = document.getElementById("nizam").value || "...";
+    const yS = (document.getElementById("yapiSinifi").value === "diger")
+      ? (document.getElementById("yapiSinifiDiger").value || "")
+      : document.getElementById("yapiSinifi").value;
+
+    const bodrum = document.getElementById("bodrumKatSayisi").value || "0";
+    const normal = document.getElementById("normalKatSayisi").value || "0";
     const toplamKat = parseInt(bodrum || "0", 10) + 1 + parseInt(normal || "0", 10);
-    const asansor = document.getElementById('asansor').value;
+    const asansor = document.getElementById("asansor").value;
     const katMetni = r.katDetayMetni || "KAT DETAYI GİRİLMEDİ";
 
     const binaObj = getBinaObj(r) || {};
-    const bbSayisi = parseInt(binaObj.toplamBagimsizBolum || 0, 10) || parseInt(r.bina?.toplamBagimsizBolum || 0, 10) || 0;
+    const bbSayisi =
+      parseInt(binaObj.toplamBagimsizBolum || 0, 10) ||
+      parseInt(r.bina?.toplamBagimsizBolum || 0, 10) ||
+      0;
+
+    const ortak = `${r.il || "..."} İli, ${r.ilce || "..."} ilçesi, ${r.mahalle || "..."} Mahallesinde ${r.ada || "..."} Ada ${r.parsel || "..."} Nolu Parselde konumlu ${aA} m² arsa üzerinde ${nizam} nizamda `;
 
     let metin = "";
-    const ortak = `${r.il || '...'} İli, ${r.ilce || '...'} ilçesi, ${r.mahalle || '...'} Mahallesinde ${r.ada || '...'} Ada ${r.parsel || '...'} Nolu Parselde konumlu ${aA} m² arsa üzerinde ${nizam} nizamda `;
-
     if (bT === "tek") {
-      metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${yS || '...'} yapı sınıfında inşa edilmiş yapıdır. Değerleme konusu taşınmaz ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Bina girişi ${document.getElementById('girisKotu').value || '...'} seviyesinden ${document.getElementById('girisCephe').value || '...'} cephesinden sağlanmaktadır. Bina giriş kapısı ${document.getElementById('girisKapi').value || '...'} kapıdır. Binanın giriş ve merdiven zeminleri ${document.getElementById('merdivenZemin').value || '...'} olup bina dış cephesi ${document.getElementById('disCephe').value || '...'}’dır. Binada asansör ${asansor}. Bina ısıtma sistemi ${document.getElementById('isinma').value || '...'}’dır.`;
+      metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${yS || "..."} yapı sınıfında inşa edilmiş yapıdır. Değerleme konusu taşınmaz ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Bina girişi ${document.getElementById("girisKotu").value || "..."} seviyesinden ${document.getElementById("girisCephe").value || "..."} cephesinden sağlanmaktadır. Bina giriş kapısı ${document.getElementById("girisKapi").value || "..."} kapıdır. Binanın giriş ve merdiven zeminleri ${document.getElementById("merdivenZemin").value || "..."} olup bina dış cephesi ${document.getElementById("disCephe").value || "..."}’dır. Binada asansör ${asansor}. Bina ısıtma sistemi ${document.getElementById("isinma").value || "..."}’dır.`;
     } else {
-      const bS = document.getElementById('blokSayisi').value || "...";
-      metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${bS} blokta ${yS || '...'} yapı sınıfında inşa edilmiştir. Taşınmazın bulunduğu ${document.getElementById('hangiBlok').value || '...'} Blok parselin ${document.getElementById('blokKonum').value || '...'} bulunan yapıdır. ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Taşınmaz girişi ${document.getElementById('girisKotu').value || '...'} seviyesinden ${document.getElementById('girisCephe').value || '...'} cephesinden sağlanmaktadır. Giriş kapısı ${document.getElementById('girisKapi').value || '...'} kapıdır. Bina giriş ve merdiven zeminleri ${document.getElementById('merdivenZemin').value || '...'} olup dış cephesi ${document.getElementById('disCephe').value || '...'}’dır. Taşınmazda asansör ${asansor}. Isıtma sistemi ${document.getElementById('isinma').value || '...'}’dır.`;
+      const bS = document.getElementById("blokSayisi").value || "...";
+      metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${bS} blokta ${yS || "..."} yapı sınıfında inşa edilmiştir. Taşınmazın bulunduğu ${document.getElementById("hangiBlok").value || "..."} Blok parselin ${document.getElementById("blokKonum").value || "..."} bulunan yapıdır. ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Taşınmaz girişi ${document.getElementById("girisKotu").value || "..."} seviyesinden ${document.getElementById("girisCephe").value || "..."} cephesinden sağlanmaktadır. Giriş kapısı ${document.getElementById("girisKapi").value || "..."} kapıdır. Bina giriş ve merdiven zeminleri ${document.getElementById("merdivenZemin").value || "..."} olup dış cephesi ${document.getElementById("disCephe").value || "..."}’dır. Taşınmazda asansör ${asansor}. Isıtma sistemi ${document.getElementById("isinma").value || "..."}’dır.`;
     }
-    document.getElementById('taslak').innerText = metin;
+
+    document.getElementById("taslak").innerText = metin;
     return metin;
   }
+  window.taslakOlustur = taslakOlustur;
 
   async function kaydet() {
-    const { arr: allReports, r, i } = getLatestData();
-    if (i < 0) { alert("Rapor bulunamadı!"); return; }
+    const { arr, i, r } = getLatestData();
+    if (!r || i < 0) { alert("Rapor bulunamadı! (rid/id eşleşmedi)"); return; }
 
     const metin = taslakOlustur();
 
@@ -297,19 +326,21 @@
     hafizaInputlar.forEach(alanId => {
       const el = document.getElementById(alanId);
       if(!el) return;
-      const v = el.value.trim();
+      const v = (el.value || "").trim();
       if(v.length > 1) {
-        let h = JSON.parse(localStorage.getItem('h_bina_' + alanId)) || [];
-        if(!h.includes(v)) { h.unshift(v); localStorage.setItem('h_bina_' + alanId, JSON.stringify(h.slice(0, 20))); }
+        let h = JSON.parse(localStorage.getItem("h_bina_" + alanId) || "[]");
+        if(!h.includes(v)) {
+          h.unshift(v);
+          localStorage.setItem("h_bina_" + alanId, JSON.stringify(h.slice(0, 20)));
+        }
       }
     });
 
-    const arsa = document.getElementById('arsaAlani').value;
-    const nizam = document.getElementById('nizam').value;
-    const yapiS = document.getElementById('yapiSinifi').value;
-    const disCephe = document.getElementById('disCephe').value;
+    const arsa = document.getElementById("arsaAlani").value;
+    const nizam = document.getElementById("nizam").value;
+    const yapiS = document.getElementById("yapiSinifi").value;
+    const disCephe = document.getElementById("disCephe").value;
 
-    // bbSayisi: kat-detay’dan geliyor olabilir, bina objesinde saklıyoruz
     const mevcutBina = getBinaObj(r) || {};
     const bbSayisi = parseInt(mevcutBina.toplamBagimsizBolum || r.bina?.toplamBagimsizBolum || 0, 10) || 0;
 
@@ -325,110 +356,124 @@
       if(!confirm(hata + "\nSARI BAYRAK ile kaydedilsin mi?")) return;
     }
 
-    // ✅ Standard: modules.bina
-    if(!allReports[i].modules) allReports[i].modules = {};
-    allReports[i].modules.bina = {
+    // ✅ Standard: modules.bina (tek yer)
+    if(!r.modules) r.modules = {};
+    r.modules.bina = {
       binaTipi: document.querySelector('input[name="binaTipi"]:checked').value,
       arsaAlani: arsa,
       nizam: nizam,
-      blokSayisi: document.getElementById('blokSayisi').value,
+      blokSayisi: document.getElementById("blokSayisi").value,
       yapiSinifi: yapiS,
-      yapiSinifiDiger: document.getElementById('yapiSinifiDiger').value,
-      hangiBlok: document.getElementById('hangiBlok').value,
-      blokKonum: document.getElementById('blokKonum').value,
-      bodrumKatSayisi: document.getElementById('bodrumKatSayisi').value,
-      normalKatSayisi: document.getElementById('normalKatSayisi').value,
-      girisKotu: document.getElementById('girisKotu').value,
-      girisCephe: document.getElementById('girisCephe').value,
-      girisKapi: document.getElementById('girisKapi').value,
-      merdivenZemin: document.getElementById('merdivenZemin').value,
+      yapiSinifiDiger: document.getElementById("yapiSinifiDiger").value,
+      hangiBlok: document.getElementById("hangiBlok").value,
+      blokKonum: document.getElementById("blokKonum").value,
+      bodrumKatSayisi: document.getElementById("bodrumKatSayisi").value,
+      normalKatSayisi: document.getElementById("normalKatSayisi").value,
+      girisKotu: document.getElementById("girisKotu").value,
+      girisCephe: document.getElementById("girisCephe").value,
+      girisKapi: document.getElementById("girisKapi").value,
+      merdivenZemin: document.getElementById("merdivenZemin").value,
       disCephe: disCephe,
-      asansor: document.getElementById('asansor').value,
-      isinma: document.getElementById('isinma').value,
+      asansor: document.getElementById("asansor").value,
+      isinma: document.getElementById("isinma").value,
+      text: metin,
       metin: metin,
       binaMetni: metin,
       toplamBagimsizBolum: bbSayisi
     };
 
-    allReports[i].modules.bina_tamamlandi = !eksikVar;
-    allReports[i].modules.binaMetni = metin;
+    r.modules.bina_tamamlandi = !eksikVar;
 
-    // ✅ Geriye uyumluluk: eski alanları da bozmadan güncel tut
-    allReports[i].bina = { ...(allReports[i].bina || {}), ...(allReports[i].modules.bina || {}) };
-    allReports[i].bina_tamamlandi = !eksikVar;
-    allReports[i].binaMetni = metin;
+    // ✅ Geriye uyumluluk (eski alanlar kırımasın)
+    r.bina = { ...(r.bina || {}), ...(r.modules.bina || {}) };
+    r.bina_tamamlandi = !eksikVar;
+    r.binaMetni = metin;
 
-    // ✅ kaydetmenin asıl noktası: localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allReports));
+    // ✅ tek kayıt noktası
+    persist(arr, i, r);
 
-    // ✅ buluta bas
-    try { await scheduleCloudWriteNow(); } catch (e) {}
-
-    const box = document.getElementById('statusBox');
-    box.style.display = 'block';
-    box.style.backgroundColor = eksikVar ? '#fff3cd' : '#d1e7dd';
+    const box = document.getElementById("statusBox");
+    box.style.display = "block";
+    box.style.backgroundColor = eksikVar ? "#fff3cd" : "#d1e7dd";
     box.textContent = eksikVar ? "⚠️ EKSİK VERİYLE KAYDEDİLDİ" : "✅ BİNA VERİLERİ MÜHÜRLENDİ";
-    setTimeout(() => box.style.display = 'none', 3000);
+    setTimeout(() => box.style.display = "none", 3000);
 
     hafizaYukle();
   }
+  window.kaydet = kaydet;
 
-  function katDetayAc() { kaydet(); window.location.href = `kat-detay.html?rid=${encodeURIComponent(rid)}`; }
-  function anaMenuyeDon() { window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`; }
+  async function katDetayAc() {
+    await kaydet();
+    window.location.href = `kat-detay.html?rid=${encodeURIComponent(rid)}`;
+  }
+  window.katDetayAc = katDetayAc;
+
+  function anaMenuyeDon() {
+    window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+  }
+  window.anaMenuyeDon = anaMenuyeDon;
 
   function initPage(){
-    const { r } = getLatestData();
+    const { r, arr, i } = getLatestData();
+    if (!r) { alert("Rapor bulunamadı! (rid/id eşleşmedi)"); return; }
 
-    document.getElementById('propertyInfo').textContent = (r.propertyName || "Rapor Bilgisi");
-    document.getElementById('il').value = r.il || '';
-    document.getElementById('ilce').value = r.ilce || '';
-    document.getElementById('mahalle').value = r.mahalle || '';
-    document.getElementById('ada').value = r.ada || '';
-    document.getElementById('parsel').value = r.parsel || '';
+    // rid/url/migration varsa bir kez yaz
+    persist(arr, i, r);
+
+    document.getElementById("propertyInfo").textContent = (r.propertyName || "Rapor Bilgisi");
+    document.getElementById("il").value = r.il || "";
+    document.getElementById("ilce").value = r.ilce || "";
+    document.getElementById("mahalle").value = r.mahalle || "";
+    document.getElementById("ada").value = r.ada || "";
+    document.getElementById("parsel").value = r.parsel || "";
 
     const bObj = getBinaObj(r) || {};
-    if (bObj) {
-      const targetRadio = document.querySelector(`input[name="binaTipi"][value="${bObj.binaTipi || 'tek'}"]`);
-      if(targetRadio) targetRadio.checked = true;
+    const targetRadio = document.querySelector(`input[name="binaTipi"][value="${bObj.binaTipi || "tek"}"]`);
+    if(targetRadio) targetRadio.checked = true;
 
-      document.getElementById('arsaAlani').value = bObj.arsaAlani || '';
-      document.getElementById('nizam').value = bObj.nizam || '';
-      document.getElementById('blokSayisi').value = bObj.blokSayisi || '';
-      document.getElementById('yapiSinifi').value = bObj.yapiSinifi || '';
-      document.getElementById('yapiSinifiDiger').value = bObj.yapiSinifiDiger || '';
-      document.getElementById('hangiBlok').value = bObj.hangiBlok || '';
-      document.getElementById('blokKonum').value = bObj.blokKonum || '';
-      document.getElementById('bodrumKatSayisi').value = bObj.bodrumKatSayisi || '0';
-      document.getElementById('normalKatSayisi').value = bObj.normalKatSayisi || '0';
-      document.getElementById('girisKotu').value = bObj.girisKotu || '';
-      document.getElementById('girisCephe').value = bObj.girisCephe || '';
-      document.getElementById('girisKapi').value = bObj.girisKapi || '';
-      document.getElementById('merdivenZemin').value = bObj.merdivenZemin || '';
-      document.getElementById('disCephe').value = bObj.disCephe || '';
-      document.getElementById('asansor').value = bObj.asansor || 'yoktur';
-      document.getElementById('isinma').value = bObj.isinma || '';
+    document.getElementById("arsaAlani").value = bObj.arsaAlani || "";
+    document.getElementById("nizam").value = bObj.nizam || "";
+    document.getElementById("blokSayisi").value = bObj.blokSayisi || "";
+    document.getElementById("yapiSinifi").value = bObj.yapiSinifi || "";
+    document.getElementById("yapiSinifiDiger").value = bObj.yapiSinifiDiger || "";
+    document.getElementById("hangiBlok").value = bObj.hangiBlok || "";
+    document.getElementById("blokKonum").value = bObj.blokKonum || "";
+    document.getElementById("bodrumKatSayisi").value = bObj.bodrumKatSayisi || "0";
+    document.getElementById("normalKatSayisi").value = bObj.normalKatSayisi || "0";
+    document.getElementById("girisKotu").value = bObj.girisKotu || "";
+    document.getElementById("girisCephe").value = bObj.girisCephe || "";
+    document.getElementById("girisKapi").value = bObj.girisKapi || "";
+    document.getElementById("merdivenZemin").value = bObj.merdivenZemin || "";
+    document.getElementById("disCephe").value = bObj.disCephe || "";
+    document.getElementById("asansor").value = bObj.asansor || "yoktur";
+    document.getElementById("isinma").value = bObj.isinma || "";
 
-      if(bObj.yapiSinifi === 'diger') document.getElementById('yapiSinifiDiger').classList.remove('hidden');
+    document.getElementById("yapiSinifiDiger").classList.toggle("hidden", (document.getElementById("yapiSinifi").value !== "diger"));
 
-      const m = bObj.binaMetni || bObj.metin || r.binaMetni || "";
-      if (m) document.getElementById('taslak').innerText = m;
-    }
+    const m = bObj.binaMetni || bObj.metin || bObj.text || r.binaMetni || "";
+    if (m) document.getElementById("taslak").innerText = m;
 
     toggleBlokFields();
     hafizaYukle();
     taslakOlustur();
 
-    document.getElementById('yapiSinifi').addEventListener('change', function() {
-      document.getElementById('yapiSinifiDiger').classList.toggle('hidden', this.value !== "diger");
+    document.getElementById("yapiSinifi").addEventListener("change", function() {
+      document.getElementById("yapiSinifiDiger").classList.toggle("hidden", this.value !== "diger");
       taslakOlustur();
     });
 
-    document.querySelectorAll('input[name="binaTipi"]').forEach(rr => rr.addEventListener('change', () => {
-      toggleBlokFields();
-      taslakOlustur();
-    }));
+    document.querySelectorAll('input[name="binaTipi"]').forEach(rr =>
+      rr.addEventListener("change", () => { toggleBlokFields(); taslakOlustur(); })
+    );
   }
+
+  auth.onAuthStateChanged((user) => {
+    if (!user) { window.location.href = "index.html"; return; }
+    initPage();
+  });
 </script>
+
 
 </body>
 </html>
+
