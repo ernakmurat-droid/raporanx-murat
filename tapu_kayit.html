@@ -60,7 +60,7 @@
         </thead>
         <tbody id="tabloGövde"></tbody>
       </table>
-      <button class="btn btn-dark btn-sm" onclick="takyidatEkle()">+ Yeni Takyidat Ekle</button>
+      <button class="btn btn-dark btn-sm" type="button" onclick="takyidatEkle()">+ Yeni Takyidat Ekle</button>
     </div>
 
     <h5 class="mt-4">Malikler</h5>
@@ -75,10 +75,10 @@
         </thead>
         <tbody id="malikGövde"></tbody>
       </table>
-      <button class="btn btn-primary btn-sm" onclick="malikEkle()">+ Yeni Malik Ekle</button>
+      <button class="btn btn-primary btn-sm" type="button" onclick="malikEkle()">+ Yeni Malik Ekle</button>
     </div>
 
-    <button class="btn btn-save-final" onclick="kaydet()">TAPU VERİLERİNİ VE METİNLERİ KAYDET</button>
+    <button class="btn btn-save-final" type="button" onclick="kaydet()">TAPU VERİLERİNİ VE METİNLERİ KAYDET</button>
     <div id="saveStatus" class="save-status">✅ Kaydedildi! Takyidat Tarih ve Sayıları Metne İşlendi.</div>
   </div>
 
@@ -91,14 +91,13 @@
 
 <script>
   const STORAGE_KEY = "gayrimenkul_reports";
-
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  /* ========= RID + legacy id ========= */
-  const urlParams = new URLSearchParams(window.location.search);
-  let rid = urlParams.get('rid');
-  const legacyId = urlParams.get('id');
+  // ==== rid / legacy id ====
+  const urlParams = new URLSearchParams(location.search);
+  let rid = urlParams.get("rid");
+  const legacyId = urlParams.get("id");
 
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
@@ -106,60 +105,65 @@
   }
   function ensureRidMigration(arr){
     let changed=false;
-    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
+    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid = genRid(); changed=true; }});
     return changed;
   }
   function findIndexByRid(arr, rid){
     return (arr||[]).findIndex(r => r && r.rid === rid);
   }
 
-  let reports = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  if (ensureRidMigration(reports)) localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-
-  // legacy id -> rid redirect
-  if (!rid && legacyId !== null && legacyId !== "") {
-    const idxLegacy = Number(legacyId);
-    if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
-      rid = reports[idxLegacy].rid;
-      window.location.replace("tapu.html?rid=" + encodeURIComponent(rid));
-    }
+  function getReportsArray(){
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(raw) ? raw : [];
   }
 
-  const idx = rid ? findIndexByRid(reports, rid) : -1;
-  let report = (idx >= 0) ? (reports[idx] || {}) : null;
+  // legacy id -> rid redirect (veya rid yoksa)
+  (function bootResolveRid(){
+    const arr = getReportsArray();
+    let changed = ensureRidMigration(arr);
+    if(changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+
+    if (!rid && legacyId !== null && legacyId !== "") {
+      const idxLegacy = Number(legacyId);
+      if (!Number.isNaN(idxLegacy) && arr[idxLegacy] && arr[idxLegacy].rid) {
+        rid = arr[idxLegacy].rid;
+        location.replace("tapu.html?rid=" + encodeURIComponent(rid));
+      }
+    }
+  })();
 
   function getLatestData(){
-    const arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const arr = getReportsArray();
     const i = rid ? findIndexByRid(arr, rid) : -1;
-    const r = (i >= 0) ? (arr[i] || {}) : null;
+    const r = (i >= 0) ? (arr[i] || null) : null;
     if(r && !r.modules) r.modules = {};
     return { arr, i, r };
   }
 
-  // Bu sayfada mevcut buluta atma (geriye uyumluluk)
-  function bulutaGonder() {
+  async function bulutaGonder(){
     const user = auth.currentUser;
-    if (!user) return Promise.resolve();
-    const arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    return db.collection("users").doc(user.uid).set({
+    if(!user) return;
+    const arr = getReportsArray();
+    await db.collection("users").doc(user.uid).set({
       gayrimenkul_reports: arr,
       lastUpdate: new Date().toISOString()
-    }, { merge: true });
+    }, { merge:true });
   }
 
-  // Standart isim: varsa dışarıdaki scheduleCloudWriteNow'ı çağırır, yoksa buradaki bulutaGonder'ı kullanır.
-  function scheduleCloudWriteNow(){
+  // varsa sistemin genel fonksiyonunu kullan, yoksa burada buluta at
+  async function cloudWriteNow(){
     try{
-      if (typeof window.scheduleCloudWriteNow === "function" && window.scheduleCloudWriteNow !== scheduleCloudWriteNow) {
-        return window.scheduleCloudWriteNow();
+      if(typeof window.scheduleCloudWriteNow === "function"){
+        await window.scheduleCloudWriteNow();
+        return;
       }
     }catch(e){}
-    return bulutaGonder();
+    try{ await bulutaGonder(); }catch(e){}
   }
 
   function getTapuObj(r){
     if(r && r.modules && r.modules.tapu) return r.modules.tapu;
-    // legacy: dağınık alanlardan toparla
+    // legacy toparla
     if(r && (r.tapuTarih || r.tapuSaat || r.tapuTakyidatDizi || r.tapuMalikDizi || r.tapuMetniB1 || r.tapuMetniB2)){
       return {
         tapuTarih: r.tapuTarih || "",
@@ -174,21 +178,33 @@
     return null;
   }
 
-  // ===== UI Helpers =====
+  function escapeHtml(str){
+    return String(str ?? "")
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;");
+  }
+
+  // ===== UI =====
+  function renkGuncelle(s){
+    if(!s) return;
+    s.closest('tr').classList.toggle('engel-evet', s.value === 'evet');
+  }
+  window.renkGuncelle = renkGuncelle;
+
   function takyidatEkle(v1='', v2='', v3='', v4='', v5='hayir') {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="text" class="form-control t-tur" value="${escapeHtml(v1)}" oninput="guncelle()"></td>
+      <td><input type="text" class="form-control t-tur"  value="${escapeHtml(v1)}" oninput="guncelle()"></td>
       <td><input type="text" class="form-control t-acik" value="${escapeHtml(v2)}" oninput="guncelle()"></td>
-      <td><input type="text" class="form-control t-tar" value="${escapeHtml(v3)}" placeholder="GG.AA.YYYY" oninput="guncelle()"></td>
-      <td><input type="text" class="form-control t-say" value="${escapeHtml(v4)}" oninput="guncelle()"></td>
+      <td><input type="text" class="form-control t-tar"  value="${escapeHtml(v3)}" placeholder="GG.AA.YYYY" oninput="guncelle()"></td>
+      <td><input type="text" class="form-control t-say"  value="${escapeHtml(v4)}" oninput="guncelle()"></td>
       <td>
         <select class="form-select t-engel" onchange="renkGuncelle(this); guncelle();">
           <option value="hayir" ${v5==='hayir'?'selected':''}>Hayır</option>
-          <option value="evet" ${v5==='evet'?'selected':''}>Evet</option>
+          <option value="evet"  ${v5==='evet'?'selected':''}>Evet</option>
         </select>
       </td>
-      <td><button class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); guncelle()">X</button></td>
+      <td><button class="btn btn-outline-danger btn-sm" type="button" onclick="this.closest('tr').remove(); guncelle()">X</button></td>
     `;
     document.getElementById('tabloGövde').appendChild(tr);
     renkGuncelle(tr.querySelector('select'));
@@ -200,32 +216,23 @@
     tr.innerHTML = `
       <td><input type="text" class="form-control m-ad" value="${escapeHtml(ad)}" placeholder="Ad Soyad" oninput="guncelle()"></td>
       <td><input type="text" class="form-control m-pay" value="${escapeHtml(pay)}" readonly></td>
-      <td><button class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove(); payHesapla(); guncelle()">X</button></td>
+      <td><button class="btn btn-outline-danger btn-sm" type="button" onclick="this.closest('tr').remove(); payHesapla(); guncelle()">X</button></td>
     `;
     document.getElementById('malikGövde').appendChild(tr);
     payHesapla();
   }
   window.malikEkle = malikEkle;
 
-  function payHesapla() {
+  function payHesapla(){
     const rows = document.querySelectorAll('#malikGövde tr');
-    rows.forEach(row => { row.querySelector('.m-pay').value = `1/${rows.length || 1}`; });
+    const n = rows.length || 1;
+    rows.forEach(row => row.querySelector('.m-pay').value = `1/${n}`);
   }
 
-  function renkGuncelle(s) {
-    if(!s) return;
-    s.closest('tr').classList.toggle('engel-evet', s.value === 'evet');
-  }
-  window.renkGuncelle = renkGuncelle;
-
-  function escapeHtml(str){
-    return String(str ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-  }
-
-  function guncelle() {
+  function guncelle(){
     const tVal = document.getElementById('tarihInput').value;
     const tarihTakbis = tVal ? tVal.split('-').reverse().join('.') : "....";
-    const saatTakbis = document.getElementById('saatInput').value || "....";
+    const saatTakbis  = document.getElementById('saatInput').value || "....";
 
     let hayirlar = [];
     let evetler = [];
@@ -237,11 +244,11 @@
       const say = row.querySelector('.t-say').value.trim();
       const engelMi = row.querySelector('.t-engel').value;
 
-      if(tur || acik) {
+      if(tur || acik){
         let detay = `${tur} ${acik}`.trim();
         if(tar) detay += ` Tarih: ${tar}`;
         if(say) detay += ` Sayı: ${say}`;
-        if(engelMi === 'evet') evetler.push(detay); else hayirlar.push(detay);
+        (engelMi === 'evet' ? evetler : hayirlar).push(detay);
       }
     });
 
@@ -267,12 +274,13 @@
   }
   window.guncelle = guncelle;
 
-  async function kaydet() {
+  async function kaydet(){
     const { arr, i, r } = getLatestData();
-    if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
+    if(!r || i < 0){ alert("Rapor bulunamadı!"); return; }
 
     const metinler = guncelle();
 
+    // topla
     let takyidatData = [];
     let takyidatVar = false;
     document.querySelectorAll('#tabloGövde tr').forEach(row => {
@@ -299,10 +307,11 @@
     const saat  = document.getElementById('saatInput').value;
 
     const eksik = (!tarih || !saat || !takyidatVar || !malikVar);
-    if (eksik) {
-      if (!confirm("⚠️ Bazı teknik alanlar boş! Yine de 'Eksik Kayıt' olarak mühürlensin mi?")) return;
+    if(eksik){
+      if(!confirm("⚠️ Bazı teknik alanlar boş! Yine de 'Eksik Kayıt' olarak mühürlensin mi?")) return;
     }
 
+    // modules.tapu
     if(!arr[i].modules) arr[i].modules = {};
     arr[i].modules.tapu = {
       tapuTarih: tarih,
@@ -314,12 +323,7 @@
       tapu_tamamlandi: !eksik
     };
 
-    // modül durum/özet alanları
-    arr[i].modules.tapu_tamamlandi = !eksik;
-    arr[i].modules.tapuMetniB1 = metinler.b1;
-    arr[i].modules.tapuMetniB2 = metinler.b2;
-
-    // ✅ legacy alanları da güncel tut (geri uyumluluk)
+    // legacy
     arr[i].tapuTarih = tarih;
     arr[i].tapuSaat = saat;
     arr[i].tapuTakyidatDizi = takyidatData;
@@ -330,36 +334,39 @@
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
 
-    try { await scheduleCloudWriteNow(); } catch(e){}
+    // bulut dene (hata olsa bile local kayıt durur)
+    try{ await cloudWriteNow(); }catch(e){}
 
     const status = document.getElementById('saveStatus');
     status.style.display = 'block';
-    setTimeout(() => { status.style.display = 'none'; }, 3000);
+    setTimeout(()=> status.style.display='none', 3000);
   }
   window.kaydet = kaydet;
 
-  function anaMenuyeDon() {
-    if(!rid){ window.location.href = "index.html"; return; }
-    window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+  function anaMenuyeDon(){
+    if(!rid){ location.href="index.html"; return; }
+    location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
   }
   window.anaMenuyeDon = anaMenuyeDon;
 
-  // ===== Init =====
-  auth.onAuthStateChanged((user) => {
-    if (!user || !rid || !report) { window.location.href = 'index.html'; return; }
+  // ==== init ====
+  auth.onAuthStateChanged((user)=>{
+    if(!user || !rid){ location.href="index.html"; return; }
 
     const { r } = getLatestData();
+    if(!r){ location.href="index.html"; return; }
+
     const tapuObj = getTapuObj(r) || {};
 
     if(tapuObj.tapuTarih) document.getElementById('tarihInput').value = tapuObj.tapuTarih;
     if(tapuObj.tapuSaat)  document.getElementById('saatInput').value  = tapuObj.tapuSaat;
 
     const tList = Array.isArray(tapuObj.tapuTakyidatDizi) ? tapuObj.tapuTakyidatDizi : [];
-    if (tList.length > 0) tList.forEach(d => takyidatEkle(d.tur, d.acik, d.tar, d.say, d.engel));
+    if(tList.length > 0) tList.forEach(d => takyidatEkle(d.tur, d.acik, d.tar, d.say, d.engel));
     else takyidatEkle();
 
     const mList = Array.isArray(tapuObj.tapuMalikDizi) ? tapuObj.tapuMalikDizi : [];
-    if (mList.length > 0) mList.forEach(m => malikEkle(m.ad, m.pay));
+    if(mList.length > 0) mList.forEach(m => malikEkle(m.ad, m.pay));
     else malikEkle();
 
     guncelle();
