@@ -62,7 +62,6 @@
 
   <div class="preview-card">
     <h4 style="margin:0 0 10px;">MİMARİ PROJE VE MEVCUT DURUM METNİ</h4>
-    
     <div id="taslakMetin" oncopy="return false">Veri girişi bekleniyor...</div>
   </div>
 
@@ -75,39 +74,103 @@
 
 <script>
   const auth = firebase.auth();
-  const db = firebase.firestore();
+  const db   = firebase.firestore();
 
-  const params = new URLSearchParams(window.location.search);
-  let rid = params.get('rid');
+  const params   = new URLSearchParams(window.location.search);
+  let rid        = params.get('rid');
   const legacyId = params.get('id');
+
+  // ===========================
+  // === BULUT KAYDI (BB/BINA) ===
+  // ✅ TEK DOĞRU BULUT KAYDI: users/{uid}/reports/{rid}
+  async function cloudSaveReport(reportObj){
+    try{
+      const user = auth.currentUser;
+      if(!user || !reportObj || !reportObj.rid) return;
+
+      await db.collection("users").doc(user.uid)
+        .collection("reports").doc(String(reportObj.rid))
+        .set(
+          { ...reportObj, rid:String(reportObj.rid), updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+          { merge:true }
+        );
+    }catch(e){
+      console.warn("cloudSaveReport:", e);
+    }
+  }
+  // ===========================
+
+  // ================================
+  // === RAPOR VERİ YÖNETİMİ (BB/BINA STANDARD) ===
+  // (Aramak için: "RAPOR VERİ YÖNETİMİ (BB/BINA STANDARD)")
+  const STORAGE_KEY = "gayrimenkul_reports";
 
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
   }
-  function ensureRidMigration(arr){
-    let changed=false;
-    (arr||[]).forEach(r=>{ if(r && !r.rid){ r.rid=genRid(); changed=true; }});
-    return changed;
-  }
-  function findIndexByRid(arr, rid){
-    return (arr||[]).findIndex(r => r && r.rid === rid);
+
+  function toArrayIfObject(data){
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object") return Object.values(data);
+    return [];
   }
 
-  let reports = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-  if (ensureRidMigration(reports)) localStorage.setItem('gayrimenkul_reports', JSON.stringify(reports));
-
-  if (!rid && legacyId !== null && legacyId !== "") {
-    const idxLegacy = Number(legacyId);
-    if (!Number.isNaN(idxLegacy) && reports[idxLegacy] && reports[idxLegacy].rid) {
-      rid = reports[idxLegacy].rid;
-      window.location.replace("kat-detay.html?rid=" + encodeURIComponent(rid));
+  function resolveRidAndMigrateIfNeeded(arr){
+    // 1) rid varsa
+    if (rid) {
+      const idx = arr.findIndex(x => x && x.rid === rid);
+      if (idx >= 0) return { arr, i: idx, r: arr[idx] };
     }
+
+    // 2) rid yoksa legacyId ile bul
+    if (legacyId) {
+      const idx2 = arr.findIndex(x => x && (String(x.id) === String(legacyId) || String(x.legacyId) === String(legacyId)));
+      if (idx2 >= 0) {
+        if (!arr[idx2].rid) arr[idx2].rid = genRid();
+        rid = arr[idx2].rid;
+        history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+        return { arr, i: idx2, r: arr[idx2] };
+      }
+    }
+
+    return { arr, i: -1, r: null };
   }
 
-  const idx0 = rid ? findIndexByRid(reports, rid) : -1;
-  let currentReport = (idx0 >= 0) ? (reports[idx0] || { bina:{} }) : null;
-  let savedKatVerileri = (currentReport && currentReport.katSatirVerileri) ? currentReport.katSatirVerileri : {};
+  function getLatestData(){
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    const arr = toArrayIfObject(raw);
+    return resolveRidAndMigrateIfNeeded(arr);
+  }
+
+  function persist(arr, i, r){
+    if (!r) return;
+
+    if (i >= 0) {
+      arr[i] = r;
+    } else {
+      if (!r.rid) r.rid = rid || genRid();
+      rid = r.rid;
+      arr.push(r);
+      history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
+    }
+
+    // local timestamp
+    r.updatedAt   = new Date().toISOString();
+    r.updatedAtMs = Date.now();
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    cloudSaveReport(r);
+  }
+
+  function getBinaObj(r){
+    // Önce yeni yer: modules.bina
+    if(r && r.modules && r.modules.bina) return r.modules.bina;
+    // Sonra eski yer: r.bina
+    if(r && r.bina) return r.bina;
+    return null;
+  }
+  // ================================
 
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) { e.preventDefault(); }
@@ -120,12 +183,26 @@
   });
 
   let globalKatlar = [];
+  let savedKatVerileri = {};
 
   auth.onAuthStateChanged((user) => {
-    if (!user || !rid || !currentReport) {
-      window.location.href = 'index.html';
-      return;
-    }
+    if (!user) { window.location.href = 'index.html'; return; }
+
+    const { r, arr, i } = getLatestData();
+    if (!r) { alert("Rapor bulunamadı! (rid/id eşleşmedi)"); return; }
+
+    // garanti: modules
+    if(!r.modules) r.modules = {};
+    if(!r.modules.bina) r.modules.bina = (r.bina || {});
+    if(!r.modules.katDetay) r.modules.katDetay = (r.modules.katDetay || {});
+
+    // local + bulut mühür (zaten merge)
+    persist(arr, i, r);
+
+    // kayıtlı verileri çek
+    const kd = r.modules.katDetay || {};
+    savedKatVerileri = (kd.tumSatirVerileri || r.katSatirVerileri || kd.katSatirVerileri || {}) || {};
+
     init();
   });
 
@@ -133,20 +210,16 @@
     window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
   }
 
-  function getLatestData(){
-    const arr = JSON.parse(localStorage.getItem('gayrimenkul_reports')) || [];
-    const i = rid ? findIndexByRid(arr, rid) : -1;
-    const r = (i >= 0) ? (arr[i] || null) : null;
-    return { arr, i, r };
-  }
-
   function init() {
+    const { r } = getLatestData();
     const listContainer = document.getElementById('katListesi');
     listContainer.innerHTML = '';
     globalKatlar = [];
 
-    const bodrumCount = parseInt(currentReport?.bina?.bodrumKatSayisi) || 0;
-    const normalCount = parseInt(currentReport?.bina?.normalKatSayisi) || 0;
+    // ✅ Bodrum/Normal sayısı: önce modules.bina, sonra r.bina
+    const bObj = getBinaObj(r) || {};
+    const bodrumCount = parseInt(bObj.bodrumKatSayisi || r?.bina?.bodrumKatSayisi || "0", 10) || 0;
+    const normalCount = parseInt(bObj.normalKatSayisi || r?.bina?.normalKatSayisi || "0", 10) || 0;
 
     for (let i = bodrumCount; i >= 1; i--) globalKatlar.push({ id: `b${i}`, ad: `${i}. Bodrum Kat` });
     globalKatlar.push({ id: 'zemin', ad: 'Zemin Kat' });
@@ -264,7 +337,7 @@
 
     const isLast = document.getElementById(`last-${kaynakId}`).checked;
     const targetVal = document.getElementById(`target-${kaynakId}`).value;
-    const bitisIndex = isLast ? globalKatlar.length - 1 : parseInt(targetVal);
+    const bitisIndex = isLast ? globalKatlar.length - 1 : parseInt(targetVal,10);
 
     if(!isLast && targetVal === "") { alert("Lütfen hedef kat seçiniz!"); return; }
 
@@ -306,11 +379,9 @@
         katSatirlari.push({ tip, qty, desc });
 
         if (desc && qty > 0) {
-          if (desc.toLowerCase() === "adet") {
-            icerikList.push("adet");
-          } else {
-            icerikList.push(`${qty} ${desc}`.trim());
-          }
+          if (desc.toLowerCase() === "adet") icerikList.push("adet");
+          else icerikList.push(`${qty} ${desc}`.trim());
+
           if (tip === "B.B.") toplamBB += qty;
         }
       });
@@ -342,61 +413,67 @@
 
     document.getElementById('taslakMetin').innerText = tamMetin;
 
-    return { katDetayMetni, toplamBB, tumSatirVerileri };
+    return { katDetayMetni, toplamBB, tumSatirVerileri, tamMetin };
   }
 
   function verileriSifirla() {
-    if(confirm("Tüm kat girişleri silinecektir. Emin misiniz?")) {
-      const { arr, i, r } = getLatestData();
-      if (!r || i < 0) return;
+    if(!confirm("Tüm kat girişleri silinecektir. Emin misiniz?")) return;
 
-      r.katSatirVerileri = {};
-      r.katDetayMetni = "";
-      if (!r.bina) r.bina = {};
-      r.bina.toplamBagimsizBolum = 0;
+    const { r, arr, i } = getLatestData();
+    if (!r || i < 0) return;
 
-      arr[i] = r;
-      localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+    if(!r.modules) r.modules = {};
+    if(!r.modules.katDetay) r.modules.katDetay = {};
+    if(!r.modules.bina) r.modules.bina = (r.bina || {});
 
-      const user = auth.currentUser;
-      if (user) {
-        db.collection("users").doc(user.uid).set({ gayrimenkul_reports: arr }, { merge: true }).catch(()=>{});
-      }
+    // ✅ temizle
+    r.modules.katDetay = { katDetayMetni:"", toplamBagimsizBolum:0, tumSatirVerileri:{} };
+    r.katSatirVerileri = {};
+    r.katDetayMetni = "";
+    if(!r.bina) r.bina = {};
+    r.bina.toplamBagimsizBolum = 0;
+    r.modules.bina.toplamBagimsizBolum = 0;
 
-      location.reload();
-    }
+    persist(arr, i, r);
+    location.reload();
   }
 
   async function tumunuKaydet() {
     const data = renderPreview();
-    const { arr, i, r } = getLatestData();
+    const { r, arr, i } = getLatestData();
     if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
 
-    if(!r.bina) r.bina = {};
+    if(!r.modules) r.modules = {};
+    if(!r.modules.bina) r.modules.bina = (r.bina || {});
+    if(!r.modules.katDetay) r.modules.katDetay = {};
+
+    // ✅ Standard: modules.katDetay
+    r.modules.katDetay = {
+      katDetayMetni: data.katDetayMetni,
+      toplamBagimsizBolum: data.toplamBB,
+      tumSatirVerileri: data.tumSatirVerileri,
+      metin: data.tamMetin
+    };
+
+    // ✅ Bina’nın ihtiyacı olan sayı (iki yere birden)
+    r.modules.bina.toplamBagimsizBolum = data.toplamBB;
+
+    // ✅ Geriye uyumluluk (eski alanları da besle)
     r.katDetayMetni = data.katDetayMetni;
-    r.bina.toplamBagimsizBolum = data.toplamBB;
     r.katSatirVerileri = data.tumSatirVerileri;
 
-    arr[i] = r;
-    localStorage.setItem('gayrimenkul_reports', JSON.stringify(arr));
+    if(!r.bina) r.bina = {};
+    r.bina.toplamBagimsizBolum = data.toplamBB;
 
-    const user = auth.currentUser;
-    if (user) {
-      try{
-        await db.collection("users").doc(user.uid).set({
-          gayrimenkul_reports: arr,
-          lastUpdate: new Date().toISOString()
-        }, { merge: true });
-      }catch(e){}
-    }
+    // Bina sayfasında kullanılan alanlarla uyum (isterse okur)
+    r.modules.katDetayMetni = data.katDetayMetni;
+
+    persist(arr, i, r);
 
     window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
   }
 
-  window.onload = function(){};
 </script>
 
 </body>
 </html>
-
-
