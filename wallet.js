@@ -34,22 +34,21 @@
     return await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
       if (!snap.exists) {
-        const init = {
-          balance: 0,
-          freeReportsLeft: 5,
-          // İstersen burada fiyat koy: 100 gibi
-          // pricePerReportTL: 100,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        tx.set(ref, init, { merge: true });
-        return init;
-      }
+      const init = {
+  balance: 0,
+  freeReportsLeft: 5,
+  reportCredits: 0,   // 🔥 paketlerden gelecek haklar
+  createdAt: FieldValue.serverTimestamp(),
+  updatedAt: FieldValue.serverTimestamp(),
+};
+
 
       const data = snap.data() || {};
       const patch = {};
       if (typeof data.balance !== "number") patch.balance = n(data.balance);
       if (typeof data.freeReportsLeft !== "number") patch.freeReportsLeft = n(data.freeReportsLeft);
+      if (typeof data.reportCredits !== "number") patch.reportCredits = n(data.reportCredits);
+
       if (Object.keys(patch).length) {
         patch.updatedAt = FieldValue.serverTimestamp();
         tx.set(ref, patch, { merge: true });
@@ -202,3 +201,4 @@
     }
   });
 })();
+
