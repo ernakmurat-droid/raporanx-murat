@@ -18,7 +18,9 @@
   function n(v) { return Number(v ?? 0) || 0; }
 
   function walletMainRef(uid) {
-   return db.collection("kullanıcılar").doc(uid).collection("wallet").doc("main");
+  return db.collection("kullanıcılar").doc(uid).collection("wallet").doc("main");
+}
+
  
   }
 
@@ -115,13 +117,14 @@
       // 2) cüzdanı getir (yoksa oluştur)
       const mainSnap = await tx.get(mainRef);
       if (!mainSnap.exists) {
-        const init = {
-          balance: 0,
-          freeReportsLeft: 5,
-          reportCredits: 0,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
+       const init = {
+  balance: 0,
+  freeReportsLeft: 5,
+  reportCredits: 0,
+  createdAt: FieldValue.serverTimestamp(),
+  updatedAt: FieldValue.serverTimestamp(),
+};
+
         tx.set(mainRef, init, { merge: true });
 
         // Oluşturduk ama elimizde snap yok; init ile devam edelim
