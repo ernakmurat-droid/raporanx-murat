@@ -12,6 +12,9 @@
 
   <!-- Tek kaynak config -->
   <script src="firebase-config.js"></script>
+  <!-- Wallet (Hak sistemi) -->
+<script src="wallet.js"></script>
+
 
   <style>
     :root{
@@ -285,9 +288,16 @@
   </div>
 
   <script>
+    
     /* ========= Firebase instances ========= */
+    if (!window.firebase) {
+      document.getElementById("statusInfoLogin").textContent = "⚠️ Bağlantı hatası: Firebase yüklenemedi.";
+      throw new Error("Firebase yüklenemedi (window.firebase yok).");
+    }
+
     const auth = window.auth || firebase.auth();
     const db   = window.db   || firebase.firestore();
+
 
     let reports = [];
 
@@ -691,3 +701,4 @@
   </script>
 </body>
 </html>
+
