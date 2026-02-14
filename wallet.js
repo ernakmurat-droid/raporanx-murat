@@ -18,7 +18,8 @@
   function n(v) { return Number(v ?? 0) || 0; }
 
   function walletMainRef(uid) {
-    return db.collection("users").doc(uid).collection("wallet").doc("main");
+   return db.collection("kullanıcılar").doc(uid).collection("wallet").doc("main");
+ 
   }
 
   function walletUseRef(uid, rid) {
@@ -218,3 +219,4 @@
     }
   });
 })();
+
