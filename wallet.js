@@ -215,31 +215,7 @@
    * - ödeme linki admin tarafından gönderilecek (manuel)
    * - order status: pending
    */
-  async function createOrder(packId) {
-    const user = auth.currentUser;
-    if (!user) throw new Error("createOrder: giriş yok");
-
-    const pack = PACKS[String(packId)];
-    if (!pack) throw new Error("createOrder: packId geçersiz");
-
-    const ref = ordersColRef(user.uid).doc(); // otomatik id
-    const order = {
-      orderId: ref.id,
-      packId: String(packId),
-      packTitle: pack.title,
-      priceTL: pack.priceTL,
-      credits: pack.credits,
-
-      status: "pending",         // pending | approved | rejected | cancelled
-      appliedToWallet: false,    // ✅ idempotent kilit
-
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    };
-
-    await ref.set(order, { merge: true });
-    return order;
-  }
+  
 
   /**
    * approveOrder(uid, orderId)
@@ -433,6 +409,24 @@
     ensure: ensureWallet,
     consumeReport,
     listen: listenWallet,
+const user = auth.currentUser;
+
+const order = {
+  orderId: ref.id,
+  uid: user.uid,
+  userEmail: user.email || "",
+  userName: user.displayName || "",
+
+  packId: String(packId),
+  packTitle: pack.title,
+  priceTL: pack.priceTL,
+  credits: pack.credits,
+
+  status: "pending",
+  appliedToWallet: false,
+  createdAt: FieldValue.serverTimestamp(),
+  updatedAt: FieldValue.serverTimestamp(),
+};
 
     createOrder,     // kullanıcı
     approveOrder,    // admin
@@ -456,4 +450,5 @@
     }
   });
 })();
+
 
