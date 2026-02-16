@@ -365,11 +365,12 @@ function startLiveSync(user, rid){
 
     localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
 
-    // ✅ Başlığı güncelle
-    const baslikEl = document.getElementById("baslik");
-    if (baslikEl) {
-      baslikEl.textContent = cloudReport.propertyName || "Rapor Detayı";
-    }
+   // ✅ Başlığı güncelle
+const baslikEl = document.getElementById("baslik");
+if (baslikEl) {
+  baslikEl.textContent = cloudReport.propertyName || "Rapor Detayı";
+}
+
 
     // ✅ Kilit geldiyse uygula
     if (
@@ -442,8 +443,6 @@ document.getElementById("walletCard").addEventListener("click", ()=>{
 });
 
 
-  await Wallet.load(user.uid);
-
 
 auth.onAuthStateChanged(async (user)=>{
   if (!user || !rid) { location.href="index.html"; return; }
@@ -455,13 +454,16 @@ auth.onAuthStateChanged(async (user)=>{
   if (!report) { location.href="index.html"; return; }
 
   document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
-  await loadWallet(user);
+
+  // ✅ Doğru olan bu
+  await Wallet.load(user.uid);
 
   const lockedLocal = (report.isLocked === true || report.locked === true || report.final === true);
   const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
 
   if (lockedLocal || lockedRemote) applyLockedUI();
 });
+
 
 </script>
 <!-- WALLET MODAL -->
