@@ -10,6 +10,73 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="wallet.js"></script>
+<script>
+/* WALLET UI START */
+(function(){
+  const auth = firebase.auth();
+
+  function trStatus(s){
+    if(s === "approved") return "Onaylandı ✅";
+    if(s === "user_marked_paid") return "Ödeme bildirildi ⏳";
+    if(s === "link_added") return "Ödeme linki hazır ⏳";
+    if(s === "pending") return "Ödeme bekleniyor ⏳";
+    if(s === "rejected") return "Reddedildi ❌";
+    if(s === "cancelled") return "İptal edildi";
+    return s || "-";
+  }
+
+  function renderOrders(list){
+    const wrap = document.getElementById("ordersList");
+    if(!wrap) return;
+    if(!list || !list.length){
+      wrap.innerHTML = `<div style="opacity:.7">Henüz sipariş yok.</div>`;
+      return;
+    }
+    wrap.innerHTML = list.map(o => {
+      const payLink = o?.payment?.link;
+      const btnPay = payLink ? `<a href="${payLink}" target="_blank" style="display:inline-block;margin-right:8px">💳 Ödemeye Git</a>` : "";
+      const btnPaid = (o.status !== "approved") ? `<button onclick="markPaidUI('${o.orderId}')">Ödeme Yaptım</button>` : "";
+      return `
+        <div style="border:1px solid #eee;border-radius:12px;padding:10px;margin:8px 0">
+          <div style="font-weight:700">${o.packTitle || o.packId}</div>
+          <div style="margin-top:4px">Durum: <b>${trStatus(o.status)}</b></div>
+          <div style="margin-top:8px">${btnPay}${btnPaid}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  window.buyPack = async function(packId){
+    try{
+      const o = await Wallet.createOrder(packId);
+      alert("Sipariş oluşturuldu ✅ Ödeme linki hazırlanacak. (Link gelince burada görünecek)");
+      return o;
+    }catch(e){
+      alert(e?.message || e);
+      throw e;
+    }
+  };
+
+  window.markPaidUI = async function(orderId){
+    try{
+      const ref = prompt("Varsa dekont/ref no gir (opsiyonel):") || "";
+      await Wallet.markPaid(orderId, ref);
+      alert("Tamam ✅ Ödeme bildirildi. Onaydan sonra haklar yüklenecek.");
+    }catch(e){
+      alert(e?.message || e);
+    }
+  };
+
+  auth.onAuthStateChanged((user) => {
+    if(!user) return;
+    Wallet.listenOrders(user.uid, (arr) => {
+      const filtered = arr.filter(x => ["pending","link_added","user_marked_paid","approved"].includes(x.status));
+      renderOrders(filtered);
+    });
+  });
+})();
+/* WALLET UI END */
+</script>
 
   <title>Rapor Ana Menü - Raporan X</title>
 
@@ -360,29 +427,23 @@ function rerenderReportDetail(){
     }catch(e){ return false; }
   }
 
-  let walletRevealed = false;
-  document.getElementById("walletCard").addEventListener("click", ()=>{
-    walletRevealed = !walletRevealed;
-    document.getElementById("walletCard").classList.toggle("reveal", walletRevealed);
-  });
+  window.openWalletModal = function(){
+  const m = document.getElementById("walletModal");
+  if(m) m.style.display = "block";
+};
 
-  async function loadWallet(user){
-    if (!window.Wallet || !user) return;
-    try{
-      // wallet.js senin sürümünde alanlar: balance + freeReportsLeft
-      const w = await Wallet.load(user.uid);
-      const balance = Number(w?.balance ?? 0);
-      const freeLeft = Number(w?.freeReportsLeft ?? 0);
+window.closeWalletModal = function(){
+  const m = document.getElementById("walletModal");
+  if(m) m.style.display = "none";
+};
 
-      const tlText = new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(balance) + " TL";
-      const info = (freeLeft > 0)
-        ? `Ücretsiz rapor hakkı: ${freeLeft} • Bakiye: (gizli)`
-        : `Ücretsiz hak bitti • Bakiye: (gizli)`;
+document.getElementById("walletCard").addEventListener("click", ()=>{
+  openWalletModal();
+});
 
-      document.getElementById("walletAmount").textContent = tlText;
-      document.getElementById("walletSub").textContent = info;
-    }catch(e){}
-  }
+
+  await Wallet.load(user.uid);
+
 
 auth.onAuthStateChanged(async (user)=>{
   if (!user || !rid) { location.href="index.html"; return; }
@@ -403,9 +464,43 @@ auth.onAuthStateChanged(async (user)=>{
 });
 
 </script>
+<!-- WALLET MODAL -->
+<div id="walletModal" style="display:none; position:fixed; inset:0; z-index:9999999; background:rgba(0,0,0,.55);">
+  <div style="max-width:560px; margin: 80px auto 0; background:#fff; color:#222; border-radius:16px; padding:14px; box-shadow:0 20px 60px rgba(0,0,0,.35);">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div style="font-weight:900; font-size:18px;">💳 Cüzdan</div>
+      <button onclick="closeWalletModal()" style="border:none; background:#eee; padding:8px 12px; border-radius:10px; cursor:pointer;">Kapat ✖</button>
+    </div>
+
+    <div style="margin-top:10px; padding:12px; border:1px solid #eee; border-radius:12px;">
+      <div style="font-weight:900;">Mevcut Hak</div>
+      <div style="opacity:.8; margin-top:4px;">
+        Üstteki kartta toplam hak yazıyor. (Ücretsiz + Paket)
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div style="font-weight:900; margin-bottom:8px;">🎟️ Paket Satın Al</div>
+      <div style="display:grid; gap:10px;">
+        <button onclick="buyPack('P120')" style="padding:12px;border-radius:12px;border:1px solid #ddd;cursor:pointer;">120 TL • 4 Hak</button>
+        <button onclick="buyPack('P200')" style="padding:12px;border-radius:12px;border:1px solid #ddd;cursor:pointer;">200 TL • 8 Hak</button>
+        <button onclick="buyPack('P500')" style="padding:12px;border-radius:12px;border:1px solid #ddd;cursor:pointer;">500 TL • 25 Hak</button>
+      </div>
+      <div style="opacity:.7; font-size:12px; margin-top:8px;">
+        Not: Ödeme linki admin tarafından eklenir. Link gelince aşağıda görünür.
+      </div>
+    </div>
+
+    <div style="margin-top:14px">
+      <div style="font-weight:900;margin-bottom:8px">📦 Siparişlerim</div>
+      <div id="ordersList">Yükleniyor…</div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
+
 
 
 
