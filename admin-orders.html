@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>RaporanX • Admin Siparişler</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <!-- senin config -->
+  <script src="firebase-config.js"></script>
+
+  <!-- wallet.js -->
+  <script src="wallet.js"></script>
+
+  <style>
+    body{font-family:Arial, sans-serif; margin:0; background:#0f172a; color:#e5e7eb;}
+    .wrap{max-width:1100px; margin:0 auto; padding:18px;}
+    .top{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    .card{background:#111827; border:1px solid rgba(255,255,255,.10); border-radius:16px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.25);}
+    .btn{border:none; border-radius:10px; padding:10px 12px; cursor:pointer; font-weight:800;}
+    .btn.primary{background:#22c55e;}
+    .btn.warn{background:#f59e0b;}
+    .btn.danger{background:#ef4444;}
+    .btn.ghost{background:rgba(255,255,255,.08); color:#e5e7eb; border:1px solid rgba(255,255,255,.12);}
+    input, select{padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#0b1220; color:#e5e7eb;}
+    .grid{display:grid; gap:12px;}
+    .row{display:grid; gap:10px; grid-template-columns: 1.4fr .9fr .9fr 1fr; align-items:center;}
+    @media(max-width:900px){ .row{grid-template-columns: 1fr;}}
+    .muted{opacity:.75}
+    .tag{display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:800; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.12);}
+    .tag.ok{background:rgba(34,197,94,.18); border-color:rgba(34,197,94,.35);}
+    .tag.wait{background:rgba(245,158,11,.18); border-color:rgba(245,158,11,.35);}
+    .tag.bad{background:rgba(239,68,68,.18); border-color:rgba(239,68,68,.35);}
+    .line{height:1px; background:rgba(255,255,255,.08); margin:10px 0;}
+    a{color:#60a5fa; text-decoration:none}
+    .small{font-size:12px}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div style="font-size:20px;font-weight:900;">🧾 Admin Siparişler</div>
+        <div class="muted small">Yeni siparişleri buradan gör, link ekle, onayla.</div>
+      </div>
+      <div class="card" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <select id="statusFilter">
+          <option value="active">Aktif (pending/link_added/user_marked_paid)</option>
+          <option value="all">Hepsi</option>
+          <option value="pending">pending</option>
+          <option value="link_added">link_added</option>
+          <option value="user_marked_paid">user_marked_paid</option>
+          <option value="approved">approved</option>
+          <option value="rejected">rejected</option>
+          <option value="cancelled">cancelled</option>
+        </select>
+
+        <input id="searchBox" placeholder="Ara: email / paket / orderId / uid" />
+
+        <button class="btn ghost" id="btnRefresh">Yenile</button>
+        <button class="btn danger" id="btnLogout">Çıkış</button>
+      </div>
+    </div>
+
+    <div class="line"></div>
+
+    <div id="me" class="card small muted">Giriş bekleniyor…</div>
+
+    <div class="line"></div>
+
+    <div id="list" class="grid"></div>
+  </div>
+
+<script>
+(function(){
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const FieldValue = firebase.firestore.FieldValue;
+
+  // ✅ buraya kendi admin mailini yaz (istersen birden fazla)
+  const ADMIN_EMAILS = [
+    "ernakmurat@gmail.com"
+  ];
+
+  const elList = document.getElementById("list");
+  const elMe = document.getElementById("me");
+  const elFilter = document.getElementById("statusFilter");
+  const elSearch = document.getElementById("searchBox");
+
+  let _unsub = null;
+  let _cache = [];
+
+  function trStatus(s){
+    if(s === "approved") return "Onaylandı ✅";
+    if(s === "user_marked_paid") return "Ödeme bildirildi ⏳";
+    if(s === "link_added") return "Link eklendi ⏳";
+    if(s === "pending") return "Yeni sipariş ⏳";
+    if(s === "rejected") return "Reddedildi ❌";
+    if(s === "cancelled") return "İptal";
+    return s || "-";
+  }
+
+  function tagClass(s){
+    if(s === "approved") return "ok";
+    if(s === "rejected") return "bad";
+    if(["pending","link_added","user_marked_paid"].includes(s)) return "wait";
+    return "";
+  }
+
+  function ts(x){
+    try{
+      const d = x?.toDate ? x.toDate() : (x ? new Date(x) : null);
+      if(!d) return "-";
+      return d.toLocaleString("tr-TR");
+    }catch(e){ return "-"; }
+  }
+
+  function getParentUid(docRef){
+    // users/{uid}/orders/{orderId}
+    try{
+      return docRef?.parent?.parent?.id || "";
+    }catch(e){ return ""; }
+  }
+
+  function filterRows(rows){
+    const mode = elFilter.value;
+    const q = (elSearch.value || "").trim().toLowerCase();
+
+    let out = rows;
+
+    if(mode === "active"){
+      out = out.filter(x => ["pending","link_added","user_marked_paid"].includes(x.status));
+    } else if(mode !== "all"){
+      out = out.filter(x => x.status === mode);
+    }
+
+    if(q){
+      out = out.filter(x => {
+        const blob = [
+          x.orderId, x.packId, x.packTitle, x.userEmail, x.userName, x.uid, x._parentUid
+        ].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+    }
+
+    return out;
+  }
+
+  function render(){
+    const rows = filterRows(_cache);
+
+    if(!rows.length){
+      elList.innerHTML = `<div class="card muted">Hiç sipariş yok (bu filtrede).</div>`;
+      return;
+    }
+
+    elList.innerHTML = rows.map(o => {
+      const uid = o.uid || o._parentUid || "";
+      const payLink = o?.payment?.link || "";
+      const payRef  = o?.payment?.ref  || "";
+
+      const btnLink = `<button class="btn warn" onclick="addLink('${uid}','${o.orderId}')">🔗 Link Ekle</button>`;
+      const btnApprove = `<button class="btn primary" onclick="approve('${uid}','${o.orderId}')">✅ Onayla</button>`;
+
+      const linkPart = payLink
+        ? `<div class="small">Link: <a href="${payLink}" target="_blank">${payLink}</a></div>`
+        : `<div class="small muted">Link: (yok)</div>`;
+
+      const refPart = payRef
+        ? `<div class="small">Ref/Dekont: <span class="mono">${payRef}</span></div>`
+        : `<div class="small muted">Ref/Dekont: (yok)</div>`;
+
+      const who = (o.userName || o.userEmail)
+        ? `${o.userName || ""} ${o.userEmail ? "• "+o.userEmail : ""}`
+        : (uid ? `UID: ${uid}` : "-");
+
+      return `
+        <div class="card">
+          <div class="row">
+            <div>
+              <div style="font-weight:900; font-size:16px">${o.packTitle || o.packId || "Paket"}</div>
+              <div class="small muted">${who}</div>
+              <div class="small muted">orderId: <span class="mono">${o.orderId}</span> • created: ${ts(o.createdAt)}</div>
+              <div class="small muted">uid: <span class="mono">${uid || "-"}</span></div>
+            </div>
+
+            <div>
+              <span class="tag ${tagClass(o.status)}">${trStatus(o.status)}</span>
+              <div class="small muted" style="margin-top:8px">Tutar: <b>${o.priceTL || "-"} TL</b> • Hak: <b>${o.credits || "-"}</b></div>
+              <div class="small muted">updated: ${ts(o.updatedAt)}</div>
+            </div>
+
+            <div>
+              ${linkPart}
+              ${refPart}
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+              ${btnLink}
+              ${btnApprove}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function ensureAdmin(user){
+    const ok = user && ADMIN_EMAILS.includes((user.email || "").toLowerCase());
+    if(!ok){
+      elMe.innerHTML = `⛔ Bu sayfa sadece admin içindir. (Giriş yapan: <b>${user?.email || "-"}</b>)`;
+      throw new Error("admin değil");
+    }
+    elMe.innerHTML = `✅ Admin: <b>${user.email}</b> • UID: <span class="mono">${user.uid}</span>`;
+  }
+
+  function startListen(){
+    if(_unsub) _unsub();
+
+    // ✅ tüm users/*/orders koleksiyonlarını toplar
+    _unsub = db.collectionGroup("orders")
+      .orderBy("createdAt","desc")
+      .limit(200)
+      .onSnapshot((snap)=>{
+        const arr = [];
+        snap.forEach(doc=>{
+          const d = doc.data() || {};
+          d.orderId = d.orderId || doc.id;
+          d._parentUid = getParentUid(doc.ref);
+          d.uid = d.uid || d._parentUid; // yoksa parent'tan tamamla
+          arr.push(d);
+        });
+        _cache = arr;
+        render();
+      }, (err)=>{
+        elList.innerHTML = `<div class="card" style="border-color:rgba(239,68,68,.35)">Hata: ${err?.message || err}</div>`;
+      });
+  }
+
+  // ✅ Global buton fonksiyonları
+  window.addLink = async function(uid, orderId){
+    try{
+      if(!uid || !orderId) return alert("uid/orderId yok");
+      const link = prompt("QNB ödeme linkini yapıştır:") || "";
+      if(!link.trim()) return;
+
+      const ref = db.collection("users").doc(uid).collection("orders").doc(orderId);
+      await ref.set({
+        status: "link_added",
+        payment: {
+          link: link.trim(),
+          linkAddedAt: FieldValue.serverTimestamp(),
+        },
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge:true });
+
+      alert("Link eklendi ✅");
+    }catch(e){
+      alert(e?.message || e);
+    }
+  };
+
+  window.approve = async function(uid, orderId){
+    try{
+      if(!uid || !orderId) return alert("uid/orderId yok");
+      const ok = confirm("Ödeme geldi mi? Onaylayınca hak yüklenecek.");
+      if(!ok) return;
+
+      const res = await Wallet.approveOrder(uid, orderId);
+      console.log("approve result:", res);
+      alert("Onaylandı ✅ Hak yüklendi (veya zaten onaylı).");
+    }catch(e){
+      alert(e?.message || e);
+    }
+  };
+
+  document.getElementById("btnLogout").onclick = ()=> auth.signOut();
+  document.getElementById("btnRefresh").onclick = ()=> render();
+  elFilter.onchange = render;
+  elSearch.oninput = render;
+
+  // ✅ Auth
+  auth.onAuthStateChanged(async (user)=>{
+    try{
+      if(!user){
+        elMe.innerHTML = `Giriş yok. <a href="index.html">Ana sayfadan giriş yap</a>`;
+        if(_unsub) _unsub();
+        return;
+      }
+      await ensureAdmin(user);
+      startListen();
+    }catch(e){
+      if(_unsub) _unsub();
+    }
+  });
+})();
+</script>
+</body>
+</html>
+
