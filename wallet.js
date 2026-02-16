@@ -309,6 +309,122 @@
 
     return out;
   }
+  /**
+   * setPaymentLink(uid, orderId, link)
+   * - admin, QNB LinkPOS linkini siparişe ekler
+   * - status: pending -> link_added
+   */
+  async function setPaymentLink(uid, orderId, link) {
+    if (!uid) throw new Error("setPaymentLink: uid yok");
+    if (!orderId) throw new Error("setPaymentLink: orderId yok");
+
+    const clean = String(link || "").trim();
+    if (!/^https?:\/\//i.test(clean)) {
+      throw new Error("setPaymentLink: geçerli bir link gir (https://...)");
+    }
+
+    const oRef = orderRef(uid, orderId);
+
+    await db.runTransaction(async (tx) => {
+      const oSnap = await tx.get(oRef);
+      if (!oSnap.exists) throw new Error("Sipariş bulunamadı.");
+
+      const o = oSnap.data() || {};
+      if (o.status === "approved") {
+        throw new Error("Bu sipariş zaten onaylanmış.");
+      }
+
+      tx.set(oRef, {
+        payment: {
+          method: "QNB_LINKPOS",
+          link: clean,
+          addedAt: FieldValue.serverTimestamp(),
+        },
+        status: (o.status === "pending" ? "link_added" : o.status),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    });
+
+    return { ok: true };
+  }
+
+  /**
+   * markPaid(orderId, refText)
+   * - kullanıcı "ödemeyi yaptım" der (opsiyonel ama çok faydalı)
+   * - status: link_added/pending -> user_marked_paid
+   */
+  async function markPaid(orderId, refText) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("markPaid: giriş yok");
+    if (!orderId) throw new Error("markPaid: orderId yok");
+
+    const oRef = orderRef(user.uid, orderId);
+    const refStr = String(refText || "").trim().slice(0, 120);
+
+    await db.runTransaction(async (tx) => {
+      const oSnap = await tx.get(oRef);
+      if (!oSnap.exists) throw new Error("Sipariş bulunamadı.");
+
+      const o = oSnap.data() || {};
+      if (o.status === "approved") return; // zaten bitti
+
+      tx.set(oRef, {
+        status: "user_marked_paid",
+        payment: {
+          ...(o.payment || {}),
+          paidClaimedAt: FieldValue.serverTimestamp(),
+          ref: refStr,
+        },
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    });
+
+    return { ok: true };
+  }
+
+  /**
+   * listOrders(uid, statuses?)
+   * - admin panelde veya kullanıcı panelinde siparişleri listelemek için
+   */
+  async function listOrders(uid, statuses) {
+    if (!uid) throw new Error("listOrders: uid yok");
+
+    let q = ordersColRef(uid).orderBy("createdAt", "desc").limit(50);
+
+    // Firestore "in" en fazla 10 eleman. Biz genelde 2-3 kullanacağız.
+    if (Array.isArray(statuses) && statuses.length) {
+      q = ordersColRef(uid)
+        .where("status", "in", statuses.slice(0, 10))
+        .orderBy("createdAt", "desc")
+        .limit(50);
+    }
+
+    const snap = await q.get();
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+  }
+
+  /**
+   * listenOrders(uid, cb, statuses?)
+   * - canlı sipariş listesi
+   */
+  function listenOrders(uid, cb, statuses) {
+    if (!uid) throw new Error("listenOrders: uid yok");
+    if (typeof cb !== "function") throw new Error("listenOrders: cb function olmalı");
+
+    let q = ordersColRef(uid).orderBy("createdAt", "desc").limit(50);
+
+    if (Array.isArray(statuses) && statuses.length) {
+      q = ordersColRef(uid)
+        .where("status", "in", statuses.slice(0, 10))
+        .orderBy("createdAt", "desc")
+        .limit(50);
+    }
+
+    return q.onSnapshot((snap) => {
+      const arr = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+      cb(arr);
+    });
+  }
 
   // dışa aç
   window.Wallet = {
@@ -323,6 +439,11 @@
 
     ref: walletMainRef,
     ordersRef: ordersColRef,
+        setPaymentLink,  // admin: link ekle
+    markPaid,        // kullanıcı: ödedim
+    listOrders,      // liste
+    listenOrders,    // canlı liste
+
   };
 
   // otomatik yükle
@@ -335,3 +456,4 @@
     }
   });
 })();
+
