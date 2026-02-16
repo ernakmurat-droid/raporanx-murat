@@ -221,7 +221,7 @@
 
   function startListen(){
     if(_unsub) _unsub();
-
+  
     // ✅ tüm users/*/orders koleksiyonlarını toplar
     _unsub = db.collectionGroup("orders")
       .orderBy("createdAt","desc")
