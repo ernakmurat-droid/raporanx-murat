@@ -264,6 +264,83 @@ function buy(packId){
     });
 }
 </script>
+<script>
+(async function(){
+  const auth = window.auth || firebase.auth();
+  const db   = window.db   || firebase.firestore();
+
+  const ordersEl = document.getElementById("orders");
+  const msgEl = document.getElementById("statusInfo") || document.getElementById("walletSub");
+
+  function statusTR(s){
+    if(s==="pending") return "⏳ Sipariş alındı (link hazırlanıyor)";
+    if(s==="link_added") return "🔗 Ödeme linki hazır";
+    if(s==="user_marked_paid") return "🧾 Ödeme bildirildi (admin onayı bekleniyor)";
+    if(s==="approved") return "✅ Onaylandı (hak yüklendi)";
+    if(s==="rejected") return "❌ Reddedildi";
+    if(s==="cancelled") return "🚫 İptal";
+    return s || "-";
+  }
+
+  // ✅ Satın al butonları bununla çalışacak
+  window.buy = function(packId){
+    Wallet.createOrder(packId)
+      .then(o=>{
+        alert("Sipariş oluşturuldu ✅ Link gelince burada göreceksin.");
+        // sipariş listesi zaten listener ile güncellenecek
+      })
+      .catch(e=>{
+        alert("Hata: " + (e?.message || e));
+      });
+  };
+
+  auth.onAuthStateChanged(user=>{
+    if(!user) return;
+
+    // ✅ Canlı sipariş listesi
+    db.collection("users").doc(user.uid).collection("orders")
+      .orderBy("createdAt","desc").limit(20)
+      .onSnapshot(snap=>{
+        const arr = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
+
+        if(!arr.length){
+          ordersEl.innerHTML = "Henüz sipariş yok.";
+          return;
+        }
+
+        ordersEl.innerHTML = arr.map(o=>{
+          const link = o.paymentLink || o?.payment?.link || "";
+          const ref = o?.payment?.ref || "";
+          const st = statusTR(o.status);
+
+          return `
+            <div style="padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:12px;margin:8px 0;text-align:left;">
+              <b>${o.packTitle || o.packId}</b><br>
+              <div style="opacity:.85;font-size:12px;">Durum: ${st}</div>
+              <div style="opacity:.85;font-size:12px;">OrderId: ${o.orderId || o.id}</div>
+              ${link ? `<a href="${link}" target="_blank" style="display:inline-block;margin-top:8px;background:#00c853;color:#fff;padding:10px 12px;border-radius:10px;text-decoration:none;font-weight:900;">Ödemeye Git</a>` : ``}
+              ${link ? `
+                <button onclick="markPaid('${o.orderId || o.id}')" style="margin-left:8px;background:#ffd600;border:none;padding:10px 12px;border-radius:10px;font-weight:900;cursor:pointer;">
+                  Ödedim
+                </button>` : ``}
+              ${ref ? `<div style="opacity:.85;font-size:12px;margin-top:6px;">Ref: ${ref}</div>` : ``}
+            </div>
+          `;
+        }).join("");
+
+        if(msgEl && arr[0]) msgEl.textContent = "Son sipariş: " + statusTR(arr[0].status);
+      });
+  });
+
+  // ✅ Kullanıcı “ödedim” bildirimi
+  window.markPaid = function(orderId){
+    const ref = prompt("Dekont/Referans no (opsiyonel):") || "";
+    Wallet.markPaid(orderId, ref)
+      .then(()=>alert("Ödeme bildirildi ✅ Admin onaylayınca hak yüklenecek."))
+      .catch(e=>alert("Hata: " + (e?.message || e)));
+  };
+})();
+</script>
 
 </body>
 </html>
