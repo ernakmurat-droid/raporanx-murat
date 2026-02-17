@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>RaporanX • Cüzdan</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <script src="firebase-config.js"></script>
+  <script src="wallet.js"></script>
+
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#0f172a;color:#e5e7eb}
+    .wrap{max-width:900px;margin:0 auto;padding:16px}
+    .card{background:#111827;border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:14px;margin:12px 0}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
+    .btn{background:rgba(255,255,255,.08);color:#e5e7eb;border:1px solid rgba(255,255,255,.12)}
+    .buy{background:#22c55e;color:#062}
+    .warn{background:#f59e0b;color:#111}
+    .link{color:#60a5fa;text-decoration:none}
+    .muted{opacity:.75}
+    input{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#0b1220;color:#e5e7eb}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <div style="font-size:20px;font-weight:900;">🎟️ Cüzdan</div>
+        <div class="muted" id="me">Giriş bekleniyor…</div>
+      </div>
+      <div class="row">
+        <button class="btn" id="btnRefresh">↻ Yenile</button>
+        <button class="btn" id="btnLogout">Çıkış</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:18px;font-weight:900;" id="walletAmount">—</div>
+      <div class="muted" id="walletSub">—</div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900;margin-bottom:10px;">Paket Satın Al</div>
+      <div class="row">
+        <button class="buy" onclick="buy('P120')">120 TL • 4 Hak</button>
+        <button class="buy" onclick="buy('P200')">200 TL • 8 Hak</button>
+        <button class="buy" onclick="buy('P500')">500 TL • 25 Hak</button>
+      </div>
+      <div class="muted" style="margin-top:10px;">
+        Not: Ödeme linki admin tarafından eklendiğinde aşağıda görünür.
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900;margin-bottom:10px;">Siparişlerim</div>
+      <div id="orders" class="muted">Yükleniyor…</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const auth = firebase.auth();
+
+  const elMe = document.getElementById("me");
+  const elOrders = document.getElementById("orders");
+
+  let unsubOrders = null;
+
+  function esc(s){
+    return String(s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function pickLink(o){
+    return (o.paymentLink || o?.payment?.link || "").trim();
+  }
+
+  function statusTr(s){
+    if(s==="pending") return "Yeni sipariş";
+    if(s==="link_added") return "Link eklendi";
+    if(s==="user_marked_paid") return "Ödeme bildirildi";
+    if(s==="approved") return "Onaylandı ✅";
+    if(s==="rejected") return "Reddedildi";
+    if(s==="cancelled") return "İptal";
+    return s || "-";
+  }
+
+  window.buy = async function(packId){
+    try{
+      const o = await Wallet.createOrder(packId);
+      alert("Sipariş oluşturuldu ✅\norderId: " + o.orderId);
+    }catch(e){
+      alert("Hata: " + (e?.message || e));
+    }
+  };
+
+  async function renderOrders(arr){
+    if(!arr || !arr.length){
+      elOrders.innerHTML = `<div class="muted">Henüz sipariş yok.</div>`;
+      return;
+    }
+
+    elOrders.innerHTML = arr.map(o => {
+      const link = pickLink(o);
+      const canGoPay = !!link && o.status !== "approved";
+
+      const btnPay = canGoPay
+        ? `<a class="link" href="${esc(link)}" target="_blank">🔗 Ödemeye Git</a>`
+        : (link ? `<span class="muted">Link var</span>` : `<span class="muted">Link yok</span>`);
+
+      const btnMarkPaid = (o.status !== "approved")
+        ? `<button class="warn" onclick="markPaid('${esc(o.orderId || o.id)}')">Ödedim</button>`
+        : ``;
+
+      return `
+        <div style="padding:10px 0;border-top:1px solid rgba(255,255,255,.10)">
+          <div class="row">
+            <div>
+              <div style="font-weight:900">${esc(o.packTitle || o.packId || "Paket")} • ${esc(o.priceTL)} TL • ${esc(o.credits)} Hak</div>
+              <div class="muted small">Durum: <b>${esc(statusTr(o.status))}</b> • orderId: <span class="mono">${esc(o.orderId || o.id || "")}</span></div>
+            </div>
+            <div class="row">
+              ${btnPay}
+              ${btnMarkPaid}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  window.markPaid = async function(orderId){
+    try{
+      const ref = prompt("Varsa dekont/işlem no yaz (boş bırakabilirsin):") || "";
+      await Wallet.markPaid(orderId, ref);
+      alert("Bildirim gönderildi ✅");
+    }catch(e){
+      alert("Hata: " + (e?.message || e));
+    }
+  };
+
+  document.getElementById("btnLogout").onclick = ()=> auth.signOut();
+  document.getElementById("btnRefresh").onclick = async ()=>{
+    const u = auth.currentUser;
+    if(u) await Wallet.load(u.uid);
+  };
+
+  auth.onAuthStateChanged(async (user)=>{
+    if(unsubOrders){ unsubOrders(); unsubOrders = null; }
+
+    if(!user){
+      elMe.innerHTML = `Giriş yok. (Önce giriş yapmalısın)`;
+      elOrders.innerHTML = `<div class="muted">Siparişleri görmek için giriş yap.</div>`;
+      return;
+    }
+
+    elMe.innerHTML = `Giriş: <b>${esc(user.email || user.uid)}</b>`;
+    await Wallet.load(user.uid);
+
+    // canlı sipariş listesi (son 50)
+    unsubOrders = Wallet.listenOrders(user.uid, async (arr)=> {
+      await renderOrders(arr);
+    });
+  });
+})();
+</script>
+</body>
+</html>
