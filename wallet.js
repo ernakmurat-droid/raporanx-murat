@@ -13,6 +13,8 @@
  * Akış:
  *  - Kullanıcı "paket satın al" der -> createOrder(packId)
  *  - Admin ödeme geldiğini görür -> approveOrder(uid, orderId)
+ *  - Admin link ekler -> setPaymentLink(uid, orderId, link)
+ *  - Kullanıcı "ödedim" diyebilir -> markPaid(orderId, refText)
  *  - Rapor oluşturunca -> consumeReport(uid, rid) önce free, sonra reportCredits düşer
  */
 (function () {
@@ -65,15 +67,9 @@
 
       if (!snap.exists) {
         const init = {
-          // NOT: TL bakiye şimdilik kullanılmıyor, ama dursun istersen.
           balance: 0,
-
-          // ✅ Ücretsiz 5 hak aynen kalıyor
           freeReportsLeft: 5,
-
-          // ✅ Paketlerden gelen haklar
           reportCredits: 0,
-
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         };
@@ -107,7 +103,6 @@
     const freeLeft = n(w?.freeReportsLeft);
     const credits = n(w?.reportCredits);
 
-    // Görselde sen "bakiye gizli" diyordun. Biz de hakları öne çıkaralım.
     amountEl.textContent = `🎟️ ${freeLeft + credits} Hak`;
     subEl.textContent = `🎁 Ücretsiz: ${freeLeft} • 🧾 Paket: ${credits} • 💰 Bakiye: ${tl(balance)} TL`;
 
@@ -158,7 +153,7 @@
       const w = (mainSnap.exists ? (mainSnap.data() || {}) : {});
       let freeLeft = n(w.freeReportsLeft);
       let credits = n(w.reportCredits);
-      let balance = n(w.balance);
+      const balance = n(w.balance);
 
       // 3) ücretsizden düş
       if (freeLeft > 0) {
@@ -212,19 +207,50 @@
   /**
    * createOrder(packId)
    * - kullanıcı paket seçer: P120/P200/P500
-   * - ödeme linki admin tarafından gönderilecek (manuel)
    * - order status: pending
    */
-  
+  async function createOrder(packId) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("createOrder: giriş yok");
+
+    const pack = PACKS[String(packId)];
+    if (!pack) throw new Error("createOrder: packId geçersiz");
+
+    const ref = ordersColRef(user.uid).doc(); // otomatik id
+
+    const order = {
+      orderId: ref.id,
+
+      // ✅ admin panel için kim bilgisi
+      uid: user.uid,
+      userEmail: user.email || "",
+      userName: user.displayName || "",
+
+      packId: String(packId),
+      packTitle: pack.title,
+      priceTL: pack.priceTL,
+      credits: pack.credits,
+
+      status: "pending",
+      appliedToWallet: false,
+
+      // link alanları (başta boş) - uyumluluk
+      paymentLink: "",
+      payment: { },
+
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    await ref.set(order, { merge: true });
+    return order;
+  }
 
   /**
    * approveOrder(uid, orderId)
    * - admin ödeme geldiğini kontrol eder
    * - cüzdana credits ekler
    * - aynı order 2 kere onaylanırsa 2 kere eklemez
-   *
-   * NOT: Bunu admin panelinden çağıracaksın.
-   * Güvenlik için ideal olan: admin kullanıcıya özel Firestore rule / custom claim.
    */
   async function approveOrder(uid, orderId) {
     if (!uid) throw new Error("approveOrder: uid yok");
@@ -285,10 +311,11 @@
 
     return out;
   }
+
   /**
    * setPaymentLink(uid, orderId, link)
-   * - admin, QNB LinkPOS linkini siparişe ekler
-   * - status: pending -> link_added
+   * - admin, ödeme linkini siparişe ekler
+   * - status: pending -> link_added (approved değilse)
    */
   async function setPaymentLink(uid, orderId, link) {
     if (!uid) throw new Error("setPaymentLink: uid yok");
@@ -306,12 +333,12 @@
       if (!oSnap.exists) throw new Error("Sipariş bulunamadı.");
 
       const o = oSnap.data() || {};
-      if (o.status === "approved") {
-        throw new Error("Bu sipariş zaten onaylanmış.");
-      }
+      if (o.status === "approved") throw new Error("Bu sipariş zaten onaylanmış.");
 
       tx.set(oRef, {
+        paymentLink: clean, // ✅ düz alan (uyumluluk)
         payment: {
+          ...(o.payment || {}),
           method: "QNB_LINKPOS",
           link: clean,
           addedAt: FieldValue.serverTimestamp(),
@@ -326,7 +353,7 @@
 
   /**
    * markPaid(orderId, refText)
-   * - kullanıcı "ödemeyi yaptım" der (opsiyonel ama çok faydalı)
+   * - kullanıcı "ödemeyi yaptım" der
    * - status: link_added/pending -> user_marked_paid
    */
   async function markPaid(orderId, refText) {
@@ -342,7 +369,7 @@
       if (!oSnap.exists) throw new Error("Sipariş bulunamadı.");
 
       const o = oSnap.data() || {};
-      if (o.status === "approved") return; // zaten bitti
+      if (o.status === "approved") return;
 
       tx.set(oRef, {
         status: "user_marked_paid",
@@ -360,14 +387,12 @@
 
   /**
    * listOrders(uid, statuses?)
-   * - admin panelde veya kullanıcı panelinde siparişleri listelemek için
    */
   async function listOrders(uid, statuses) {
     if (!uid) throw new Error("listOrders: uid yok");
 
     let q = ordersColRef(uid).orderBy("createdAt", "desc").limit(50);
 
-    // Firestore "in" en fazla 10 eleman. Biz genelde 2-3 kullanacağız.
     if (Array.isArray(statuses) && statuses.length) {
       q = ordersColRef(uid)
         .where("status", "in", statuses.slice(0, 10))
@@ -381,7 +406,6 @@
 
   /**
    * listenOrders(uid, cb, statuses?)
-   * - canlı sipariş listesi
    */
   function listenOrders(uid, cb, statuses) {
     if (!uid) throw new Error("listenOrders: uid yok");
@@ -402,45 +426,27 @@
     });
   }
 
-  // dışa aç
+  // ✅ dışa aç (SADECE fonksiyonlar)
   window.Wallet = {
     PACKS,
     load: loadWallet,
     ensure: ensureWallet,
     consumeReport,
     listen: listenWallet,
-const user = auth.currentUser;
-
-const order = {
-  orderId: ref.id,
-  uid: user.uid,
-  userEmail: user.email || "",
-  userName: user.displayName || "",
-
-  packId: String(packId),
-  packTitle: pack.title,
-  priceTL: pack.priceTL,
-  credits: pack.credits,
-
-  status: "pending",
-  appliedToWallet: false,
-  createdAt: FieldValue.serverTimestamp(),
-  updatedAt: FieldValue.serverTimestamp(),
-};
 
     createOrder,     // kullanıcı
     approveOrder,    // admin
+    setPaymentLink,  // admin: link ekle
+    markPaid,        // kullanıcı: ödedim
+
+    listOrders,
+    listenOrders,
 
     ref: walletMainRef,
     ordersRef: ordersColRef,
-        setPaymentLink,  // admin: link ekle
-    markPaid,        // kullanıcı: ödedim
-    listOrders,      // liste
-    listenOrders,    // canlı liste
-
   };
 
-  // otomatik yükle
+  // otomatik yükle (giriş varsa cüzdanı göster)
   auth.onAuthStateChanged(async (user) => {
     if (!user) return;
     try {
@@ -450,5 +456,3 @@ const order = {
     }
   });
 })();
-
-
