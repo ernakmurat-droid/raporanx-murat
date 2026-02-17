@@ -1,5 +1,6 @@
 // firebase-config.js (TEK KAYNAK - tüm sayfalar buradan kullanacak)
 (function () {
+  // ✅ Firebase config (webde görünmesi normaldir; güvenlik rules ile sağlanır)
   const FB_CFG = {
     apiKey: "AIzaSyCMwx6S6rq1lnNJuHOxc38ij3qU4ankSxs",
     authDomain: "raporanx.firebaseapp.com",
@@ -7,30 +8,51 @@
     storageBucket: "raporanx.firebasestorage.app",
     messagingSenderId: "715194328346",
     appId: "1:715194328346:web:46f0bb98941e01ead6f8a3",
-    measurementId: "G-V749P1HB80" // Analytics için, zararsız
+    measurementId: "G-V749P1HB80"
   };
 
-  // Firebase zaten başladıysa tekrar başlatma
+  // 0) Firebase yüklü mü?
+  if (!window.firebase || !firebase.initializeApp) {
+    console.error("firebase-config.js: Firebase scriptleri yüklenmemiş (firebase yok).");
+    return;
+  }
+
+  // 1) Init (tek sefer)
   if (!firebase.apps.length) {
     firebase.initializeApp(FB_CFG);
   }
 
-  // GLOBAL olarak dışarı ver (tüm sayfalar buradan kullanacak)
-  window.auth = firebase.auth();
-  window.db = firebase.firestore();
-  window.FB_CFG = FB_CFG;
+  // 2) Auth
+  const auth = firebase.auth();
 
-  // ✅ Mobil/PC oturum stabil olsun (özellikle mobil + iframe durumları için)
-  // Not: Bazı tarayıcılarda 3rd-party cookie kısıtları olabilir, bu yine de en doğru ayar.
-  window.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function (err) {
+  // ✅ Oturum kalıcı olsun
+  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function (err) {
     console.warn("Auth persistence set edilemedi:", err?.code || err, err?.message || "");
   });
 
-  // ✅ Auth hazır olana kadar beklemek için ortak yardımcı
-  // Kullanım: const user = await waitForAuth();
+  // 3) Firestore (Long Polling fix + güvenli init)
+  // 🔧 Bazı ağlarda (ISS/modem/AdBlock/proxy) Firestore istekleri "pending" kalır.
+  // Bu ayar bunu çözer.
+  const db = firebase.firestore();
+  try {
+    db.settings({
+      experimentalForceLongPolling: true,
+      experimentalAutoDetectLongPolling: true
+    });
+  } catch (e) {
+    // settings bazen sadece ilk çağrıda alınır; sorun değil
+    console.warn("Firestore settings set edilemedi (muhtemelen daha önce set edildi):", e?.message || e);
+  }
+
+  // 4) Global export
+  window.FB_CFG = FB_CFG;
+  window.auth = auth;
+  window.db = db;
+
+  // 5) Auth hazır olana kadar beklemek için helper
   window.waitForAuth = function () {
     return new Promise(function (resolve) {
-      const unsub = window.auth.onAuthStateChanged(function (user) {
+      const unsub = auth.onAuthStateChanged(function (user) {
         if (user) {
           unsub();
           resolve(user);
@@ -39,12 +61,16 @@
     });
   };
 
-  // ✅ Debug (istersen kapatırsın) — mobilde teşhis için hayat kurtarır
+  // 6) Debug helper
   window.__fbDebug = function () {
-    const u = window.auth.currentUser;
-    console.log("FB projectId:", window.FB_CFG?.projectId);
-    console.log("FB auth ready:", !!u);
-    console.log("FB uid:", u?.uid);
-    console.log("FB email:", u?.email);
+    const u = auth.currentUser;
+    console.log({
+      projectId: FB_CFG.projectId,
+      authDomain: FB_CFG.authDomain,
+      online: navigator.onLine,
+      uid: u?.uid,
+      email: u?.email,
+      apps: firebase.apps.length
+    });
   };
 })();
