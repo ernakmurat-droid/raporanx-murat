@@ -11,6 +11,82 @@
 
   <script src="firebase-config.js"></script>
   <script src="wallet.js"></script>
+<script>
+(function(){
+  const auth = firebase.auth();
+  const elOrders = document.getElementById("orders");
+
+  let unsubOrders = null;
+
+  function pickLink(o){
+    return (o.paymentLink || o?.payment?.link || "").trim();
+  }
+
+  function statusTr(s){
+    if(s==="pending") return "Link hazırlanıyor ⏳";
+    if(s==="link_added") return "Link hazır ✅";
+    if(s==="user_marked_paid") return "Kontrol ediliyor ⏳";
+    if(s==="approved") return "Onaylandı ✅";
+    return s || "-";
+  }
+
+  function renderOrders(arr){
+    if(!arr || !arr.length){
+      elOrders.innerHTML = `<div class="muted">Henüz sipariş yok.</div>`;
+      return;
+    }
+
+    elOrders.innerHTML = arr.map(o => {
+      const orderId = o.orderId || o.id || "";
+      const link = pickLink(o);
+
+      const payBtn = (link && o.status !== "approved")
+        ? `<a class="link" href="${link}" target="_blank">🔗 Ödemeye Git</a>`
+        : `<span class="muted">${link ? "Link var" : "Link yok"}</span>`;
+
+      const markPaidBtn = (o.status !== "approved")
+        ? `<button class="warn" onclick="markPaid('${orderId}')">Ödedim</button>`
+        : ``;
+
+      return `
+        <div style="padding:10px 0;border-top:1px solid rgba(255,255,255,.10)">
+          <div style="font-weight:900">${o.packTitle || o.packId} • ${o.priceTL} TL • ${o.credits} Hak</div>
+          <div class="muted">Durum: <b>${statusTr(o.status)}</b></div>
+          <div style="margin-top:8px; display:flex; gap:10px;">
+            ${payBtn}
+            ${markPaidBtn}
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  window.markPaid = async function(orderId){
+    try{
+      const ref = prompt("Varsa dekont no yaz (boş bırakabilirsin):") || "";
+      await Wallet.markPaid(orderId, ref);
+      alert("Bildirim gönderildi ✅");
+    }catch(e){
+      alert("Hata: " + (e?.message || e));
+    }
+  };
+
+  auth.onAuthStateChanged(async (user)=>{
+    if(unsubOrders){ unsubOrders(); unsubOrders = null; }
+
+    if(!user){
+      elOrders.innerHTML = `<div class="muted">Giriş yapmalısın.</div>`;
+      return;
+    }
+
+    await Wallet.load(user.uid);
+
+    unsubOrders = Wallet.listenOrders(user.uid, (arr)=>{
+      renderOrders(arr);
+    });
+  });
+})();
+</script>
 
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#0f172a;color:#e5e7eb}
@@ -172,3 +248,4 @@
 </script>
 </body>
 </html>
+
