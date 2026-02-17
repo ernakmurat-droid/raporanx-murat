@@ -12,9 +12,6 @@
   <!-- senin config -->
   <script src="firebase-config.js"></script>
 
-  <!-- wallet.js -->
-  <script src="wallet.js"></script>
-
   <style>
     body{font-family:Arial, sans-serif; margin:0; background:#0f172a; color:#e5e7eb;}
     .wrap{max-width:1100px; margin:0 auto; padding:18px;}
@@ -82,13 +79,13 @@
   const db = firebase.firestore();
   const FieldValue = firebase.firestore.FieldValue;
 
-  // ✅ buraya kendi admin mailini yaz (istersen birden fazla)
+  // ✅ BURAYA admin mail(ler)i yaz
   const ADMIN_EMAILS = [
     "ernakmurat@gmail.com"
-  ];
+  ].map(x => (x || "").toLowerCase().trim());
 
-  const elList = document.getElementById("list");
-  const elMe = document.getElementById("me");
+  const elList   = document.getElementById("list");
+  const elMe     = document.getElementById("me");
   const elFilter = document.getElementById("statusFilter");
   const elSearch = document.getElementById("searchBox");
 
@@ -122,9 +119,8 @@
 
   function getParentUid(docRef){
     // users/{uid}/orders/{orderId}
-    try{
-      return docRef?.parent?.parent?.id || "";
-    }catch(e){ return ""; }
+    try{ return docRef?.parent?.parent?.id || ""; }
+    catch(e){ return ""; }
   }
 
   function filterRows(rows){
@@ -151,6 +147,12 @@
     return out;
   }
 
+  function escapeHtml(s){
+    return String(s||"").replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
   function render(){
     const rows = filterRows(_cache);
 
@@ -161,37 +163,37 @@
 
     elList.innerHTML = rows.map(o => {
       const uid = o.uid || o._parentUid || "";
-      const payLink = o?.payment?.link || "";
+      const payLink = o.paymentLink || o?.payment?.link || "";
       const payRef  = o?.payment?.ref  || "";
 
-      const btnLink = `<button class="btn warn" onclick="addLink('${uid}','${o.orderId}')">🔗 Link Ekle</button>`;
-      const btnApprove = `<button class="btn primary" onclick="approve('${uid}','${o.orderId}')">✅ Onayla</button>`;
+      const btnLink = `<button class="btn warn" onclick="addLink('${escapeHtml(uid)}','${escapeHtml(o.orderId)}')">🔗 Link Ekle</button>`;
+      const btnApprove = `<button class="btn primary" onclick="approve('${escapeHtml(uid)}','${escapeHtml(o.orderId)}')">✅ Onayla</button>`;
 
       const linkPart = payLink
-        ? `<div class="small">Link: <a href="${payLink}" target="_blank">${payLink}</a></div>`
+        ? `<div class="small">Link: <a href="${escapeHtml(payLink)}" target="_blank">${escapeHtml(payLink)}</a></div>`
         : `<div class="small muted">Link: (yok)</div>`;
 
       const refPart = payRef
-        ? `<div class="small">Ref/Dekont: <span class="mono">${payRef}</span></div>`
+        ? `<div class="small">Ref/Dekont: <span class="mono">${escapeHtml(payRef)}</span></div>`
         : `<div class="small muted">Ref/Dekont: (yok)</div>`;
 
       const who = (o.userName || o.userEmail)
-        ? `${o.userName || ""} ${o.userEmail ? "• "+o.userEmail : ""}`
-        : (uid ? `UID: ${uid}` : "-");
+        ? `${escapeHtml(o.userName || "")} ${o.userEmail ? "• "+escapeHtml(o.userEmail) : ""}`
+        : (uid ? `UID: ${escapeHtml(uid)}` : "-");
 
       return `
         <div class="card">
           <div class="row">
             <div>
-              <div style="font-weight:900; font-size:16px">${o.packTitle || o.packId || "Paket"}</div>
+              <div style="font-weight:900; font-size:16px">${escapeHtml(o.packTitle || o.packId || "Paket")}</div>
               <div class="small muted">${who}</div>
-              <div class="small muted">orderId: <span class="mono">${o.orderId}</span> • created: ${ts(o.createdAt)}</div>
-              <div class="small muted">uid: <span class="mono">${uid || "-"}</span></div>
+              <div class="small muted">orderId: <span class="mono">${escapeHtml(o.orderId)}</span> • created: ${ts(o.createdAt)}</div>
+              <div class="small muted">uid: <span class="mono">${escapeHtml(uid || "-")}</span></div>
             </div>
 
             <div>
-              <span class="tag ${tagClass(o.status)}">${trStatus(o.status)}</span>
-              <div class="small muted" style="margin-top:8px">Tutar: <b>${o.priceTL || "-"} TL</b> • Hak: <b>${o.credits || "-"}</b></div>
+              <span class="tag ${tagClass(o.status)}">${escapeHtml(trStatus(o.status))}</span>
+              <div class="small muted" style="margin-top:8px">Tutar: <b>${escapeHtml(o.priceTL || "-")} TL</b> • Hak: <b>${escapeHtml(o.credits || "-")}</b></div>
               <div class="small muted">updated: ${ts(o.updatedAt)}</div>
             </div>
 
@@ -211,18 +213,19 @@
   }
 
   async function ensureAdmin(user){
-    const ok = user && ADMIN_EMAILS.includes((user.email || "").toLowerCase());
+    const email = (user?.email || "").toLowerCase().trim();
+    const ok = user && ADMIN_EMAILS.includes(email);
     if(!ok){
-      elMe.innerHTML = `⛔ Bu sayfa sadece admin içindir. (Giriş yapan: <b>${user?.email || "-"}</b>)`;
+      elMe.innerHTML = `⛔ Bu sayfa sadece admin içindir. (Giriş yapan: <b>${escapeHtml(user?.email || "-")}</b>)`;
       throw new Error("admin değil");
     }
-    elMe.innerHTML = `✅ Admin: <b>${user.email}</b> • UID: <span class="mono">${user.uid}</span>`;
+    elMe.innerHTML = `✅ Admin: <b>${escapeHtml(user.email)}</b> • UID: <span class="mono">${escapeHtml(user.uid)}</span>`;
   }
 
   function startListen(){
     if(_unsub) _unsub();
-  
-    // ✅ tüm users/*/orders koleksiyonlarını toplar
+
+    // ✅ tüm users/*/orders alt koleksiyonlarını toplar
     _unsub = db.collectionGroup("orders")
       .orderBy("createdAt","desc")
       .limit(200)
@@ -238,22 +241,26 @@
         _cache = arr;
         render();
       }, (err)=>{
-        elList.innerHTML = `<div class="card" style="border-color:rgba(239,68,68,.35)">Hata: ${err?.message || err}</div>`;
+        elList.innerHTML = `<div class="card" style="border-color:rgba(239,68,68,.35)">Hata: ${escapeHtml(err?.message || err)}</div>`;
       });
   }
 
-  // ✅ Global buton fonksiyonları
+  // ✅ Link ekle: hem paymentLink hem payment.link yazıyoruz (uyum için)
   window.addLink = async function(uid, orderId){
     try{
+      uid = (uid || "").trim();
+      orderId = (orderId || "").trim();
       if(!uid || !orderId) return alert("uid/orderId yok");
-      const link = prompt("QNB ödeme linkini yapıştır:") || "";
-      if(!link.trim()) return;
+
+      const link = (prompt("QNB ödeme linkini yapıştır:") || "").trim();
+      if(!link) return;
 
       const ref = db.collection("users").doc(uid).collection("orders").doc(orderId);
       await ref.set({
         status: "link_added",
+        paymentLink: link, // ✅ kullanıcı tarafı bunu okuyorsa
         payment: {
-          link: link.trim(),
+          link: link,        // ✅ eski yapı da çalışsın
           linkAddedAt: FieldValue.serverTimestamp(),
         },
         updatedAt: FieldValue.serverTimestamp()
@@ -265,15 +272,60 @@
     }
   };
 
+  // ✅ Onayla: transaction ile tek seferlik hak yükleme
   window.approve = async function(uid, orderId){
     try{
+      uid = (uid || "").trim();
+      orderId = (orderId || "").trim();
       if(!uid || !orderId) return alert("uid/orderId yok");
-      const ok = confirm("Ödeme geldi mi? Onaylayınca hak yüklenecek.");
+
+      const ok = confirm("Ödeme geldi mi? Onaylayınca hak yüklenecek (tek sefer).");
       if(!ok) return;
 
-      const res = await Wallet.approveOrder(uid, orderId);
-      console.log("approve result:", res);
-      alert("Onaylandı ✅ Hak yüklendi (veya zaten onaylı).");
+      const orderRef  = db.collection("users").doc(uid).collection("orders").doc(orderId);
+      const walletRef = db.collection("wallets").doc(uid);
+
+      await db.runTransaction(async (tx) => {
+        const orderSnap = await tx.get(orderRef);
+        if(!orderSnap.exists) throw new Error("Sipariş bulunamadı.");
+
+        const o = orderSnap.data() || {};
+
+        if(o.appliedToWallet) {
+          // zaten uygulanmışsa dokunma
+          return;
+        }
+
+        const creditsToAdd = Number(o.credits || 0);
+        if(!creditsToAdd || creditsToAdd < 1) throw new Error("Sipariş credits hatalı.");
+
+        // wallet yoksa oluştur
+        const walletSnap = await tx.get(walletRef);
+        if(!walletSnap.exists){
+          tx.set(walletRef, {
+            uid,
+            credits: 0,
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge:true });
+        }
+
+        // kredi ekle
+        tx.set(walletRef, {
+          credits: FieldValue.increment(creditsToAdd),
+          updatedAt: FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        // siparişi kilitle
+        tx.set(orderRef, {
+          status: "approved",
+          appliedToWallet: true,
+          approvedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp()
+        }, { merge:true });
+      });
+
+      alert("Onaylandı ✅ Hak yüklendi (veya zaten onaylıydı).");
     }catch(e){
       alert(e?.message || e);
     }
@@ -284,7 +336,6 @@
   elFilter.onchange = render;
   elSearch.oninput = render;
 
-  // ✅ Auth
   auth.onAuthStateChanged(async (user)=>{
     try{
       if(!user){
@@ -302,4 +353,3 @@
 </script>
 </body>
 </html>
-
