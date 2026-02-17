@@ -26,7 +26,8 @@
   </style>
 </head>
 
-<body oncontextmenu="return false;">
+<body>
+
 <div class="container-fluid">
   <div class="card p-4">
     <div class="mb-3">
@@ -82,11 +83,12 @@
     <div id="saveStatus" class="save-status">✅ Kaydedildi! Takyidat Tarih ve Sayıları Metne İşlendi.</div>
   </div>
 
-  <span class="format-label">📄 BANKA FORMATI B1</span>
-  <div class="result-body" id="b1_sonuc"></div>
+ <span class="format-label">📄 BANKA FORMATI B1</span>
+<div class="result-body no-copy" id="b1_sonuc"></div>
 
-  <span class="format-label">📄 BANKA FORMATI B2</span>
-  <div class="result-body" id="b2_sonuc"></div>
+<span class="format-label">📄 BANKA FORMATI B2</span>
+<div class="result-body no-copy" id="b2_sonuc"></div>
+
 </div>
 
 <script>
@@ -399,6 +401,35 @@
     guncelle();
   });
 </script>
+<script>
+  // Sadece .no-copy içinde kopyalamayı engelle
+  function isInsideNoCopySelection(){
+    const sel = window.getSelection && window.getSelection();
+    if(!sel || sel.rangeCount === 0) return false;
+    const node = sel.anchorNode;
+    const el = node && (node.nodeType === 1 ? node : node.parentElement);
+    return !!(el && el.closest && el.closest(".no-copy"));
+  }
+
+  document.addEventListener("copy", (e)=>{
+    const active = document.activeElement;
+    // input/textarea içindeyse engelleme (form serbest)
+    if(active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;
+
+    if(isInsideNoCopySelection()){
+      e.preventDefault();
+      alert("Bu metin kopyalanamaz.");
+    }
+  });
+
+  // .no-copy üzerinde sağ tık menüsünü kapat (formda açık kalsın)
+  document.addEventListener("contextmenu", (e)=>{
+    if(e.target && e.target.closest && e.target.closest(".no-copy")){
+      e.preventDefault();
+    }
+  });
+</script>
 
 </body>
 </html>
+
