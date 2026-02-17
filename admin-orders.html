@@ -246,31 +246,21 @@
   }
 
   // ✅ Link ekle: hem paymentLink hem payment.link yazıyoruz (uyum için)
-  window.addLink = async function(uid, orderId){
-    try{
-      uid = (uid || "").trim();
-      orderId = (orderId || "").trim();
-      if(!uid || !orderId) return alert("uid/orderId yok");
+window.addLink = async function(uid, orderId){
+  try{
+    if(!uid || !orderId) return alert("uid/orderId yok");
 
-      const link = (prompt("QNB ödeme linkini yapıştır:") || "").trim();
-      if(!link) return;
+    const link = (prompt("QNB ödeme linkini yapıştır:") || "").trim();
+    if(!link) return;
 
-      const ref = db.collection("users").doc(uid).collection("orders").doc(orderId);
-      await ref.set({
-        status: "link_added",
-        paymentLink: link, // ✅ kullanıcı tarafı bunu okuyorsa
-        payment: {
-          link: link,        // ✅ eski yapı da çalışsın
-          linkAddedAt: FieldValue.serverTimestamp(),
-        },
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge:true });
+    await Wallet.setPaymentLink(uid, orderId, link);
 
-      alert("Link eklendi ✅");
-    }catch(e){
-      alert(e?.message || e);
-    }
-  };
+    alert("Link eklendi ✅");
+  }catch(e){
+    alert(e?.message || e);
+  }
+};
+
 
   // ✅ Onayla: transaction ile tek seferlik hak yükleme
   window.approve = async function(uid, orderId){
