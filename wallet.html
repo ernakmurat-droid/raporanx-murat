@@ -251,7 +251,22 @@
   });
 })();
 </script>
+<script>
+function buy(packId){
+  Wallet.createOrder(packId)
+    .then(o => {
+      alert("Sipariş oluşturuldu ✅ Ödeme linki hazırlanacak.");
+      console.log("ORDER:", o);
+    })
+    .catch(e => {
+      alert("Hata: " + e.message);
+      console.error(e);
+    });
+}
+</script>
+
 </body>
 </html>
+
 
 
