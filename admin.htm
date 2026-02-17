@@ -395,5 +395,36 @@
   });
 })();
 </script>
+<script>
+firebase.auth().onAuthStateChanged(function(user){
+  const statusBox = document.querySelector("h1") || document.body;
+
+  if(!user){
+    document.body.innerHTML = "<h2>Giriş yok. Ana sayfadan giriş yap.</h2>";
+    return;
+  }
+
+  // Admin email kontrolü
+  const adminEmail = "ernakmurat@gmail.com";
+
+  if(user.email !== adminEmail){
+    document.body.innerHTML = "<h2>Bu sayfa sadece admin içindir.</h2>";
+    return;
+  }
+
+  console.log("ADMIN OK:", user.email);
+
+  // Ekrana yaz
+  const info = document.createElement("div");
+  info.style.padding = "10px";
+  info.style.color = "#0f0";
+  info.innerHTML = "Admin: " + user.email + " ✅";
+  document.body.prepend(info);
+
+  // 👉 Burada siparişleri yükleyebilirsin
+  // loadOrders(); // varsa çalışır
+});
+</script>
+
 </body>
 </html>
