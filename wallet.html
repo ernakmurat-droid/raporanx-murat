@@ -11,82 +11,6 @@
 
   <script src="firebase-config.js"></script>
   <script src="wallet.js"></script>
-<script>
-(function(){
-  const auth = firebase.auth();
-  const elOrders = document.getElementById("orders");
-
-  let unsubOrders = null;
-
-  function pickLink(o){
-    return (o.paymentLink || o?.payment?.link || "").trim();
-  }
-
-  function statusTr(s){
-    if(s==="pending") return "Link hazırlanıyor ⏳";
-    if(s==="link_added") return "Link hazır ✅";
-    if(s==="user_marked_paid") return "Kontrol ediliyor ⏳";
-    if(s==="approved") return "Onaylandı ✅";
-    return s || "-";
-  }
-
-  function renderOrders(arr){
-    if(!arr || !arr.length){
-      elOrders.innerHTML = `<div class="muted">Henüz sipariş yok.</div>`;
-      return;
-    }
-
-    elOrders.innerHTML = arr.map(o => {
-      const orderId = o.orderId || o.id || "";
-      const link = pickLink(o);
-
-      const payBtn = (link && o.status !== "approved")
-        ? `<a class="link" href="${link}" target="_blank">🔗 Ödemeye Git</a>`
-        : `<span class="muted">${link ? "Link var" : "Link yok"}</span>`;
-
-      const markPaidBtn = (o.status !== "approved")
-        ? `<button class="warn" onclick="markPaid('${orderId}')">Ödedim</button>`
-        : ``;
-
-      return `
-        <div style="padding:10px 0;border-top:1px solid rgba(255,255,255,.10)">
-          <div style="font-weight:900">${o.packTitle || o.packId} • ${o.priceTL} TL • ${o.credits} Hak</div>
-          <div class="muted">Durum: <b>${statusTr(o.status)}</b></div>
-          <div style="margin-top:8px; display:flex; gap:10px;">
-            ${payBtn}
-            ${markPaidBtn}
-          </div>
-        </div>
-      `;
-    }).join("");
-  }
-
-  window.markPaid = async function(orderId){
-    try{
-      const ref = prompt("Varsa dekont no yaz (boş bırakabilirsin):") || "";
-      await Wallet.markPaid(orderId, ref);
-      alert("Bildirim gönderildi ✅");
-    }catch(e){
-      alert("Hata: " + (e?.message || e));
-    }
-  };
-
-  auth.onAuthStateChanged(async (user)=>{
-    if(unsubOrders){ unsubOrders(); unsubOrders = null; }
-
-    if(!user){
-      elOrders.innerHTML = `<div class="muted">Giriş yapmalısın.</div>`;
-      return;
-    }
-
-    await Wallet.load(user.uid);
-
-    unsubOrders = Wallet.listenOrders(user.uid, (arr)=>{
-      renderOrders(arr);
-    });
-  });
-})();
-</script>
 
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#0f172a;color:#e5e7eb}
@@ -97,18 +21,19 @@
     .btn{background:rgba(255,255,255,.08);color:#e5e7eb;border:1px solid rgba(255,255,255,.12)}
     .buy{background:#22c55e;color:#062}
     .warn{background:#f59e0b;color:#111}
-    .link{color:#60a5fa;text-decoration:none}
+    .link{color:#60a5fa;text-decoration:none;font-weight:800}
     .muted{opacity:.75}
     input{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#0b1220;color:#e5e7eb}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .small{font-size:12px}
   </style>
 </head>
 
 <body>
   <a href="/admin.html"
-   style="position:fixed;top:10px;right:10px;background:#ef4444;color:white;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:800;z-index:9999;">
-  🔧 Admin
-</a>
+     style="position:fixed;top:10px;right:10px;background:#ef4444;color:white;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:800;z-index:9999;">
+    🔧 Admin
+  </a>
 
   <div class="wrap">
     <div class="row">
@@ -145,7 +70,8 @@
     </div>
   </div>
 
-<script>
+  <script>
+ 
 (function(){
   const auth = firebase.auth();
 
@@ -155,31 +81,29 @@
   let unsubOrders = null;
 
   function esc(s){
-    return String(s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    return String(s||"").replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
   }
 
   function pickLink(o){
-    return (o.paymentLink || o?.payment?.link || "").trim();
+    return (o?.paymentLink || o?.payment?.link || "").trim();
   }
 
   function statusTr(s){
-    if(s==="pending") return "Yeni sipariş";
-    if(s==="link_added") return "Link eklendi";
-    if(s==="user_marked_paid") return "Ödeme bildirildi";
+    if(s==="pending") return "Yeni sipariş (link hazırlanıyor) ⏳";
+    if(s==="link_added") return "Link hazır ✅";
+    if(s==="user_marked_paid") return "Ödeme bildirildi ⏳";
     if(s==="approved") return "Onaylandı ✅";
-    if(s==="rejected") return "Reddedildi";
-    if(s==="cancelled") return "İptal";
+    if(s==="rejected") return "Reddedildi ❌";
+    if(s==="cancelled") return "İptal 🚫";
     return s || "-";
   }
-
-  window.buy = async function(packId){
-    try{
-      const o = await Wallet.createOrder(packId);
-      alert("Sipariş oluşturuldu ✅\norderId: " + o.orderId);
-    }catch(e){
-      alert("Hata: " + (e?.message || e));
-    }
-  };
+arr = [...arr].sort((a,b)=>{
+  const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+  const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+  return tb - ta;
+});
 
   async function renderOrders(arr){
     if(!arr || !arr.length){
@@ -188,23 +112,29 @@
     }
 
     elOrders.innerHTML = arr.map(o => {
+      const orderId = o.orderId || o.id || "";
       const link = pickLink(o);
-      const canGoPay = !!link && o.status !== "approved";
+      const approved = (o.status === "approved");
 
-      const btnPay = canGoPay
-        ? `<a class="link" href="${esc(link)}" target="_blank">🔗 Ödemeye Git</a>`
-        : (link ? `<span class="muted">Link var</span>` : `<span class="muted">Link yok</span>`);
+      const btnPay = (link && !approved)
+    ? `<a class="link" href="${encodeURI(link)}" target="_blank" rel="noopener">🔗 Ödemeye Git</a>`
 
-      const btnMarkPaid = (o.status !== "approved")
-        ? `<button class="warn" onclick="markPaid('${esc(o.orderId || o.id)}')">Ödedim</button>`
+        : `<span class="muted">${link ? "Link var" : "Link yok"}</span>`;
+
+      const btnMarkPaid = (!approved)
+        ? `<button class="warn" onclick="markPaid('${esc(orderId)}')">Ödedim</button>`
         : ``;
 
       return `
         <div style="padding:10px 0;border-top:1px solid rgba(255,255,255,.10)">
           <div class="row">
             <div>
-              <div style="font-weight:900">${esc(o.packTitle || o.packId || "Paket")} • ${esc(o.priceTL)} TL • ${esc(o.credits)} Hak</div>
-              <div class="muted small">Durum: <b>${esc(statusTr(o.status))}</b> • orderId: <span class="mono">${esc(o.orderId || o.id || "")}</span></div>
+              <div style="font-weight:900">
+                ${esc(o.packTitle || o.packId)} • ${esc(o.priceTL)} TL • ${esc(o.credits)} Hak
+              </div>
+              <div class="muted small">
+                Durum: <b>${esc(statusTr(o.status))}</b> • orderId: <span class="mono">${esc(orderId)}</span>
+              </div>
             </div>
             <div class="row">
               ${btnPay}
@@ -216,9 +146,20 @@
     }).join("");
   }
 
+  // ✅ Satın alma
+  window.buy = async function(packId){
+    try{
+      const o = await Wallet.createOrder(packId);
+      alert("Sipariş oluşturuldu ✅\nLink eklendiğinde burada göreceksin.");
+    }catch(e){
+      alert("Hata: " + (e?.message || e));
+    }
+  };
+
+  // ✅ Ödeme bildirimi
   window.markPaid = async function(orderId){
     try{
-      const ref = prompt("Varsa dekont/işlem no yaz (boş bırakabilirsin):") || "";
+      const ref = prompt("Varsa dekont no yaz (opsiyonel):") || "";
       await Wallet.markPaid(orderId, ref);
       alert("Bildirim gönderildi ✅");
     }catch(e){
@@ -236,114 +177,22 @@
     if(unsubOrders){ unsubOrders(); unsubOrders = null; }
 
     if(!user){
-      elMe.innerHTML = `Giriş yok. (Önce giriş yapmalısın)`;
+      elMe.innerHTML = `Giriş yapmalısın.`;
       elOrders.innerHTML = `<div class="muted">Siparişleri görmek için giriş yap.</div>`;
       return;
     }
 
     elMe.innerHTML = `Giriş: <b>${esc(user.email || user.uid)}</b>`;
-    await Wallet.load(user.uid);
+    try{ await Wallet.load(user.uid); }catch(e){ console.warn("Wallet.load hata:", e); }
 
-    // canlı sipariş listesi (son 50)
-    unsubOrders = Wallet.listenOrders(user.uid, async (arr)=> {
+
+    unsubOrders = Wallet.listenOrders(user.uid, async (arr)=>{
       await renderOrders(arr);
     });
   });
 })();
 </script>
-<script>
-function buy(packId){
-  Wallet.createOrder(packId)
-    .then(o => {
-      alert("Sipariş oluşturuldu ✅ Ödeme linki hazırlanacak.");
-      console.log("ORDER:", o);
-    })
-    .catch(e => {
-      alert("Hata: " + e.message);
-      console.error(e);
-    });
-}
-</script>
-<script>
-(async function(){
-  const auth = window.auth || firebase.auth();
-  const db   = window.db   || firebase.firestore();
-
-  const ordersEl = document.getElementById("orders");
-  const msgEl = document.getElementById("statusInfo") || document.getElementById("walletSub");
-
-  function statusTR(s){
-    if(s==="pending") return "⏳ Sipariş alındı (link hazırlanıyor)";
-    if(s==="link_added") return "🔗 Ödeme linki hazır";
-    if(s==="user_marked_paid") return "🧾 Ödeme bildirildi (admin onayı bekleniyor)";
-    if(s==="approved") return "✅ Onaylandı (hak yüklendi)";
-    if(s==="rejected") return "❌ Reddedildi";
-    if(s==="cancelled") return "🚫 İptal";
-    return s || "-";
-  }
-
-  // ✅ Satın al butonları bununla çalışacak
-  window.buy = function(packId){
-    Wallet.createOrder(packId)
-      .then(o=>{
-        alert("Sipariş oluşturuldu ✅ Link gelince burada göreceksin.");
-        // sipariş listesi zaten listener ile güncellenecek
-      })
-      .catch(e=>{
-        alert("Hata: " + (e?.message || e));
-      });
-  };
-
-  auth.onAuthStateChanged(user=>{
-    if(!user) return;
-
-    // ✅ Canlı sipariş listesi
-    db.collection("users").doc(user.uid).collection("orders")
-      .orderBy("createdAt","desc").limit(20)
-      .onSnapshot(snap=>{
-        const arr = snap.docs.map(d=>({id:d.id, ...(d.data()||{})}));
-
-        if(!arr.length){
-          ordersEl.innerHTML = "Henüz sipariş yok.";
-          return;
-        }
-
-        ordersEl.innerHTML = arr.map(o=>{
-          const link = o.paymentLink || o?.payment?.link || "";
-          const ref = o?.payment?.ref || "";
-          const st = statusTR(o.status);
-
-          return `
-            <div style="padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:12px;margin:8px 0;text-align:left;">
-              <b>${o.packTitle || o.packId}</b><br>
-              <div style="opacity:.85;font-size:12px;">Durum: ${st}</div>
-              <div style="opacity:.85;font-size:12px;">OrderId: ${o.orderId || o.id}</div>
-              ${link ? `<a href="${link}" target="_blank" style="display:inline-block;margin-top:8px;background:#00c853;color:#fff;padding:10px 12px;border-radius:10px;text-decoration:none;font-weight:900;">Ödemeye Git</a>` : ``}
-              ${link ? `
-                <button onclick="markPaid('${o.orderId || o.id}')" style="margin-left:8px;background:#ffd600;border:none;padding:10px 12px;border-radius:10px;font-weight:900;cursor:pointer;">
-                  Ödedim
-                </button>` : ``}
-              ${ref ? `<div style="opacity:.85;font-size:12px;margin-top:6px;">Ref: ${ref}</div>` : ``}
-            </div>
-          `;
-        }).join("");
-
-        if(msgEl && arr[0]) msgEl.textContent = "Son sipariş: " + statusTR(arr[0].status);
-      });
-  });
-
-  // ✅ Kullanıcı “ödedim” bildirimi
-  window.markPaid = function(orderId){
-    const ref = prompt("Dekont/Referans no (opsiyonel):") || "";
-    Wallet.markPaid(orderId, ref)
-      .then(()=>alert("Ödeme bildirildi ✅ Admin onaylayınca hak yüklenecek."))
-      .catch(e=>alert("Hata: " + (e?.message || e)));
-  };
-})();
-</script>
+ 
 
 </body>
 </html>
-
-
-
