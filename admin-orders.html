@@ -271,7 +271,7 @@
 
     // ✅ Liste (çalışırsa süper, çalışmazsa manuel mod zaten var)
     _unsub = db.collectionGroup("orders")
-      .orderBy("createdAt","desc")
+      
       .limit(200)
       .onSnapshot((snap)=>{
         const arr = [];
