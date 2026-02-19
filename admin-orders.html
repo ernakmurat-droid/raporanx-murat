@@ -141,6 +141,10 @@
   let mode = "list"; // list | manual
   let _unsub = null;
   let _cache = [];
+  // 🔔 DINK sesi için
+let _lastCount = 0;
+const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+
 
   function setMode(next){
     mode = next;
