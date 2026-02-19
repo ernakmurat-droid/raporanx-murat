@@ -94,13 +94,12 @@
     <!-- LİSTE MOD -->
     <div id="listBox">
       <div class="card" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <select id="statusFilter" style="max-width:360px;">
-          <option value="active">Aktif (pending/link_added/user_marked_paid)</option>
+        <select id="statusFilter" style="max-width:420px;">
+          <option value="active">Aktif (pending/link_added/link_sent/user_marked_paid)</option>
           <option value="all">Hepsi</option>
           <option value="pending">pending</option>
-          <option value="link_added">link_added</option>
-          <option value="link_sent">link_sent</option>
-
+          <option value="link_added">link_added (eski)</option>
+          <option value="link_sent">link_sent (yeni)</option>
           <option value="user_marked_paid">user_marked_paid</option>
           <option value="approved">approved</option>
           <option value="rejected">rejected</option>
@@ -162,18 +161,20 @@
   function trStatus(s){
     if(s === "approved") return "Onaylandı ✅";
     if(s === "user_marked_paid") return "Ödeme bildirildi ⏳";
+    if(s === "link_sent") return "Link gönderildi ⏳";
     if(s === "link_added") return "Link eklendi ⏳";
     if(s === "pending") return "Yeni sipariş ⏳";
     if(s === "rejected") return "Reddedildi ❌";
     if(s === "cancelled") return "İptal";
     return s || "-";
   }
+
   function tagClass(s){
-  if(s === "approved") return "ok";
-  if(s === "rejected") return "bad";
-  if(["pending","link_added","link_sent","user_marked_paid"].includes(s)) return "wait";
-  return "";
-}
+    if(s === "approved") return "ok";
+    if(s === "rejected") return "bad";
+    if(["pending","link_added","link_sent","user_marked_paid"].includes(s)) return "wait";
+    return "";
+  }
 
   function ts(x){
     try{
@@ -182,6 +183,7 @@
       return d.toLocaleString("tr-TR");
     }catch(e){ return "-"; }
   }
+
   function getParentUid(docRef){
     try{ return docRef?.parent?.parent?.id || ""; }
     catch(e){ return ""; }
@@ -193,9 +195,7 @@
     let out = rows;
 
     if(modeF === "active"){
-    out = out.filter(x => ["pending","link_added","link_sent","user_marked_paid"].includes(x.status));
-
-  
+      out = out.filter(x => ["pending","link_added","link_sent","user_marked_paid"].includes(x.status));
     } else if(modeF !== "all"){
       out = out.filter(x => x.status === modeF);
     }
@@ -221,9 +221,8 @@
 
     elList.innerHTML = rows.map(o => {
       const uid = o.uid || o._parentUid || "";
-      const payLink = o?.payment?.link || o?.paymentLink || "";
-      const payRef  = o?.payment?.ref || o?.paymentRef || "";
-
+      const payLink = (o?.payment?.link || o?.paymentLink || "").trim();
+      const payRef  = (o?.payment?.ref  || o?.paymentRef  || "").trim();
 
       const who = (o.userName || o.userEmail)
         ? `${o.userName || ""} ${o.userEmail ? "• "+o.userEmail : ""}`
@@ -235,7 +234,7 @@
             <div>
               <div style="font-weight:1000; font-size:16px">${o.packTitle || o.packId || "Paket"}</div>
               <div class="small muted">${who}</div>
-              <div class="small muted">orderId: <span class="mono">${o.orderId}</span> • created: ${ts(o.createdAt)}</div>
+              <div class="small muted">orderId: <span class="mono">${o.orderId || ""}</span> • created: ${ts(o.createdAt)}</div>
               <div class="small muted">uid: <span class="mono">${uid || "-"}</span></div>
             </div>
 
@@ -247,9 +246,7 @@
 
             <div>
               ${payLink ? `<div class="small">Link: <a href="${payLink}" target="_blank" rel="noopener noreferrer">${payLink}</a></div>` : ``}
-
               ${payRef ? `<div class="small">Ref/Dekont: <span class="mono">${payRef}</span></div>` : ``}
-}
             </div>
 
             <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
@@ -277,9 +274,7 @@
 
     elHint.textContent = "Liste dinleniyor…";
 
-    // ✅ Liste (çalışırsa süper, çalışmazsa manuel mod zaten var)
     _unsub = db.collectionGroup("orders")
-      
       .limit(200)
       .onSnapshot((snap)=>{
         const arr = [];
@@ -311,25 +306,22 @@
 
       const link = (prompt("QNB ödeme linkini yapıştır:") || "").trim();
       if(!link) return;
-const payRef = (prompt("Ref/Dekont no (opsiyonel):") || "").trim();
 
-     const orderRef = db.collection("users").doc(uid).collection("orders").doc(orderId);
+      const payRef = (prompt("Ref/Dekont no (opsiyonel):") || "").trim();
 
-// ✅ seçili siparişi hafızaya al (ileride butonlu UI yaparsak lazım)
-window.selectedOrderRef = orderRef;
+      const orderRef = db.collection("users").doc(uid).collection("orders").doc(orderId);
 
-await orderRef.set({
-  status: "link_sent",                 // ✅ daha net
-  paymentLink: link,                   // ✅ ayrı alan
- const payRef  = o?.payment?.ref || o?.paymentRef || "";
-  // ✅ ayrı alan (boş olabilir)
-  payment: {                           // (istersen dursun, geriye uyum)
-    link: link,
-    ref: payRef,
-    linkAddedAt: FieldValue.serverTimestamp()
-  },
-  updatedAt: FieldValue.serverTimestamp()
-}, { merge:true });
+      await orderRef.set({
+        status: "link_sent",
+        paymentLink: link,
+        paymentRef: payRef,
+        payment: {
+          link: link,
+          ref: payRef,
+          linkAddedAt: FieldValue.serverTimestamp()
+        },
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge:true });
 
       alert("Link eklendi ✅");
     }catch(e){
@@ -410,8 +402,6 @@ await orderRef.set({
     }
   });
 })();
-
-
 </script>
 
 </body>
