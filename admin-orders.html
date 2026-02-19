@@ -55,8 +55,7 @@
         <button class="btn ghost" id="btnToggleMode">Mod: Liste</button>
         <button class="btn ghost" id="btnRefresh">Yenile</button>
         <button class="btn danger" id="btnLogout">Çıkış</button>
-        <button class="btn danger" onclick="ADMIN_delete('${uid}','${o.orderId}')">🗑 Sil</button>
-
+        
       </div>
     </div>
 
@@ -258,6 +257,7 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
             <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
               <button class="btn warn" onclick="ADMIN_setLink('${uid}','${o.orderId}')">🔗 Link Ekle</button>
               <button class="btn primary" onclick="ADMIN_approve('${uid}','${o.orderId}')">✅ Onayla</button>
+              <button class="btn danger" onclick="ADMIN_delete('${uid}','${o.orderId}')">🗑 Sil</button>
             </div>
           </div>
         </div>
