@@ -99,6 +99,8 @@
           <option value="all">Hepsi</option>
           <option value="pending">pending</option>
           <option value="link_added">link_added</option>
+          <option value="link_sent">link_sent</option>
+
           <option value="user_marked_paid">user_marked_paid</option>
           <option value="approved">approved</option>
           <option value="rejected">rejected</option>
@@ -167,11 +169,12 @@
     return s || "-";
   }
   function tagClass(s){
-    if(s === "approved") return "ok";
-    if(s === "rejected") return "bad";
-    if(["pending","link_added","user_marked_paid"].includes(s)) return "wait";
-    return "";
-  }
+  if(s === "approved") return "ok";
+  if(s === "rejected") return "bad";
+  if(["pending","link_added","link_sent","user_marked_paid"].includes(s)) return "wait";
+  return "";
+}
+
   function ts(x){
     try{
       const d = x?.toDate ? x.toDate() : (x ? new Date(x) : null);
@@ -190,7 +193,9 @@
     let out = rows;
 
     if(modeF === "active"){
-      out = out.filter(x => ["pending","link_added","user_marked_paid"].includes(x.status));
+    out = out.filter(x => ["pending","link_added","link_sent","user_marked_paid"].includes(x.status));
+
+  
     } else if(modeF !== "all"){
       out = out.filter(x => x.status === modeF);
     }
@@ -240,8 +245,10 @@
             </div>
 
             <div>
-              ${payLink ? `<div class="small">Link: <a href="${payLink}" target="_blank">${payLink}</a></div>` : `<div class="small muted">Link: (yok)</div>`}
-              ${payRef ? `<div class="small">Ref/Dekont: <span class="mono">${payRef}</span></div>` : `<div class="small muted">Ref/Dekont: (yok)</div>`}
+              ${payLink ? `<div class="small">Link: <a href="${payLink}" target="_blank" rel="noopener noreferrer">${payLink}</a></div>` : ``}
+
+              ${payRef ? `<div class="small">Ref/Dekont: <span class="mono">${payRef}</span></div>` : ``}
+}
             </div>
 
             <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
@@ -303,18 +310,25 @@
 
       const link = (prompt("QNB ödeme linkini yapıştır:") || "").trim();
       if(!link) return;
+const payRef = (prompt("Ref/Dekont no (opsiyonel):") || "").trim();
 
-      if(window.Wallet?.setPaymentLink){
-        await Wallet.setPaymentLink(uid, orderId, link);
-      }else{
-        // fallback direkt yaz
-        await db.collection("users").doc(uid).collection("orders").doc(orderId).set({
-          status: "link_added",
-          paymentLink: link,
-          payment: { link: link, linkAddedAt: FieldValue.serverTimestamp() },
-          updatedAt: FieldValue.serverTimestamp()
-        }, { merge:true });
-      }
+     const orderRef = db.collection("users").doc(uid).collection("orders").doc(orderId);
+
+// ✅ seçili siparişi hafızaya al (ileride butonlu UI yaparsak lazım)
+window.selectedOrderRef = orderRef;
+
+await orderRef.set({
+  status: "link_sent",                 // ✅ daha net
+  paymentLink: link,                   // ✅ ayrı alan
+  paymentRef: payRef,                  // ✅ ayrı alan (boş olabilir)
+  payment: {                           // (istersen dursun, geriye uyum)
+    link: link,
+    ref: payRef,
+    linkAddedAt: FieldValue.serverTimestamp()
+  },
+  updatedAt: FieldValue.serverTimestamp()
+}, { merge:true });
+
       alert("Link eklendi ✅");
     }catch(e){
       alert(e?.message || e);
@@ -394,36 +408,8 @@
     }
   });
 })();
-</script>
-<script>
-firebase.auth().onAuthStateChanged(function(user){
-  const statusBox = document.querySelector("h1") || document.body;
 
-  if(!user){
-    document.body.innerHTML = "<h2>Giriş yok. Ana sayfadan giriş yap.</h2>";
-    return;
-  }
 
-  // Admin email kontrolü
-  const adminEmail = "ernakmurat@gmail.com";
-
-  if(user.email !== adminEmail){
-    document.body.innerHTML = "<h2>Bu sayfa sadece admin içindir.</h2>";
-    return;
-  }
-
-  console.log("ADMIN OK:", user.email);
-
-  // Ekrana yaz
-  const info = document.createElement("div");
-  info.style.padding = "10px";
-  info.style.color = "#0f0";
-  info.innerHTML = "Admin: " + user.email + " ✅";
-  document.body.prepend(info);
-
-  // 👉 Burada siparişleri yükleyebilirsin
-  // loadOrders(); // varsa çalışır
-});
 </script>
 
 </body>
