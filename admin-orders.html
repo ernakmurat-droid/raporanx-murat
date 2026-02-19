@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>RaporanX • Admin</title>
-
+f
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -257,8 +257,9 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
             <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
               <button class="btn warn" onclick="ADMIN_setLink('${uid}','${o.orderId}')">🔗 Link Ekle</button>
               <button class="btn primary" onclick="ADMIN_approve('${uid}','${o.orderId}')">✅ Onayla</button>
-              <button class="btn danger" onclick="ADMIN_delete('${uid}','${o.orderId}')">🗑 Sil</button>
               <button class="btn ghost" onclick="ADMIN_expire('${uid}','${o.orderId}')">⏱ Expired</button>
+        
+
 
               window.ADMIN_expire = async function(uid, orderId){
   try{
@@ -375,6 +376,26 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
       alert(e?.message || e);
     }
   };
+window.ADMIN_expire = async function(uid, orderId){
+  try{
+    uid = String(uid||"").trim();
+    orderId = String(orderId||"").trim();
+    if(!uid || !orderId) return alert("uid/orderId yok");
+
+    const ok = confirm("Bu siparişi 'expired' yapmak istiyor musun? (Silinmez, kapanır)");
+    if(!ok) return;
+
+    await db.collection("users").doc(uid).collection("orders").doc(orderId).set({
+      status: "expired",
+      expiredAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+
+    alert("Expired yapıldı ✅");
+  }catch(e){
+    alert(e?.message || e);
+  }
+};
 
   // ✅ MANUEL butonlar
   document.getElementById("btnLoadOrder").onclick = async ()=>{
