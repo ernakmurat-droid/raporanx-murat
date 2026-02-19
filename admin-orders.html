@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>RaporanX • Admin</title>
-f
+
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -55,7 +55,6 @@ f
         <button class="btn ghost" id="btnToggleMode">Mod: Liste</button>
         <button class="btn ghost" id="btnRefresh">Yenile</button>
         <button class="btn danger" id="btnLogout">Çıkış</button>
-        
       </div>
     </div>
 
@@ -83,7 +82,9 @@ f
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
         <button class="btn ghost" id="btnLoadOrder">📥 Siparişi Aç</button>
         <button class="btn warn" id="btnSetLink">🔗 Link Ekle</button>
+        <button class="btn ghost" id="btnExpire">⏱ Expired</button>
         <button class="btn primary" id="btnApprove">✅ Onayla</button>
+        <button class="btn danger" id="btnDelete">🗑 Sil</button>
       </div>
 
       <div class="line"></div>
@@ -96,13 +97,13 @@ f
     <div id="listBox">
       <div class="card" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         <select id="statusFilter" style="max-width:420px;">
-          <option value="active">Aktif (pending/link_added/link_sent/user_marked_paid)</option>
+          <option value="active">Aktif (pending/link_sent/user_marked_paid)</option>
           <option value="all">Hepsi</option>
           <option value="pending">pending</option>
-          <option value="link_added">link_added (eski)</option>
-          <option value="link_sent">link_sent (yeni)</option>
+          <option value="link_sent">link_sent</option>
           <option value="user_marked_paid">user_marked_paid</option>
           <option value="approved">approved</option>
+          <option value="expired">expired</option>
           <option value="rejected">rejected</option>
           <option value="cancelled">cancelled</option>
         </select>
@@ -142,10 +143,6 @@ f
   let mode = "list"; // list | manual
   let _unsub = null;
   let _cache = [];
-  // 🔔 DINK sesi için
-let _lastCount = 0;
-const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-
 
   function setMode(next){
     mode = next;
@@ -167,7 +164,7 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
     if(s === "approved") return "Onaylandı ✅";
     if(s === "user_marked_paid") return "Ödeme bildirildi ⏳";
     if(s === "link_sent") return "Link gönderildi ⏳";
-    if(s === "link_added") return "Link eklendi ⏳";
+    if(s === "expired") return "Süresi doldu ⏱️";
     if(s === "pending") return "Yeni sipariş ⏳";
     if(s === "rejected") return "Reddedildi ❌";
     if(s === "cancelled") return "İptal";
@@ -177,7 +174,7 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
   function tagClass(s){
     if(s === "approved") return "ok";
     if(s === "rejected") return "bad";
-    if(["pending","link_added","link_sent","user_marked_paid"].includes(s)) return "wait";
+    if(["pending","link_sent","user_marked_paid","expired","cancelled"].includes(s)) return "wait";
     return "";
   }
 
@@ -200,7 +197,7 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
     let out = rows;
 
     if(modeF === "active"){
-      out = out.filter(x => ["pending","link_added","link_sent","user_marked_paid"].includes(x.status));
+      out = out.filter(x => ["pending","link_sent","user_marked_paid"].includes(x.status));
     } else if(modeF !== "all"){
       out = out.filter(x => x.status === modeF);
     }
@@ -256,32 +253,9 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
 
             <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
               <button class="btn warn" onclick="ADMIN_setLink('${uid}','${o.orderId}')">🔗 Link Ekle</button>
-              <button class="btn primary" onclick="ADMIN_approve('${uid}','${o.orderId}')">✅ Onayla</button>
               <button class="btn ghost" onclick="ADMIN_expire('${uid}','${o.orderId}')">⏱ Expired</button>
-        
-
-
-              window.ADMIN_expire = async function(uid, orderId){
-  try{
-    uid = String(uid||"").trim();
-    orderId = String(orderId||"").trim();
-    if(!uid || !orderId) return alert("uid/orderId yok");
-
-    const ok = confirm("Bu siparişi 'expired' yapmak istiyor musun? (Silinmez, kapanır)");
-    if(!ok) return;
-
-    await db.collection("users").doc(uid).collection("orders").doc(orderId).set({
-      status: "expired",
-      expiredAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge:true });
-
-    alert("Expired yapıldı ✅");
-  }catch(e){
-    alert(e?.message || e);
-  }
-};
-
+              <button class="btn primary" onclick="ADMIN_approve('${uid}','${o.orderId}')">✅ Onayla</button>
+              <button class="btn danger" onclick="ADMIN_delete('${uid}','${o.orderId}')">🗑 Sil</button>
             </div>
           </div>
         </div>
@@ -327,7 +301,7 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
       });
   }
 
-  // ✅ GLOBAL admin aksiyonları (liste butonları için)
+  // ✅ GLOBAL admin aksiyonları
   window.ADMIN_setLink = async function(uid, orderId){
     try{
       uid = String(uid||"").trim();
@@ -359,6 +333,27 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
     }
   };
 
+  window.ADMIN_expire = async function(uid, orderId){
+    try{
+      uid = String(uid||"").trim();
+      orderId = String(orderId||"").trim();
+      if(!uid || !orderId) return alert("uid/orderId yok");
+
+      const ok = confirm("Bu siparişi 'expired' yapmak istiyor musun? (Silinmez, kapanır)");
+      if(!ok) return;
+
+      await db.collection("users").doc(uid).collection("orders").doc(orderId).set({
+        status: "expired",
+        expiredAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge:true });
+
+      alert("Expired yapıldı ✅");
+    }catch(e){
+      alert(e?.message || e);
+    }
+  };
+
   window.ADMIN_approve = async function(uid, orderId){
     try{
       uid = String(uid||"").trim();
@@ -376,26 +371,22 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
       alert(e?.message || e);
     }
   };
-window.ADMIN_expire = async function(uid, orderId){
-  try{
-    uid = String(uid||"").trim();
-    orderId = String(orderId||"").trim();
-    if(!uid || !orderId) return alert("uid/orderId yok");
 
-    const ok = confirm("Bu siparişi 'expired' yapmak istiyor musun? (Silinmez, kapanır)");
-    if(!ok) return;
+  window.ADMIN_delete = async function(uid, orderId){
+    try{
+      uid = String(uid||"").trim();
+      orderId = String(orderId||"").trim();
+      if(!uid || !orderId) return alert("uid/orderId yok");
 
-    await db.collection("users").doc(uid).collection("orders").doc(orderId).set({
-      status: "expired",
-      expiredAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge:true });
+      const ok = confirm("Bu siparişi SİLMEK istiyor musun? (Geri alınmaz)");
+      if(!ok) return;
 
-    alert("Expired yapıldı ✅");
-  }catch(e){
-    alert(e?.message || e);
-  }
-};
+      await db.collection("users").doc(uid).collection("orders").doc(orderId).delete();
+      alert("Silindi ✅");
+    }catch(e){
+      alert(e?.message || e);
+    }
+  };
 
   // ✅ MANUEL butonlar
   document.getElementById("btnLoadOrder").onclick = async ()=>{
@@ -423,11 +414,25 @@ window.ADMIN_expire = async function(uid, orderId){
     await window.ADMIN_setLink(uid, orderId);
   };
 
+  document.getElementById("btnExpire").onclick = async ()=>{
+    const uid = String(mUid.value||"").trim();
+    const orderId = String(mOrderId.value||"").trim();
+    if(!uid || !orderId) return alert("UID + OrderId gir");
+    await window.ADMIN_expire(uid, orderId);
+  };
+
   document.getElementById("btnApprove").onclick = async ()=>{
     const uid = String(mUid.value||"").trim();
     const orderId = String(mOrderId.value||"").trim();
     if(!uid || !orderId) return alert("UID + OrderId gir");
     await window.ADMIN_approve(uid, orderId);
+  };
+
+  document.getElementById("btnDelete").onclick = async ()=>{
+    const uid = String(mUid.value||"").trim();
+    const orderId = String(mOrderId.value||"").trim();
+    if(!uid || !orderId) return alert("UID + OrderId gir");
+    await window.ADMIN_delete(uid, orderId);
   };
 
   // Top bar
@@ -451,22 +456,7 @@ window.ADMIN_expire = async function(uid, orderId){
       if(_unsub) _unsub();
     }
   });
-})();window.ADMIN_delete = async function(uid, orderId){
-  try{
-    uid = String(uid||"").trim();
-    orderId = String(orderId||"").trim();
-    if(!uid || !orderId) return alert("uid/orderId yok");
-
-    const ok = confirm("Bu siparişi SİLMEK istiyor musun? (Geri alınmaz)");
-    if(!ok) return;
-
-    await db.collection("users").doc(uid).collection("orders").doc(orderId).delete();
-    alert("Silindi ✅");
-  }catch(e){
-    alert(e?.message || e);
-  }
-};
-
+})();
 </script>
 
 </body>
