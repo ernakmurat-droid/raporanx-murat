@@ -222,7 +222,8 @@
     elList.innerHTML = rows.map(o => {
       const uid = o.uid || o._parentUid || "";
       const payLink = o?.payment?.link || o?.paymentLink || "";
-      const payRef  = o?.payment?.ref  || "";
+      const payRef  = o?.payment?.ref || o?.paymentRef || "";
+
 
       const who = (o.userName || o.userEmail)
         ? `${o.userName || ""} ${o.userEmail ? "• "+o.userEmail : ""}`
@@ -320,7 +321,8 @@ window.selectedOrderRef = orderRef;
 await orderRef.set({
   status: "link_sent",                 // ✅ daha net
   paymentLink: link,                   // ✅ ayrı alan
-  paymentRef: payRef,                  // ✅ ayrı alan (boş olabilir)
+ const payRef  = o?.payment?.ref || o?.paymentRef || "";
+  // ✅ ayrı alan (boş olabilir)
   payment: {                           // (istersen dursun, geriye uyum)
     link: link,
     ref: payRef,
