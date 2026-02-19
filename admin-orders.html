@@ -55,6 +55,8 @@
         <button class="btn ghost" id="btnToggleMode">Mod: Liste</button>
         <button class="btn ghost" id="btnRefresh">Yenile</button>
         <button class="btn danger" id="btnLogout">Çıkış</button>
+        <button class="btn danger" onclick="ADMIN_delete('${uid}','${o.orderId}')">🗑 Sil</button>
+
       </div>
     </div>
 
@@ -405,7 +407,22 @@ const dinkAudio = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_
       if(_unsub) _unsub();
     }
   });
-})();
+})();window.ADMIN_delete = async function(uid, orderId){
+  try{
+    uid = String(uid||"").trim();
+    orderId = String(orderId||"").trim();
+    if(!uid || !orderId) return alert("uid/orderId yok");
+
+    const ok = confirm("Bu siparişi SİLMEK istiyor musun? (Geri alınmaz)");
+    if(!ok) return;
+
+    await db.collection("users").doc(uid).collection("orders").doc(orderId).delete();
+    alert("Silindi ✅");
+  }catch(e){
+    alert(e?.message || e);
+  }
+};
+
 </script>
 
 </body>
