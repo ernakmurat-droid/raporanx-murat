@@ -1,200 +1,169 @@
-<!doctype html>
-<html lang="tr">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>RaporanX • Cüzdan</title>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
-  <script src="firebase-config.js"></script>
-  <script src="wallet.js"></script>
-
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#0f172a;color:#e5e7eb}
-    .wrap{max-width:900px;margin:0 auto;padding:16px}
-    .card{background:#111827;border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:14px;margin:12px 0}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
-    .btn{background:rgba(255,255,255,.08);color:#e5e7eb;border:1px solid rgba(255,255,255,.12)}
-    .buy{background:#22c55e;color:#062}
-    .warn{background:#f59e0b;color:#111}
-    .link{color:#60a5fa;text-decoration:none;font-weight:800}
-    .muted{opacity:.75}
-    input{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#0b1220;color:#e5e7eb}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    .small{font-size:12px}
-  </style>
-</head>
-
-<body>
-  <a href="/admin-orders.html"
-
-     style="position:fixed;top:10px;right:10px;background:#ef4444;color:white;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:800;z-index:9999;">
-    🔧 Admin
-  </a>
-
-  <div class="wrap">
-    <div class="row">
-      <div>
-        <div style="font-size:20px;font-weight:900;">🎟️ Cüzdan</div>
-        <div class="muted" id="me">Giriş bekleniyor…</div>
-      </div>
-      <div class="row">
-        <button class="btn" id="btnRefresh">↻ Yenile</button>
-        <button class="btn" id="btnLogout">Çıkış</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="font-size:18px;font-weight:900;" id="walletAmount">—</div>
-      <div class="muted" id="walletSub">—</div>
-    </div>
-
-    <div class="card">
-      <div style="font-weight:900;margin-bottom:10px;">Paket Satın Al</div>
-      <div class="row">
-        <button class="buy" onclick="buy('P120')">120 TL • 4 Hak</button>
-        <button class="buy" onclick="buy('P200')">200 TL • 8 Hak</button>
-        <button class="buy" onclick="buy('P500')">500 TL • 25 Hak</button>
-      </div>
-      <div class="muted" style="margin-top:10px;">
-        Not: Ödeme linki admin tarafından eklendiğinde aşağıda görünür.
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="font-weight:900;margin-bottom:10px;">Siparişlerim</div>
-      <div id="orders" class="muted">Yükleniyor…</div>
-    </div>
-  </div>
-
-  <script>
- 
+/* wallet.js — RaporanX */
 (function(){
   const auth = firebase.auth();
+  const db = firebase.firestore();
 
-  const elMe = document.getElementById("me");
-  const elOrders = document.getElementById("orders");
-
-  let unsubOrders = null;
-
-  function esc(s){
-    return String(s||"").replace(/[&<>"']/g, m => ({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[m]));
-  }
-
-  function pickLink(o){
-    return (o?.paymentLink || o?.payment?.link || "").trim();
-  }
-
-  function statusTr(s){
-    if(s==="pending") return "Yeni sipariş (link hazırlanıyor) ⏳";
-    if(s==="link_added") return "Link hazır ✅";
-    if(s==="user_marked_paid") return "Ödeme bildirildi ⏳";
-    if(s==="approved") return "Onaylandı ✅";
-    if(s==="rejected") return "Reddedildi ❌";
-    if(s==="cancelled") return "İptal 🚫";
-    return s || "-";
-  }
-arr = [...arr].sort((a,b)=>{
-  const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-  const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-  return tb - ta;
-});
-
-  async function renderOrders(arr){
-    if(!arr || !arr.length){
-      elOrders.innerHTML = `<div class="muted">Henüz sipariş yok.</div>`;
-      return;
-    }
-
-    elOrders.innerHTML = arr.map(o => {
-      const orderId = o.orderId || o.id || "";
-      const link = pickLink(o);
-      const approved = (o.status === "approved");
-
-      const btnPay = (link && !approved)
-    ? `<a class="link" href="${encodeURI(link)}" target="_blank" rel="noopener">🔗 Ödemeye Git</a>`
-
-        : `<span class="muted">${link ? "Link var" : "Link yok"}</span>`;
-
-      const btnMarkPaid = (!approved)
-        ? `<button class="warn" onclick="markPaid('${esc(orderId)}')">Ödedim</button>`
-        : ``;
-
-      return `
-        <div style="padding:10px 0;border-top:1px solid rgba(255,255,255,.10)">
-          <div class="row">
-            <div>
-              <div style="font-weight:900">
-                ${esc(o.packTitle || o.packId)} • ${esc(o.priceTL)} TL • ${esc(o.credits)} Hak
-              </div>
-              <div class="muted small">
-                Durum: <b>${esc(statusTr(o.status))}</b> • orderId: <span class="mono">${esc(orderId)}</span>
-              </div>
-            </div>
-            <div class="row">
-              ${btnPay}
-              ${btnMarkPaid}
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
-  }
-
-  // ✅ Satın alma
-  window.buy = async function(packId){
-    try{
-      const o = await Wallet.createOrder(packId);
-      alert("Sipariş oluşturuldu ✅\nLink eklendiğinde burada göreceksin.");
-    }catch(e){
-      alert("Hata: " + (e?.message || e));
-    }
+  const PACKS = {
+    P120: { id:"P120", title:"120 TL • 4 Hak", priceTL:120, credits:4 },
+    P200: { id:"P200", title:"200 TL • 8 Hak", priceTL:200, credits:8 },
+    P500: { id:"P500", title:"500 TL • 25 Hak", priceTL:500, credits:25 },
   };
 
-  // ✅ Ödeme bildirimi
-  window.markPaid = async function(orderId){
-    try{
-      const ref = prompt("Varsa dekont no yaz (opsiyonel):") || "";
-      await Wallet.markPaid(orderId, ref);
-      alert("Bildirim gönderildi ✅");
-    }catch(e){
-      alert("Hata: " + (e?.message || e));
+  function nowTs(){ return firebase.firestore.FieldValue.serverTimestamp(); }
+
+  function usersDoc(uid){
+    return db.collection("users").doc(uid);
+  }
+
+  function ordersCol(uid){
+    return db.collection("users").doc(uid).collection("orders");
+  }
+
+  async function ensureUserDoc(uid){
+    const ref = usersDoc(uid);
+    const snap = await ref.get();
+    if(!snap.exists){
+      await ref.set({
+        uid,
+        credits: 0,
+        createdAt: nowTs(),
+        updatedAt: nowTs(),
+      }, { merge:true });
     }
+  }
+
+  function setWalletUI(credits){
+    const elAmount = document.getElementById("walletAmount");
+    const elSub = document.getElementById("walletSub");
+    if(elAmount) elAmount.textContent = `🎟️ ${Number(credits||0)} Hak`;
+    if(elSub) elSub.textContent = `Bakiyen: ${Number(credits||0)} hak`;
+  }
+
+  const Wallet = {
+    PACKS,
+
+    // ✅ Kullanıcı cüzdanını yükle
+    async load(uid){
+      if(!uid) throw new Error("Wallet.load: uid yok");
+      await ensureUserDoc(uid);
+
+      const snap = await usersDoc(uid).get();
+      const data = snap.data() || {};
+      setWalletUI(data.credits || 0);
+      return data;
+    },
+
+    // ✅ Siparişleri dinle (TEK SNAPSHOT → TEK ARRAY)
+    listenOrders(uid, cb){
+      if(!uid) throw new Error("Wallet.listenOrders: uid yok");
+      const q = ordersCol(uid).orderBy("createdAt", "desc");
+
+      const unsub = q.onSnapshot((snap)=>{
+        const arr = [];
+        snap.forEach(doc => {
+          arr.push({ id: doc.id, ...doc.data() });
+        });
+        try{ cb(arr); }catch(e){ console.warn("listenOrders cb hata:", e); }
+      }, (err)=>{
+        console.error("listenOrders snapshot error:", err);
+      });
+
+      return unsub;
+    },
+
+    // ✅ Sipariş oluştur (users/{uid}/orders/{orderId})
+    async createOrder(packId){
+      const user = auth.currentUser;
+      if(!user) throw new Error("createOrder: giriş yok");
+
+      const pack = PACKS[String(packId)];
+      if(!pack) throw new Error("createOrder: packId geçersiz");
+
+      await ensureUserDoc(user.uid);
+
+      const ref = ordersCol(user.uid).doc(); // auto id
+
+      const order = {
+        orderId: ref.id,
+
+        // ayırt etme
+        uid: user.uid,
+        userEmail: user.email || "",
+        userName: user.displayName || "",
+
+        packId: pack.id,
+        packTitle: pack.title,
+        priceTL: pack.priceTL,
+        credits: pack.credits,
+
+        status: "pending",
+        paymentLink: "",
+        userPaidRef: "",
+        appliedToWallet: false,
+
+        createdAt: nowTs(),
+        updatedAt: nowTs(),
+      };
+
+      // ✅ tek write (çoğalma yok)
+      await ref.set(order, { merge:true });
+      return order;
+    },
+
+    // ✅ Kullanıcı “ödedim” işaretlesin
+    async markPaid(orderId, refText){
+      const user = auth.currentUser;
+      if(!user) throw new Error("markPaid: giriş yok");
+      if(!orderId) throw new Error("markPaid: orderId yok");
+
+      const ref = ordersCol(user.uid).doc(orderId);
+
+      await ref.set({
+        status: "user_marked_paid",
+        userPaidRef: (refText || "").trim(),
+        updatedAt: nowTs(),
+      }, { merge:true });
+
+      return true;
+    },
+
+    // ✅ Fatura bilgisi getir
+    async getBillingProfile(uid){
+      if(!uid) throw new Error("getBillingProfile: uid yok");
+      await ensureUserDoc(uid);
+      const snap = await usersDoc(uid).get();
+      const data = snap.data() || {};
+      return data.billingProfile || null;
+    },
+
+    // ✅ Fatura bilgisi kaydet (TEK NOKTA → users/{uid}.billingProfile)
+    async saveBillingProfile(uid, profile){
+      if(!uid) throw new Error("saveBillingProfile: uid yok");
+
+      const clean = {
+        type: (profile?.type || "individual"),
+        fullName: (profile?.fullName || "").trim(),
+        tcOrVkn: (profile?.tcOrVkn || "").trim(),
+        taxOffice: (profile?.taxOffice || "").trim(),
+        address: (profile?.address || "").trim(),
+        phone: (profile?.phone || "").trim(),
+        email: (profile?.email || "").trim(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+
+      // Basit doğrulama (minimum)
+      if(!clean.fullName) throw new Error("Ad/Ünvan boş olamaz");
+      if(!clean.tcOrVkn) throw new Error("TCKN/VKN boş olamaz");
+      if(!clean.address) throw new Error("Adres boş olamaz");
+
+      await usersDoc(uid).set({
+        billingProfile: clean,
+        updatedAt: nowTs(),
+      }, { merge:true });
+
+      return clean;
+    },
   };
 
-  document.getElementById("btnLogout").onclick = ()=> auth.signOut();
-  document.getElementById("btnRefresh").onclick = async ()=>{
-    const u = auth.currentUser;
-    if(u) await Wallet.load(u.uid);
-  };
-
-  auth.onAuthStateChanged(async (user)=>{
-    if(unsubOrders){ unsubOrders(); unsubOrders = null; }
-
-    if(!user){
-      elMe.innerHTML = `Giriş yapmalısın.`;
-      elOrders.innerHTML = `<div class="muted">Siparişleri görmek için giriş yap.</div>`;
-      return;
-    }
-
-    elMe.innerHTML = `Giriş: <b>${esc(user.email || user.uid)}</b>`;
-    try{ await Wallet.load(user.uid); }catch(e){ console.warn("Wallet.load hata:", e); }
-
-
-    unsubOrders = Wallet.listenOrders(user.uid, async (arr)=>{
-      await renderOrders(arr);
-    });
-  });
+  window.Wallet = Wallet;
 })();
-</script>
- 
-
-</body>
-</html>
-
