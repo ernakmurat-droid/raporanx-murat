@@ -43,7 +43,7 @@
   <div class="wrap">
     <div class="row">
       <div>
-        <div style="font-size:20px;font-weight:900;">🎟️ Cüzdan</div>
+        
         <div class="muted" id="me">Giriş bekleniyor…</div>
       </div>
       <div class="row">
@@ -118,27 +118,26 @@
       </div>
     </div>
 
-    <div class="card">
-      <div style="font-weight:900;margin-bottom:10px;">Paket Satın Al</div>
-      <div class="row">
-        <button class="buy" onclick="buy('P120')">120 TL • 4 Hak</button>
-        <button class="buy" onclick="buy('P200')">200 TL • 8 Hak</button>
-        <button class="buy" onclick="buy('P500')">500 TL • 25 Hak</button>
-      </div>
-      <div class="muted" style="margin-top:10px;">
-        Not: Ödeme linki admin tarafından eklendiğinde aşağıda görünür.
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="font-weight:900;margin-bottom:10px;">Siparişlerim</div>
-      <div id="orders" class="muted">Yükleniyor…</div>
-    </div>
+  <div class="card">
+  <div style="font-weight:900;margin-bottom:10px;">Paket Satın Al</div>
+  <div class="row">
+    <button class="buy" onclick="buy('P120')">120 TL • 4 Hak</button>
+    <button class="buy" onclick="buy('P200')">200 TL • 8 Hak</button>
+    <button class="buy" onclick="buy('P500')">500 TL • 25 Hak</button>
   </div>
-console.log("WALLET PAGE LOADED:", location.href);
-console.log("wallet.js loaded?", typeof window.Wallet);
+  <div class="muted" style="margin-top:10px;">
+    Not: Ödeme linki admin tarafından eklendiğinde aşağıda görünür.
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-weight:900;margin-bottom:10px;">Siparişlerim</div>
+  <div id="orders" class="muted">Yükleniyor…</div>
+</div>
+ </div> <!-- wrap kapanışı -->
   <script>
   (function(){
+    
     const auth = firebase.auth();
 
     const elMe = document.getElementById("me");
@@ -160,7 +159,12 @@ console.log("wallet.js loaded?", typeof window.Wallet);
       return String(s||"").replace(/[&<>"']/g, m => ({
         '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
       }[m]));
-    }
+      </div>
+
+   
+console.log("WALLET PAGE LOADED:", location.href);
+console.log("wallet.js loaded?", typeof window.Wallet);
+  }
 
     function pickLink(o){ return (o?.paymentLink || o?.payment?.link || "").trim(); }
 
