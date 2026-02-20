@@ -317,7 +317,46 @@
         setBillingStatus(false);
         return;
       }
+auth.onAuthStateChanged(async (user) => {
+  // Önceki dinleyicileri (varsa) temizle ki veri çakışmasın
+  if(unsubOrders){unsubOrders();unsubOrders=null;}
+  if(unsubBilling){unsubBilling();unsubBilling=null;}
+  if(unsubWallet){unsubWallet();unsubWallet=null;}
 
+  if(!user){
+    elMe.textContent = "Giriş yapmalısın.";
+    elOrders.innerHTML = `<div class="muted">Siparişleri görmek için giriş yap.</div>`;
+    fillBillingForm(null);
+    setBillingStatus(false);
+    return;
+  }
+
+  // 1. Kullanıcı bilgilerini ekrana yaz
+  elMe.innerHTML = `Giriş: <b>${esc(user.email || user.uid)}</b>`;
+
+  try {
+    // 2. Cüzdan verilerini ana kaynaktan bir kez yükle
+    await Wallet.load(user.uid);
+
+    // 3. CANLI DİNLEYİCİLERİ BAŞLAT (Asıl çözüm burası)
+    // Cüzdan bakiyesini dinle
+    unsubWallet = Wallet.listenWallet(user.uid); 
+    
+    // Fatura profilini dinle (Bilgi varsa forma otomatik dolar)
+    unsubBilling = Wallet.listenBillingProfile(user.uid, (p) => {
+        fillBillingForm(p);
+    });
+
+    // Siparişleri dinle (Menüden gelsen de adresle gelsen de veriyi çeker)
+    unsubOrders = Wallet.listenOrders(user.uid, (arr) => {
+        renderOrders(arr);
+    });
+
+  } catch (error) {
+    console.error("Veri yüklenirken hata oluştu:", error);
+    elOrders.innerHTML = `<div style="color:red">Veriler yüklenemedi. Lütfen sayfayı yenileyin.</div>`;
+  }
+});
       elMe.innerHTML = `Giriş: <b>${esc(user.email || user.uid)}</b>`;
 
       await Wallet.load(user.uid);
@@ -330,4 +369,5 @@
   </script>
 </body>
 </html>
+
 
