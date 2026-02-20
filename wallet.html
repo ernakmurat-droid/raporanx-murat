@@ -23,7 +23,10 @@
     .warn{background:#f59e0b;color:#111}
     .link{color:#60a5fa;text-decoration:none;font-weight:800}
     .muted{opacity:.75}
-    input, select, textarea{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#0b1220;color:#e5e7eb; width:100%; box-sizing: border-box;}
+    input, select, textarea{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#0b1220;color:#e5e7eb;width:100%;box-sizing:border-box}
+    textarea{min-height:90px;resize:vertical}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .small{font-size:12px}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     @media (max-width:720px){.grid{grid-template-columns:1fr}}
     .hr{height:1px;background:rgba(255,255,255,.10);margin:12px 0}
@@ -62,13 +65,13 @@
       <div class="hr"></div>
       <div class="grid">
         <div><label class="small muted">Tip</label><select id="bpType"><option value="individual">Şahıs</option><option value="company">Şirket</option></select></div>
-        <div><label class="small muted">Ad Soyad / Ünvan</label><input id="bpName"/></div>
-        <div><label class="small muted">TCKN / VKN</label><input id="bpTaxId"/></div>
-        <div><label class="small muted">Vergi Dairesi</label><input id="bpTaxOffice"/></div>
-        <div><label class="small muted">Telefon</label><input id="bpPhone"/></div>
-        <div><label class="small muted">E-posta</label><input id="bpEmail"/></div>
+        <div><label class="small muted">Ad Soyad / Ünvan</label><input id="bpName" placeholder="Örn: Murat Ernak"/></div>
+        <div><label class="small muted">TCKN / VKN</label><input id="bpTaxId" placeholder="11 hane / 10 hane"/></div>
+        <div><label class="small muted">Vergi Dairesi</label><input id="bpTaxOffice" placeholder="Örn: Kadıköy"/></div>
+        <div><label class="small muted">Telefon</label><input id="bpPhone" placeholder="05xx..."/></div>
+        <div><label class="small muted">E-posta</label><input id="bpEmail" placeholder="mail@mail.com"/></div>
       </div>
-      <div style="margin-top:10px;"><label class="small muted">Adres</label><textarea id="bpAddress"></textarea></div>
+      <div style="margin-top:10px;"><label class="small muted">Adres</label><textarea id="bpAddress" placeholder="Tam adres..."></textarea></div>
       <div class="row" style="margin-top:12px;justify-content:flex-end;">
         <button class="btn" id="btnBillingReload">Bilgileri Getir</button>
         <button class="buy" id="btnBillingSave">Kaydet</button>
@@ -98,7 +101,7 @@
     const elBillingStatus = document.getElementById("billingStatus");
 
     // Form Elemanları
-    const fields = {
+    const bpFields = {
       type: document.getElementById("bpType"),
       fullName: document.getElementById("bpName"),
       tcOrVkn: document.getElementById("bpTaxId"),
@@ -112,81 +115,106 @@
 
     function esc(s){ return String(s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+    function statusTr(s){
+      const map = {
+        "pending": "İşleniyor ⏳",
+        "link_added": "Link Hazır ✅",
+        "user_marked_paid": "Ödeme Bildirildi ⏳",
+        "approved": "Onaylandı ✅",
+        "rejected": "Reddedildi ❌",
+        "cancelled": "İptal 🚫"
+      };
+      return map[s] || s || "-";
+    }
+
     function fillBillingForm(p){
       const data = p || {};
-      fields.type.value = data.type || "individual";
-      fields.fullName.value = data.fullName || "";
-      fields.tcOrVkn.value = data.tcOrVkn || "";
-      fields.taxOffice.value = data.taxOffice || "";
-      fields.phone.value = data.phone || "";
-      fields.email.value = data.email || "";
-      fields.address.value = data.address || "";
+      bpFields.type.value = data.type || "individual";
+      bpFields.fullName.value = data.fullName || "";
+      bpFields.tcOrVkn.value = data.tcOrVkn || "";
+      bpFields.taxOffice.value = data.taxOffice || "";
+      bpFields.phone.value = data.phone || "";
+      bpFields.email.value = data.email || "";
+      bpFields.address.value = data.address || "";
       elBillingStatus.textContent = (data.fullName && data.tcOrVkn) ? "Kayıtlı ✅" : "Eksik ⚠️";
     }
 
-    // AUTH TAKİBİ - TEK BİR BLOK OLARAK DÜZENLENDİ
+    function renderOrders(arr){
+      if(!arr || !arr.length) { elOrders.innerHTML = "Sipariş bulunamadı."; return; }
+      
+      const sorted = [...arr].sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+      elOrders.innerHTML = sorted.map(o => {
+        const orderId = o.orderId || o.id;
+        const link = o.paymentLink || o.payment?.link || "";
+        const isApproved = o.status === "approved";
+        
+        return `
+          <div style="padding:12px 0; border-top:1px solid rgba(255,255,255,0.1)">
+            <div class="row">
+              <div>
+                <div style="font-weight:900">${esc(o.packTitle || o.packId)} • ${o.priceTL} TL</div>
+                <div class="small muted">Durum: <b>${statusTr(o.status)}</b></div>
+              </div>
+              <div class="row">
+                ${link && !isApproved ? `<a class="link" href="${link}" target="_blank">🔗 Öde</a>` : ''}
+                ${!isApproved ? `<button class="warn small" onclick="markPaid('${esc(orderId)}')">Ödedim</button>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // AUTH VE VERİ YÜKLEME
     auth.onAuthStateChanged(async (user) => {
-      // Önceki bağlantıları temizle
-      if(unsubOrders) unsubOrders();
-      if(unsubBilling) unsubBilling();
-      if(unsubWallet) unsubWallet();
+      if(unsubOrders) unsubOrders(); if(unsubBilling) unsubBilling(); if(unsubWallet) unsubWallet();
 
       if(!user){
         elMe.textContent = "Giriş yapmalısın.";
-        elOrders.innerHTML = "Siparişleri görmek için giriş yap.";
+        elOrders.innerHTML = "Siparişler için giriş yapın.";
         return;
       }
 
       elMe.innerHTML = `Giriş: <b>${esc(user.email)}</b>`;
 
       try {
-        // Cüzdan verilerini çek
         await Wallet.load(user.uid);
-
-        // Dinleyicileri Başlat
         unsubWallet = Wallet.listenWallet(user.uid);
         unsubBilling = Wallet.listenBillingProfile(user.uid, (p) => fillBillingForm(p));
         unsubOrders = Wallet.listenOrders(user.uid, (arr) => renderOrders(arr));
-        
-      } catch (err) {
-        console.error("Yükleme hatası:", err);
-        elOrders.innerHTML = "Veriler şu an alınamıyor.";
+      } catch(e) {
+        console.error(e);
+        elOrders.innerHTML = "Veri yükleme hatası.";
       }
     });
 
-    // Siparişleri ekrana basan fonksiyon
-    function renderOrders(arr){
-      if(!arr || arr.length === 0){
-        elOrders.innerHTML = "Henüz sipariş yok.";
-        return;
-      }
-      elOrders.innerHTML = arr.map(o => `
-        <div style="padding:10px 0; border-top:1px solid rgba(255,255,255,0.1)">
-          <div class="row">
-            <div><b>${esc(o.packTitle || o.packId)}</b> - ${o.priceTL} TL</div>
-            <div class="small">${esc(o.status)}</div>
-          </div>
-        </div>
-      `).join("");
-    }
+    // BUTON FONKSİYONLARI
+    window.buy = async (id) => { try { await Wallet.createOrder(id); alert("Sipariş oluşturuldu!"); } catch(e){ alert(e.message); } };
+    window.markPaid = async (id) => { 
+      const ref = prompt("Varsa dekont no:") || "";
+      try { await Wallet.markPaid(id, ref); alert("Bildirildi!"); } catch(e){ alert(e.message); }
+    };
 
-    // Buton İşlemleri
-    window.buy = async (id) => { try { await Wallet.createOrder(id); alert("Sipariş alındı!"); } catch(e) { alert(e.message); } };
     document.getElementById("btnLogout").onclick = () => auth.signOut();
+    document.getElementById("btnRefresh").onclick = () => location.reload();
+    document.getElementById("btnBillingReload").onclick = () => location.reload();
+
     document.getElementById("btnBillingSave").onclick = async () => {
-        const profile = {
-            type: fields.type.value,
-            fullName: fields.fullName.value,
-            tcOrVkn: fields.tcOrVkn.value,
-            taxOffice: fields.taxOffice.value,
-            address: fields.address.value,
-            phone: fields.phone.value,
-            email: fields.email.value
-        };
-        try {
-            await Wallet.saveBillingProfile(auth.currentUser.uid, profile);
-            alert("Kaydedildi ✅");
-        } catch(e) { alert(e.message); }
+      const p = {
+        type: bpFields.type.value,
+        fullName: bpFields.fullName.value.trim(),
+        tcOrVkn: bpFields.tcOrVkn.value.trim(),
+        taxOffice: bpFields.taxOffice.value.trim(),
+        address: bpFields.address.value.trim(),
+        phone: bpFields.phone.value.trim(),
+        email: bpFields.email.value.trim()
+      };
+      if(!p.fullName || !p.tcOrVkn) return alert("Lütfen ad ve TCKN alanlarını doldurun.");
+      try {
+        await Wallet.saveBillingProfile(auth.currentUser.uid, p);
+        alert("Başarıyla kaydedildi ✅");
+      } catch(e) { alert(e.message); }
     };
 
   })();
