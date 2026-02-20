@@ -9,8 +9,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-  <script src="./firebase-config.js"></script>
-  <script src="./wallet.js"></script>
+  <!-- ✅ absolute path: menüden gelince de bozulmasın -->
+  <script src="/firebase-config.js"></script>
+  <script src="/wallet.js"></script>
 
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#0f172a;color:#e5e7eb}
@@ -23,8 +24,8 @@
     .warn{background:#f59e0b;color:#111}
     .link{color:#60a5fa;text-decoration:none;font-weight:800}
     .muted{opacity:.75}
-    input, select, textarea{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#0b1220;color:#e5e7eb;width:100%;box-sizing:border-box}
-    textarea{min-height:90px;resize:vertical}
+    input, select, textarea{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#0b1220;color:#e5e7eb}
+    textarea{min-height:90px;resize:vertical;width:100%}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
     .small{font-size:12px}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -35,12 +36,16 @@
 </head>
 
 <body>
-  <a href="/admin-orders.html" style="position:fixed;top:10px;right:10px;background:#ef4444;color:white;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:800;z-index:9999;">🔧 Admin</a>
+  <a href="/admin-orders.html"
+     style="position:fixed;top:10px;right:10px;background:#ef4444;color:white;padding:8px 12px;border-radius:10px;text-decoration:none;font-weight:800;z-index:9999;">
+    🔧 Admin
+  </a>
 
   <div class="wrap">
     <div class="row">
       <div>
         <div style="font-size:20px;font-weight:900;">🎟️ Cüzdan</div>
+        <div style="color:red;font-weight:900;">TEST 123</div>
         <div class="muted" id="me">Giriş bekleniyor…</div>
       </div>
       <div class="row">
@@ -54,6 +59,7 @@
       <div class="muted" id="walletSub">—</div>
     </div>
 
+    <!-- ✅ FATURA -->
     <div class="card">
       <div class="row" style="align-items:flex-end;">
         <div>
@@ -62,22 +68,60 @@
         </div>
         <div class="pill" id="billingStatus">—</div>
       </div>
+
       <div class="hr"></div>
+
       <div class="grid">
-        <div><label class="small muted">Tip</label><select id="bpType"><option value="individual">Şahıs</option><option value="company">Şirket</option></select></div>
-        <div><label class="small muted">Ad Soyad / Ünvan</label><input id="bpName" placeholder="Örn: Murat Ernak"/></div>
-        <div><label class="small muted">TCKN / VKN</label><input id="bpTaxId" placeholder="11 hane / 10 hane"/></div>
-        <div><label class="small muted">Vergi Dairesi</label><input id="bpTaxOffice" placeholder="Örn: Kadıköy"/></div>
-        <div><label class="small muted">Telefon</label><input id="bpPhone" placeholder="05xx..."/></div>
-        <div><label class="small muted">E-posta</label><input id="bpEmail" placeholder="mail@mail.com"/></div>
+        <div>
+          <label class="small muted">Tip</label><br/>
+          <select id="bpType">
+            <option value="individual">Şahıs</option>
+            <option value="company">Şirket</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="small muted">Ad Soyad / Ünvan</label><br/>
+          <input id="bpName" placeholder="Örn: Murat Ernak / RaporanX Ltd."/>
+        </div>
+
+        <div>
+          <label class="small muted">TCKN / VKN</label><br/>
+          <input id="bpTaxId" placeholder="11 hane (TCKN) / 10 hane (VKN)"/>
+        </div>
+
+        <div>
+          <label class="small muted">Vergi Dairesi</label><br/>
+          <input id="bpTaxOffice" placeholder="Örn: Kadıköy"/>
+        </div>
+
+        <div>
+          <label class="small muted">Telefon</label><br/>
+          <input id="bpPhone" placeholder="05xx xxx xx xx"/>
+        </div>
+
+        <div>
+          <label class="small muted">E-posta</label><br/>
+          <input id="bpEmail" placeholder="ornek@mail.com"/>
+        </div>
       </div>
-      <div style="margin-top:10px;"><label class="small muted">Adres</label><textarea id="bpAddress" placeholder="Tam adres..."></textarea></div>
+
+      <div style="margin-top:10px;">
+        <label class="small muted">Adres</label><br/>
+        <textarea id="bpAddress" placeholder="Adres..."></textarea>
+      </div>
+
       <div class="row" style="margin-top:12px;justify-content:flex-end;">
         <button class="btn" id="btnBillingReload">Bilgileri Getir</button>
         <button class="buy" id="btnBillingSave">Kaydet</button>
       </div>
+
+      <div class="muted small" style="margin-top:8px;">
+        Not: Bilgiler <span class="mono">users/{uid}.billingProfile</span> alanına kaydedilir.
+      </div>
     </div>
 
+    <!-- ✅ PAKET -->
     <div class="card">
       <div style="font-weight:900;margin-bottom:10px;">Paket Satın Al</div>
       <div class="row">
@@ -85,80 +129,125 @@
         <button class="buy" onclick="buy('P200')">200 TL • 8 Hak</button>
         <button class="buy" onclick="buy('P500')">500 TL • 25 Hak</button>
       </div>
+      <div class="muted" style="margin-top:10px;">
+        Not: Ödeme linki admin tarafından eklendiğinde aşağıda görünür.
+      </div>
     </div>
 
+    <!-- ✅ SİPARİŞLER -->
     <div class="card">
       <div style="font-weight:900;margin-bottom:10px;">Siparişlerim</div>
       <div id="orders" class="muted">Yükleniyor…</div>
     </div>
   </div>
 
+  <!-- ✅ Sayfa davranışı (küçük, sade). Ana işleri wallet.js yapar -->
   <script>
   (function(){
     const auth = firebase.auth();
+
     const elMe = document.getElementById("me");
     const elOrders = document.getElementById("orders");
     const elBillingStatus = document.getElementById("billingStatus");
 
-    // Form Elemanları
-    const bpFields = {
-      type: document.getElementById("bpType"),
-      fullName: document.getElementById("bpName"),
-      tcOrVkn: document.getElementById("bpTaxId"),
-      taxOffice: document.getElementById("bpTaxOffice"),
-      phone: document.getElementById("bpPhone"),
-      email: document.getElementById("bpEmail"),
-      address: document.getElementById("bpAddress")
-    };
+    const bpType = document.getElementById("bpType");
+    const bpName = document.getElementById("bpName");
+    const bpTaxId = document.getElementById("bpTaxId");
+    const bpTaxOffice = document.getElementById("bpTaxOffice");
+    const bpPhone = document.getElementById("bpPhone");
+    const bpEmail = document.getElementById("bpEmail");
+    const bpAddress = document.getElementById("bpAddress");
 
     let unsubOrders=null, unsubBilling=null, unsubWallet=null;
+    let savingBilling=false;
 
-    function esc(s){ return String(s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-    function statusTr(s){
-      const map = {
-        "pending": "İşleniyor ⏳",
-        "link_added": "Link Hazır ✅",
-        "user_marked_paid": "Ödeme Bildirildi ⏳",
-        "approved": "Onaylandı ✅",
-        "rejected": "Reddedildi ❌",
-        "cancelled": "İptal 🚫"
-      };
-      return map[s] || s || "-";
+    function esc(s){
+      return String(s||"").replace(/[&<>"']/g, m => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[m]));
     }
 
-    function fillBillingForm(p){
-      const data = p || {};
-      bpFields.type.value = data.type || "individual";
-      bpFields.fullName.value = data.fullName || "";
-      bpFields.tcOrVkn.value = data.tcOrVkn || "";
-      bpFields.taxOffice.value = data.taxOffice || "";
-      bpFields.phone.value = data.phone || "";
-      bpFields.email.value = data.email || "";
-      bpFields.address.value = data.address || "";
-      elBillingStatus.textContent = (data.fullName && data.tcOrVkn) ? "Kayıtlı ✅" : "Eksik ⚠️";
+    function setBillingStatus(has){
+      elBillingStatus.textContent = has ? "Kayıtlı ✅" : "Eksik ⚠️";
+    }
+
+    function fillBillingForm(profile){
+      const p = profile || {};
+      bpType.value = p.type || "individual";
+      bpName.value = p.fullName || "";
+      bpTaxId.value = p.tcOrVkn || "";
+      bpTaxOffice.value = p.taxOffice || "";
+      bpPhone.value = p.phone || "";
+      bpEmail.value = p.email || "";
+      bpAddress.value = p.address || "";
+      setBillingStatus(!!(p.fullName && p.tcOrVkn && p.address));
+    }
+
+    function readBillingForm(){
+      return {
+        type: (bpType.value || "individual"),
+        fullName: (bpName.value || "").trim(),
+        tcOrVkn: (bpTaxId.value || "").trim(),
+        taxOffice: (bpTaxOffice.value || "").trim(),
+        address: (bpAddress.value || "").trim(),
+        phone: (bpPhone.value || "").trim(),
+        email: (bpEmail.value || "").trim(),
+      };
+    }
+
+    function pickLink(o){
+      return (o?.paymentLink || o?.payment?.link || "").trim();
+    }
+
+    function statusTr(s){
+      if(s==="pending") return "Yeni sipariş (link hazırlanıyor) ⏳";
+      if(s==="link_added") return "Link hazır ✅";
+      if(s==="user_marked_paid") return "Ödeme bildirildi ⏳";
+      if(s==="approved") return "Onaylandı ✅";
+      if(s==="rejected") return "Reddedildi ❌";
+      if(s==="cancelled") return "İptal 🚫";
+      return s || "-";
     }
 
     function renderOrders(arr){
-      if(!arr || !arr.length) { elOrders.innerHTML = "Sipariş bulunamadı."; return; }
-      
-      const sorted = [...arr].sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+      if(!arr || !arr.length){
+        elOrders.innerHTML = `<div class="muted">Henüz sipariş yok.</div>`;
+        return;
+      }
 
-      elOrders.innerHTML = sorted.map(o => {
-        const orderId = o.orderId || o.id;
-        const link = o.paymentLink || o.payment?.link || "";
-        const isApproved = o.status === "approved";
-        
+      arr = [...arr].sort((a,b)=>{
+        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return tb - ta;
+      });
+
+      elOrders.innerHTML = arr.map(o=>{
+        const orderId = o.orderId || o.id || "";
+        const link = pickLink(o);
+        const approved = (o.status === "approved");
+
+        const btnPay = (link && !approved)
+          ? `<a class="link" href="${encodeURI(link)}" target="_blank" rel="noopener">🔗 Ödemeye Git</a>`
+          : `<span class="muted">${link ? "Link var" : "Link yok"}</span>`;
+
+        const btnMarkPaid = (!approved)
+          ? `<button class="warn" onclick="markPaid('${esc(orderId)}')">Ödedim</button>`
+          : ``;
+
         return `
-          <div style="padding:12px 0; border-top:1px solid rgba(255,255,255,0.1)">
+          <div style="padding:10px 0;border-top:1px solid rgba(255,255,255,.10)">
             <div class="row">
               <div>
-                <div style="font-weight:900">${esc(o.packTitle || o.packId)} • ${o.priceTL} TL</div>
-                <div class="small muted">Durum: <b>${statusTr(o.status)}</b></div>
+                <div style="font-weight:900">
+                  ${esc(o.packTitle || o.packId)} • ${esc(o.priceTL)} TL • ${esc(o.credits)} Hak
+                </div>
+                <div class="muted small">
+                  Durum: <b>${esc(statusTr(o.status))}</b> • orderId: <span class="mono">${esc(orderId)}</span>
+                </div>
               </div>
               <div class="row">
-                ${link && !isApproved ? `<a class="link" href="${link}" target="_blank">🔗 Öde</a>` : ''}
-                ${!isApproved ? `<button class="warn small" onclick="markPaid('${esc(orderId)}')">Ödedim</button>` : ''}
+                ${btnPay}
+                ${btnMarkPaid}
               </div>
             </div>
           </div>
@@ -166,58 +255,80 @@
       }).join("");
     }
 
-    // AUTH VE VERİ YÜKLEME
-    auth.onAuthStateChanged(async (user) => {
-      if(unsubOrders) unsubOrders(); if(unsubBilling) unsubBilling(); if(unsubWallet) unsubWallet();
+    // global: butonlar bunları çağırıyor
+    window.buy = async function(packId){
+      try{
+        await Wallet.createOrder(packId);
+        alert("Sipariş oluşturuldu ✅");
+      }catch(e){
+        alert("Hata: " + (e?.message || e));
+      }
+    };
+
+    window.markPaid = async function(orderId){
+      try{
+        const ref = prompt("Varsa dekont no yaz (opsiyonel):") || "";
+        await Wallet.markPaid(orderId, ref);
+        alert("Bildirim gönderildi ✅");
+      }catch(e){
+        alert("Hata: " + (e?.message || e));
+      }
+    };
+
+    document.getElementById("btnLogout").onclick = ()=> auth.signOut();
+    document.getElementById("btnRefresh").onclick = async ()=>{
+      const u = auth.currentUser;
+      if(u) await Wallet.load(u.uid);
+    };
+
+    document.getElementById("btnBillingReload").onclick = async ()=>{
+      const u = auth.currentUser;
+      if(!u) return alert("Giriş yok.");
+      const profile = await Wallet.getBillingProfile(u.uid);
+      fillBillingForm(profile);
+      alert("Fatura bilgileri getirildi ✅");
+    };
+
+    document.getElementById("btnBillingSave").onclick = async ()=>{
+      const u = auth.currentUser;
+      if(!u) return alert("Giriş yok.");
+      if(savingBilling) return;
+      savingBilling = true;
+      try{
+        const profile = readBillingForm();
+        await Wallet.saveBillingProfile(u.uid, profile);
+        alert("Fatura bilgileri kaydedildi ✅");
+      }catch(e){
+        alert("Hata: " + (e?.message || e));
+      }finally{
+        savingBilling = false;
+      }
+    };
+
+    auth.onAuthStateChanged(async (user)=>{
+      if(unsubOrders){unsubOrders();unsubOrders=null;}
+      if(unsubBilling){unsubBilling();unsubBilling=null;}
+      if(unsubWallet){unsubWallet();unsubWallet=null;}
 
       if(!user){
         elMe.textContent = "Giriş yapmalısın.";
-        elOrders.innerHTML = "Siparişler için giriş yapın.";
+        elOrders.innerHTML = `<div class="muted">Siparişleri görmek için giriş yap.</div>`;
+        fillBillingForm(null);
+        setBillingStatus(false);
         return;
       }
 
-      elMe.innerHTML = `Giriş: <b>${esc(user.email)}</b>`;
+      elMe.innerHTML = `Giriş: <b>${esc(user.email || user.uid)}</b>`;
 
-      try {
-        await Wallet.load(user.uid);
-        unsubWallet = Wallet.listenWallet(user.uid);
-        unsubBilling = Wallet.listenBillingProfile(user.uid, (p) => fillBillingForm(p));
-        unsubOrders = Wallet.listenOrders(user.uid, (arr) => renderOrders(arr));
-      } catch(e) {
-        console.error(e);
-        elOrders.innerHTML = "Veri yükleme hatası.";
-      }
+      await Wallet.load(user.uid);
+      unsubWallet = Wallet.listenWallet(user.uid);
+
+      unsubBilling = Wallet.listenBillingProfile(user.uid, (p)=>fillBillingForm(p));
+      unsubOrders = Wallet.listenOrders(user.uid, (arr)=>renderOrders(arr));
     });
-
-    // BUTON FONKSİYONLARI
-    window.buy = async (id) => { try { await Wallet.createOrder(id); alert("Sipariş oluşturuldu!"); } catch(e){ alert(e.message); } };
-    window.markPaid = async (id) => { 
-      const ref = prompt("Varsa dekont no:") || "";
-      try { await Wallet.markPaid(id, ref); alert("Bildirildi!"); } catch(e){ alert(e.message); }
-    };
-
-    document.getElementById("btnLogout").onclick = () => auth.signOut();
-    document.getElementById("btnRefresh").onclick = () => location.reload();
-    document.getElementById("btnBillingReload").onclick = () => location.reload();
-
-    document.getElementById("btnBillingSave").onclick = async () => {
-      const p = {
-        type: bpFields.type.value,
-        fullName: bpFields.fullName.value.trim(),
-        tcOrVkn: bpFields.tcOrVkn.value.trim(),
-        taxOffice: bpFields.taxOffice.value.trim(),
-        address: bpFields.address.value.trim(),
-        phone: bpFields.phone.value.trim(),
-        email: bpFields.email.value.trim()
-      };
-      if(!p.fullName || !p.tcOrVkn) return alert("Lütfen ad ve TCKN alanlarını doldurun.");
-      try {
-        await Wallet.saveBillingProfile(auth.currentUser.uid, p);
-        alert("Başarıyla kaydedildi ✅");
-      } catch(e) { alert(e.message); }
-    };
-
   })();
   </script>
 </body>
 </html>
+
+
