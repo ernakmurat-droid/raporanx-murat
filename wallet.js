@@ -1,4 +1,3 @@
-
 /**
  * wallet.js (TEK DOSYA - HAK + SİPARİŞ + HAK DÜŞÜRME)
  * Firestore:
@@ -41,41 +40,46 @@
   function ordersColRef(uid) {
     return db.collection(USERS_COL).doc(uid).collection("orders");
   }
-async function listOrders(uid, statuses) {
-  if (!uid) throw new Error("listOrders: uid yok");
 
-  let q = ordersColRef(uid).orderBy("createdAt", "desc").limit(50);
-
-  if (Array.isArray(statuses) && statuses.length) {
-    q = ordersColRef(uid)
-      .where("status", "in", statuses.slice(0, 10))
-      .orderBy("createdAt", "desc")
-      .limit(50);
-  }
-
-  const snap = await q.get();
-  return snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-}
-function listenOrders(uid, cb) {
-  if (!uid) throw new Error("listenOrders: uid yok");
-  if (typeof cb !== "function") throw new Error("listenOrders: cb function olmalı");
-
-  return ordersColRef(uid)
-    .orderBy("createdAt", "desc")
-    .limit(50)
-    .onSnapshot(
-      (snap) => {
-        const arr = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-        cb(arr);
-      },
-      (err) => {
-        console.error("listenOrders snapshot ERR:", err);
-        cb([{ id: "ERR", packTitle: "HATA", status: err?.message || String(err) }]);
-      }
-    );
-}
   function orderRef(uid, orderId) {
     return ordersColRef(uid).doc(String(orderId));
+  }
+
+  // ✅ Siparişleri tek seferlik çek (opsiyonel filtre)
+  async function listOrders(uid, statuses) {
+    if (!uid) throw new Error("listOrders: uid yok");
+
+    let q = ordersColRef(uid).orderBy("createdAt", "desc").limit(50);
+
+    if (Array.isArray(statuses) && statuses.length) {
+      q = ordersColRef(uid)
+        .where("status", "in", statuses.slice(0, 10))
+        .orderBy("createdAt", "desc")
+        .limit(50);
+    }
+
+    const snap = await q.get();
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+  }
+
+  // ✅ Siparişleri canlı dinle (EN GARANTİ: status filtresi yok)
+  function listenOrders(uid, cb) {
+    if (!uid) throw new Error("listenOrders: uid yok");
+    if (typeof cb !== "function") throw new Error("listenOrders: cb function olmalı");
+
+    return ordersColRef(uid)
+      .orderBy("createdAt", "desc")
+      .limit(50)
+      .onSnapshot(
+        (snap) => {
+          const arr = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+          cb(arr);
+        },
+        (err) => {
+          console.error("listenOrders snapshot ERR:", err);
+          cb([{ id: "ERR", packTitle: "HATA", status: err?.message || String(err), priceTL:"", credits:"" }]);
+        }
+      );
   }
 
   async function ensureWallet(uid) {
@@ -230,7 +234,7 @@ function listenOrders(uid, cb) {
     const pack = PACKS[String(packId)];
     if (!pack) throw new Error("createOrder: packId geçersiz");
 
-    const ref = ordersColRef(user.uid).doc();
+    const ref = ordersColRef(user.uid).doc(); // auto id
 
     const order = {
       orderId: ref.id,
@@ -350,7 +354,8 @@ function listenOrders(uid, cb) {
           link: clean,
           addedAt: FieldValue.serverTimestamp(),
         },
-        status: (o.status === "pending" ? "link_added" : o.status),
+        // ✅ standart: link_sent
+        status: (o.status === "pending" ? "link_sent" : o.status),
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
     });
@@ -391,55 +396,14 @@ function listenOrders(uid, cb) {
     return { ok: true };
   }
 
-  async function listOrders(uid, statuses) {
-    if (!uid) throw new Error("listOrders: uid yok");
-
-    let q = ordersColRef(uid).orderBy("createdAt", "desc").limit(50);
-
-    if (Array.isArray(statuses) && statuses.length) {
-      q = ordersColRef(uid)
-        .where("status", "in", statuses.slice(0, 10))
-        .orderBy("createdAt", "desc")
-        .limit(50);
-    }
-
-    const snap = await q.get();
-    return snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-  }
-
-
-
-  return q.onSnapshot(
-    (snap) => {
-      const arr = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-      cb(arr);
-    },
-    (err) => {
-      console.error("listenOrders snapshot ERR:", err);
-      // kullanıcıya boş basma, hatayı gör
-      cbfunction listenOrders(uid, cb) {
-  if (!uid) throw new Error("listenOrders: uid yok");
-  if (typeof cb !== "function") throw new Error("listenOrders: cb function olmalı");
-
-  return ordersColRef(uid)
-    .orderBy("createdAt", "desc")
-    .limit(50)
-    .onSnapshot((snap) => {
-      const arr = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-      cb(arr);
-    });
-}([{ id: "ERR", packTitle: "HATA", status: err?.message || String(err), priceTL:"", credits:"" }]);
-    }
-  );
-}
-
-  // dışa aç
+  // ✅ dışa aç
   window.Wallet = {
     PACKS,
     load: loadWallet,
     ensure: ensureWallet,
     consumeReport,
     listen: listenWallet,
+    listenWallet,
 
     createOrder,
     approveOrder,
