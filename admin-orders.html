@@ -120,7 +120,12 @@
 <script>
 (function(){
   const auth = window.auth || firebase.auth();
-  const db   = window.db   || firebase.firestore();
+  const db = window.db || firebase.firestore();
+
+db.settings({
+  experimentalForceLongPolling: true,
+  useFetchStreams: false
+});
   const FieldValue = firebase.firestore.FieldValue;
 
   // ✅ ADMIN mail(ler)i
