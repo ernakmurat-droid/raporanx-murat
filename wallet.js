@@ -41,7 +41,39 @@
   function ordersColRef(uid) {
     return db.collection(USERS_COL).doc(uid).collection("orders");
   }
+async function listOrders(uid, statuses) {
+  if (!uid) throw new Error("listOrders: uid yok");
 
+  let q = ordersColRef(uid).orderBy("createdAt", "desc").limit(50);
+
+  if (Array.isArray(statuses) && statuses.length) {
+    q = ordersColRef(uid)
+      .where("status", "in", statuses.slice(0, 10))
+      .orderBy("createdAt", "desc")
+      .limit(50);
+  }
+
+  const snap = await q.get();
+  return snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+}
+function listenOrders(uid, cb) {
+  if (!uid) throw new Error("listenOrders: uid yok");
+  if (typeof cb !== "function") throw new Error("listenOrders: cb function olmalı");
+
+  return ordersColRef(uid)
+    .orderBy("createdAt", "desc")
+    .limit(50)
+    .onSnapshot(
+      (snap) => {
+        const arr = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+        cb(arr);
+      },
+      (err) => {
+        console.error("listenOrders snapshot ERR:", err);
+        cb([{ id: "ERR", packTitle: "HATA", status: err?.message || String(err) }]);
+      }
+    );
+}
   function orderRef(uid, orderId) {
     return ordersColRef(uid).doc(String(orderId));
   }
