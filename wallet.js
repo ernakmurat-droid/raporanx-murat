@@ -374,24 +374,31 @@
     return snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
   }
 
-  function listenOrders(uid, cb, statuses) {
-    if (!uid) throw new Error("listenOrders: uid yok");
-    if (typeof cb !== "function") throw new Error("listenOrders: cb function olmalı");
+function listenOrders(uid, cb, statuses) {
+  if (!uid) throw new Error("listenOrders: uid yok");
+  if (typeof cb !== "function") throw new Error("listenOrders: cb function olmalı");
 
-    let q = ordersColRef(uid).orderBy("createdAt", "desc").limit(50);
+  let q = ordersColRef(uid).orderBy("createdAt", "desc").limit(50);
 
-    if (Array.isArray(statuses) && statuses.length) {
-      q = ordersColRef(uid)
-        .where("status", "in", statuses.slice(0, 10))
-        .orderBy("createdAt", "desc")
-        .limit(50);
-    }
+  if (Array.isArray(statuses) && statuses.length) {
+    q = ordersColRef(uid)
+      .where("status", "in", statuses.slice(0, 10))
+      .orderBy("createdAt", "desc")
+      .limit(50);
+  }
 
-    return q.onSnapshot((snap) => {
+  return q.onSnapshot(
+    (snap) => {
       const arr = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
       cb(arr);
-    });
-  }
+    },
+    (err) => {
+      console.error("listenOrders snapshot ERR:", err);
+      // kullanıcıya boş basma, hatayı gör
+      cb([{ id: "ERR", packTitle: "HATA", status: err?.message || String(err), priceTL:"", credits:"" }]);
+    }
+  );
+}
 
   // dışa aç
   window.Wallet = {
