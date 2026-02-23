@@ -323,12 +323,15 @@
       await Wallet.load(user.uid);
       unsubWallet = Wallet.listenWallet(user.uid);
 
-      unsubBilling = Wallet.listenBillingProfile(user.uid, (p)=>fillBillingForm(p));
+     if (typeof Wallet.listenBillingProfile === "function") {
+  unsubBilling = Wallet.listenBillingProfile(user.uid, (p)=>fillBillingForm(p));
+} 
       unsubOrders = Wallet.listenOrders(user.uid, (arr)=>renderOrders(arr));
     });
   })();
   </script>
 </body>
 </html>
+
 
 
