@@ -256,12 +256,12 @@ db.settings({
               ${payRef ? `<div class="small">Ref/Dekont: <span class="mono">${payRef}</span></div>` : ``}
             </div>
 
-            <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-              <button class="btn warn" onclick="ADMIN_setLink('${uid}','${o.orderId}')">🔗 Link Ekle</button>
-              <button class="btn ghost" onclick="ADMIN_expire('${uid}','${o.orderId}')">⏱ Expired</button>
-              <button class="btn primary" onclick="ADMIN_approve('${uid}','${o.orderId}')">✅ Onayla</button>
-              <button class="btn danger" onclick="ADMIN_delete('${uid}','${o.orderId}')">🗑 Sil</button>
-            </div>
+           <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+  <button class="btn warn" onclick="ADMIN_setLink('${uid}','${o._docId || o.orderId}')">🔗 Link Ekle</button>
+  <button class="btn ghost" onclick="ADMIN_expire('${uid}','${o._docId || o.orderId}')">⏱ Expired</button>
+  <button class="btn primary" onclick="ADMIN_approve('${uid}','${o._docId || o.orderId}')">✅ Onayla</button>
+  <button class="btn danger" onclick="ADMIN_delete('${uid}','${o._docId || o.orderId}')">🗑 Sil</button>
+</div>
           </div>
         </div>
       `;
@@ -320,17 +320,17 @@ db.settings({
 
       const orderRef = db.collection("users").doc(uid).collection("orders").doc(orderId);
 
-      await orderRef.set({
-       status: "link_added", 
-        paymentLink: link,
-        paymentRef: payRef,
-        payment: {
-          link: link,
-          ref: payRef,
-          linkAddedAt: FieldValue.serverTimestamp()
-        },
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge:true });
+   await orderRef.set({
+  status: "link_sent",
+  paymentLink: link,
+  paymentRef: payRef,
+  payment: {
+    link: link,
+    ref: payRef,
+    linkAddedAt: FieldValue.serverTimestamp()
+  },
+  updatedAt: FieldValue.serverTimestamp()
+}, { merge: true });
 
       alert("Link eklendi ✅");
     }catch(e){
