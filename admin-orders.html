@@ -316,7 +316,7 @@
       const orderRef = db.collection("users").doc(uid).collection("orders").doc(orderId);
 
       await orderRef.set({
-        status: "link_sent",
+       status: "link_added", 
         paymentLink: link,
         paymentRef: payRef,
         payment: {
