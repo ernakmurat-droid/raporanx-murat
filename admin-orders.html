@@ -331,7 +331,7 @@ db.settings({
   updatedAt: FieldValue.serverTimestamp()
 }, { merge: true });
 
-      alert("Link eklendi ✅");siparisler
+      
     }catch(e){
       alert(e?.message || e);
     }
@@ -376,7 +376,26 @@ db.settings({
     }
   };
 
-  
+  window.ADMIN_delete = async function(uid, orderId){
+  try{
+    uid = String(uid||"").trim();
+    orderId = String(orderId||"").trim();
+    if(!uid || !orderId) return alert("uid/orderId yok");
+
+    const ok = confirm("Bu siparişi SİLMEK istiyor musun? (Geri alınmaz)");
+    if(!ok) return;
+
+    await db.collection("kullanicilar")
+            .doc(uid)
+            .collection("siparisler")
+            .doc(orderId)
+            .delete();
+
+    alert("Silindi ✅");
+  }catch(e){
+    alert(e?.message || e);
+  }
+};
 
  // ✅ MANUEL butonlar
 document.getElementById("btnLoadOrder").onclick = async () => {
@@ -400,7 +419,7 @@ document.getElementById("btnLoadOrder").onclick = async () => {
 };
   document.getElementById("btnSetLink").onclick = async ()=>{
     const uid = String(mUid.value||"").trim();
-    const orderId = String(mOrderId.value||"").trim();siparisler
+    
     if(!uid || !orderId) return alert("UID + OrderId gir");
     await window.ADMIN_setLink(uid, orderId);
   };
