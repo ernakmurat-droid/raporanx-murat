@@ -395,27 +395,53 @@
 
     return { ok: true };
   }
+function billingRef(uid){
+  return db
+    .collection(USERS_COL)
+    .doc(uid)
+    .collection("invoiceProfile")
+    .doc("main");
+}
 
-  // ✅ dışa aç
-  window.Wallet = {
-    PACKS,
-    load: loadWallet,
-    ensure: ensureWallet,
-    consumeReport,
-    listen: listenWallet,
-    listenWallet,
+async function getBillingProfile(uid){
+  if(!uid) throw new Error("getBillingProfile: uid yok");
+  const snap = await billingRef(uid).get();
+  return snap.exists ? (snap.data() || {}) : {};
+}
 
-    createOrder,
-    approveOrder,
-    setPaymentLink,
-    markPaid,
+async function saveBillingProfile(uid, profile){
+  if(!uid) throw new Error("saveBillingProfile: uid yok");
 
-    listOrders,
-    listenOrders,
+  await billingRef(uid).set({
+    ...(profile || {}),
+    updatedAt: FieldValue.serverTimestamp()
+  }, { merge:true });
 
-    ref: walletMainRef,
-    ordersRef: ordersColRef,
-  };
+  return { ok:true };
+}
+ // ✅ dışa aç
+window.Wallet = {
+  PACKS,
+  load: loadWallet,
+  ensure: ensureWallet,
+  consumeReport,
+  listenWallet,
+
+  createOrder,
+  approveOrder,
+  setPaymentLink,
+  markPaid,
+
+  listOrders,
+  listenOrders,
+
+  ref: walletMainRef,
+  ordersRef: ordersColRef,
+
+  // ✅ FATURA
+  getBillingProfile,
+  saveBillingProfile,
+};
 
   // giriş varsa otomatik cüzdanı yükle (UI varsa günceller)
   auth.onAuthStateChanged(async (user) => {
