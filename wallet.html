@@ -329,9 +329,102 @@
       unsubOrders = Wallet.listenOrders(user.uid, (arr)=>renderOrders(arr));
     });
   })();
+  // =====================
+// ✅ FATURA PROFİLİ (users/{uid}/invoiceProfile/main)
+// =====================
+(function(){
+  const db = window.db || firebase.firestore();
+  const auth = window.auth || firebase.auth();
+  const FieldValue = firebase.firestore.FieldValue;
+
+  const bpType = document.getElementById("bpType");
+  const bpName = document.getElementById("bpName");
+  const bpTaxId = document.getElementById("bpTaxId");
+  const bpTaxOffice = document.getElementById("bpTaxOffice");
+  const bpPhone = document.getElementById("bpPhone");
+  const bpEmail = document.getElementById("bpEmail");
+  const bpAddress = document.getElementById("bpAddress");
+  const billingStatus = document.getElementById("billingStatus");
+
+  function setBillingPill(text){
+    if(!billingStatus) return;
+    billingStatus.textContent = text || "—";
+  }
+
+  function fillBillingForm(p){
+    p = p || {};
+    if(bpType) bpType.value = p.type || "individual";
+    if(bpName) bpName.value = p.fullName || "";
+    if(bpTaxId) bpTaxId.value = p.tcOrVkn || "";
+    if(bpTaxOffice) bpTaxOffice.value = p.taxOffice || "";
+    if(bpPhone) bpPhone.value = p.phone || "";
+    if(bpEmail) bpEmail.value = p.email || (auth.currentUser?.email || "");
+    if(bpAddress) bpAddress.value = p.address || "";
+
+    const ok = !!((bpName?.value||"") && (bpTaxId?.value||"") && (bpAddress?.value||""));
+    setBillingPill(ok ? "✅ Tam" : "⚠️ Eksik");
+  }
+
+  async function loadBillingProfile(){
+    const user = auth.currentUser;
+    if(!user) return;
+
+    const ref = db.collection("users").doc(user.uid)
+      .collection("invoiceProfile").doc("main");
+
+    const snap = await ref.get();
+    if(!snap.exists){
+      fillBillingForm(null);
+      setBillingPill("—");
+      return;
+    }
+    fillBillingForm(snap.data() || {});
+  }
+
+  async function saveBillingProfile(){
+    const user = auth.currentUser;
+    if(!user) return alert("Giriş yok");
+
+    const data = {
+      type: (bpType?.value || "individual"),
+      fullName: (bpName?.value || "").trim(),
+      tcOrVkn: (bpTaxId?.value || "").trim(),
+      taxOffice: (bpTaxOffice?.value || "").trim(),
+      phone: (bpPhone?.value || "").trim(),
+      email: ((bpEmail?.value || user.email || "")).trim(),
+      address: (bpAddress?.value || "").trim(),
+      updatedAt: FieldValue.serverTimestamp()
+    };
+
+    if(!data.fullName || !data.tcOrVkn || !data.address){
+      setBillingPill("⚠️ Eksik");
+      return alert("Fatura için en az: Ad/Ünvan + TCKN/VKN + Adres gerekli.");
+    }
+
+    const ref = db.collection("users").doc(user.uid)
+      .collection("invoiceProfile").doc("main");
+
+    await ref.set(data, { merge:true });
+    setBillingPill("Kaydedildi ✅");
+  }
+
+  // Butonlara bağla
+  document.getElementById("btnBillingReload")?.addEventListener("click", loadBillingProfile);
+  document.getElementById("btnBillingSave")?.addEventListener("click", saveBillingProfile);
+
+  // Giriş olunca otomatik getir
+  auth.onAuthStateChanged((user)=>{
+    if(user) loadBillingProfile();
+  });
+
+  // dışa da açalım (istersen console'dan çağırırsın)
+  window.loadBillingProfile = loadBillingProfile;
+  window.saveBillingProfile = saveBillingProfile;
+})();
   </script>
 </body>
 </html>
+
 
 
 
