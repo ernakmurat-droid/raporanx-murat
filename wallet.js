@@ -425,7 +425,10 @@ window.Wallet = {
   load: loadWallet,
   ensure: ensureWallet,
   consumeReport,
-  listenWallet,
+
+  // ✅ aynı fonksiyon ama iki isimle dışa açıyoruz (kafa karışmasın)
+  listen: listenWallet,
+  listenWallet: listenWallet,
 
   createOrder,
   approveOrder,
@@ -441,6 +444,7 @@ window.Wallet = {
   // ✅ FATURA
   getBillingProfile,
   saveBillingProfile,
+  listenBillingProfile,
 };
 
   // giriş varsa otomatik cüzdanı yükle (UI varsa günceller)
