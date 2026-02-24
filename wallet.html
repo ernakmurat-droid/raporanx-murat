@@ -321,7 +321,7 @@
       elMe.innerHTML = `Giriş: <b>${esc(user.email || user.uid)}</b>`;
 
       await Wallet.load(user.uid);
-      unsubWallet = Wallet.listenWallet(user.uid);
+      unsubWallet = Wallet.listen(user.uid);
 
      if (typeof Wallet.listenBillingProfile === "function") {
   unsubBilling = Wallet.listenBillingProfile(user.uid, (p)=>fillBillingForm(p));
@@ -332,6 +332,7 @@
   </script>
 </body>
 </html>
+
 
 
 
