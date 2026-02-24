@@ -317,7 +317,7 @@ db.settings({
 
       const payRef = (prompt("Ref/Dekont no (opsiyonel):") || "").trim();
 
-      const orderRef = db.collection("users").doc(uid).collection("orders").doc(orderId);
+      const orderRef = db.collection("kullanicilar").doc(uid).collection("siparisler").doc(orderId);
 
    await orderRef.set({
   status: "link_sent",
@@ -331,7 +331,7 @@ db.settings({
   updatedAt: FieldValue.serverTimestamp()
 }, { merge: true });
 
-      alert("Link eklendi ✅");
+      alert("Link eklendi ✅");siparisler
     }catch(e){
       alert(e?.message || e);
     }
@@ -346,7 +346,7 @@ db.settings({
       const ok = confirm("Bu siparişi 'expired' yapmak istiyor musun? (Silinmez, kapanır)");
       if(!ok) return;
 
-      await db.collection("users").doc(uid).collection("orders").doc(orderId).set({
+      await db.collection("kullanicilar").doc(uid).collection("siparisler").doc(orderId).set({
         status: "expired",
         expiredAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
@@ -376,44 +376,31 @@ db.settings({
     }
   };
 
-  window.ADMIN_delete = async function(uid, orderId){
-    try{
-      uid = String(uid||"").trim();
-      orderId = String(orderId||"").trim();
-      if(!uid || !orderId) return alert("uid/orderId yok");
+  
 
-      const ok = confirm("Bu siparişi SİLMEK istiyor musun? (Geri alınmaz)");
-      if(!ok) return;
+ // ✅ MANUEL butonlar
+document.getElementById("btnLoadOrder").onclick = async () => {
+  try {
+    const uid = String(mUid.value || "").trim();
+    const orderId = String(mOrderId.value || "").trim();
+    if (!uid || !orderId) return alert("UID + OrderId gir");
 
-      await db.collection("users").doc(uid).collection("orders").doc(orderId).delete();
-      alert("Silindi ✅");
-    }catch(e){
-      alert(e?.message || e);
+    const ref = db.collection("kullanicilar").doc(uid).collection("siparisler").doc(orderId);
+    const snap = await ref.get();
+
+    if (!snap.exists) {
+      mOut.textContent = "Sipariş bulunamadı. UID/OrderId yanlış olabilir.";
+      return;
     }
-  };
 
-  // ✅ MANUEL butonlar
-  document.getElementById("btnLoadOrder").onclick = async ()=>{
-    try{
-      const uid = String(mUid.value||"").trim();
-      const orderId = String(mOrderId.value||"").trim();
-      if(!uid || !orderId) return alert("UID + OrderId gir");
-
-      const ref = db.collection("users").doc(uid).collection("orders").doc(orderId);
-      const snap = await ref.get();
-      if(!snap.exists){
-        mOut.textContent = "Sipariş bulunamadı. UID/OrderId yanlış olabilir.";
-        return;
-      }
-      mOut.textContent = JSON.stringify(snap.data() || {}, null, 2);
-    }catch(e){
-      mOut.textContent = "Hata: " + (e?.message || e);
-    }
-  };
-
+    mOut.textContent = JSON.stringify(snap.data() || {}, null, 2);
+  } catch (e) {
+    mOut.textContent = "Hata: " + (e?.message || e);
+  }
+};
   document.getElementById("btnSetLink").onclick = async ()=>{
     const uid = String(mUid.value||"").trim();
-    const orderId = String(mOrderId.value||"").trim();
+    const orderId = String(mOrderId.value||"").trim();siparisler
     if(!uid || !orderId) return alert("UID + OrderId gir");
     await window.ADMIN_setLink(uid, orderId);
   };
