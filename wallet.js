@@ -15,7 +15,7 @@
   const db = firebase.firestore();
   const FieldValue = firebase.firestore.FieldValue;
 
-  const USERS_COL = "users";
+  const USERS_COL = "kullanicilar";
 
   const PACKS = {
     P120: { priceTL: 120, credits: 4, title: "120 TL • 4 Hak" },
@@ -38,8 +38,8 @@
   }
 
   function ordersColRef(uid) {
-    return db.collection(USERS_COL).doc(uid).collection("orders");
-  }
+  return db.collection(USERS_COL).doc(uid).collection("siparisler");
+}
 
   function orderRef(uid, orderId) {
     return ordersColRef(uid).doc(String(orderId));
