@@ -283,8 +283,7 @@ db.settings({
 
     elHint.textContent = "Liste dinleniyor…";
 
-    _unsub = db.collectionGroup("orders")
-      .limit(200)
+ _unsub = db.collectionGroup("siparisler")     .limit(200)
       .onSnapshot((snap)=>{
         const arr = [];
         snap.forEach(doc=>{
