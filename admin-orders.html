@@ -121,14 +121,8 @@
 (function(){
   const auth = window.auth || firebase.auth();
   const db = window.db || firebase.firestore();
-
-db.settings({
-  experimentalForceLongPolling: true,
-  useFetchStreams: false
-});
   const FieldValue = firebase.firestore.FieldValue;
 
-  // ✅ ADMIN mail(ler)i
   const ADMIN_EMAILS = ["muraternak@gmail.com","ernakmurat@gmail.com"].map(x=>String(x).toLowerCase());
 
   const elMe = document.getElementById("me");
@@ -145,7 +139,7 @@ db.settings({
   const mOrderId = document.getElementById("mOrderId");
   const mOut = document.getElementById("mOut");
 
-  let mode = "list"; // list | manual
+  let mode = "list";
   let _unsub = null;
   let _cache = [];
 
@@ -161,7 +155,7 @@ db.settings({
       manualBox.style.display = "none";
       listBox.style.display = "block";
       btnToggle.textContent = "Mod: Liste";
-      startListen(); // tekrar bağlan
+      startListen();
     }
   }
 
@@ -235,13 +229,15 @@ db.settings({
         ? `${o.userName || ""} ${o.userEmail ? "• "+o.userEmail : ""}`
         : (uid ? `UID: ${uid}` : "-");
 
+      const oid = o._docId || o.orderId || "";
+
       return `
         <div class="card">
           <div class="row">
             <div>
               <div style="font-weight:1000; font-size:16px">${o.packTitle || o.packId || "Paket"}</div>
               <div class="small muted">${who}</div>
-              <div class="small muted">orderId: <span class="mono">${o.orderId || ""}</span> • created: ${ts(o.createdAt)}</div>
+              <div class="small muted">orderId: <span class="mono">${o.orderId || oid}</span> • created: ${ts(o.createdAt)}</div>
               <div class="small muted">uid: <span class="mono">${uid || "-"}</span></div>
             </div>
 
@@ -256,12 +252,12 @@ db.settings({
               ${payRef ? `<div class="small">Ref/Dekont: <span class="mono">${payRef}</span></div>` : ``}
             </div>
 
-           <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-  <button class="btn warn" onclick="ADMIN_setLink('${uid}','${o._docId || o.orderId}')">🔗 Link Ekle</button>
-  <button class="btn ghost" onclick="ADMIN_expire('${uid}','${o._docId || o.orderId}')">⏱ Expired</button>
-  <button class="btn primary" onclick="ADMIN_approve('${uid}','${o._docId || o.orderId}')">✅ Onayla</button>
-  <button class="btn danger" onclick="ADMIN_delete('${uid}','${o._docId || o.orderId}')">🗑 Sil</button>
-</div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+              <button class="btn warn" onclick="ADMIN_setLink('${uid}','${oid}')">🔗 Link Ekle</button>
+              <button class="btn ghost" onclick="ADMIN_expire('${uid}','${oid}')">⏱ Expired</button>
+              <button class="btn primary" onclick="ADMIN_approve('${uid}','${oid}')">✅ Onayla</button>
+              <button class="btn danger" onclick="ADMIN_delete('${uid}','${oid}')">🗑 Sil</button>
+            </div>
           </div>
         </div>
       `;
@@ -283,12 +279,14 @@ db.settings({
 
     elHint.textContent = "Liste dinleniyor…";
 
- _unsub = db.collectionGroup("siparisler")     .limit(200)
+    _unsub = db.collectionGroup("siparisler")
+      .limit(200)
       .onSnapshot((snap)=>{
         const arr = [];
         snap.forEach(doc=>{
           const d = doc.data() || {};
-          d.orderId = d.orderId || doc.id;
+          d._docId = doc.id;                 // ✅ butonlar için net id
+          d.orderId = d.orderId || doc.id;   // ✅ ekranda orderId
           d._parentUid = getParentUid(doc.ref);
           d.uid = d.uid || d._parentUid;
           arr.push(d);
@@ -305,7 +303,6 @@ db.settings({
       });
   }
 
-  // ✅ GLOBAL admin aksiyonları
   window.ADMIN_setLink = async function(uid, orderId){
     try{
       uid = String(uid||"").trim();
@@ -319,19 +316,19 @@ db.settings({
 
       const orderRef = db.collection("kullanicilar").doc(uid).collection("siparisler").doc(orderId);
 
-   await orderRef.set({
-  status: "link_sent",
-  paymentLink: link,
-  paymentRef: payRef,
-  payment: {
-    link: link,
-    ref: payRef,
-    linkAddedAt: FieldValue.serverTimestamp()
-  },
-  updatedAt: FieldValue.serverTimestamp()
-}, { merge: true });
+      await orderRef.set({
+        status: "link_sent",
+        paymentLink: link,
+        paymentRef: payRef,
+        payment: {
+          link: link,
+          ref: payRef,
+          linkAddedAt: FieldValue.serverTimestamp()
+        },
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
 
-      
+      alert("Link eklendi ✅");
     }catch(e){
       alert(e?.message || e);
     }
@@ -377,49 +374,45 @@ db.settings({
   };
 
   window.ADMIN_delete = async function(uid, orderId){
-  try{
-    uid = String(uid||"").trim();
-    orderId = String(orderId||"").trim();
-    if(!uid || !orderId) return alert("uid/orderId yok");
+    try{
+      uid = String(uid||"").trim();
+      orderId = String(orderId||"").trim();
+      if(!uid || !orderId) return alert("uid/orderId yok");
 
-    const ok = confirm("Bu siparişi SİLMEK istiyor musun? (Geri alınmaz)");
-    if(!ok) return;
+      const ok = confirm("Bu siparişi SİLMEK istiyor musun? (Geri alınmaz)");
+      if(!ok) return;
 
-    await db.collection("kullanicilar")
-            .doc(uid)
-            .collection("siparisler")
-            .doc(orderId)
-            .delete();
-
-    alert("Silindi ✅");
-  }catch(e){
-    alert(e?.message || e);
-  }
-};
-
- // ✅ MANUEL butonlar
-document.getElementById("btnLoadOrder").onclick = async () => {
-  try {
-    const uid = String(mUid.value || "").trim();
-    const orderId = String(mOrderId.value || "").trim();
-    if (!uid || !orderId) return alert("UID + OrderId gir");
-
-    const ref = db.collection("kullanicilar").doc(uid).collection("siparisler").doc(orderId);
-    const snap = await ref.get();
-
-    if (!snap.exists) {
-      mOut.textContent = "Sipariş bulunamadı. UID/OrderId yanlış olabilir.";
-      return;
+      await db.collection("kullanicilar").doc(uid).collection("siparisler").doc(orderId).delete();
+      alert("Silindi ✅");
+    }catch(e){
+      alert(e?.message || e);
     }
+  };
 
-    mOut.textContent = JSON.stringify(snap.data() || {}, null, 2);
-  } catch (e) {
-    mOut.textContent = "Hata: " + (e?.message || e);
-  }
-};
+  // ✅ MANUEL butonlar
+  document.getElementById("btnLoadOrder").onclick = async () => {
+    try {
+      const uid = String(mUid.value || "").trim();
+      const orderId = String(mOrderId.value || "").trim();
+      if (!uid || !orderId) return alert("UID + OrderId gir");
+
+      const ref = db.collection("kullanicilar").doc(uid).collection("siparisler").doc(orderId);
+      const snap = await ref.get();
+
+      if (!snap.exists) {
+        mOut.textContent = "Sipariş bulunamadı. UID/OrderId yanlış olabilir.";
+        return;
+      }
+
+      mOut.textContent = JSON.stringify(snap.data() || {}, null, 2);
+    } catch (e) {
+      mOut.textContent = "Hata: " + (e?.message || e);
+    }
+  };
+
   document.getElementById("btnSetLink").onclick = async ()=>{
     const uid = String(mUid.value||"").trim();
-    
+    const orderId = String(mOrderId.value||"").trim();
     if(!uid || !orderId) return alert("UID + OrderId gir");
     await window.ADMIN_setLink(uid, orderId);
   };
@@ -445,14 +438,12 @@ document.getElementById("btnLoadOrder").onclick = async () => {
     await window.ADMIN_delete(uid, orderId);
   };
 
-  // Top bar
   document.getElementById("btnLogout").onclick = ()=> auth.signOut();
   document.getElementById("btnRefresh").onclick = ()=> render();
   btnToggle.onclick = ()=> setMode(mode === "list" ? "manual" : "list");
   elFilter.onchange = render;
   elSearch.oninput = render;
 
-  // Auth
   auth.onAuthStateChanged(async (user)=>{
     try{
       if(!user){
@@ -461,7 +452,7 @@ document.getElementById("btnLoadOrder").onclick = async () => {
         return;
       }
       await ensureAdmin(user);
-      setMode("list"); // açılışta liste dene
+      setMode("list");
     }catch(e){
       if(_unsub) _unsub();
     }
