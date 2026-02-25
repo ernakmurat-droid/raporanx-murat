@@ -9,7 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-  <!-- ✅ absolute path: menüden gelince de bozulmasın -->
   <script src="/firebase-config.js"></script>
   <script src="/wallet.js"></script>
 
@@ -45,7 +44,6 @@
     <div class="row">
       <div>
         <div style="font-size:20px;font-weight:900;">🎟️ Cüzdan</div>
-        <div style="color:red;font-weight:900;">TEST 123</div>
         <div class="muted" id="me">Giriş bekleniyor…</div>
       </div>
       <div class="row">
@@ -117,7 +115,7 @@
       </div>
 
       <div class="muted small" style="margin-top:8px;">
-        Not: Bilgiler <span class="mono">users/{uid}.billingProfile</span> alanına kaydedilir.
+        Not: Bilgiler <span class="mono">kullanicilar/{uid}/invoiceProfile/main</span> alanına kaydedilir.
       </div>
     </div>
 
@@ -141,10 +139,9 @@
     </div>
   </div>
 
-  <!-- ✅ Sayfa davranışı (küçük, sade). Ana işleri wallet.js yapar -->
   <script>
   (function(){
-    const auth = firebase.auth();
+    const auth = window.auth || firebase.auth();
 
     const elMe = document.getElementById("me");
     const elOrders = document.getElementById("orders");
@@ -201,9 +198,10 @@
 
     function statusTr(s){
       if(s==="pending") return "Yeni sipariş (link hazırlanıyor) ⏳";
-      if(s==="link_added") return "Link hazır ✅";
+      if(s==="link_sent") return "Link gönderildi ✅";
       if(s==="user_marked_paid") return "Ödeme bildirildi ⏳";
       if(s==="approved") return "Onaylandı ✅";
+      if(s==="expired") return "Süresi doldu ⏱️";
       if(s==="rejected") return "Reddedildi ❌";
       if(s==="cancelled") return "İptal 🚫";
       return s || "-";
@@ -255,7 +253,6 @@
       }).join("");
     }
 
-    // global: butonlar bunları çağırıyor
     window.buy = async function(packId){
       try{
         await Wallet.createOrder(packId);
@@ -323,109 +320,10 @@
       await Wallet.load(user.uid);
       unsubWallet = Wallet.listen(user.uid);
 
-     if (typeof Wallet.listenBillingProfile === "function") {
-  unsubBilling = Wallet.listenBillingProfile(user.uid, (p)=>fillBillingForm(p));
-} 
+      unsubBilling = Wallet.listenBillingProfile(user.uid, (p)=>fillBillingForm(p));
       unsubOrders = Wallet.listenOrders(user.uid, (arr)=>renderOrders(arr));
     });
   })();
-  // =====================
-// ✅ FATURA PROFİLİ (users/{uid}/invoiceProfile/main)
-// =====================
-(function(){
-  const db = window.db || firebase.firestore();
-  const auth = window.auth || firebase.auth();
-  const FieldValue = firebase.firestore.FieldValue;
-
-  const bpType = document.getElementById("bpType");
-  const bpName = document.getElementById("bpName");
-  const bpTaxId = document.getElementById("bpTaxId");
-  const bpTaxOffice = document.getElementById("bpTaxOffice");
-  const bpPhone = document.getElementById("bpPhone");
-  const bpEmail = document.getElementById("bpEmail");
-  const bpAddress = document.getElementById("bpAddress");
-  const billingStatus = document.getElementById("billingStatus");
-
-  function setBillingPill(text){
-    if(!billingStatus) return;
-    billingStatus.textContent = text || "—";
-  }
-
-  function fillBillingForm(p){
-    p = p || {};
-    if(bpType) bpType.value = p.type || "individual";
-    if(bpName) bpName.value = p.fullName || "";
-    if(bpTaxId) bpTaxId.value = p.tcOrVkn || "";
-    if(bpTaxOffice) bpTaxOffice.value = p.taxOffice || "";
-    if(bpPhone) bpPhone.value = p.phone || "";
-    if(bpEmail) bpEmail.value = p.email || (auth.currentUser?.email || "");
-    if(bpAddress) bpAddress.value = p.address || "";
-
-    const ok = !!((bpName?.value||"") && (bpTaxId?.value||"") && (bpAddress?.value||""));
-    setBillingPill(ok ? "✅ Tam" : "⚠️ Eksik");
-  }
-
-  async function loadBillingProfile(){
-    const user = auth.currentUser;
-    if(!user) return;
-
-    const ref = db.collection("users").doc(user.uid)
-      .collection("invoiceProfile").doc("main");
-
-    const snap = await ref.get();
-    if(!snap.exists){
-      fillBillingForm(null);
-      setBillingPill("—");
-      return;
-    }
-    fillBillingForm(snap.data() || {});
-  }
-
-  async function saveBillingProfile(){
-    const user = auth.currentUser;
-    if(!user) return alert("Giriş yok");
-
-    const data = {
-      type: (bpType?.value || "individual"),
-      fullName: (bpName?.value || "").trim(),
-      tcOrVkn: (bpTaxId?.value || "").trim(),
-      taxOffice: (bpTaxOffice?.value || "").trim(),
-      phone: (bpPhone?.value || "").trim(),
-      email: ((bpEmail?.value || user.email || "")).trim(),
-      address: (bpAddress?.value || "").trim(),
-      updatedAt: FieldValue.serverTimestamp()
-    };
-
-    if(!data.fullName || !data.tcOrVkn || !data.address){
-      setBillingPill("⚠️ Eksik");
-      return alert("Fatura için en az: Ad/Ünvan + TCKN/VKN + Adres gerekli.");
-    }
-
-    const ref = db.collection("users").doc(user.uid)
-      .collection("invoiceProfile").doc("main");
-
-    await ref.set(data, { merge:true });
-    setBillingPill("Kaydedildi ✅");
-  }
-
-  // Butonlara bağla
-  document.getElementById("btnBillingReload")?.addEventListener("click", loadBillingProfile);
-  document.getElementById("btnBillingSave")?.addEventListener("click", saveBillingProfile);
-
-  // Giriş olunca otomatik getir
-  auth.onAuthStateChanged((user)=>{
-    if(user) loadBillingProfile();
-  });
-
-  // dışa da açalım (istersen console'dan çağırırsın)
-  window.loadBillingProfile = loadBillingProfile;
-  window.saveBillingProfile = saveBillingProfile;
-})();
   </script>
 </body>
 </html>
-
-
-
-
-
