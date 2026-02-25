@@ -1,9 +1,10 @@
 /**
- * wallet.js (TEK DOSYA - HAK + SİPARİŞ + HAK DÜŞÜRME)
- * Firestore:
- *  - users/{uid}/wallet/main
- *  - users/{uid}/wallet/main/uses/{rid}          // rapor tüketim kaydı (idempotent)
- *  - users/{uid}/orders/{orderId}               // paket satın alma isteği
+ * wallet.js (TEK DOSYA - HAK + SİPARİŞ + HAK DÜŞÜRME + FATURA)
+ * Firestore (TEK KÖK: kullanicilar):
+ *  - kullanicilar/{uid}/wallet/main
+ *  - kullanicilar/{uid}/wallet/main/uses/{rid}          // rapor tüketim kaydı (idempotent)
+ *  - kullanicilar/{uid}/siparisler/{orderId}            // paket satın alma isteği
+ *  - kullanicilar/{uid}/invoiceProfile/main             // fatura profili
  */
 (function () {
   if (!window.firebase) {
@@ -11,8 +12,9 @@
     return;
   }
 
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+  // ✅ tek kaynak kullan: firebase-config.js export'larını tercih et
+  const auth = window.auth || firebase.auth();
+  const db = window.db || firebase.firestore();
   const FieldValue = firebase.firestore.FieldValue;
 
   const USERS_COL = "kullanicilar";
@@ -38,8 +40,8 @@
   }
 
   function ordersColRef(uid) {
-  return db.collection(USERS_COL).doc(uid).collection("siparisler");
-}
+    return db.collection(USERS_COL).doc(uid).collection("siparisler");
+  }
 
   function orderRef(uid, orderId) {
     return ordersColRef(uid).doc(String(orderId));
@@ -138,11 +140,6 @@
     return w;
   }
 
-  /**
-   * consumeReport(uid, rid)
-   * - Aynı rid için 1 kere düşer (uses/{rid})
-   * - Önce freeReportsLeft, bitince reportCredits düşer
-   */
   async function consumeReport(uid, rid) {
     if (!uid) throw new Error("consumeReport: uid yok");
     if (!rid) throw new Error("consumeReport: rid yok");
@@ -222,11 +219,6 @@
     });
   }
 
-  /**
-   * createOrder(packId)
-   * - kullanıcı paket seçer: P120/P200/P500
-   * - order status: pending
-   */
   async function createOrder(packId) {
     const user = auth.currentUser;
     if (!user) throw new Error("createOrder: giriş yok");
@@ -262,11 +254,6 @@
     return order;
   }
 
-  /**
-   * approveOrder(uid, orderId)
-   * - admin ödeme geldiğini kontrol eder
-   * - tek seferlik: appliedToWallet ile kilit
-   */
   async function approveOrder(uid, orderId) {
     if (!uid) throw new Error("approveOrder: uid yok");
     if (!orderId) throw new Error("approveOrder: orderId yok");
@@ -324,10 +311,6 @@
     return out;
   }
 
-  /**
-   * setPaymentLink(uid, orderId, link)
-   * - admin ödeme linkini siparişe ekler
-   */
   async function setPaymentLink(uid, orderId, link) {
     if (!uid) throw new Error("setPaymentLink: uid yok");
     if (!orderId) throw new Error("setPaymentLink: orderId yok");
@@ -354,7 +337,6 @@
           link: clean,
           addedAt: FieldValue.serverTimestamp(),
         },
-        // ✅ standart: link_sent
         status: (o.status === "pending" ? "link_sent" : o.status),
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
@@ -363,10 +345,6 @@
     return { ok: true };
   }
 
-  /**
-   * markPaid(orderId, refText)
-   * - kullanıcı "ödemeyi yaptım" der
-   */
   async function markPaid(orderId, refText) {
     const user = auth.currentUser;
     if (!user) throw new Error("markPaid: giriş yok");
@@ -395,59 +373,71 @@
 
     return { ok: true };
   }
-function billingRef(uid){
-  return db
-    .collection(USERS_COL)
-    .doc(uid)
-    .collection("invoiceProfile")
-    .doc("main");
-}
 
-async function getBillingProfile(uid){
-  if(!uid) throw new Error("getBillingProfile: uid yok");
-  const snap = await billingRef(uid).get();
-  return snap.exists ? (snap.data() || {}) : {};
-}
+  // =====================
+  // ✅ FATURA PROFİLİ (kullanicilar/{uid}/invoiceProfile/main)
+  // =====================
+  function billingRef(uid) {
+    return db.collection(USERS_COL).doc(uid).collection("invoiceProfile").doc("main");
+  }
 
-async function saveBillingProfile(uid, profile){
-  if(!uid) throw new Error("saveBillingProfile: uid yok");
+  async function getBillingProfile(uid) {
+    if (!uid) throw new Error("getBillingProfile: uid yok");
+    const snap = await billingRef(uid).get();
+    return snap.exists ? (snap.data() || {}) : {};
+  }
 
-  await billingRef(uid).set({
-    ...(profile || {}),
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge:true });
+  async function saveBillingProfile(uid, profile) {
+    if (!uid) throw new Error("saveBillingProfile: uid yok");
 
-  return { ok:true };
-}
- // ✅ dışa aç
-window.Wallet = {
-  PACKS,
-  load: loadWallet,
-  ensure: ensureWallet,
-  consumeReport,
+    await billingRef(uid).set({
+      ...(profile || {}),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
 
-  // ✅ aynı fonksiyon ama iki isimle dışa açıyoruz (kafa karışmasın)
-  listen: listenWallet,
-  listenWallet: listenWallet,
+    return { ok: true };
+  }
 
-  createOrder,
-  approveOrder,
-  setPaymentLink,
-  markPaid,
+  function listenBillingProfile(uid, cb) {
+    if (!uid) throw new Error("listenBillingProfile: uid yok");
+    if (typeof cb !== "function") throw new Error("listenBillingProfile: cb function olmalı");
 
-  listOrders,
-  listenOrders,
+    return billingRef(uid).onSnapshot(
+      (snap) => cb(snap.exists ? (snap.data() || {}) : {}),
+      (err) => {
+        console.error("listenBillingProfile ERR:", err);
+        cb({});
+      }
+    );
+  }
 
-  ref: walletMainRef,
-  ordersRef: ordersColRef,
+  // ✅ dışa aç
+  window.Wallet = {
+    PACKS,
+    load: loadWallet,
+    ensure: ensureWallet,
+    consumeReport,
 
-  // ✅ FATURA
-  getBillingProfile,
-  saveBillingProfile,
-  listenBillingProfile,
-};
+    listen: listenWallet,
+    listenWallet: listenWallet,
 
-  // giriş varsa otomatik cüzdanı yükle (UI varsa günceller)
+    createOrder,
+    approveOrder,
+    setPaymentLink,
+    markPaid,
+
+    listOrders,
+    listenOrders,
+
+    ref: walletMainRef,
+    ordersRef: ordersColRef,
+
+    // ✅ FATURA
+    getBillingProfile,
+    saveBillingProfile,
+    listenBillingProfile,
+  };
+
   auth.onAuthStateChanged(async (user) => {
     if (!user) return;
     try { await loadWallet(user.uid); }
