@@ -14,6 +14,7 @@
   <script src="/firebase-config.js"></script>
   <!-- Wallet -->
   <script src="/wallet.js"></script>
+
   <style>
     body{font-family:Arial, sans-serif; margin:0; background:#0f172a; color:#e5e7eb;}
     .wrap{max-width:1100px; margin:0 auto; padding:18px;}
@@ -39,6 +40,32 @@
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
     .two{display:grid; gap:12px; grid-template-columns: 1fr 1fr;}
     @media(max-width:900px){ .two{grid-template-columns:1fr;} }
+
+    /* ✅ Fatura modal */
+    #billModal{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:9999999;
+      background:rgba(0,0,0,.55);
+      padding:12px;
+      overflow:auto;
+    }
+    #billModalCard{
+      max-width:720px;
+      margin:12px auto;
+      background:#111827;
+      color:#e5e7eb;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
+      padding:14px;
+    }
+    .kv{display:grid; grid-template-columns: 140px 1fr; gap:10px; align-items:start; margin-top:8px;}
+    @media(max-width:720px){ .kv{grid-template-columns: 1fr; } }
+    .k{opacity:.75; font-size:12px;}
+    .v{font-weight:800;}
+    .v.mono{font-weight:700;}
   </style>
 </head>
 
@@ -84,6 +111,7 @@
         <button class="btn ghost" id="btnExpire">⏱ Expired</button>
         <button class="btn primary" id="btnApprove">✅ Onayla</button>
         <button class="btn danger" id="btnDelete">🗑 Sil</button>
+        <button class="btn ghost" id="btnShowBilling">🧾 Fatura</button>
       </div>
 
       <div class="line"></div>
@@ -116,6 +144,30 @@
     </div>
   </div>
 
+  <!-- ✅ FATURA MODAL -->
+  <div id="billModal">
+    <div id="billModalCard">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <div style="font-weight:1000; font-size:18px;">🧾 Fatura Bilgileri</div>
+        <button class="btn ghost" onclick="closeBilling()">Kapat ✖</button>
+      </div>
+
+      <div class="line"></div>
+
+      <div class="small muted">UID: <span id="billUid" class="mono">-</span></div>
+
+      <div id="billBody" style="margin-top:10px;">
+        Yükleniyor…
+      </div>
+
+      <div class="line"></div>
+
+      <div class="small muted">
+        Kaynak: <span class="mono">kullanicilar/{uid}/invoiceProfile/main</span>
+      </div>
+    </div>
+  </div>
+
 <script>
 (function(){
   const auth = window.auth || firebase.auth();
@@ -138,9 +190,64 @@
   const mOrderId = document.getElementById("mOrderId");
   const mOut = document.getElementById("mOut");
 
+  // billing modal elements
+  const billModal = document.getElementById("billModal");
+  const billUidEl = document.getElementById("billUid");
+  const billBody  = document.getElementById("billBody");
+
   let mode = "list";
   let _unsub = null;
   let _cache = [];
+
+  function esc(s){
+    return String(s||"").replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
+  function openBilling(uid){
+    billUidEl.textContent = uid || "-";
+    billBody.innerHTML = "Yükleniyor…";
+    billModal.style.display = "block";
+  }
+  window.closeBilling = function(){
+    billModal.style.display = "none";
+  };
+
+  async function fetchBilling(uid){
+    uid = String(uid||"").trim();
+    if(!uid) throw new Error("UID yok");
+
+    openBilling(uid);
+
+    const ref = db.collection("kullanicilar").doc(uid).collection("invoiceProfile").doc("main");
+    const snap = await ref.get();
+
+    if(!snap.exists){
+      billBody.innerHTML = `<div class="muted">Bu kullanıcı için fatura kaydı yok.</div>`;
+      return;
+    }
+
+    const p = snap.data() || {};
+    const has = (p.fullName && p.tcOrVkn && p.address);
+
+    billBody.innerHTML = `
+      <div class="card" style="box-shadow:none;">
+        <div class="tag ${has ? "ok" : "wait"}">${has ? "Kayıtlı ✅" : "Eksik ⚠️"}</div>
+
+        <div class="kv"><div class="k">Tip</div><div class="v">${esc(p.type || "-")}</div></div>
+        <div class="kv"><div class="k">Ad/Ünvan</div><div class="v">${esc(p.fullName || "-")}</div></div>
+        <div class="kv"><div class="k">TCKN/VKN</div><div class="v mono">${esc(p.tcOrVkn || "-")}</div></div>
+        <div class="kv"><div class="k">Vergi Dairesi</div><div class="v">${esc(p.taxOffice || "-")}</div></div>
+        <div class="kv"><div class="k">Telefon</div><div class="v">${esc(p.phone || "-")}</div></div>
+        <div class="kv"><div class="k">E-posta</div><div class="v">${esc(p.email || "-")}</div></div>
+        <div class="kv"><div class="k">Adres</div><div class="v">${esc(p.address || "-")}</div></div>
+
+        <div class="line"></div>
+        <div class="small muted">updatedAt: <span class="mono">${esc(String(p.updatedAt?.toDate ? p.updatedAt.toDate().toLocaleString("tr-TR") : (p.updatedAt || "-")))}</span></div>
+      </div>
+    `;
+  }
 
   function setMode(next){
     mode = next;
@@ -234,28 +341,29 @@
         <div class="card">
           <div class="row">
             <div>
-              <div style="font-weight:1000; font-size:16px">${o.packTitle || o.packId || "Paket"}</div>
-              <div class="small muted">${who}</div>
-              <div class="small muted">orderId: <span class="mono">${o.orderId || oid}</span> • created: ${ts(o.createdAt)}</div>
-              <div class="small muted">uid: <span class="mono">${uid || "-"}</span></div>
+              <div style="font-weight:1000; font-size:16px">${esc(o.packTitle || o.packId || "Paket")}</div>
+              <div class="small muted">${esc(who)}</div>
+              <div class="small muted">orderId: <span class="mono">${esc(o.orderId || oid)}</span> • created: ${esc(ts(o.createdAt))}</div>
+              <div class="small muted">uid: <span class="mono">${esc(uid || "-")}</span></div>
             </div>
 
             <div>
-              <span class="tag ${tagClass(o.status)}">${trStatus(o.status)}</span>
-              <div class="small muted" style="margin-top:8px">Tutar: <b>${o.priceTL || "-"} TL</b> • Hak: <b>${o.credits || "-"}</b></div>
-              <div class="small muted">updated: ${ts(o.updatedAt)}</div>
+              <span class="tag ${tagClass(o.status)}">${esc(trStatus(o.status))}</span>
+              <div class="small muted" style="margin-top:8px">Tutar: <b>${esc(o.priceTL || "-")} TL</b> • Hak: <b>${esc(o.credits || "-")}</b></div>
+              <div class="small muted">updated: ${esc(ts(o.updatedAt))}</div>
             </div>
 
             <div>
-              ${payLink ? `<div class="small">Link: <a href="${payLink}" target="_blank" rel="noopener noreferrer">${payLink}</a></div>` : ``}
-              ${payRef ? `<div class="small">Ref/Dekont: <span class="mono">${payRef}</span></div>` : ``}
+              ${payLink ? `<div class="small">Link: <a href="${esc(payLink)}" target="_blank" rel="noopener noreferrer">${esc(payLink)}</a></div>` : ``}
+              ${payRef ? `<div class="small">Ref/Dekont: <span class="mono">${esc(payRef)}</span></div>` : ``}
             </div>
 
             <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-              <button class="btn warn" onclick="ADMIN_setLink('${uid}','${oid}')">🔗 Link Ekle</button>
-              <button class="btn ghost" onclick="ADMIN_expire('${uid}','${oid}')">⏱ Expired</button>
-              <button class="btn primary" onclick="ADMIN_approve('${uid}','${oid}')">✅ Onayla</button>
-              <button class="btn danger" onclick="ADMIN_delete('${uid}','${oid}')">🗑 Sil</button>
+              <button class="btn ghost" onclick="ADMIN_showBilling('${esc(uid)}')">🧾 Fatura</button>
+              <button class="btn warn" onclick="ADMIN_setLink('${esc(uid)}','${esc(oid)}')">🔗 Link Ekle</button>
+              <button class="btn ghost" onclick="ADMIN_expire('${esc(uid)}','${esc(oid)}')">⏱ Expired</button>
+              <button class="btn primary" onclick="ADMIN_approve('${esc(uid)}','${esc(oid)}')">✅ Onayla</button>
+              <button class="btn danger" onclick="ADMIN_delete('${esc(uid)}','${esc(oid)}')">🗑 Sil</button>
             </div>
           </div>
         </div>
@@ -269,7 +377,7 @@
       elMe.innerHTML = `⛔ Admin değilsin. (Giriş yapan: <b>${user?.email || "-"}</b>)`;
       throw new Error("admin değil");
     }
-    elMe.innerHTML = `✅ Admin: <b>${user.email}</b> • UID: <span class="mono">${user.uid}</span> • <a href="/wallet.html">wallet</a>`;
+    elMe.innerHTML = `✅ Admin: <b>${esc(user.email)}</b> • UID: <span class="mono">${esc(user.uid)}</span> • <a href="/wallet.html">wallet</a>`;
   }
 
   function startListen(){
@@ -284,8 +392,8 @@
         const arr = [];
         snap.forEach(doc=>{
           const d = doc.data() || {};
-          d._docId = doc.id;                 // ✅ butonlar için net id
-          d.orderId = d.orderId || doc.id;   // ✅ ekranda orderId
+          d._docId = doc.id;
+          d.orderId = d.orderId || doc.id;
           d._parentUid = getParentUid(doc.ref);
           d.uid = d.uid || d._parentUid;
           arr.push(d);
@@ -296,11 +404,20 @@
       }, (err)=>{
         elHint.textContent = "Liste hatası. Manuel moda geçebilirsin.";
         elList.innerHTML = `<div class="card" style="border-color:rgba(239,68,68,.35)">
-          Liste çekilemedi: <b>${(err?.message||err)}</b><br><br>
+          Liste çekilemedi: <b>${esc(err?.message||err)}</b><br><br>
           <span class="muted small">Çözüm: Manuel moda geç → UID+OrderId ile link ekle/onayla.</span>
         </div>`;
       });
   }
+
+  // ✅ yeni: fatura göster
+  window.ADMIN_showBilling = async function(uid){
+    try{
+      await fetchBilling(uid);
+    }catch(e){
+      alert(e?.message || e);
+    }
+  };
 
   window.ADMIN_setLink = async function(uid, orderId){
     try{
@@ -437,11 +554,22 @@
     await window.ADMIN_delete(uid, orderId);
   };
 
+  document.getElementById("btnShowBilling").onclick = async ()=>{
+    const uid = String(mUid.value||"").trim();
+    if(!uid) return alert("UID gir");
+    await window.ADMIN_showBilling(uid);
+  };
+
   document.getElementById("btnLogout").onclick = ()=> auth.signOut();
   document.getElementById("btnRefresh").onclick = ()=> render();
   btnToggle.onclick = ()=> setMode(mode === "list" ? "manual" : "list");
   elFilter.onchange = render;
   elSearch.oninput = render;
+
+  // Modal dışına tıklayınca kapat
+  billModal.addEventListener("click", (e)=>{
+    if(e.target === billModal) closeBilling();
+  });
 
   auth.onAuthStateChanged(async (user)=>{
     try{
