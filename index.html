@@ -487,7 +487,7 @@
         lastCloudSig = sig;
 
         cloudWriteChain = cloudWriteChain
-          .then(()=> db.collection("users").doc(user.uid).set(payload, { merge:true }))
+          .then(()=> db.collection("kullanicilar").doc(user.uid).set(payload, { merge:true }))
           .catch(err => console.warn("Cloud write error:", err));
       }, 250);
     }
@@ -641,7 +641,7 @@
       loadReports();
 
       // sonra cloud snapshot
-      db.collection("users").doc(user.uid).onSnapshot(async (doc)=>{
+      db.collection("kullanicilar").doc(user.uid).onSnapshot(async (doc)=>{
         let cloudReports = [];
         let cloudDeleted = [];
 
@@ -701,4 +701,5 @@
   </script>
 </body>
 </html>
+
 
