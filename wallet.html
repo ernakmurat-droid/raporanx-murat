@@ -58,6 +58,9 @@
     </div>
 
     <!-- ✅ FATURA -->
+<div id="billingNeedContact" class="muted small" style="display:none;margin-top:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);padding:10px 12px;border-radius:12px;">
+  ⚠️ Ödeme tamamlanmazsa size ulaşabilmemiz için <b>Telefon</b> veya <b>E-posta</b> zorunludur.
+</div>
     <div class="card">
       <div class="row" style="align-items:flex-end;">
         <div>
@@ -154,7 +157,7 @@
     const bpPhone = document.getElementById("bpPhone");
     const bpEmail = document.getElementById("bpEmail");
     const bpAddress = document.getElementById("bpAddress");
-
+    const elBillingNeedContact = document.getElementById("billingNeedContact");
     let unsubOrders=null, unsubBilling=null, unsubWallet=null;
     let savingBilling=false;
 
@@ -169,16 +172,21 @@
     }
 
     function fillBillingForm(profile){
-      const p = profile || {};
-      bpType.value = p.type || "individual";
-      bpName.value = p.fullName || "";
-      bpTaxId.value = p.tcOrVkn || "";
-      bpTaxOffice.value = p.taxOffice || "";
-      bpPhone.value = p.phone || "";
-      bpEmail.value = p.email || "";
-      bpAddress.value = p.address || "";
-      setBillingStatus(!!(p.fullName && p.tcOrVkn && p.address));
-    }
+  const p = profile || {};
+  bpType.value = p.type || "individual";
+  bpName.value = p.fullName || "";
+  bpTaxId.value = p.tcOrVkn || "";
+  bpTaxOffice.value = p.taxOffice || "";
+  bpPhone.value = p.phone || "";
+  bpEmail.value = p.email || "";
+  bpAddress.value = p.address || "";
+
+  const okCore = !!(p.fullName && p.tcOrVkn && p.address);
+  setBillingStatus(okCore);
+
+  // ✅ Telefon veya email yoksa uyarıyı göster
+  showNeedContactWarn(!hasContact(p));
+}
 
     function readBillingForm(){
       return {
@@ -253,15 +261,40 @@
       }).join("");
     }
 
-    window.buy = async function(packId){
-      try{
-        await Wallet.createOrder(packId);
-        alert("Sipariş oluşturuldu ✅");
-      }catch(e){
-        alert("Hata: " + (e?.message || e));
-      }
-    };
+  window.buy = async function(packId){
+  try{
+    const u = auth.currentUser;
+    if(!u) return alert("Giriş yapmalısın.");
 
+    const profile = await Wallet.getBillingProfile(u.uid);
+    if(!hasContact(profile)){
+      showNeedContactWarn(true);
+      scrollToBilling();
+      return alert("Ödeme için Telefon veya E-posta zorunlu. Lütfen Fatura Bilgilerim bölümünü doldur.");
+    }
+
+    await Wallet.createOrder(packId);
+    alert("Sipariş oluşturuldu ✅");
+  }catch(e){
+    alert("Hata: " + (e?.message || e));
+  }
+}; 
+    function hasContact(profile){
+  const phone = String(profile?.phone || "").trim();
+  const email = String(profile?.email || "").trim();
+  return !!(phone || email);
+}
+
+function showNeedContactWarn(show){
+  if(!elBillingNeedContact) return;
+  elBillingNeedContact.style.display = show ? "block" : "none";
+}
+
+function scrollToBilling(){
+  // fatura kartı: bu id yoksa en yakın card’ı bulmaya gerek yok; en basit:
+  bpPhone?.scrollIntoView({ behavior:"smooth", block:"center" });
+  bpPhone?.focus();
+}
     window.markPaid = async function(orderId){
       try{
         const ref = prompt("Varsa dekont no yaz (opsiyonel):") || "";
@@ -301,7 +334,11 @@
         savingBilling = false;
       }
     };
-
+    const profile = readBillingForm();
+if(!(profile.phone || profile.email)){
+  showNeedContactWarn(true);
+  return alert("Telefon veya E-posta zorunlu.");
+}
     auth.onAuthStateChanged(async (user)=>{
       if(unsubOrders){unsubOrders();unsubOrders=null;}
       if(unsubBilling){unsubBilling();unsubBilling=null;}
@@ -327,3 +364,4 @@
   </script>
 </body>
 </html>
+
