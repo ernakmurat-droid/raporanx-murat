@@ -8,8 +8,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="wallet.js"></script>
+
+<!-- ✅ Tek kaynak -->
+<script src="/firebase-config.js"></script>
+<script src="/wallet.js"></script>
 
 <style>
 :root{--primary:#1a237e;--secondary:#3949ab;--bg:#f4f7f9;}
@@ -22,17 +24,14 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   position:relative;
 }
 .header.locked{background:linear-gradient(135deg,#263238,#455a64);}
-.back{position:absolute;left:20px;top: calc(25px + env(safe-area-inset-top, 0px));background:rgba(255,255,255,.2);padding:8px 15px;border-radius:30px;color:#fff;border:none;cursor:pointer;}
+.back{
+  position:absolute;left:20px;top: calc(25px + env(safe-area-inset-top, 0px));
+  background:rgba(255,255,255,.2);padding:8px 15px;border-radius:30px;color:#fff;
+  border:none;cursor:pointer;font-weight:900;
+}
 .badge{
-  display:none;
-  margin:10px auto 0;
-  width:fit-content;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:13px;
-  font-weight:900;
-  background:rgba(0,0,0,.22);
-  border:1px solid rgba(255,255,255,.22);
+  display:none;margin:10px auto 0;width:fit-content;padding:6px 10px;border-radius:999px;
+  font-size:13px;font-weight:900;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.22);
 }
 .main-wrapper{max-width:1300px;margin:14px auto 30px;display:grid;grid-template-columns:270px 1fr;gap:25px;padding:0 20px;}
 .toc-container{position:sticky;top:20px;height:fit-content;}
@@ -47,7 +46,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 .section h2{color:var(--primary);border-bottom:2px solid #eee;padding-bottom:8px;font-size:1.2em;}
 .text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;color:#34495e;}
 .warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
-.print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto;display:block;cursor:pointer;font-weight:bold;}
+.print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto;display:block;cursor:pointer;font-weight:900;}
 .print-btn:hover{background:#1e874e;}
 .action-btn{
   background:#ff5722;color:#fff;padding:13px 26px;border:none;border-radius:50px;
@@ -56,15 +55,9 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 .action-btn:hover{opacity:.92;}
 .action-btn:disabled{opacity:.55;cursor:not-allowed;}
 #statusBar{
-  max-width:1300px;
-  margin:12px auto 0;
-  padding:10px 14px;
-  border-radius:12px;
-  background:#fff;
-  box-shadow:0 4px 14px rgba(0,0,0,.06);
-  border-left:6px solid var(--secondary);
-  color:#2c3e50;
-  font-weight:900;
+  max-width:1300px;margin:12px auto 0;padding:10px 14px;border-radius:12px;background:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.06);border-left:6px solid var(--secondary);
+  color:#2c3e50;font-weight:900;
 }
 #statusBar small{display:block;font-weight:700;opacity:.88;margin-top:4px}
 @media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
@@ -75,8 +68,8 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   .section{page-break-inside:avoid;}
 }
 </style>
-
 </head>
+
 <body>
 
 <div class="header" id="hdr">
@@ -110,7 +103,12 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 
   <main class="container">
     <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
+
     <button class="action-btn" id="btnFinalCreate" disabled>🧾 Final Rapor Oluştur (Hak Düş + Kilitle)</button>
+
+    <!-- ✅ Word gibi düzenleme -->
+    <button class="action-btn" id="btnEditText" style="background:#1976d2;">✍️ Final Metni Düzenle</button>
+    <button class="action-btn" id="btnSaveText" style="background:#6d4c41; display:none;">💾 Düzenlemeyi Kaydet</button>
 
     <section id="genel" class="section">
       <h2>1. Genel Bilgiler</h2>
@@ -175,8 +173,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmParam = params.get("confirm") === "1";
 
   $("btnBack").onclick = () => {
-    if (!rid) location.href="index.html";
-    else location.href="rapor-detay.html?rid=" + encodeURIComponent(rid);
+    if (!rid) location.href="/index.html";
+    else location.href="/rapor-detay.html?rid=" + encodeURIComponent(rid);
   };
 
   if (!rid){
@@ -187,7 +185,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let finalizing = false;
 
-  function isLockedLocal(){ return localStorage.getItem("report_locked_" + rid) === "1"; }
+  // ✅ daha sağlam local kilit kontrol
+  function isLockedLocal(){
+    const v = String(localStorage.getItem("report_locked_" + rid) || "").trim();
+    return (v === "1" || v === "true" || v === "locked");
+  }
 
   function markLockedInLocalReports(){
     try{
@@ -195,9 +197,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!Array.isArray(arr)) return;
       const idx = arr.findIndex(r => String(r?.rid || "").trim() === rid);
       if (idx < 0) return;
-      arr[idx].isLocked = true;
-      arr[idx].locked = true;
-      arr[idx].lockedAt = Date.now();
+
+      arr[idx] = {
+        ...(arr[idx]||{}),
+        isLocked: true,
+        locked: true,
+        final: true,
+        lockedAt: Date.now(),
+        updatedAt: new Date().toISOString()
+      };
+
       localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
     }catch(e){ console.warn("local reports lock fail:", e); }
   }
@@ -210,23 +219,65 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function isLockedRemote(uid){
+    // locks koleksiyonu (opsiyonel)
     try{
       const lockId = `${uid}_${rid}`;
       const d = await db.collection("locks").doc(lockId).get();
-      if (d.exists) return true;
+      if (d.exists && d.data()?.locked === true) return true;
     }catch(e){}
+
+    // kullanicilar/{uid} içinden (ASİL)
     try{
-      const d = await db.collection("users").doc(uid).collection("locks").doc(rid).get();
-      if (d.exists) return true;
+      const snap = await db.collection("kullanicilar").doc(uid).get();
+      if(snap.exists){
+        const d = snap.data() || {};
+        const raw = d.gayrimenkul_reports;
+        let arr = [];
+        if(Array.isArray(raw)) arr = raw;
+        else if(raw && typeof raw === "object") arr = Object.values(raw);
+
+        const rep = arr.find(r => String(r?.rid||"").trim() === String(rid));
+        if(rep && (rep.final === true || rep.locked === true || rep.isLocked === true)) return true;
+      }
     }catch(e){}
+
     return false;
   }
 
+  // ✅ ASIL KİLİT YAZMA: locks + kullanicilar/{uid}.gayrimenkul_reports update
   async function setLockedRemote(uid){
     const now = firebase.firestore.FieldValue.serverTimestamp();
-    const payload = { uid, rid, locked:true, createdAt: now };
+    const payload = { uid, rid, locked:true, isLocked:true, final:true, lockedAt: now };
+
+    // 1) locks (opsiyonel)
     try{ await db.collection("locks").doc(`${uid}_${rid}`).set(payload, { merge:true }); }catch(e){}
     try{ await db.collection("users").doc(uid).collection("locks").doc(rid).set(payload, { merge:true }); }catch(e){}
+
+    // 2) ✅ kullanicilar/{uid} -> gayrimenkul_reports içinde raporu final yap
+    try{
+      const ref = db.collection("kullanicilar").doc(uid);
+      const snap = await ref.get();
+      const d = snap.exists ? (snap.data() || {}) : {};
+
+      let arr = [];
+      const raw = d.gayrimenkul_reports;
+      if (Array.isArray(raw)) arr = raw;
+      else if (raw && typeof raw === "object") arr = Object.values(raw);
+
+      const i = arr.findIndex(r => String(r?.rid||"").trim() === String(rid));
+      if(i >= 0){
+        arr[i] = {
+          ...(arr[i]||{}),
+          final: true,
+          locked: true,
+          isLocked: true,
+          updatedAt: new Date().toISOString()
+        };
+        await ref.set({ gayrimenkul_reports: arr, lastUpdate: new Date().toISOString() }, { merge:true });
+      }
+    }catch(e){
+      console.warn("kullanicilar/{uid} lock update fail:", e);
+    }
   }
 
   function formatMetin(t){
@@ -235,7 +286,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return s.replace(/\r\n/g,"\n").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
   }
 
-  // GÜNCELLENDİ: Değer çekme fonksiyonu
   function pick(obj, ...paths){
     for (const p of paths){
       try{
@@ -245,7 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (val === null || val === undefined) break;
           val = val[key];
         }
-        if (val !== null && val !== undefined && val !== '' && String(val).trim() !== "") 
+        if (val !== null && val !== undefined && val !== '' && String(val).trim() !== "")
           return val;
       }catch(e){}
     }
@@ -312,38 +362,31 @@ document.addEventListener("DOMContentLoaded", () => {
     return formatMetin(metin);
   }
 
-  // TAMAMEN YENİLENDİ: Bağımsız bölüm metni oluşturma
   function getBagimsizBolumMetni(rep){
-    // Toplu metin varsa onu kullan
     const topluMetin = formatMetin(pick(rep, "modules.bagimsizBolum.text", "bagimsizBolumMetni"));
     if (topluMetin) return topluMetin;
 
-    // BB listesini güvenli şekilde al
-    const list = Array.isArray(rep?.bbDetayList) ? rep.bbDetayList : 
+    const list = Array.isArray(rep?.bbDetayList) ? rep.bbDetayList :
                  Array.isArray(rep?.bbList) ? rep.bbList : [];
 
     if (list.length === 0) return "Bağımsız bölüm verisi bulunamadı";
 
-    // Her BB için metin oluştur
     return list.map((bb, i) => {
       const baslik = bb?.baslik || bb?.title || `${i+1}. Bağımsız Bölüm`;
       const d = bb?.bbDetay || bb || {};
-      
-      // Kaydedilmiş metin varsa onu kullan
+
       const savedText = formatMetin(pick(bb, "taslakMetin", "metin", "bbDetay.taslakMetin"));
       if (savedText) return `### ${baslik} ###\n${savedText}`;
-      
-      // Yoksa otomatik üret
+
       return `### ${baslik} ###\n${buildBBTextFromDetay(d)}`;
     }).join("\n\n");
   }
 
-  // YENİLENDİ: Emsal metni oluşturma
   function emsalMetni(rep){
     const modDirect = pick(rep, "modules.emsal.text", "emsalFinalMetni");
     if (modDirect) return formatMetin(modDirect);
 
-    const list = Array.isArray(rep?.bbDetayList) ? rep.bbDetayList : 
+    const list = Array.isArray(rep?.bbDetayList) ? rep.bbDetayList :
                  Array.isArray(rep?.bbList) ? rep.bbList : [];
 
     return list.map((bb, i) => {
@@ -367,7 +410,6 @@ document.addEventListener("DOMContentLoaded", () => {
     $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin"));
     $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","binaMetni"));
 
-    // YENİ FONKSİYONLARLA GÜNCELLENDİ
     $("bbMetin").textContent = getBagimsizBolumMetni(r);
     $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumMetni"));
     $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1"));
@@ -382,13 +424,73 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadReportRemote(uid){
+    // raporlar genelde index ile kullanicilar/{uid} içinde, ama yine de fallback bırakıyorum:
     try{
       const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
       if (snap.exists) return snap.data();
+    }catch(e){}
+
+    try{
       const snap2 = await db.collection("reports").doc(rid).get();
       if (snap2.exists) return snap2.data();
     }catch(e){}
+
+    // ✅ asıl kaynak: kullanicilar/{uid}.gayrimenkul_reports
+    try{
+      const s = await db.collection("kullanicilar").doc(uid).get();
+      if(s.exists){
+        const d = s.data() || {};
+        const raw = d.gayrimenkul_reports;
+        let arr = [];
+        if(Array.isArray(raw)) arr = raw;
+        else if(raw && typeof raw === "object") arr = Object.values(raw);
+
+        const rep = arr.find(r => String(r?.rid||"").trim() === String(rid));
+        if(rep) return rep;
+      }
+    }catch(e){}
+
     return null;
+  }
+
+  /* ===============================
+     ✅ Word gibi düzenleme (local)
+  =============================== */
+  const EDIT_KEY = "final_report_edits_" + rid;
+
+  function getEditableBlocks(){
+    return ["imarMetin","belgelerMetin","binaMetin","bbMetin","konumMetin","tapuMetinB1","tapuMetinB2","emsalMetin"]
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+  }
+
+  function loadEdits(){
+    try{
+      const data = JSON.parse(localStorage.getItem(EDIT_KEY) || "{}");
+      for(const [id, txt] of Object.entries(data)){
+        const el = document.getElementById(id);
+        if(el) el.textContent = String(txt ?? "");
+      }
+    }catch(e){}
+  }
+
+  function setEditMode(on){
+    getEditableBlocks().forEach(el=>{
+      el.contentEditable = on ? "true" : "false";
+      el.style.outline = on ? "2px dashed rgba(25,118,210,.55)" : "none";
+      el.style.padding = on ? "8px" : "";
+      el.style.borderRadius = on ? "10px" : "";
+      el.style.background = on ? "rgba(25,118,210,.06)" : "";
+    });
+    $("btnSaveText").style.display = on ? "block" : "none";
+  }
+
+  function saveEdits(){
+    const data = {};
+    getEditableBlocks().forEach(el=>{
+      data[el.id] = el.textContent || "";
+    });
+    localStorage.setItem(EDIT_KEY, JSON.stringify(data));
   }
 
   async function finalizeFlow(user){
@@ -398,24 +500,31 @@ document.addEventListener("DOMContentLoaded", () => {
       let rep = loadReportLocal() || await loadReportRemote(user.uid);
       if (!rep){ setStatus("❌ Rapor yok.", "rid bulunamadı."); return; }
       render(rep);
+      loadEdits();
+
       const locked = isLockedLocal() || await isLockedRemote(user.uid);
       if (locked){
         setLockedLocal();
         setStatus("🔒 Zaten kilitli.", "Final yapılmış.");
         return;
       }
+
       if (!confirmParam){
         if (!confirm("Final rapor oluşturulduğunda hak düşebilir ve rapor kilitlenir. Devam?")) return;
       }
+
       setStatus("💳 Hak düşürülüyor…", "Cüzdan kontrolü yapılıyor.");
       const res = await Wallet.consumeReport(user.uid, rid);
       if (!res){
         setStatus("❌ Başarısız!", "Hak/Bakiye yetersiz veya işlem başarısız.");
         return;
       }
+
+      // ✅ kilitle
       setLockedLocal();
       await setLockedRemote(user.uid);
-      setStatus("✅ Kilitlendi.", "Rapor final yapıldı.");
+
+      setStatus("✅ Kilitlendi.", "Rapor final yapıldı. İstersen metni düzenleyip PDF alabilirsin.");
     } finally {
       finalizing = false;
     }
@@ -423,26 +532,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function boot(){
     const user = await new Promise((resolve)=> auth.onAuthStateChanged(u=> resolve(u)));
-    if (!user){ alert("Giriş yok!"); return; }
+    if (!user){ alert("Giriş yok!"); location.href="/index.html"; return; }
+
     let rep = loadReportLocal() || await loadReportRemote(user.uid);
     if (!rep){ setStatus("❌ Rapor yok.", `rid: ${rid}`); return; }
+
     render(rep);
-    if (isLockedLocal() || await isLockedRemote(user.uid)){
+    loadEdits();
+
+    // ✅ düzenleme butonları her zaman açık
+    $("btnEditText").onclick = ()=>{
+      setEditMode(true);
+      setStatus("✍️ Düzenleme açık", "Metin alanlarına tıkla yaz. Bitince Kaydet.");
+    };
+    $("btnSaveText").onclick = ()=>{
+      saveEdits();
+      setEditMode(false);
+      setStatus("💾 Kaydedildi", "Bu cihazda saklandı. PDF alabilirsin.");
+    };
+
+    const locked = isLockedLocal() || await isLockedRemote(user.uid);
+
+    if (locked){
       setLockedLocal();
-      setStatus("🔒 Kilitli.", "Bu rapor final yapılmış.");
+      setStatus("🔒 Kilitli.", "Bu rapor final yapılmış. Metni düzenleyip PDF alabilirsin.");
+      $("btnFinalCreate").disabled = true;
     } else {
       setStatus("✅ Hazır.", "Final butonunu kullanın.");
       const btn = $("btnFinalCreate");
       btn.disabled = false;
       btn.onclick = () => finalizeFlow(user);
     }
+
     if (confirmParam) setTimeout(()=> finalizeFlow(user), 150);
   }
-  boot().catch(console.error);
+
+  boot().catch((e)=>{
+    console.error(e);
+    setStatus("⚠️ Hata", e?.message || String(e));
+  });
 });
 </script>
 
 </body>
 </html>
-
-
