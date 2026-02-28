@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RaporanX</title>
 
   <!-- Firebase -->
@@ -12,9 +12,9 @@
 
   <!-- Tek kaynak config -->
   <script src="firebase-config.js"></script>
-  <!-- Wallet (Hak sistemi) -->
-<script src="wallet.js"></script>
 
+  <!-- Wallet (Hak sistemi) -->
+  <script src="wallet.js"></script>
 
   <style>
     :root{
@@ -288,7 +288,6 @@
   </div>
 
   <script>
-    
     /* ========= Firebase instances ========= */
     if (!window.firebase) {
       document.getElementById("statusInfoLogin").textContent = "⚠️ Bağlantı hatası: Firebase yüklenemedi.";
@@ -297,7 +296,6 @@
 
     const auth = window.auth || firebase.auth();
     const db   = window.db   || firebase.firestore();
-
 
     let reports = [];
 
@@ -345,14 +343,16 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
-    function isReportLocked(rid){
-  const v = localStorage.getItem("report_locked_" + rid);
-  return v === "1" || v === "true" || v === "locked";
-}
 
-function lockedMsg(){
-  return "🔒 Bu rapor kilitli. Final alındığı için tekrar giriş/düzenleme yapılamaz.";
-}
+    // ✅ KİLİT: localStorage report_locked_{rid}
+    function isReportLocked(rid){
+      const v = localStorage.getItem("report_locked_" + rid);
+      return v === "1" || v === "true" || v === "locked";
+    }
+    function lockedMsg(){
+      return "🔒 Bu rapor kilitli. Final alındığı için tekrar giriş/düzenleme yapılamaz.";
+    }
+
     /* ========= RID helpers ========= */
     function genRid(){
       try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
@@ -546,33 +546,35 @@ function lockedMsg(){
     });
     sheetCancelBtn.addEventListener("click", closeSheet);
 
+    // ✅ Sheet "Aç" (kilit kontrol)
     sheetOpenBtn.addEventListener("click", ()=>{
-  if(!activeRid) return;
-  const rid = activeRid;
+      if(!activeRid) return;
+      const rid = activeRid;
 
-  if(isReportLocked(rid)){
-    closeSheet();
-    alert(lockedMsg());
-    return;
-  }
+      if(isReportLocked(rid)){
+        closeSheet();
+        alert(lockedMsg());
+        return;
+      }
 
-  closeSheet();
-  window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-});
+      closeSheet();
+      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+    });
 
+    // ✅ Sheet "Düzenle" (kilit kontrol)
     sheetEditBtn.addEventListener("click", ()=>{
-  if(!activeRid) return;
-  const rid = activeRid;
+      if(!activeRid) return;
+      const rid = activeRid;
 
-  if(isReportLocked(rid)){
-    closeSheet();
-    alert(lockedMsg());
-    return;
-  }
+      if(isReportLocked(rid)){
+        closeSheet();
+        alert(lockedMsg());
+        return;
+      }
 
-  closeSheet();
-  window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
-});
+      closeSheet();
+      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
+    });
 
     /* ========= Delete (tombstone + sync) ========= */
     async function deleteReportByRid(rid){
@@ -602,52 +604,40 @@ function lockedMsg(){
     });
 
     /* ========= UI render ========= */
-   function loadReports(){
-  const list = document.getElementById("reportsList");
-  list.innerHTML = "";
+    function loadReports(){
+      const list = document.getElementById("reportsList");
+      list.innerHTML = "";
 
-  if(!reports || reports.length === 0){
-    list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
-    return;
-  }
-
-  reports.forEach((report)=>{
-    const rid = report.rid;
-    const locked = isReportLocked(rid);
-
-    const card = document.createElement("div");
-    card.className = "report-card";
-
-    card.innerHTML = `
-      <button class="kebab" type="button" aria-label="Menü">⋮</button>
-      <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}${locked ? " 🔒" : ""}</div>
-      <div class="report-meta">
-        ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
-        <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
-      </div>
-    `;
-
-    // ✅ Kart tıklayınca kilit kontrol
-    card.addEventListener("click", ()=>{
-      if(isReportLocked(rid)){
-        alert(lockedMsg());
+      if(!reports || reports.length === 0){
+        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
         return;
       }
-      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-    });
 
-    const kebab = card.querySelector(".kebab");
-    kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
-    kebab.addEventListener("click", (e)=>{
-      e.stopPropagation();
-      openSheet(rid, report);
-    });
+      reports.forEach((report)=>{
+        const rid = report.rid;
+        const locked = isReportLocked(rid);
 
-    list.appendChild(card);
-  });
-}
-  window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-});
+        const card = document.createElement("div");
+        card.className = "report-card";
+
+        card.innerHTML = `
+          <button class="kebab" type="button" aria-label="Menü">⋮</button>
+          <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}${locked ? " 🔒" : ""}</div>
+          <div class="report-meta">
+            ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
+            <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
+          </div>
+        `;
+
+        // ✅ Kart tıklayınca kilit kontrol
+        card.addEventListener("click", ()=>{
+          if(isReportLocked(rid)){
+            alert(lockedMsg());
+            return;
+          }
+          window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+        });
+
         const kebab = card.querySelector(".kebab");
         kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
         kebab.addEventListener("click", (e)=>{
@@ -687,8 +677,8 @@ function lockedMsg(){
 
         if(doc.exists){
           const d = doc.data() || {};
-          cloudReports = toArray(d.gayrimenkul_reports);          // ✅ object/array fark etmez
-          cloudDeleted = safeArray(d.deletedRids);                // ✅ TEK İSİM: deletedRids
+          cloudReports = toArray(d.gayrimenkul_reports);
+          cloudDeleted = safeArray(d.deletedRids);
         }
 
         ensureRidMigration(cloudReports);
@@ -739,18 +729,11 @@ function lockedMsg(){
       });
     });
   </script>
-    <!-- sayfanın içeriği burada biter -->
 
   <footer style="padding:20px; text-align:center; font-size:14px; opacity:.8;">
     <a href="/gizlilik-politikasi.html">Gizlilik Politikası</a> |
     <a href="/iade-politikasi.html">İade ve İptal Politikası</a>
     <div style="margin-top:10px;">© 2026 RaporanX</div>
   </footer>
-
-
 </body>
 </html>
-
-
-
-
