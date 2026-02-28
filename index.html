@@ -548,18 +548,12 @@
 
     // ✅ Sheet "Aç" (kilit kontrol)
     sheetOpenBtn.addEventListener("click", ()=>{
-      if(!activeRid) return;
-      const rid = activeRid;
+  if(!activeRid) return;
+  const rid = activeRid;
 
-      if(isReportLocked(rid)){
-        closeSheet();
-        alert(lockedMsg());
-        return;
-      }
-
-      closeSheet();
-      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-    });
+  closeSheet();
+  window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+});
 
     // ✅ Sheet "Düzenle" (kilit kontrol)
     sheetEditBtn.addEventListener("click", ()=>{
@@ -631,12 +625,8 @@
 
         // ✅ Kart tıklayınca kilit kontrol
         card.addEventListener("click", ()=>{
-          if(isReportLocked(rid)){
-            alert(lockedMsg());
-            return;
-          }
-          window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-        });
+  window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+});
 
         const kebab = card.querySelector(".kebab");
         kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
@@ -737,3 +727,4 @@
   </footer>
 </body>
 </html>
+
