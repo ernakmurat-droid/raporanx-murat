@@ -188,25 +188,21 @@
   const p = new URLSearchParams(location.search);
   const rid0 = (p.get("rid") || "").toString().trim();
   window.__RID__ = rid0;
-  window.__LOCKED__ = false; // kilitli mi? birazdan true olabilir
+  window.__LOCKED__ = false; // kilitli mi? aşağıda true yapılacak
 
+  // ✅ Modül sayfaya git (kilitliyken butonlar zaten disabled olacağı için ekstra iş yok)
   window.go = function(page){
     const rid = (window.__RID__ || "").toString().trim();
     if (!rid) { location.href = "/index.html"; return; }
-
-    // ✅ kilitliyse modüllere "görüntüleme" etiketiyle git
-    const qs = new URLSearchParams();
-    qs.set("rid", rid);
-    if (window.__LOCKED__) qs.set("view", "1"); // modül sayfaları bunu okuyacak
-
-    location.href = page + "?" + qs.toString();
+    location.href = page + "?rid=" + encodeURIComponent(rid);
   };
 
+  // ✅ Tam rapor oluştur butonu
   window.raporOlusturUyari = function(){
     const rid = (window.__RID__ || "").toString().trim();
     if (!rid) { location.href="/index.html"; return; }
 
-    // ✅ kilitliyse uyarı sorma, direkt raporu göster
+    // ✅ kilitliyse: uyarısız direkt görüntüle
     if (window.__LOCKED__){
       location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
       return;
@@ -217,6 +213,7 @@
 Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir. Para ve zaman kaybı yaşamamak için bütün modüllerde veri girişlerinizin tamam olduğunu kontrol edin.
 Devam etmek istiyor musunuz?`;
     if (!confirm(msg)) return;
+
     location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
   };
 })();
@@ -309,13 +306,11 @@ Devam etmek istiyor musunuz?`;
     return (arr||[]).find(r => r && String(r.rid) === String(rid)) || null;
   }
 
-  function applyLockedUI(){
-  window.__LOCKED__ = true; // ✅ go(page) artık view=1 ile gidecek
+function applyLockedUI(){
+  window.__LOCKED__ = true;
 
   document.getElementById("kilitMesaji").style.display = "block";
-
-  // ❌ modülleri kapatma! sadece görünüm moduna alacağız
-  // document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+  document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
 
   const btn = document.getElementById("btnRaporOlustur");
   btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
@@ -413,4 +408,5 @@ const lockedLocal = lockedLs || (report.isLocked === true || report.locked === t
 
 </body>
 </html>
+
 
