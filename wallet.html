@@ -58,8 +58,7 @@
     </div>
 
     <!-- ✅ FATURA -->
-<div id="billingNeedContact" class="muted small" style="display:none;margin-top:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);padding:10px 12px;border-radius:12px;">
-  ⚠️ Ödeme tamamlanmazsa size ulaşabilmemiz için <b>Telefon</b> veya <b>E-posta</b> zorunludur.
+
 </div>
     <div class="card">
       <div class="row" style="align-items:flex-end;">
@@ -67,6 +66,18 @@
           <div style="font-weight:900;">🧾 Fatura Bilgilerim</div>
           <div class="muted small">Fatura kesimi için bu bilgiler kullanılacaktır.</div>
         </div>
+         <div class="card">
+  <div class="row" style="align-items:flex-end;">
+    ...
+  </div>
+
+  <div id="billingNeedContact" class="muted small" style="display:none;margin-top:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);padding:10px 12px;border-radius:12px;">
+    ⚠️ Ödeme tamamlanmazsa size ulaşabilmemiz için <b>Telefon</b> veya <b>E-posta</b> zorunludur.
+  </div>
+
+  <div class="hr"></div>
+  ...
+</div>
         <div class="pill" id="billingStatus">—</div>
       </div>
 
@@ -319,25 +330,30 @@ function scrollToBilling(){
       alert("Fatura bilgileri getirildi ✅");
     };
 
-    document.getElementById("btnBillingSave").onclick = async ()=>{
-      const u = auth.currentUser;
-      if(!u) return alert("Giriş yok.");
-      if(savingBilling) return;
-      savingBilling = true;
-      try{
-        const profile = readBillingForm();
-        await Wallet.saveBillingProfile(u.uid, profile);
-        alert("Fatura bilgileri kaydedildi ✅");
-      }catch(e){
-        alert("Hata: " + (e?.message || e));
-      }finally{
-        savingBilling = false;
-      }
-    };
+   document.getElementById("btnBillingSave").onclick = async ()=>{
+  const u = auth.currentUser;
+  if(!u) return alert("Giriş yok.");
+  if(savingBilling) return;
+  savingBilling = true;
+
+  try{
     const profile = readBillingForm();
-if(!(profile.phone || profile.email)){
-  showNeedContactWarn(true);
-  return alert("Telefon veya E-posta zorunlu.");
+
+    // ✅ Telefon veya E-posta zorunlu
+    if(!(profile.phone || profile.email)){
+      showNeedContactWarn(true);
+      return alert("Telefon veya E-posta zorunlu.");
+    }
+
+    await Wallet.saveBillingProfile(u.uid, profile);
+    alert("Fatura bilgileri kaydedildi ✅");
+  }catch(e){
+    alert("Hata: " + (e?.message || e));
+  }finally{
+    savingBilling = false;
+  }
+};
+   
 }
     auth.onAuthStateChanged(async (user)=>{
       if(unsubOrders){unsubOrders();unsubOrders=null;}
