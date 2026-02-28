@@ -157,7 +157,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const auth = window.auth || firebase.auth();
-  const db = window.db || firebase.firestore();
+  const db   = window.db   || firebase.firestore();
   const $ = (id) => document.getElementById(id);
 
   function setStatus(title, sub){
@@ -183,103 +183,128 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  let finalizing = false;
+  /* ===============================
+     ✅ KİLİT MOTORU (TEMİZ)
+  =============================== */
+  function normRid(x){ return String(x||"").trim(); }
+  function lockKey(){ return "report_locked_" + normRid(rid); }
 
   // ✅ daha sağlam local kilit kontrol
   function isLockedLocal(){
-    const v = String(localStorage.getItem("report_locked_" + rid) || "").trim();
+    const v = String(localStorage.getItem(lockKey()) || "").trim();
     return (v === "1" || v === "true" || v === "locked");
   }
 
-  function markLockedInLocalReports(){
-    try{
-      const arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
-      if (!Array.isArray(arr)) return;
-      const idx = arr.findIndex(r => String(r?.rid || "").trim() === rid);
-      if (idx < 0) return;
-
-      arr[idx] = {
-        ...(arr[idx]||{}),
-        isLocked: true,
-        locked: true,
-        final: true,
-        lockedAt: Date.now(),
-        updatedAt: new Date().toISOString()
-      };
-
-      localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
-    }catch(e){ console.warn("local reports lock fail:", e); }
-  }
-
-  function setLockedLocal(){
-    localStorage.setItem("report_locked_" + rid, "1");
-    markLockedInLocalReports();
+  function applyLockedUIBadge(){
     $("finalBadge").style.display = "block";
     $("hdr").classList.add("locked");
   }
 
-  async function isLockedRemote(uid){
-    // locks koleksiyonu (opsiyonel)
-    try{
-      const lockId = `${uid}_${rid}`;
-      const d = await db.collection("locks").doc(lockId).get();
-      if (d.exists && d.data()?.locked === true) return true;
-    }catch(e){}
+  // ✅ index.html bunu okuyor → en garanti kilit burası
+  function setLockedLocalHard(){
+    localStorage.setItem(lockKey(), "1");
 
-    // kullanicilar/{uid} içinden (ASİL)
+    // rapor listesine de yaz
     try{
-      const snap = await db.collection("kullanicilar").doc(uid).get();
-      if(snap.exists){
-        const d = snap.data() || {};
-        const raw = d.gayrimenkul_reports;
-        let arr = [];
-        if(Array.isArray(raw)) arr = raw;
-        else if(raw && typeof raw === "object") arr = Object.values(raw);
-
-        const rep = arr.find(r => String(r?.rid||"").trim() === String(rid));
-        if(rep && (rep.final === true || rep.locked === true || rep.isLocked === true)) return true;
+      let arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
+      if(!Array.isArray(arr)) arr = [];
+      const ridN = normRid(rid);
+      const i = arr.findIndex(r => normRid(r?.rid) === ridN);
+      const patch = {
+        final:true, locked:true, isLocked:true,
+        lockedAt: Date.now(),
+        updatedAt: new Date().toISOString()
+      };
+      if(i >= 0){
+        arr[i] = { ...(arr[i]||{}), ...patch };
+      }else{
+        arr.unshift({ rid: ridN, propertyName: document.title || "Rapor", ...patch });
       }
+      localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
+    }catch(e){ console.warn("local lock write fail:", e); }
+
+    applyLockedUIBadge();
+  }
+
+  async function setLockedRemoteHard(uid){
+    const now = firebase.firestore.FieldValue.serverTimestamp();
+    const ridN = normRid(rid);
+
+    const lockPatch = {
+      final: true, locked: true, isLocked: true,
+      lockedAt: now,
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1) locks koleksiyonu (olursa olur)
+    try{
+      await db.collection("locks").doc(`${uid}_${ridN}`).set({ uid, rid: ridN, locked:true, createdAt: now }, { merge:true });
+    }catch(e){ console.warn("locks write fail:", e); }
+
+    async function updateDoc(path){
+      const ref = db.collection(path).doc(uid);
+      const snap = await ref.get();
+      const d = snap.exists ? (snap.data() || {}) : {};
+      const raw = d.gayrimenkul_reports;
+
+      let arr = [];
+      if(Array.isArray(raw)) arr = raw;
+      else if(raw && typeof raw === "object") arr = Object.values(raw);
+
+      const i = arr.findIndex(r => normRid(r?.rid) === ridN);
+      if(i >= 0) arr[i] = { ...(arr[i]||{}), ...lockPatch };
+      else arr.unshift({ rid: ridN, ...lockPatch });
+
+      await ref.set({ gayrimenkul_reports: arr, lastUpdate: new Date().toISOString() }, { merge:true });
+    }
+
+    // index'in ana kaynağı: kullanicilar
+    let ok = false;
+    try{ await updateDoc("kullanicilar"); ok = true; }catch(e){ console.warn("kullanicilar lock fail:", e); }
+    if(!ok){
+      try{ await updateDoc("users"); ok = true; }catch(e){ console.warn("users lock fail:", e); }
+    }
+
+    return ok;
+  }
+
+  async function isLockedRemoteHard(uid){
+    const ridN = normRid(rid);
+
+    // 1) locks doc
+    try{
+      const s = await db.collection("locks").doc(`${uid}_${ridN}`).get();
+      if(s.exists && s.data()?.locked === true) return true;
     }catch(e){}
+
+    // 2) kullanicilar/users gayrimenkul_reports içi
+    async function checkDoc(path){
+      const snap = await db.collection(path).doc(uid).get();
+      if(!snap.exists) return false;
+      const d = snap.data() || {};
+      const raw = d.gayrimenkul_reports;
+      let arr = [];
+      if(Array.isArray(raw)) arr = raw;
+      else if(raw && typeof raw === "object") arr = Object.values(raw);
+
+      const rep = arr.find(r => normRid(r?.rid) === ridN);
+      return !!(rep && (rep.final===true || rep.locked===true || rep.isLocked===true));
+    }
+
+    try{ if(await checkDoc("kullanicilar")) return true; }catch(e){}
+    try{ if(await checkDoc("users")) return true; }catch(e){}
 
     return false;
   }
 
-  // ✅ ASIL KİLİT YAZMA: locks + kullanicilar/{uid}.gayrimenkul_reports update
-  async function setLockedRemote(uid){
-    const now = firebase.firestore.FieldValue.serverTimestamp();
-    const payload = { uid, rid, locked:true, isLocked:true, final:true, lockedAt: now };
+  // ✅ wrapper: eski çağrılar boşa düşmesin
+  function setLockedLocal(){ setLockedLocalHard(); }
+  async function setLockedRemote(uid){ return await setLockedRemoteHard(uid); }
+  async function isLockedRemote(uid){ return await isLockedRemoteHard(uid); }
 
-    // 1) locks (opsiyonel)
-    try{ await db.collection("locks").doc(`${uid}_${rid}`).set(payload, { merge:true }); }catch(e){}
-    try{ await db.collection("users").doc(uid).collection("locks").doc(rid).set(payload, { merge:true }); }catch(e){}
-
-    // 2) ✅ kullanicilar/{uid} -> gayrimenkul_reports içinde raporu final yap
-    try{
-      const ref = db.collection("kullanicilar").doc(uid);
-      const snap = await ref.get();
-      const d = snap.exists ? (snap.data() || {}) : {};
-
-      let arr = [];
-      const raw = d.gayrimenkul_reports;
-      if (Array.isArray(raw)) arr = raw;
-      else if (raw && typeof raw === "object") arr = Object.values(raw);
-
-      const i = arr.findIndex(r => String(r?.rid||"").trim() === String(rid));
-      if(i >= 0){
-        arr[i] = {
-          ...(arr[i]||{}),
-          final: true,
-          locked: true,
-          isLocked: true,
-          updatedAt: new Date().toISOString()
-        };
-        await ref.set({ gayrimenkul_reports: arr, lastUpdate: new Date().toISOString() }, { merge:true });
-      }
-    }catch(e){
-      console.warn("kullanicilar/{uid} lock update fail:", e);
-    }
-  }
-
+  /* ===============================
+     ✅ METİN/VERİ YARDIMCILARI
+  =============================== */
   function formatMetin(t){
     if (t === null || t === undefined) return "";
     const s = String(t);
@@ -424,7 +449,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadReportRemote(uid){
-    // raporlar genelde index ile kullanicilar/{uid} içinde, ama yine de fallback bırakıyorum:
+    // fallbackler
     try{
       const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
       if (snap.exists) return snap.data();
@@ -493,12 +518,18 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem(EDIT_KEY, JSON.stringify(data));
   }
 
+  /* ===============================
+     ✅ FINAL AKIŞI
+  =============================== */
+  let finalizing = false;
+
   async function finalizeFlow(user){
     if (finalizing) return;
     finalizing = true;
     try{
       let rep = loadReportLocal() || await loadReportRemote(user.uid);
       if (!rep){ setStatus("❌ Rapor yok.", "rid bulunamadı."); return; }
+
       render(rep);
       loadEdits();
 
@@ -520,7 +551,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // ✅ kilitle
+      // ✅ kilitle (local + remote)
       setLockedLocal();
       await setLockedRemote(user.uid);
 
@@ -554,7 +585,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const locked = isLockedLocal() || await isLockedRemote(user.uid);
 
     if (locked){
-      setLockedLocal();
+      setLockedLocal(); // badge + header rengi
       setStatus("🔒 Kilitli.", "Bu rapor final yapılmış. Metni düzenleyip PDF alabilirsin.");
       $("btnFinalCreate").disabled = true;
     } else {
