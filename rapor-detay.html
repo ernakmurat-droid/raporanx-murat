@@ -188,16 +188,30 @@
   const p = new URLSearchParams(location.search);
   const rid0 = (p.get("rid") || "").toString().trim();
   window.__RID__ = rid0;
+  window.__LOCKED__ = false; // kilitli mi? birazdan true olabilir
 
   window.go = function(page){
     const rid = (window.__RID__ || "").toString().trim();
     if (!rid) { location.href = "/index.html"; return; }
-    location.href = page + "?rid=" + encodeURIComponent(rid);
+
+    // ✅ kilitliyse modüllere "görüntüleme" etiketiyle git
+    const qs = new URLSearchParams();
+    qs.set("rid", rid);
+    if (window.__LOCKED__) qs.set("view", "1"); // modül sayfaları bunu okuyacak
+
+    location.href = page + "?" + qs.toString();
   };
 
   window.raporOlusturUyari = function(){
     const rid = (window.__RID__ || "").toString().trim();
     if (!rid) { location.href="/index.html"; return; }
+
+    // ✅ kilitliyse uyarı sorma, direkt raporu göster
+    if (window.__LOCKED__){
+      location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
+      return;
+    }
+
     const msg =
 `UYARI! (ÖNEMLİ)
 Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir. Para ve zaman kaybı yaşamamak için bütün modüllerde veri girişlerinizin tamam olduğunu kontrol edin.
@@ -296,14 +310,18 @@ Devam etmek istiyor musunuz?`;
   }
 
   function applyLockedUI(){
-    document.getElementById("kilitMesaji").style.display = "block";
-    document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+  window.__LOCKED__ = true; // ✅ go(page) artık view=1 ile gidecek
 
-    const btn = document.getElementById("btnRaporOlustur");
-    btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
-    btn.classList.add("locked");
-    btn.onclick = () => location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
-  }
+  document.getElementById("kilitMesaji").style.display = "block";
+
+  // ❌ modülleri kapatma! sadece görünüm moduna alacağız
+  // document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+
+  const btn = document.getElementById("btnRaporOlustur");
+  btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
+  btn.classList.add("locked");
+  btn.onclick = () => location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
+}
 
   async function isLockedRemoteStrict(uid){
     try{
@@ -343,6 +361,11 @@ Devam etmek istiyor musunuz?`;
     await Wallet.load(user.uid);
 
     const lockedLocal = (report.isLocked === true || report.locked === true || report.final === true);
+    const lockedLs = (localStorage.getItem("report_locked_" + rid) === "1" ||
+                  localStorage.getItem("report_locked_" + rid) === "true" ||
+                  localStorage.getItem("report_locked_" + rid) === "locked");
+
+const lockedLocal = lockedLs || (report.isLocked === true || report.locked === true || report.final === true);
     const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
 
     if (lockedLocal || lockedRemote) applyLockedUI();
@@ -390,3 +413,4 @@ Devam etmek istiyor musunuz?`;
 
 </body>
 </html>
+
