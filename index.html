@@ -602,35 +602,50 @@ function lockedMsg(){
     });
 
     /* ========= UI render ========= */
-    function loadReports(){
-      const list = document.getElementById("reportsList");
-      list.innerHTML = "";
+   function loadReports(){
+  const list = document.getElementById("reportsList");
+  list.innerHTML = "";
 
-      if(!reports || reports.length === 0){
-        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
-        return;
-      }
-
-      reports.forEach((report)=>{
-        const rid = report.rid;
-        const locked = isReportLocked(rid);
-        const card = document.createElement("div");
-        card.className = "report-card";
-       const locked = isReportLocked(rid); 
-        card.innerHTML = `
-          <button class="kebab" type="button" aria-label="Menü">⋮</button>
-          <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}${locked ? " 🔒" : ""}</div>
-          <div class="report-meta">
-            ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
-            <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
-          </div>
-        `;
-
-        card.addEventListener("click", ()=>{
-  if(isReportLocked(rid)){
-    alert(lockedMsg());
+  if(!reports || reports.length === 0){
+    list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
     return;
   }
+
+  reports.forEach((report)=>{
+    const rid = report.rid;
+    const locked = isReportLocked(rid);
+
+    const card = document.createElement("div");
+    card.className = "report-card";
+
+    card.innerHTML = `
+      <button class="kebab" type="button" aria-label="Menü">⋮</button>
+      <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}${locked ? " 🔒" : ""}</div>
+      <div class="report-meta">
+        ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
+        <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
+      </div>
+    `;
+
+    // ✅ Kart tıklayınca kilit kontrol
+    card.addEventListener("click", ()=>{
+      if(isReportLocked(rid)){
+        alert(lockedMsg());
+        return;
+      }
+      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+    });
+
+    const kebab = card.querySelector(".kebab");
+    kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
+    kebab.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      openSheet(rid, report);
+    });
+
+    list.appendChild(card);
+  });
+}
   window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
 });
         const kebab = card.querySelector(".kebab");
