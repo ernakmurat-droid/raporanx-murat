@@ -345,7 +345,14 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+    function isReportLocked(rid){
+  const v = localStorage.getItem("report_locked_" + rid);
+  return v === "1" || v === "true" || v === "locked";
+}
 
+function lockedMsg(){
+  return "🔒 Bu rapor kilitli. Final alındığı için tekrar giriş/düzenleme yapılamaz.";
+}
     /* ========= RID helpers ========= */
     function genRid(){
       try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
@@ -540,18 +547,32 @@
     sheetCancelBtn.addEventListener("click", closeSheet);
 
     sheetOpenBtn.addEventListener("click", ()=>{
-      if(!activeRid) return;
-      const rid = activeRid;
-      closeSheet();
-      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-    });
+  if(!activeRid) return;
+  const rid = activeRid;
+
+  if(isReportLocked(rid)){
+    closeSheet();
+    alert(lockedMsg());
+    return;
+  }
+
+  closeSheet();
+  window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+});
 
     sheetEditBtn.addEventListener("click", ()=>{
-      if(!activeRid) return;
-      const rid = activeRid;
-      closeSheet();
-      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
-    });
+  if(!activeRid) return;
+  const rid = activeRid;
+
+  if(isReportLocked(rid)){
+    closeSheet();
+    alert(lockedMsg());
+    return;
+  }
+
+  closeSheet();
+  window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
+});
 
     /* ========= Delete (tombstone + sync) ========= */
     async function deleteReportByRid(rid){
@@ -592,12 +613,13 @@
 
       reports.forEach((report)=>{
         const rid = report.rid;
-
+        const locked = isReportLocked(rid);
         const card = document.createElement("div");
         card.className = "report-card";
+       const locked = isReportLocked(rid); 
         card.innerHTML = `
           <button class="kebab" type="button" aria-label="Menü">⋮</button>
-          <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}</div>
+          <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}${locked ? " 🔒" : ""}</div>
           <div class="report-meta">
             ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
             <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
@@ -605,9 +627,12 @@
         `;
 
         card.addEventListener("click", ()=>{
-          window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-        });
-
+  if(isReportLocked(rid)){
+    alert(lockedMsg());
+    return;
+  }
+  window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+});
         const kebab = card.querySelector(".kebab");
         kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
         kebab.addEventListener("click", (e)=>{
@@ -710,6 +735,7 @@
 
 </body>
 </html>
+
 
 
 
