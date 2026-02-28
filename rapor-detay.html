@@ -12,7 +12,7 @@
   <script src="/firebase-config.js"></script>
   <script src="/wallet.js"></script>
 
-  <title>Rapor Ana Menü - Raporan X</title>
+  <title>Rapor Ana Menü - RaporanX</title>
 
   <style>
     :root{ --hdrH: 78px; }
@@ -57,10 +57,7 @@
       text-overflow: ellipsis;
     }
 
-    #baslik{
-      padding: 0 64px;
-      line-height: 1.2;
-    }
+    #baslik{ padding: 0 64px; line-height: 1.2; }
 
     #kilitMesaji{
       display:none;
@@ -169,9 +166,7 @@
         font-size:20px;
         padding: calc(14px + env(safe-area-inset-top, 0px)) 12px 12px;
       }
-      body{
-        padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px));
-      }
+      body{ padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px)); }
       .menu{ padding: 20px; }
       .btn{ flex:1 1 100%; padding: 26px; font-size: 20px; }
       .footer-btn{ font-size: 24px; padding: 20px; }
@@ -188,23 +183,21 @@
   const p = new URLSearchParams(location.search);
   const rid0 = (p.get("rid") || "").toString().trim();
   window.__RID__ = rid0;
-  window.__LOCKED__ = false; // kilitli mi? aşağıda true yapılacak
+  window.__LOCKED__ = false;
 
-  // ✅ Modül sayfaya git (kilitliyken butonlar zaten disabled olacağı için ekstra iş yok)
   window.go = function(page){
     const rid = (window.__RID__ || "").toString().trim();
     if (!rid) { location.href = "/index.html"; return; }
     location.href = page + "?rid=" + encodeURIComponent(rid);
   };
 
-  // ✅ Tam rapor oluştur butonu
   window.raporOlusturUyari = function(){
     const rid = (window.__RID__ || "").toString().trim();
     if (!rid) { location.href="/index.html"; return; }
 
     // ✅ kilitliyse: uyarısız direkt görüntüle
     if (window.__LOCKED__){
-      location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
+      location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
       return;
     }
 
@@ -214,7 +207,7 @@ Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir. Para ve zaman kay
 Devam etmek istiyor musunuz?`;
     if (!confirm(msg)) return;
 
-    location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
+    location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
   };
 })();
 </script>
@@ -223,7 +216,7 @@ Devam etmek istiyor musunuz?`;
     <div id="baslik">Gayrimenkul Raporu</div>
   </div>
 
-  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüller görüntüleme modunda.</div>
+  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüllere giriş kapalı. Sadece raporu görüntüleyebilirsin.</div>
 
   <div class="topbar">
     <div id="walletCard" class="wallet-card">
@@ -238,13 +231,13 @@ Devam etmek istiyor musunuz?`;
   <a href="/index.html" class="back">← Ana Sayfa</a>
 
   <div class="menu">
-    <button class="btn btn-main-feature modül-btn" onclick="go('konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
-    <button class="btn modül-btn" onclick="go('tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
-    <button class="btn modül-btn" onclick="go('imar.html')">İMAR DURUMU</button>
-    <button class="btn modül-btn" onclick="go('belgeler.html')">İNCELENEN BELGELER</button>
-    <button class="btn modül-btn" onclick="go('bina.html')">BİNA BİLGİLERİ</button>
-    <button class="btn modül-btn" onclick="go('bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
-    <button class="btn modül-btn" onclick="go('emsal.html')">EMSAL KARŞILAŞTIRMA</button>
+    <button class="btn btn-main-feature modül-btn" onclick="go('/konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
+    <button class="btn modül-btn" onclick="go('/tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
+    <button class="btn modül-btn" onclick="go('/imar.html')">İMAR DURUMU</button>
+    <button class="btn modül-btn" onclick="go('/belgeler.html')">İNCELENEN BELGELER</button>
+    <button class="btn modül-btn" onclick="go('/bina.html')">BİNA BİLGİLERİ</button>
+    <button class="btn modül-btn" onclick="go('/bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+    <button class="btn modül-btn" onclick="go('/emsal.html')">EMSAL KARŞILAŞTIRMA</button>
   </div>
 
   <button id="btnRaporOlustur" class="footer-btn" onclick="raporOlusturUyari()">TAM RAPOR OLUŞTUR</button>
@@ -253,80 +246,104 @@ Devam etmek istiyor musunuz?`;
   const auth = window.auth || firebase.auth();
   const db   = window.db   || firebase.firestore();
 
-  let _unsubRoot = null;
-
-  function startLiveSyncRoot(user, rid){
-    try { if(_unsubRoot) _unsubRoot(); } catch(e){}
-    if(!user || !rid) return;
-
-    // ✅ index.html ile uyumlu: kullanicilar/{uid} dokümanı dinle
-    const ref = db.collection("kullanicilar").doc(user.uid);
-
-    _unsubRoot = ref.onSnapshot((snap)=>{
-      if(!snap.exists) return;
-      const d = snap.data() || {};
-      const cloudReportsRaw = d.gayrimenkul_reports;
-
-      let cloudArr = [];
-      if (Array.isArray(cloudReportsRaw)) cloudArr = cloudReportsRaw;
-      else if (cloudReportsRaw && typeof cloudReportsRaw === "object") cloudArr = Object.values(cloudReportsRaw);
-
-      const cloudReport = cloudArr.find(r => r && String(r.rid) === String(rid));
-      if(!cloudReport) return;
-
-      // localStorage güncelle
-      let arr = [];
-      try { arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); } catch(e){ arr=[]; }
-
-      const idx = arr.findIndex(r => r && String(r.rid) === String(rid));
-      if(idx === -1) arr.unshift(cloudReport);
-      else arr[idx] = cloudReport;
-
-      localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
-
-      const baslikEl = document.getElementById("baslik");
-      if (baslikEl) baslikEl.textContent = cloudReport.propertyName || "Rapor Detayı";
-
-      if (cloudReport.isLocked === true || cloudReport.locked === true || cloudReport.final === true) {
-        if (typeof applyLockedUI === "function") applyLockedUI();
-      }
-    });
-  }
-
   const params = new URLSearchParams(location.search);
-  let rid = (params.get("rid") || "").toString().trim();
+  const rid = (params.get("rid") || "").toString().trim();
   window.__RID__ = rid;
+
+  function lockKey(){ return "report_locked_" + String(rid || "").trim(); }
+  function isLockedLS(){
+    const v = String(localStorage.getItem(lockKey()) || "").trim();
+    return (v === "1" || v === "true" || v === "locked");
+  }
 
   function readReports(){
     try{ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
     catch(e){ return []; }
   }
-
   function findByRid(arr, rid){
     return (arr||[]).find(r => r && String(r.rid) === String(rid)) || null;
   }
 
-function applyLockedUI(){
-  window.__LOCKED__ = true;
+  function applyLockedUI(){
+    window.__LOCKED__ = true;
 
-  document.getElementById("kilitMesaji").style.display = "block";
-  document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+    document.getElementById("kilitMesaji").style.display = "block";
 
-  const btn = document.getElementById("btnRaporOlustur");
-  btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
-  btn.classList.add("locked");
-  btn.onclick = () => location.href = "rapor-olustur.html?rid=" + encodeURIComponent(rid);
-}
+    // ✅ Sadece modülleri kapat
+    document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+
+    // ✅ Alt buton: raporu görüntüle
+    const btn = document.getElementById("btnRaporOlustur");
+    btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
+    btn.classList.add("locked");
+    btn.onclick = () => location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
+  }
 
   async function isLockedRemoteStrict(uid){
+    // locks/{uid_rid}
     try{
       const lockId = `${uid}_${rid}`;
       const s = await db.collection("locks").doc(lockId).get();
-      return s.exists && s.data()?.locked === true;
-    }catch(e){ return false; }
+      if (s.exists && s.data()?.locked === true) return true;
+    }catch(e){}
+
+    // kullanicilar/{uid}.gayrimenkul_reports içi (final flag)
+    try{
+      const snap = await db.collection("kullanicilar").doc(uid).get();
+      if(snap.exists){
+        const d = snap.data() || {};
+        const raw = d.gayrimenkul_reports;
+        let arr = [];
+        if(Array.isArray(raw)) arr = raw;
+        else if(raw && typeof raw === "object") arr = Object.values(raw);
+        const rep = arr.find(r => r && String(r.rid) === String(rid));
+        if(rep && (rep.final===true || rep.locked===true || rep.isLocked===true)) return true;
+      }
+    }catch(e){}
+
+    return false;
   }
 
-  // ✅ Cüzdan kartı: modal aç
+  // ✅ canlı sync: kullanicilar/{uid} dinle → başlık + kilit
+  let _unsubRoot = null;
+  function startLiveSyncRoot(user){
+    try { if(_unsubRoot) _unsubRoot(); } catch(e){}
+    if(!user || !rid) return;
+
+    const ref = db.collection("kullanicilar").doc(user.uid);
+
+    _unsubRoot = ref.onSnapshot((snap)=>{
+      if(!snap.exists) return;
+      const d = snap.data() || {};
+      const raw = d.gayrimenkul_reports;
+
+      let cloudArr = [];
+      if (Array.isArray(raw)) cloudArr = raw;
+      else if (raw && typeof raw === "object") cloudArr = Object.values(raw);
+
+      const cloudReport = cloudArr.find(r => r && String(r.rid) === String(rid));
+      if(!cloudReport) return;
+
+      // localStorage rapor listesi güncelle
+      let arr = [];
+      try { arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); } catch(e){ arr=[]; }
+      const idx = arr.findIndex(r => r && String(r.rid) === String(rid));
+      if(idx === -1) arr.unshift(cloudReport);
+      else arr[idx] = cloudReport;
+      localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
+
+      // başlık
+      const baslikEl = document.getElementById("baslik");
+      if (baslikEl) baslikEl.textContent = cloudReport.propertyName || "Rapor Detayı";
+
+      // kilit geldiyse uygula
+      if (cloudReport.final===true || cloudReport.locked===true || cloudReport.isLocked===true) {
+        applyLockedUI();
+      }
+    });
+  }
+
+  // ✅ wallet modal
   window.openWalletModal = function(){
     const m = document.getElementById("walletModal");
     if(m) m.style.display = "block";
@@ -335,16 +352,12 @@ function applyLockedUI(){
     const m = document.getElementById("walletModal");
     if(m) m.style.display = "none";
   };
-
-  document.getElementById("walletCard").addEventListener("click", ()=>{
-    openWalletModal();
-  });
+  document.getElementById("walletCard").addEventListener("click", openWalletModal);
 
   auth.onAuthStateChanged(async (user)=>{
     if (!user || !rid) { location.href="/index.html"; return; }
 
-    // ✅ rapor senkronu
-    startLiveSyncRoot(user, rid);
+    startLiveSyncRoot(user);
 
     const reports = readReports();
     const report = findByRid(reports, rid);
@@ -353,14 +366,13 @@ function applyLockedUI(){
     document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
 
     // ✅ cüzdan üst kartı
-    await Wallet.load(user.uid);
+    try{ await Wallet.load(user.uid); }catch(e){ console.warn("Wallet.load fail:", e); }
 
-    const lockedLocal = (report.isLocked === true || report.locked === true || report.final === true);
-    const lockedLs = (localStorage.getItem("report_locked_" + rid) === "1" ||
-                  localStorage.getItem("report_locked_" + rid) === "true" ||
-                  localStorage.getItem("report_locked_" + rid) === "locked");
+    // ✅ TEK lockedLocal (DÜZELTİLDİ!)
+    const lockedLocal =
+      isLockedLS() ||
+      (report.final === true || report.locked === true || report.isLocked === true);
 
-const lockedLocal = lockedLs || (report.isLocked === true || report.locked === true || report.final === true);
     const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
 
     if (lockedLocal || lockedRemote) applyLockedUI();
@@ -408,5 +420,3 @@ const lockedLocal = lockedLs || (report.isLocked === true || report.locked === t
 
 </body>
 </html>
-
-
