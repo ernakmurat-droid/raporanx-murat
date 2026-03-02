@@ -9,9 +9,11 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="wallet.js"></script>
- 
+
+  <!-- Tek kaynak config + wallet -->
+  <script src="/firebase-config.js"></script>
+  <script src="/wallet.js"></script>
+
   <style>
     :root{
       --bg1:#4a148c; --bg2:#7c4dff;
@@ -21,8 +23,7 @@
       --warn:#ffd600;
       --shadow: 0 14px 36px rgba(0,0,0,0.25);
     }
-    bod<script src="firebase-config.js"></script>
-<script src="wallet.js"></script>y{
+    body{
       font-family: Arial, sans-serif;
       background: linear-gradient(to bottom, var(--bg1), var(--bg2));
       margin: 0;
@@ -285,203 +286,208 @@
   </div>
 
   <script>
-    /* ========= Firebase instances ========= */
-<script>
-  if (!window.firebase) {
-    document.getElementById("statusInfoLogin").textContent = "⚠️ Firebase yüklenemedi.";
-    throw new Error("Firebase yok.");
-  }
+    // ========= Firebase instances =========
+    if (!window.firebase) {
+      document.getElementById("statusInfoLogin").textContent = "⚠️ Firebase yüklenemedi.";
+      throw new Error("Firebase yok.");
+    }
 
-  const auth = window.auth || firebase.auth();
-  const db   = window.db   || firebase.firestore();
+    const auth = window.auth || firebase.auth();
+    const db   = window.db   || firebase.firestore();
 
-  let reports = [];
+    let reports = [];
 
-  // Google login
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account" });
+    // Google login
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
 
-  document.getElementById("googleBtn").onclick = async () => {
-    const btn = document.getElementById("googleBtn");
-    btn.textContent = "Yükleniyor...";
-    try{
-      await auth.signInWithPopup(provider);
-    }catch(err){
+    document.getElementById("googleBtn").onclick = async () => {
+      const btn = document.getElementById("googleBtn");
+      btn.textContent = "Yükleniyor...";
       try{
-        await auth.signInWithRedirect(provider);
-        return;
-      }catch(e2){
-        alert("Giriş hatası: " + (e2.message || e2));
+        await auth.signInWithPopup(provider);
+      }catch(err){
+        try{
+          await auth.signInWithRedirect(provider);
+          return;
+        }catch(e2){
+          alert("Giriş hatası: " + (e2.message || e2));
+        }
+        btn.textContent = "Google ile Giriş Yap";
       }
-      btn.textContent = "Google ile Giriş Yap";
-    }
-  };
+    };
 
-  // Helpers
-  function escapeHtml(str){
-    return String(str ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-  function lockKey(rid){ return "report_locked_" + rid; }
-  function isLocked(rid){
-    const v = localStorage.getItem(lockKey(rid));
-    return v === "1" || v === "true" || v === "locked";
-  }
-
-  // Local cache (liste)
-  function setLocalReports(arr){
-    localStorage.setItem("gayrimenkul_reports", JSON.stringify(Array.isArray(arr)?arr:[]));
-  }
-
-  // UI render
-  function loadReports(){
-    const list = document.getElementById("reportsList");
-    list.innerHTML = "";
-
-    if(!reports || reports.length === 0){
-      list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
-      return;
+    // Helpers
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
 
-    reports.forEach((report)=>{
-      const rid = String(report.rid || "");
-      const locked = isLocked(rid) || report.final===true || report.locked===true || report.isLocked===true;
-
-      const card = document.createElement("div");
-      card.className = "report-card";
-
-      card.innerHTML = `
-        <button class="kebab" type="button" aria-label="Menü">⋮</button>
-        <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}${locked ? " 🔒" : ""}</div>
-        <div class="report-meta">
-          ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
-          <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
-        </div>
-      `;
-
-      // Kart tıkla -> rapor-detay
-      card.addEventListener("click", ()=>{
-        window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-      });
-
-      // Action sheet
-      const kebab = card.querySelector(".kebab");
-      kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
-      kebab.addEventListener("click", (e)=>{
-        e.stopPropagation();
-        openSheet(rid, report);
-      });
-
-      list.appendChild(card);
-    });
-  }
-
-  // Action sheet wiring (senin HTML’inde zaten var)
-  const sheetBackdrop = document.getElementById("sheetBackdrop");
-  const sheetName = document.getElementById("sheetName");
-  const sheetSub = document.getElementById("sheetSub");
-  const sheetOpenBtn = document.getElementById("sheetOpenBtn");
-  const sheetEditBtn = document.getElementById("sheetEditBtn");
-  const sheetDeleteBtn = document.getElementById("sheetDeleteBtn");
-  const sheetCancelBtn = document.getElementById("sheetCancelBtn");
-  let activeRid = null;
-
-  function openSheet(rid, report){
-    activeRid = rid;
-    sheetName.textContent = report?.propertyName || "İsimsiz Rapor";
-    sheetSub.textContent =
-      `${report?.il || ""}${report?.ilce ? " / " + report.ilce : ""} • Ada:${report?.ada || "-"} Parsel:${report?.parsel || "-"}`;
-    sheetBackdrop.style.display = "flex";
-    document.body.style.overflow = "hidden";
-    if(!history.state || !history.state.sheetOpen){
-      history.pushState({ sheetOpen:true }, "");
+    function lockKey(rid){ return "report_locked_" + rid; }
+    function isLockedLS(rid){
+      const v = localStorage.getItem(lockKey(rid));
+      return v === "1" || v === "true" || v === "locked";
     }
-  }
-  function closeSheet(){
-    sheetBackdrop.style.display = "none";
-    document.body.style.overflow = "";
-    activeRid = null;
-  }
-  window.addEventListener("popstate", ()=>{ if(sheetBackdrop.style.display==="flex") closeSheet(); });
-  sheetBackdrop.addEventListener("click", (e)=>{ if(e.target===sheetBackdrop) closeSheet(); });
-  sheetCancelBtn.addEventListener("click", closeSheet);
 
-  sheetOpenBtn.addEventListener("click", ()=>{
-    if(!activeRid) return;
-    const rid = activeRid;
-    closeSheet();
-    window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-  });
-
-  sheetEditBtn.addEventListener("click", ()=>{
-    if(!activeRid) return;
-    const rid = activeRid;
-    const locked = isLocked(rid);
-    closeSheet();
-    if(locked){
-      alert("🔒 Bu rapor kilitli. Final alındığı için düzenlenemez.");
-      return;
+    function setLocalReports(arr){
+      localStorage.setItem("gayrimenkul_reports", JSON.stringify(Array.isArray(arr)?arr:[]));
     }
-    window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
-  });
+    function getLocalReports(){
+      try { return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
+      catch(e){ return []; }
+    }
 
-  sheetDeleteBtn.addEventListener("click", async ()=>{
-    if(!activeRid) return;
-    const rid = activeRid;
-    closeSheet();
-    if(!confirm("Silmek istediğine emin misin?")) return;
+    // UI render
+    function loadReports(){
+      const list = document.getElementById("reportsList");
+      list.innerHTML = "";
 
-    const user = auth.currentUser;
-    if(user){
-      try{
-        await db.collection("users").doc(user.uid).collection("reports").doc(String(rid)).delete();
-      }catch(e){
-        alert("Silme hatası: " + (e?.message || e));
+      if(!reports || reports.length === 0){
+        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
         return;
       }
+
+      reports.forEach((report)=>{
+        const rid = String(report.rid || "");
+        const locked = isLockedLS(rid) || report.final===true || report.locked===true || report.isLocked===true;
+
+        const card = document.createElement("div");
+        card.className = "report-card";
+
+        card.innerHTML = `
+          <button class="kebab" type="button" aria-label="Menü">⋮</button>
+          <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}${locked ? " 🔒" : ""}</div>
+          <div class="report-meta">
+            ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
+            <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
+          </div>
+        `;
+
+        card.addEventListener("click", ()=>{
+          window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+        });
+
+        const kebab = card.querySelector(".kebab");
+        kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
+        kebab.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          openSheet(rid, report);
+        });
+
+        list.appendChild(card);
+      });
     }
-  });
 
-  // ✅ TEK KAYNAK: users/{uid}/reports realtime
-  let _unsub = null;
-  function listenReports(user){
-    try{ if(_unsub) _unsub(); }catch(e){}
-    const ref = db.collection("users").doc(user.uid).collection("reports");
+    // Action sheet
+    const sheetBackdrop = document.getElementById("sheetBackdrop");
+    const sheetName = document.getElementById("sheetName");
+    const sheetSub = document.getElementById("sheetSub");
+    const sheetOpenBtn = document.getElementById("sheetOpenBtn");
+    const sheetEditBtn = document.getElementById("sheetEditBtn");
+    const sheetDeleteBtn = document.getElementById("sheetDeleteBtn");
+    const sheetCancelBtn = document.getElementById("sheetCancelBtn");
+    let activeRid = null;
 
-    _unsub = ref.onSnapshot((snap)=>{
-      reports = snap.docs.map(d => ({ rid: d.id, ...(d.data()||{}) }));
-      // local cache
-      setLocalReports(reports);
-      loadReports();
-    }, (err)=>{
-      console.warn("reports listen error:", err);
-      // local göster
-      try{
-        reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
-      }catch(e){ reports = []; }
-      loadReports();
-      document.getElementById("statusInfo").textContent = "⚠️ Yerel veriler gösteriliyor";
+    function openSheet(rid, report){
+      activeRid = rid;
+      sheetName.textContent = report?.propertyName || "İsimsiz Rapor";
+      sheetSub.textContent =
+        `${report?.il || ""}${report?.ilce ? " / " + report.ilce : ""} • Ada:${report?.ada || "-"} Parsel:${report?.parsel || "-"}`;
+      sheetBackdrop.style.display = "flex";
+      document.body.style.overflow = "hidden";
+      if(!history.state || !history.state.sheetOpen){
+        history.pushState({ sheetOpen:true }, "");
+      }
+    }
+    function closeSheet(){
+      sheetBackdrop.style.display = "none";
+      document.body.style.overflow = "";
+      activeRid = null;
+    }
+    window.addEventListener("popstate", ()=>{ if(sheetBackdrop.style.display==="flex") closeSheet(); });
+    sheetBackdrop.addEventListener("click", (e)=>{ if(e.target===sheetBackdrop) closeSheet(); });
+    sheetCancelBtn.addEventListener("click", closeSheet);
+
+    sheetOpenBtn.addEventListener("click", ()=>{
+      if(!activeRid) return;
+      const rid = activeRid;
+      closeSheet();
+      window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
     });
-  }
 
-  auth.onAuthStateChanged((user)=>{
-    if(!user){
-      document.getElementById("loginSection").style.display = "block";
-      document.getElementById("mainSection").style.display = "none";
-      document.getElementById("statusInfoLogin").textContent = "Giriş yapın";
-      return;
+    sheetEditBtn.addEventListener("click", ()=>{
+      if(!activeRid) return;
+      const rid = activeRid;
+      closeSheet();
+      if(isLockedLS(rid)){
+        alert("🔒 Bu rapor kilitli. Final alındığı için düzenlenemez.");
+        return;
+      }
+      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
+    });
+
+    sheetDeleteBtn.addEventListener("click", async ()=>{
+      if(!activeRid) return;
+      const rid = activeRid;
+      closeSheet();
+      if(!confirm("Silmek istediğine emin misin?")) return;
+
+      const user = auth.currentUser;
+      if(user){
+        try{
+          await db.collection("users").doc(user.uid).collection("reports").doc(String(rid)).delete();
+          // local listeyi de güncelle
+          reports = reports.filter(x => String(x.rid) !== String(rid));
+          setLocalReports(reports);
+          loadReports();
+        }catch(e){
+          alert("Silme hatası: " + (e?.message || e));
+        }
+      }
+    });
+
+    // ✅ TEK KAYNAK: users/{uid}/reports realtime
+    let _unsub = null;
+    function listenReports(user){
+      try{ if(_unsub) _unsub(); }catch(e){}
+      const ref = db.collection("users").doc(user.uid).collection("reports");
+
+      _unsub = ref.onSnapshot((snap)=>{
+        reports = snap.docs.map(d => ({ rid: d.id, ...(d.data()||{}) }));
+        setLocalReports(reports);
+        loadReports();
+      }, (err)=>{
+        console.warn("reports listen error:", err);
+        reports = getLocalReports();
+        loadReports();
+        document.getElementById("statusInfo").textContent = "⚠️ Yerel veriler gösteriliyor";
+      });
     }
-    document.getElementById("loginSection").style.display = "none";
-    document.getElementById("mainSection").style.display = "block";
-    document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + user.email;
 
-    listenReports(user);
-  });
-</script>
+    auth.onAuthStateChanged((user)=>{
+      if(!user){
+        document.getElementById("loginSection").style.display = "block";
+        document.getElementById("mainSection").style.display = "none";
+        document.getElementById("statusInfoLogin").textContent = "Giriş yapın";
+        return;
+      }
+
+      document.getElementById("loginSection").style.display = "none";
+      document.getElementById("mainSection").style.display = "block";
+      document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + (user.email || "");
+
+      // önce local göster
+      reports = getLocalReports();
+      loadReports();
+
+      // sonra cloud
+      listenReports(user);
+    });
+  </script>
 
   <footer style="padding:20px; text-align:center; font-size:14px; opacity:.8;">
     <a href="/gizlilik-politikasi.html">Gizlilik Politikası</a> |
@@ -490,7 +496,3 @@
   </footer>
 </body>
 </html>
-
-
-
-
