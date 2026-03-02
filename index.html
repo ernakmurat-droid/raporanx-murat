@@ -289,436 +289,202 @@
 
   <script>
     /* ========= Firebase instances ========= */
-    if (!window.firebase) {
-      document.getElementById("statusInfoLogin").textContent = "⚠️ Bağlantı hatası: Firebase yüklenemedi.";
-      throw new Error("Firebase yüklenemedi (window.firebase yok).");
-    }
+<script>
+  if (!window.firebase) {
+    document.getElementById("statusInfoLogin").textContent = "⚠️ Firebase yüklenemedi.";
+    throw new Error("Firebase yok.");
+  }
 
-    const auth = window.auth || firebase.auth();
-    const db   = window.db   || firebase.firestore();
+  const auth = window.auth || firebase.auth();
+  const db   = window.db   || firebase.firestore();
 
-    let reports = [];
+  let reports = [];
 
-    /* ========= Google login ========= */
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
+  // Google login
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
 
-    document.getElementById("googleBtn").onclick = async () => {
-      const btn = document.getElementById("googleBtn");
-      btn.textContent = "Yükleniyor...";
+  document.getElementById("googleBtn").onclick = async () => {
+    const btn = document.getElementById("googleBtn");
+    btn.textContent = "Yükleniyor...";
+    try{
+      await auth.signInWithPopup(provider);
+    }catch(err){
       try{
-        await auth.signInWithPopup(provider);
-      }catch(err){
-        const code = String(err?.code || "");
-        const msg  = String(err?.message || "");
-        const popupBlocked = code.includes("popup") || msg.toLowerCase().includes("popup") || msg.toLowerCase().includes("blocked");
-        if (popupBlocked){
-          try{
-            await auth.signInWithRedirect(provider);
-            return;
-          }catch(e2){
-            alert("Giriş hatası: " + (e2.message || e2));
-          }
-        }else{
-          alert("Giriş hatası: " + msg);
-        }
-        btn.textContent = "Google ile Giriş Yap";
+        await auth.signInWithRedirect(provider);
+        return;
+      }catch(e2){
+        alert("Giriş hatası: " + (e2.message || e2));
       }
-    };
+      btn.textContent = "Google ile Giriş Yap";
+    }
+  };
 
-    /* ========= Helpers ========= */
-    function safeArray(x){ return Array.isArray(x) ? x : []; }
+  // Helpers
+  function escapeHtml(str){
+    return String(str ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+  function lockKey(rid){ return "report_locked_" + rid; }
+  function isLocked(rid){
+    const v = localStorage.getItem(lockKey(rid));
+    return v === "1" || v === "true" || v === "locked";
+  }
 
-    function toArray(raw){
-      if (Array.isArray(raw)) return raw;
-      if (raw && typeof raw === "object") return Object.values(raw);
-      return [];
+  // Local cache (liste)
+  function setLocalReports(arr){
+    localStorage.setItem("gayrimenkul_reports", JSON.stringify(Array.isArray(arr)?arr:[]));
+  }
+
+  // UI render
+  function loadReports(){
+    const list = document.getElementById("reportsList");
+    list.innerHTML = "";
+
+    if(!reports || reports.length === 0){
+      list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
+      return;
     }
 
-    function escapeHtml(str){
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
+    reports.forEach((report)=>{
+      const rid = String(report.rid || "");
+      const locked = isLocked(rid) || report.final===true || report.locked===true || report.isLocked===true;
 
-    // ✅ KİLİT: localStorage report_locked_{rid}
-    function isReportLocked(rid){
-      const v = localStorage.getItem("report_locked_" + rid);
-      return v === "1" || v === "true" || v === "locked";
-    }
-    function lockedMsg(){
-      return "🔒 Bu rapor kilitli. Final alındığı için tekrar giriş/düzenleme yapılamaz.";
-    }
+      const card = document.createElement("div");
+      card.className = "report-card";
 
-    /* ========= RID helpers ========= */
-    function genRid(){
-      try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
-      return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
-    }
+      card.innerHTML = `
+        <button class="kebab" type="button" aria-label="Menü">⋮</button>
+        <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}${locked ? " 🔒" : ""}</div>
+        <div class="report-meta">
+          ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
+          <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
+        </div>
+      `;
 
-    function ensureRidMigration(arr){
-      let changed=false;
-      (arr||[]).forEach(r=>{
-        if(r && !r.rid){ r.rid = genRid(); changed=true; }
+      // Kart tıkla -> rapor-detay
+      card.addEventListener("click", ()=>{
+        window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
       });
-      return changed;
-    }
 
-    /* ========= Local storage ========= */
-    function getLocalReports(){
-      try{
-        const raw = localStorage.getItem("gayrimenkul_reports");
-        return toArray(raw ? JSON.parse(raw) : []);
-      }catch(e){
-        return [];
-      }
-    }
-
-    function setLocalReports(arr){
-      localStorage.setItem("gayrimenkul_reports", JSON.stringify(safeArray(arr)));
-      localStorage.setItem("gayrimenkul_reports_lastUpdate", new Date().toISOString());
-    }
-
-    /* ========= Tombstone (deleted) ========= */
-    function getDeletedRids(){
-      try{ return safeArray(JSON.parse(localStorage.getItem("deleted_rids") || "[]")); }
-      catch(e){ return []; }
-    }
-    function setDeletedRids(arr){
-      localStorage.setItem("deleted_rids", JSON.stringify(safeArray(arr)));
-    }
-    function addDeletedRid(rid){
-      const s = new Set(getDeletedRids().map(String));
-      s.add(String(rid));
-      setDeletedRids(Array.from(s));
-    }
-    function filterDeleted(arr, deletedArr){
-      const del = new Set(safeArray(deletedArr).map(String));
-      return safeArray(arr).filter(r=>{
-        const rid = String(r?.rid||"");
-        return rid && !del.has(rid);
+      // Action sheet
+      const kebab = card.querySelector(".kebab");
+      kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
+      kebab.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        openSheet(rid, report);
       });
+
+      list.appendChild(card);
+    });
+  }
+
+  // Action sheet wiring (senin HTML’inde zaten var)
+  const sheetBackdrop = document.getElementById("sheetBackdrop");
+  const sheetName = document.getElementById("sheetName");
+  const sheetSub = document.getElementById("sheetSub");
+  const sheetOpenBtn = document.getElementById("sheetOpenBtn");
+  const sheetEditBtn = document.getElementById("sheetEditBtn");
+  const sheetDeleteBtn = document.getElementById("sheetDeleteBtn");
+  const sheetCancelBtn = document.getElementById("sheetCancelBtn");
+  let activeRid = null;
+
+  function openSheet(rid, report){
+    activeRid = rid;
+    sheetName.textContent = report?.propertyName || "İsimsiz Rapor";
+    sheetSub.textContent =
+      `${report?.il || ""}${report?.ilce ? " / " + report.ilce : ""} • Ada:${report?.ada || "-"} Parsel:${report?.parsel || "-"}`;
+    sheetBackdrop.style.display = "flex";
+    document.body.style.overflow = "hidden";
+    if(!history.state || !history.state.sheetOpen){
+      history.pushState({ sheetOpen:true }, "");
     }
+  }
+  function closeSheet(){
+    sheetBackdrop.style.display = "none";
+    document.body.style.overflow = "";
+    activeRid = null;
+  }
+  window.addEventListener("popstate", ()=>{ if(sheetBackdrop.style.display==="flex") closeSheet(); });
+  sheetBackdrop.addEventListener("click", (e)=>{ if(e.target===sheetBackdrop) closeSheet(); });
+  sheetCancelBtn.addEventListener("click", closeSheet);
 
-    /* ========= Merge ========= */
-    function parseTime(s){
-      if(!s) return 0;
-      const t = Date.parse(s);
-      return Number.isFinite(t) ? t : 0;
+  sheetOpenBtn.addEventListener("click", ()=>{
+    if(!activeRid) return;
+    const rid = activeRid;
+    closeSheet();
+    window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
+  });
+
+  sheetEditBtn.addEventListener("click", ()=>{
+    if(!activeRid) return;
+    const rid = activeRid;
+    const locked = isLocked(rid);
+    closeSheet();
+    if(locked){
+      alert("🔒 Bu rapor kilitli. Final alındığı için düzenlenemez.");
+      return;
     }
-    function reportUpdatedAt(r){
-      return parseTime(r?.updatedAt) || parseTime(r?.createdAt) || 0;
-    }
-    function completenessScore(r){
-      if(!r) return 0;
-      let s=0;
-      if(r.propertyName) s+=3;
-      if(r.il) s+=2;
-      if(r.ilce) s+=1;
-      if(r.ada) s+=1;
-      if(r.parsel) s+=1;
-      if(r.belgelerMetni) s+=2;
-      if(r.imar && Object.keys(r.imar||{}).length) s+=2;
-      if(r.tapu && Object.keys(r.tapu||{}).length) s+=2;
-      if(r.konumCevre && Object.keys(r.konumCevre||{}).length) s+=2;
-      if(r.bina && Object.keys(r.bina||{}).length) s+=2;
-      if(Array.isArray(r.bbDetayList) && r.bbDetayList.length) s+=2;
-      return s;
-    }
-    function mergeByRid(localArr, cloudArr){
-      const L = safeArray(localArr);
-      const C = safeArray(cloudArr);
-      const map = new Map();
+    window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
+  });
 
-      for(const r of C){
-        const rid = String(r?.rid||"").trim();
-        if(rid) map.set(rid, r);
-      }
-      for(const lr of L){
-        const rid = String(lr?.rid||"").trim();
-        if(!rid) continue;
+  sheetDeleteBtn.addEventListener("click", async ()=>{
+    if(!activeRid) return;
+    const rid = activeRid;
+    closeSheet();
+    if(!confirm("Silmek istediğine emin misin?")) return;
 
-        const cr = map.get(rid);
-        if(!cr){ map.set(rid, lr); continue; }
-
-        const lt = reportUpdatedAt(lr);
-        const ct = reportUpdatedAt(cr);
-
-        if(lt > ct) map.set(rid, { ...cr, ...lr });
-        else if(ct > lt) map.set(rid, { ...lr, ...cr });
-        else{
-          const ls = completenessScore(lr);
-          const cs = completenessScore(cr);
-          map.set(rid, (ls >= cs) ? ({...cr, ...lr}) : ({...lr, ...cr}));
-        }
-      }
-
-      const out = Array.from(map.values());
-      out.sort((a,b)=> reportUpdatedAt(b) - reportUpdatedAt(a));
-      return out;
-    }
-
-    /* ========= Cloud write: debounce + queue ========= */
-    let cloudWriteChain = Promise.resolve();
-    let cloudWriteTimer = null;
-    let lastCloudSig = "";
-
-    function stableStringify(obj){
+    const user = auth.currentUser;
+    if(user){
       try{
-        const allKeys = [];
-        JSON.stringify(obj, (k,v)=>{ allKeys.push(k); return v; });
-        allKeys.sort();
-        return JSON.stringify(obj, allKeys);
+        await db.collection("users").doc(user.uid).collection("reports").doc(String(rid)).delete();
       }catch(e){
-        return String(Date.now());
-      }
-    }
-
-    function scheduleCloudWrite(user, reportsArr, deletedRidsArr){
-      if(!user) return;
-
-      if(cloudWriteTimer) clearTimeout(cloudWriteTimer);
-
-      cloudWriteTimer = setTimeout(()=>{
-        const payload = {
-          gayrimenkul_reports: safeArray(reportsArr),
-          deletedRids: safeArray(deletedRidsArr),   // ✅ TEK İSİM: deletedRids
-          lastUpdate: new Date().toISOString()
-        };
-
-        const sig = stableStringify(payload);
-        if(sig === lastCloudSig) return;
-        lastCloudSig = sig;
-
-        cloudWriteChain = cloudWriteChain
-          .then(()=> db.collection("kullanicilar").doc(user.uid).set(payload, { merge:true }))
-          .catch(err => console.warn("Cloud write error:", err));
-      }, 250);
-    }
-
-    /* ========= Action Sheet ========= */
-    const sheetBackdrop = document.getElementById("sheetBackdrop");
-    const sheetName = document.getElementById("sheetName");
-    const sheetSub = document.getElementById("sheetSub");
-    const sheetOpenBtn = document.getElementById("sheetOpenBtn");
-    const sheetEditBtn = document.getElementById("sheetEditBtn");
-    const sheetDeleteBtn = document.getElementById("sheetDeleteBtn");
-    const sheetCancelBtn = document.getElementById("sheetCancelBtn");
-
-    let activeRid = null;
-
-    function isSheetOpen(){
-      return sheetBackdrop.style.display === "flex";
-    }
-
-    function openSheet(rid, report){
-      activeRid = rid;
-
-      sheetName.textContent = report?.propertyName || "İsimsiz Rapor";
-      sheetSub.textContent =
-        `${report?.il || ""}${report?.ilce ? " / " + report.ilce : ""} • Ada:${report?.ada || "-"} Parsel:${report?.parsel || "-"}`;
-
-      sheetBackdrop.style.display = "flex";
-      document.body.style.overflow = "hidden";
-
-      // ✅ sadece ilk açılışta history ekle
-      if(!history.state || !history.state.sheetOpen){
-        history.pushState({ sheetOpen:true }, "");
-      }
-    }
-
-    function closeSheet(){
-      sheetBackdrop.style.display = "none";
-      document.body.style.overflow = "";
-      activeRid = null;
-    }
-
-    // ✅ geri tuşu: sheet açıksa kapat
-    window.addEventListener("popstate", ()=>{
-      if(isSheetOpen()) closeSheet();
-    });
-
-    sheetBackdrop.addEventListener("click", (e)=>{
-      if(e.target === sheetBackdrop) closeSheet();
-    });
-    sheetCancelBtn.addEventListener("click", closeSheet);
-
-    // ✅ Sheet "Aç" (kilit kontrol)
-    sheetOpenBtn.addEventListener("click", ()=>{
-  if(!activeRid) return;
-  const rid = activeRid;
-
-  closeSheet();
-  window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-});
-
-    // ✅ Sheet "Düzenle" (kilit kontrol)
-    sheetEditBtn.addEventListener("click", ()=>{
-      if(!activeRid) return;
-      const rid = activeRid;
-
-      if(isReportLocked(rid)){
-        closeSheet();
-        alert(lockedMsg());
+        alert("Silme hatası: " + (e?.message || e));
         return;
       }
+    }
+  });
 
-      closeSheet();
-      window.location.href = `yeni_kayit.html?rid=${encodeURIComponent(rid)}&mode=edit`;
-    });
+  // ✅ TEK KAYNAK: users/{uid}/reports realtime
+  let _unsub = null;
+  function listenReports(user){
+    try{ if(_unsub) _unsub(); }catch(e){}
+    const ref = db.collection("users").doc(user.uid).collection("reports");
 
-    /* ========= Delete (tombstone + sync) ========= */
-    async function deleteReportByRid(rid){
-      if(!confirm("Silmek istediğine emin misin?")) return;
-
-      addDeletedRid(rid);
-
-      reports = safeArray(reports).filter(r => String(r?.rid) !== String(rid));
+    _unsub = ref.onSnapshot((snap)=>{
+      reports = snap.docs.map(d => ({ rid: d.id, ...(d.data()||{}) }));
+      // local cache
       setLocalReports(reports);
-
-      localStorage.removeItem("rapor_" + rid);
-      localStorage.removeItem("report_locked_" + rid);
-
       loadReports();
-
-      const user = auth.currentUser;
-      if(user){
-        scheduleCloudWrite(user, reports, getDeletedRids());
-      }
-    }
-
-    sheetDeleteBtn.addEventListener("click", async ()=>{
-      if(!activeRid) return;
-      const rid = activeRid;
-      closeSheet();
-      await deleteReportByRid(rid);
-    });
-
-    /* ========= UI render ========= */
-    function loadReports(){
-      const list = document.getElementById("reportsList");
-      list.innerHTML = "";
-
-      if(!reports || reports.length === 0){
-        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
-        return;
-      }
-
-      reports.forEach((report)=>{
-        const rid = report.rid;
-        const locked = isReportLocked(rid);
-
-        const card = document.createElement("div");
-        card.className = "report-card";
-
-        card.innerHTML = `
-          <button class="kebab" type="button" aria-label="Menü">⋮</button>
-          <div class="report-title">${escapeHtml(report.propertyName || "İsimsiz")}${locked ? " 🔒" : ""}</div>
-          <div class="report-meta">
-            ${escapeHtml(report.il || "")}${report.ilce ? " / " + escapeHtml(report.ilce) : ""}<br>
-            <small>Ada: ${escapeHtml(report.ada || "")} • Parsel: ${escapeHtml(report.parsel || "")}</small>
-          </div>
-        `;
-
-        // ✅ Kart tıklayınca kilit kontrol
-        card.addEventListener("click", ()=>{
-  window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
-});
-
-        const kebab = card.querySelector(".kebab");
-        kebab.addEventListener("pointerdown", (e)=> e.stopPropagation());
-        kebab.addEventListener("click", (e)=>{
-          e.stopPropagation();
-          openSheet(rid, report);
-        });
-
-        list.appendChild(card);
-      });
-    }
-
-    /* ========= BOOT + SNAPSHOT ========= */
-    auth.onAuthStateChanged((user)=>{
-      if(!user){
-        document.getElementById("loginSection").style.display = "block";
-        document.getElementById("mainSection").style.display = "none";
-        document.getElementById("statusInfoLogin").textContent = "Giriş yapın";
-        return;
-      }
-
-      document.getElementById("loginSection").style.display = "none";
-      document.getElementById("mainSection").style.display = "block";
-      document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + user.email;
-
-      // önce local göster
-      let localReports = getLocalReports();
-      if(ensureRidMigration(localReports)) setLocalReports(localReports);
-
-      const deletedLocal = getDeletedRids();
-      reports = filterDeleted(localReports, deletedLocal);
+    }, (err)=>{
+      console.warn("reports listen error:", err);
+      // local göster
+      try{
+        reports = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
+      }catch(e){ reports = []; }
       loadReports();
-
-      // sonra cloud snapshot
-      db.collection("kullanicilar").doc(user.uid).onSnapshot(async (doc)=>{
-        let cloudReports = [];
-        let cloudDeleted = [];
-
-        if(doc.exists){
-          const d = doc.data() || {};
-          cloudReports = toArray(d.gayrimenkul_reports);
-          cloudDeleted = safeArray(d.deletedRids);
-        }
-
-        ensureRidMigration(cloudReports);
-
-        localReports = getLocalReports();
-        ensureRidMigration(localReports);
-
-        // deleted merge
-        const delSet = new Set([
-          ...getDeletedRids().map(String),
-          ...cloudDeleted.map(String)
-        ]);
-        const mergedDeleted = Array.from(delSet);
-        setDeletedRids(mergedDeleted);
-
-        localReports = filterDeleted(localReports, mergedDeleted);
-        cloudReports = filterDeleted(cloudReports, mergedDeleted);
-
-        // cloud boş ama local doluysa: local'i buluta yaz
-        if(cloudReports.length === 0 && localReports.length > 0){
-          reports = localReports;
-          setLocalReports(reports);
-          loadReports();
-          scheduleCloudWrite(user, reports, mergedDeleted);
-          return;
-        }
-
-        const merged = mergeByRid(localReports, cloudReports);
-        reports = merged;
-        setLocalReports(reports);
-        loadReports();
-
-        // deleted list farklıysa buluta yaz
-        if(doc.exists){
-          const d = doc.data() || {};
-          const old = safeArray(d.deletedRids);
-          if(old.length !== mergedDeleted.length){
-            scheduleCloudWrite(user, reports, mergedDeleted);
-          }
-        }
-      }, (error)=>{
-        console.warn("onSnapshot error:", error);
-        reports = filterDeleted(getLocalReports(), getDeletedRids());
-        ensureRidMigration(reports);
-        setLocalReports(reports);
-        loadReports();
-        document.getElementById("statusInfo").textContent = "⚠️ Yerel veriler gösteriliyor";
-      });
+      document.getElementById("statusInfo").textContent = "⚠️ Yerel veriler gösteriliyor";
     });
-  </script>
+  }
+
+  auth.onAuthStateChanged((user)=>{
+    if(!user){
+      document.getElementById("loginSection").style.display = "block";
+      document.getElementById("mainSection").style.display = "none";
+      document.getElementById("statusInfoLogin").textContent = "Giriş yapın";
+      return;
+    }
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("mainSection").style.display = "block";
+    document.getElementById("statusInfo").textContent = "✅ Bulut Aktif: " + user.email;
+
+    listenReports(user);
+  });
+</script>
 
   <footer style="padding:20px; text-align:center; font-size:14px; opacity:.8;">
     <a href="/gizlilik-politikasi.html">Gizlilik Politikası</a> |
@@ -727,4 +493,5 @@
   </footer>
 </body>
 </html>
+
 
