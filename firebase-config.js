@@ -36,6 +36,46 @@
     console.warn("Firestore settings set edilemedi (muhtemelen daha önce set edildi):", e?.message || e);
   }
 
+  // ✅ BOZMAZ: sadece Firestore yazma hatalarını konsola net basar
+  (function attachFirestoreWriteLogger() {
+    if (window.__FS_WRITE_LOGGER__) return;
+    window.__FS_WRITE_LOGGER__ = true;
+
+    try {
+      const protoDoc = firebase.firestore.DocumentReference.prototype;
+      const protoCol = firebase.firestore.CollectionReference.prototype;
+
+      const wrap = (obj, method) => {
+        const orig = obj && obj[method];
+        if (typeof orig !== "function") return;
+
+        obj[method] = function (...args) {
+          const path = (this && this.path) ? this.path : "(unknown path)";
+          try {
+            const p = orig.apply(this, args);
+            if (p && typeof p.then === "function" && typeof p.catch === "function") {
+              return p.catch(err => {
+                console.error(`🔥 FIRESTORE ${method.toUpperCase()} ERR @ ${path}`, err);
+                throw err;
+              });
+            }
+            return p;
+          } catch (err) {
+            console.error(`🔥 FIRESTORE ${method.toUpperCase()} THROW @ ${path}`, err);
+            throw err;
+          }
+        };
+      };
+
+      ["set", "update", "delete"].forEach(m => wrap(protoDoc, m));
+      ["add"].forEach(m => wrap(protoCol, m));
+
+      console.log("✅ Firestore write logger aktif");
+    } catch (e) {
+      console.warn("Firestore write logger kurulamadı:", e?.message || e);
+    }
+  })();
+
   window.FB_CFG = FB_CFG;
   window.auth = auth;
   window.db = db;
