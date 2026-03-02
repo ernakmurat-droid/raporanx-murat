@@ -305,43 +305,26 @@ Devam etmek istiyor musunuz?`;
   }
 
   // ✅ canlı sync: kullanicilar/{uid} dinle → başlık + kilit
-  let _unsubRoot = null;
-  function startLiveSyncRoot(user){
-    try { if(_unsubRoot) _unsubRoot(); } catch(e){}
-    if(!user || !rid) return;
+   let _unsubReport = null;
+function startLiveSyncRoot(user){
+  try{ if(_unsubReport) _unsubReport(); }catch(e){}
+  if(!user || !rid) return;
 
-    const ref = db.collection("kullanicilar").doc(user.uid);
+  const ref = db.collection("users").doc(user.uid).collection("reports").doc(String(rid));
+  _unsubReport = ref.onSnapshot((snap)=>{
+    if(!snap.exists) return;
+    const cloudReport = { rid: snap.id, ...(snap.data()||{}) };
 
-    _unsubRoot = ref.onSnapshot((snap)=>{
-      if(!snap.exists) return;
-      const d = snap.data() || {};
-      const raw = d.gayrimenkul_reports;
+    // başlık
+    const baslikEl = document.getElementById("baslik");
+    if (baslikEl) baslikEl.textContent = cloudReport.propertyName || "Rapor Detayı";
 
-      let cloudArr = [];
-      if (Array.isArray(raw)) cloudArr = raw;
-      else if (raw && typeof raw === "object") cloudArr = Object.values(raw);
-
-      const cloudReport = cloudArr.find(r => r && String(r.rid) === String(rid));
-      if(!cloudReport) return;
-
-      // localStorage rapor listesi güncelle
-      let arr = [];
-      try { arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); } catch(e){ arr=[]; }
-      const idx = arr.findIndex(r => r && String(r.rid) === String(rid));
-      if(idx === -1) arr.unshift(cloudReport);
-      else arr[idx] = cloudReport;
-      localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
-
-      // başlık
-      const baslikEl = document.getElementById("baslik");
-      if (baslikEl) baslikEl.textContent = cloudReport.propertyName || "Rapor Detayı";
-
-      // kilit geldiyse uygula
-      if (cloudReport.final===true || cloudReport.locked===true || cloudReport.isLocked===true) {
-        applyLockedUI();
-      }
-    });
-  }
+    // kilit
+    if (cloudReport.final===true || cloudReport.locked===true || cloudReport.isLocked===true) {
+      applyLockedUI();
+    }
+  });
+}
 
   // ✅ wallet modal
   window.openWalletModal = function(){
@@ -420,3 +403,4 @@ Devam etmek istiyor musunuz?`;
 
 </body>
 </html>
+
