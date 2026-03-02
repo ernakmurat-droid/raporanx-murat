@@ -722,6 +722,38 @@
   <button type="button" class="m-save" onclick="kaydet()">💾 KAYDET</button>
   <button type="button" class="m-back" onclick="anaMenuyeDon()">← ANA MENÜ</button>
 </div>
+<script>
+(function(){
+  // Sadece oluşturulan metin bölgesinde kopyalamayı engelle
+  const target = document.getElementById("topluMetinAlani");
+  if(!target) return;
 
+  // CSS ile seçim engeli (sadece metin kartlarında)
+  const style = document.createElement("style");
+  style.textContent = `
+    #topluMetinAlani,
+    #topluMetinAlani *{
+      -webkit-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Event ile kopya/sağ-tık/selection engeli
+  const block = (e)=>{ e.preventDefault(); e.stopPropagation(); return false; };
+
+  ["copy","cut","paste","contextmenu","selectstart","dragstart"].forEach(ev=>{
+    target.addEventListener(ev, block, {capture:true, passive:false});
+  });
+
+  // Uzun basıp seçmeyi (mobil) azaltmak için
+  target.addEventListener("pointerdown", ()=>{
+    try{ window.getSelection()?.removeAllRanges(); }catch(e){}
+  }, true);
+})();
+</script>
 </body>
 </html>
+
