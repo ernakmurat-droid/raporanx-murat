@@ -36,6 +36,16 @@
   }
   .disabled-input { background:#eee; cursor:not-allowed; opacity:.7; }
   .locked-note { display:none; background:#fff3cd; color:#856404; padding:15px; border-radius:10px; margin-bottom:15px; font-weight:900; text-align:center; border:1px solid #ffeeba; }
+  .info-note {
+    grid-column: span 2;
+    background:#eef4ff;
+    color:#1a237e;
+    padding:12px 14px;
+    border-radius:12px;
+    font-size:13px;
+    border:1px solid #d8e3ff;
+    line-height:1.5;
+  }
 </style>
 </head>
 
@@ -53,6 +63,25 @@
 
     <form id="mainForm" onsubmit="return false;">
       <div class="grid-form">
+
+        <div class="section-title">🧩 METİN ŞABLONU</div>
+
+        <div class="input-item full-width">
+          <label>Rapor Metin Şablonu</label>
+          <select id="metinFormati">
+            <option value="1">Şablon 1 - Klasik Bölge Anlatımı</option>
+            <option value="2">Şablon 2 - Adres ve Çevre Odaklı</option>
+            <option value="3">Şablon 3 - Ulaşım ve Altyapı Odaklı</option>
+          </select>
+        </div>
+
+        <div class="info-note">
+          <strong>Şablon Açıklaması:</strong><br>
+          Şablon 1: Genel ekspertiz anlatımı<br>
+          Şablon 2: Açık adres ve yakın çevre vurgusu<br>
+          Şablon 3: Ulaşım, altyapı ve bölgesel gelişim vurgusu
+        </div>
+
         <div class="section-title">📍 ADRES VE KONUM BİLGİLERİ</div>
 
         <div class="input-item"><label>(1) UAVT</label><input type="text" id="v1" list="h_v1" onfocus="showList(this)"></div>
@@ -148,7 +177,7 @@
 
   const inputIds = [
     'v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14',
-    'yakinCevre','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'
+    'yakinCevre','ulasimTarifi','ulasimOlanaklari','altyapiAciklama','metinFormati'
   ];
 
   function genRid(){
@@ -305,8 +334,11 @@
   function guncelleOnizleme(){
     let vData = {};
     inputIds.forEach(id => {
-      vData[id] = temizMetin(document.getElementById(id)?.value);
+      const el = document.getElementById(id);
+      vData[id] = temizMetin(el?.value);
     });
+
+    const format = vData.metinFormati || "1";
 
     const altyapiTik = (document.querySelector('input[name="altyapi"]:checked')?.value || "Evet");
     const altyapiMetni = altyapiTik === "Evet"
@@ -327,14 +359,18 @@
     const yakinCevre = metinVeyaVarsayilan(yakinCevreyiDuzenle(vData.yakinCevre));
     const ulasimTarifi = metinVeyaVarsayilan(vData.ulasimTarifi);
     const ulasimOlanaklari = metinVeyaVarsayilan(vData.ulasimOlanaklari);
+    const uavt = metinVeyaVarsayilan(vData.v1);
+    const koordinatX = metinVeyaVarsayilan(vData.v2);
+    const koordinatY = metinVeyaVarsayilan(vData.v3);
 
     let tablo = "";
     tablo += "------------------------------------------\n";
     tablo += "KONUM VE ÇEVRESEL ÖZELLİKLER TABLOSU\n";
     tablo += "------------------------------------------\n";
-    tablo += `UAVT                     : ${metinVeyaVarsayilan(vData.v1)}\n`;
-    tablo += `Koordinat X              : ${metinVeyaVarsayilan(vData.v2)}\n`;
-    tablo += `Koordinat Y              : ${metinVeyaVarsayilan(vData.v3)}\n`;
+    tablo += `Metin Şablonu            : Şablon ${format}\n`;
+    tablo += `UAVT                     : ${uavt}\n`;
+    tablo += `Koordinat X              : ${koordinatX}\n`;
+    tablo += `Koordinat Y              : ${koordinatY}\n`;
     tablo += `İl                       : ${il}\n`;
     tablo += `İlçe                     : ${ilce}\n`;
     tablo += `Mahalle                  : ${mahalle}\n`;
@@ -351,21 +387,38 @@
     tablo += `Ulaşım Olanakları        : ${ulasimOlanaklari}\n`;
     tablo += `Altyapı                  : ${altyapiMetni}\n`;
 
-    const anaMetin =
+    let metin = "";
+
+    if(format === "1"){
+      metin =
 `KONUMU VE ÇEVRESEL ÖZELLİKLERİ
 
-Değerlemeye konu taşınmaz; ${il} ili, ${ilce} ilçesi, ${mahalle} mahallesi, ${sokak}, No: ${kapiNo}, Kat: ${kat}, Daire: ${daire} posta adresinde konumlu bulunmaktadır. Taşınmaza ulaşım ${ulasimTarifi}
+Değerlemeye konu taşınmaz, ${il} ili, ${ilce} ilçesi, ${mahalle} mahallesi, ${sokak}, No: ${kapiNo}, Kat: ${kat}, Daire: ${daire} posta adresinde yer almaktadır. Taşınmaza ulaşım ${ulasimTarifi} Bölge genel olarak yapı kalitesine bağlı olarak, ${gelir} gelir grubu tarafından tercih edilmekte olup, çevrede ağırlıklı olarak ${yapilasma} düzeninde ${yapiTipi} tipi yapılar bulunmaktadır. Taşınmazın yakın çevresinde ${yakinCevre} yer almakta olup bölgeye ${ulasimOlanaklari} ile ulaşım sağlanabilmektedir.
 
-Taşınmazın bulunduğu bölge genel olarak ${kullanim} kullanım karakterine sahip olup, çevrede ağırlıklı olarak ${yapilasma} düzeninde ${yapiTipi} nitelikli yapılar yer almaktadır. Bölge, genel itibariyle ${gelir} gelir grubuna hitap eden bir yerleşim / kullanım alanı niteliğindedir.
+Bölgenin Gelişimine İlişkin Analiz
 
-Taşınmazın yakın çevresinde ${yakinCevre} bulunmaktadır. Bölgeye ${ulasimOlanaklari} ${altyapiMetni}`;
+Taşınmazın bulunduğu bölge, genel olarak ${gelir} gelir grubunun yerleşim amacıyla tercih ettiği alanlardan biridir. Bölgede yapılaşma karakteri ${kullanim} doğrultusunda gelişim göstermektedir.
 
-    const analizMetni =
-`BÖLGENİN GELİŞİMİNE İLİŞKİN ANALİZ
+Bölgedeki Yapılaşma Durumu
 
-Taşınmazın bulunduğu bölge, genel olarak ${gelir} gelir grubunun tercih ettiği alanlardan biri olup ${kullanim} kullanım doğrultusunda gelişim göstermektedir. Bölgedeki yapılaşma karakteri ${yapilasma} düzeninde olup çevrede çoğunlukla ${yapiTipi} tarzı yapılar bulunmaktadır.`;
+Taşınmazın bulunduğu bölgede yapılaşma ve gelişim ${kullanim} amaçlı devam etmektedir. Çevrede yer alan yapıların niteliği ve bölgenin kullanım yapısı birlikte değerlendirildiğinde, alanın gelişimini sürdüren bir karaktere sahip olduğu görülmektedir.`;
+    }
+    else if(format === "2"){
+      metin =
+`TAŞINMAZIN YERİ VE ÇEVRE ÖZELLİKLERİ
 
-    const sonuc = `${tablo}\n\n${anaMetin}\n\n${analizMetni}`;
+Değerlemesi yapılan gayrimenkul, ${mahalle} mahallesi, ${sokak}, No: ${kapiNo}, Kat: ${kat}, Daire: ${daire}, ${ilce}/${il} açık posta adresinde konumludur. Gayrimenkulün bulunduğu bölgede ${kullanim} nitelikli kullanım hakim olup çevrede genel olarak ${yapilasma} düzeninde ${yapiTipi} tipi yapılar bulunmaktadır. Taşınmaza ulaşım ${ulasimTarifi} Taşınmazın yakın çevresinde ${yakinCevre} yer almakta olup bölge, genel itibariyle ${gelir} gelir grubuna hitap etmektedir. Bölgeye ${ulasimOlanaklari} ile ulaşım sağlanabilmektedir.`;
+    }
+    else{
+      metin =
+`ULAŞIM TARİFİ VE ÇEVRESEL ANALİZ
+
+Değerlemesi yapılan gayrimenkul, ${mahalle} mahallesi, ${sokak}, No: ${kapiNo}, Kat: ${kat}, Daire: ${daire}, ${ilce}/${il} posta adresinde yer almaktadır. Değerleme konusu taşınmaza ulaşım ${ulasimTarifi} güzergahı üzerinden sağlanmaktadır. Taşınmaza özel araçlarla ulaşım mümkün olduğu gibi toplu taşıma araçları ile de erişim sağlanabilmektedir. Yakın çevresi ${kullanim} fonksiyonlu gelişmiştir.
+
+Bölgenin yapılaşma karakteristiğini ağırlıklı olarak ${yapiTipi} tipi yapılar oluşturmaktadır. Bölge, genel itibariyle ${gelir} gelir grubunun talep gösterdiği alanlardan biri olup taşınmazın yakın çevresinde ${yakinCevre} bulunmaktadır. ${altyapiMetni} Bölgeye ${ulasimOlanaklari} ile ulaşım sağlanabilmektedir.`;
+    }
+
+    const sonuc = `${tablo}\n\n${metin}`;
     document.getElementById('livePreview').textContent = sonuc;
     return sonuc;
   }
@@ -404,6 +457,11 @@ Taşınmazın bulunduğu bölge, genel olarak ${gelir} gelir grubunun tercih ett
         }
       });
 
+      if(!obj.metinFormati){
+        const mf = document.getElementById("metinFormati");
+        if(mf) mf.value = "1";
+      }
+
       if(obj.altyapiTik === "Hayır"){
         const rb = document.querySelector('input[name="altyapi"][value="Hayır"]');
         if(rb) rb.checked = true;
@@ -413,6 +471,9 @@ Taşınmazın bulunduğu bölge, genel olarak ${gelir} gelir grubunun tercih ett
         if(rb2) rb2.checked = true;
         toggleAltyapi(true);
       }
+    } else {
+      const mf = document.getElementById("metinFormati");
+      if(mf) mf.value = "1";
     }
 
     guncelleOnizleme();
@@ -429,7 +490,8 @@ Taşınmazın bulunduğu bölge, genel olarak ${gelir} gelir grubunun tercih ett
 
       let vData = {};
       inputIds.forEach(id => {
-        vData[id] = document.getElementById(id).value;
+        const el = document.getElementById(id);
+        vData[id] = el ? el.value : "";
       });
 
       const payload = {
@@ -480,6 +542,7 @@ Taşınmazın bulunduğu bölge, genel olarak ${gelir} gelir grubunun tercih ett
   inputIds.forEach(id => {
     const el = document.getElementById(id);
     if(el) el.addEventListener("input", guncelleOnizleme);
+    if(el) el.addEventListener("change", guncelleOnizleme);
   });
 </script>
 
