@@ -125,10 +125,13 @@
     </div>
 
     <button class="btn btn-taslak" onclick="taslakOlustur()">BİNA ANALİZ METNİNİ GÜNCELLE</button>
-
+    <div class="form-group" style="background:#fff8e1; border:1px solid #ffe082;">
+  <strong style="color:#e65100;">Bilgilendirme</strong>
+  Kat detayları, bina analiz metninin bir parçasıdır. Bina analizinin eksiksiz oluşabilmesi için kat detaylarının tamamlanması önerilir.
+</div>
     <div class="btn-container">
         <button class="btn btn-save" onclick="kaydet()">BİLGİLERİ KAYDET (SAYFADA KAL)</button>
-        <button class="btn btn-kat" onclick="katDetayAc()">KAT DETAYLARINI GİR/DÜZELT</button>
+        <button class="btn btn-kat" onclick="katDetayAc()">BİNA ANALİZİ İÇİN KAT DETAYLARINI TAMAMLA</button>
         <button class="btn btn-menu" onclick="anaMenuyeDon()">ANA MENÜYE DÖN</button>
     </div>
 
@@ -293,7 +296,10 @@
     const normal = document.getElementById("normalKatSayisi").value || "0";
     const toplamKat = parseInt(bodrum || "0", 10) + 1 + parseInt(normal || "0", 10);
     const asansor = document.getElementById("asansor").value;
-    const katMetni = r.katDetayMetni || "KAT DETAYI GİRİLMEDİ";
+    const katDetayTamamlandi = !!(r.katDetayMetni && String(r.katDetayMetni).trim());
+const katMetni = katDetayTamamlandi
+  ? r.katDetayMetni
+  : "kat detayları henüz tamamlanmamış olup bağımsız bölüm dağılımı netleştirilememiştir,";
 
     const binaObj = getBinaObj(r) || {};
     const bbSayisi =
@@ -302,7 +308,15 @@
       0;
 
     const ortak = `${r.il || "..."} İli, ${r.ilce || "..."} ilçesi, ${r.mahalle || "..."} Mahallesinde ${r.ada || "..."} Ada ${r.parsel || "..."} Nolu Parselde konumlu ${aA} m² arsa üzerinde ${nizam} nizamda `;
+    let uyariMetni = "";
+if (!katDetayTamamlandi) {
+  uyariMetni =
+`⚠️ NOT:
+Bu bina analiz metni, kat detayları tamamlanmadan oluşturulmuştur.
+Daha sağlıklı metin için “Bina Analizi İçin Kat Detaylarını Tamamla” butonunu kullanabilirsiniz.
 
+`;
+}
     let metin = "";
     if (bT === "tek") {
       metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${yS || "..."} yapı sınıfında inşa edilmiş yapıdır. Değerleme konusu taşınmaz ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Bina girişi ${document.getElementById("girisKotu").value || "..."} seviyesinden ${document.getElementById("girisCephe").value || "..."} cephesinden sağlanmaktadır. Bina giriş kapısı ${document.getElementById("girisKapi").value || "..."} kapıdır. Binanın giriş ve merdiven zeminleri ${document.getElementById("merdivenZemin").value || "..."} olup bina dış cephesi ${document.getElementById("disCephe").value || "..."}’dır. Binada asansör ${asansor}. Bina ısıtma sistemi ${document.getElementById("isinma").value || "..."}’dır.`;
@@ -311,8 +325,9 @@
       metin = `Değerleme konusu taşınmazın bulunduğu taşınmaz ${ortak} ${bS} blokta ${yS || "..."} yapı sınıfında inşa edilmiştir. Taşınmazın bulunduğu ${document.getElementById("hangiBlok").value || "..."} Blok parselin ${document.getElementById("blokKonum").value || "..."} bulunan yapıdır. ${bodrum} bodrum kat + zemin kat + ${normal} normal kat olmak üzere toplam ${toplamKat} kattan oluşmakta olup, ${katMetni} toplam ${bbSayisi} adet bağımsız bölüm bulunmaktadır. Taşınmaz girişi ${document.getElementById("girisKotu").value || "..."} seviyesinden ${document.getElementById("girisCephe").value || "..."} cephesinden sağlanmaktadır. Giriş kapısı ${document.getElementById("girisKapi").value || "..."} kapıdır. Bina giriş ve merdiven zeminleri ${document.getElementById("merdivenZemin").value || "..."} olup dış cephesi ${document.getElementById("disCephe").value || "..."}’dır. Taşınmazda asansör ${asansor}. Isıtma sistemi ${document.getElementById("isinma").value || "..."}’dır.`;
     }
 
-    document.getElementById("taslak").innerText = metin;
-    return metin;
+    const finalMetin = uyariMetni + metin;
+document.getElementById("taslak").innerText = finalMetin;
+return finalMetin;
   }
   window.taslakOlustur = taslakOlustur;
 
@@ -352,7 +367,7 @@
       if(!nizam) hata += "- Yapı Nizamı seçilmemiş.\n";
       if(!yapiS) hata += "- Yapı Sınıfı seçilmemiş.\n";
       if(!disCephe) hata += "- Dış Cephe Kaplaması girilmemiş.\n";
-      if(bbSayisi === 0) hata += "- Kat Detayları (B.B. Sayısı) girilmemiş.\n";
+      if(bbSayisi === 0) hata += "- Bina analizini tamamlayan kat detayları girilmemiş.\n";
       if(!confirm(hata + "\nSARI BAYRAK ile kaydedilsin mi?")) return;
     }
 
@@ -395,7 +410,9 @@
     const box = document.getElementById("statusBox");
     box.style.display = "block";
     box.style.backgroundColor = eksikVar ? "#fff3cd" : "#d1e7dd";
-    box.textContent = eksikVar ? "⚠️ EKSİK VERİYLE KAYDEDİLDİ" : "✅ BİNA VERİLERİ MÜHÜRLENDİ";
+  box.textContent = eksikVar
+  ? "⚠️ BİNA VERİLERİ EKSİK BİLGİYLE KAYDEDİLDİ"
+  : "✅ BİNA ANALİZİ VERİLERİ KAYDEDİLDİ";
     setTimeout(() => box.style.display = "none", 3000);
 
     hafizaYukle();
@@ -476,4 +493,5 @@
 
 </body>
 </html>
+
 
