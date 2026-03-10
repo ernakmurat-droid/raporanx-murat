@@ -46,6 +46,12 @@
     border:1px solid #d8e3ff;
     line-height:1.5;
   }
+  .format-note-inline{
+  color:#ffd54f;
+  font-weight:700;
+  margin-bottom:10px;
+  display:block;
+}
 </style>
 </head>
 
@@ -75,12 +81,16 @@
           </select>
         </div>
 
-        <div class="info-note">
-          <strong>Şablon Açıklaması:</strong><br>
-          Şablon 1: Genel ekspertiz anlatımı<br>
-          Şablon 2: Açık adres ve yakın çevre vurgusu<br>
-          Şablon 3: Ulaşım, altyapı ve bölgesel gelişim vurgusu
-        </div>
+        <div class="info-note" id="formatInfoBox">
+  <strong>Metin Şablonu Seçimi Zorunludur:</strong><br>
+  Rapor çıktısında kullanılacak anlatım yapısını seçiniz.<br>
+  Şablon değiştirildiğinde aşağıdaki canlı önizleme metni otomatik olarak güncellenir.<br><br>
+
+  <strong>Şablon 1:</strong> Genel ekspertiz anlatımı<br>
+  <strong>Şablon 2:</strong> Açık adres ve yakın çevre vurgusu<br>
+  <strong>Şablon 3:</strong> Ulaşım, altyapı ve bölgesel gelişim vurgusu
+</div>
+
 
         <div class="section-title">📍 ADRES VE KONUM BİLGİLERİ</div>
 
@@ -418,7 +428,7 @@ Değerlemesi yapılan gayrimenkul, ${mahalle} mahallesi, ${sokak}, No: ${kapiNo}
 Bölgenin yapılaşma karakteristiğini ağırlıklı olarak ${yapiTipi} tipi yapılar oluşturmaktadır. Bölge, genel itibariyle ${gelir} gelir grubunun talep gösterdiği alanlardan biri olup taşınmazın yakın çevresinde ${yakinCevre} bulunmaktadır. ${altyapiMetni} Bölgeye ${ulasimOlanaklari} ile ulaşım sağlanabilmektedir.`;
     }
 
-    const sonuc = `${tablo}\n\n${metin}`;
+    const sonuc = `${tablo}\n\n${formatNotu}\n\n${metin}`;
     document.getElementById('livePreview').textContent = sonuc;
     return sonuc;
   }
@@ -548,3 +558,4 @@ Bölgenin yapılaşma karakteristiğini ağırlıklı olarak ${yapiTipi} tipi ya
 
 </body>
 </html>
+
