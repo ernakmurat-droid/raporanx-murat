@@ -21,18 +21,17 @@
   .section-title { grid-column:span 2; border-left:5px solid var(--primary); margin-top:20px; padding-left:10px; color:var(--primary); font-weight:900; background:#f0f2ff; padding:8px; border-radius:0 8px 8px 0; }
   .input-item { display:flex; flex-direction:column; }
   .input-item label { font-weight:700; font-size:13px; color:#444; margin-bottom:5px; }
-  input, textarea { padding:12px; border:1px solid #ccc; border-radius:10px; font-size:15px; background:#fff; transition:.3s; width:100%; box-sizing:border-box; }
-  input:focus, textarea:focus { border-color:var(--primary); box-shadow:0 0 8px rgba(26,35,126,0.1); outline:none; }
+  input, textarea, select { padding:12px; border:1px solid #ccc; border-radius:10px; font-size:15px; background:#fff; transition:.3s; width:100%; box-sizing:border-box; }
+  input:focus, textarea:focus, select:focus { border-color:var(--primary); box-shadow:0 0 8px rgba(26,35,126,0.1); outline:none; }
   .radio-group { display:flex; gap:20px; padding:10px 0; }
   .radio-item { display:flex; align-items:center; gap:8px; cursor:pointer; }
   .full-width { grid-column:span 2; }
   .btn-save { background:var(--success); color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:30px; }
   .btn-back { background:#6c757d; color:#fff; padding:20px; border:none; border-radius:15px; width:100%; font-weight:900; font-size:18px; cursor:pointer; margin-top:10px; }
-
   .preview-box{
     background:#222; color:#00ff6a; padding:20px; border-radius:15px;
     font-family:'Courier New',monospace; white-space:pre-wrap; font-size:13px;
-    margin-top:20px; border:2px solid #555; line-height:1.5;
+    margin-top:20px; border:2px solid #555; line-height:1.6;
     user-select:none; -webkit-user-select:none; -ms-user-select:none; -webkit-touch-callout:none;
   }
   .disabled-input { background:#eee; cursor:not-allowed; opacity:.7; }
@@ -54,27 +53,57 @@
 
     <form id="mainForm" onsubmit="return false;">
       <div class="grid-form">
-        <div class="section-title">📊 TABLO VERİLERİ (1-16)</div>
+        <div class="section-title">📍 ADRES VE KONUM BİLGİLERİ</div>
+
         <div class="input-item"><label>(1) UAVT</label><input type="text" id="v1" list="h_v1" onfocus="showList(this)"></div>
         <div class="input-item"><label>(2) Koordinat X</label><input type="text" id="v2" list="h_v2" onfocus="showList(this)"></div>
         <div class="input-item"><label>(3) Koordinat Y</label><input type="text" id="v3" list="h_v3" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(4) İli</label><input type="text" id="v4" list="h_v4" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(5) İlçesi</label><input type="text" id="v5" list="h_v5" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(6) Mahallesi</label><input type="text" id="v6" list="h_v6" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(7) Cadde/Sokak</label><input type="text" id="v7" list="h_v7" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(4) İl</label><input type="text" id="v4" list="h_v4" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(5) İlçe</label><input type="text" id="v5" list="h_v5" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(6) Mahalle</label><input type="text" id="v6" list="h_v6" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(7) Cadde / Sokak</label><input type="text" id="v7" list="h_v7" onfocus="showList(this)"></div>
         <div class="input-item"><label>(8) Dış Kapı No</label><input type="text" id="v8" list="h_v8" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(9) Bulunduğu Kat</label><input type="text" id="v9" list="h_v9" onfocus="showList(this)"></div>
+        <div class="input-item"><label>(9) Taşınmazın Bulunduğu Kat</label><input type="text" id="v9" list="h_v9" onfocus="showList(this)"></div>
         <div class="input-item"><label>(10) Daire No</label><input type="text" id="v10" list="h_v10" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(11) Bölge Gelişimi</label><input type="text" id="v11" list="h_v11" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(12) Bölge Yapılaşması</label><input type="text" id="v12" list="h_v12" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(13) Yapı Tipleri</label><input type="text" id="v13" list="h_v13" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(14) Gelir Düzeyi</label><input type="text" id="v14" list="h_v14" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(15) Yakın Yapı 1</label><input type="text" id="v15" list="h_v15" onfocus="showList(this)"></div>
-        <div class="input-item"><label>(16) Yakın Yapı 2</label><input type="text" id="v16" list="h_v16" onfocus="showList(this)"></div>
+
+        <div class="section-title">🏙️ BÖLGESEL ÖZELLİKLER</div>
+
+        <div class="input-item">
+          <label>(11) Bölge Kullanım Türü</label>
+          <input type="text" id="v11" list="h_v11" onfocus="showList(this)" placeholder="Konut / Ticaret / Karma / Sanayi">
+        </div>
+
+        <div class="input-item">
+          <label>(12) Bölge Yapılaşma Düzeni</label>
+          <input type="text" id="v12" list="h_v12" onfocus="showList(this)" placeholder="3-5 katlı, ayrık nizam, bitişik nizam vb.">
+        </div>
+
+        <div class="input-item">
+          <label>(13) Bölgede Hakim Yapı Tipi</label>
+          <input type="text" id="v13" list="h_v13" onfocus="showList(this)" placeholder="apartman, villa, müstakil ev vb.">
+        </div>
+
+        <div class="input-item">
+          <label>(14) Bölgenin Hitap Ettiği Gelir Düzeyi</label>
+          <input type="text" id="v14" list="h_v14" onfocus="showList(this)" placeholder="alt / orta / üst / orta-üst">
+        </div>
+
+        <div class="input-item full-width">
+          <label>(15-16) Yakın Çevrede Bulunan Önemli Noktalar</label>
+          <textarea id="yakinCevre" rows="3" placeholder="ör: okul, cami, park, market, sağlık ocağı, belediye hizmet binası"></textarea>
+        </div>
 
         <div class="section-title">📝 METİN DEĞİŞKENLERİ</div>
-        <div class="input-item full-width"><label>Ulaşım Tarifi</label><textarea id="ulasimTarifi" rows="3" list="h_ulasimTarifi" onfocus="showList(this)"></textarea></div>
-        <div class="input-item full-width"><label>Ulaşım Olanakları</label><input type="text" id="ulasimOlanaklari" list="h_ulasimOlanaklari" onfocus="showList(this)"></div>
+
+        <div class="input-item full-width">
+          <label>Ulaşım Tarifi</label>
+          <textarea id="ulasimTarifi" rows="3" placeholder="Taşınmaza ana arter üzerinden ... istikametinden ulaşım sağlanmaktadır."></textarea>
+        </div>
+
+        <div class="input-item full-width">
+          <label>Ulaşım Olanakları</label>
+          <input type="text" id="ulasimOlanaklari" list="h_ulasimOlanaklari" onfocus="showList(this)" placeholder="özel araç ve toplu taşıma araçları ile ulaşım mümkündür">
+        </div>
 
         <div class="input-item">
           <label>Altyapı Durumu</label>
@@ -83,9 +112,10 @@
             <label class="radio-item"><input type="radio" name="altyapi" value="Hayır" onclick="toggleAltyapi(false)"> Hayır</label>
           </div>
         </div>
+
         <div class="input-item">
           <label>Altyapı Açıklaması</label>
-          <input type="text" id="altyapiAciklama" class="disabled-input" disabled value="alt yapısı tamamlanmıştır" list="h_altyapiAciklama" onfocus="showList(this)">
+          <input type="text" id="altyapiAciklama" class="disabled-input" disabled value="Bölgenin yol, su, elektrik, kanalizasyon ve doğalgaz altyapısı tamamlanmıştır." list="h_altyapiAciklama" onfocus="showList(this)">
         </div>
       </div>
     </form>
@@ -103,8 +133,7 @@
   <datalist id="h_v4"></datalist><datalist id="h_v5"></datalist><datalist id="h_v6"></datalist>
   <datalist id="h_v7"></datalist><datalist id="h_v8"></datalist><datalist id="h_v9"></datalist>
   <datalist id="h_v10"></datalist><datalist id="h_v11"></datalist><datalist id="h_v12"></datalist>
-  <datalist id="h_v13"></datalist><datalist id="h_v14"></datalist><datalist id="h_v15"></datalist>
-  <datalist id="h_v16"></datalist><datalist id="h_ulasimTarifi"></datalist>
+  <datalist id="h_v13"></datalist><datalist id="h_v14"></datalist>
   <datalist id="h_ulasimOlanaklari"></datalist><datalist id="h_altyapiAciklama"></datalist>
 </div>
 
@@ -118,11 +147,10 @@
   const legacyId = (params.get("id") || "").toString().trim();
 
   const inputIds = [
-    'v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15','v16',
-    'ulasimTarifi','ulasimOlanaklari','altyapiAciklama'
+    'v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14',
+    'yakinCevre','ulasimTarifi','ulasimOlanaklari','altyapiAciklama'
   ];
 
-  // ===== RID helpers (imar ile aynı mantık) =====
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
@@ -140,7 +168,6 @@
       if (idx >= 0) return { arr, i: idx, r: arr[idx] };
     }
     if (legacyId) {
-      // legacyId bazen index bazen eski id olabilir
       const n = Number(legacyId);
       if (!Number.isNaN(n) && arr[n]) {
         if (!arr[n].rid) arr[n].rid = genRid();
@@ -202,7 +229,6 @@
     cloudSaveReport(r);
   }
 
-  // ===== UI helpers =====
   function lockPreviewCopy(){
     const el = document.getElementById("livePreview");
     if(!el) return;
@@ -217,6 +243,7 @@
     const listId = el.getAttribute("list");
     const dl = listId ? document.getElementById(listId) : null;
     if(!dl) return;
+
     dl.innerHTML = "";
     const set = new Set();
 
@@ -229,7 +256,11 @@
       if(val && val !== "...") set.add(val);
     });
 
-    set.forEach(v => { dl.innerHTML += `<option value="${String(v).replaceAll('"','&quot;')}">`; });
+    set.forEach(v => {
+      const option = document.createElement("option");
+      option.value = v;
+      dl.appendChild(option);
+    });
   }
   window.showList = showList;
 
@@ -238,40 +269,107 @@
     if(isEvet){
       inp.disabled = true;
       inp.classList.add('disabled-input');
-      inp.value = "alt yapısı tamamlanmıştır";
+      inp.value = "Bölgenin yol, su, elektrik, kanalizasyon ve doğalgaz altyapısı tamamlanmıştır.";
     }else{
       inp.disabled = false;
       inp.classList.remove('disabled-input');
-      if(inp.value === "alt yapısı tamamlanmıştır") inp.value = "";
+      if(inp.value === "Bölgenin yol, su, elektrik, kanalizasyon ve doğalgaz altyapısı tamamlanmıştır."){
+        inp.value = "";
+      }
     }
     guncelleOnizleme();
   }
   window.toggleAltyapi = toggleAltyapi;
 
+  function temizMetin(v){
+    return (v || "").toString().trim();
+  }
+
+  function metinVeyaVarsayilan(v, fallback="..."){
+    const t = temizMetin(v);
+    return t || fallback;
+  }
+
+  function yapiTipiniDuzenle(v){
+    const t = temizMetin(v);
+    if(!t) return "...";
+    return t;
+  }
+
+  function yakinCevreyiDuzenle(v){
+    const t = temizMetin(v);
+    if(!t) return "...";
+    return t;
+  }
+
   function guncelleOnizleme(){
     let vData = {};
-    inputIds.forEach(id => { vData[id] = (document.getElementById(id)?.value ?? "") || "..."; });
-
-    let yapiTipi = (vData.v13 || "").trim();
-    let yapiTipiMetni = (yapiTipi !== "..." && !yapiTipi.toLowerCase().includes("tip")) ? yapiTipi + " tipi yapılar" : yapiTipi;
+    inputIds.forEach(id => {
+      vData[id] = temizMetin(document.getElementById(id)?.value);
+    });
 
     const altyapiTik = (document.querySelector('input[name="altyapi"]:checked')?.value || "Evet");
-    const altyapiMetni = altyapiTik === "Evet" ? "alt yapısı tamamlanmıştır" : (vData.altyapiAciklama || "...");
+    const altyapiMetni = altyapiTik === "Evet"
+      ? "Bölgenin yol, su, elektrik, kanalizasyon ve doğalgaz altyapısı tamamlanmıştır."
+      : (temizMetin(vData.altyapiAciklama) || "Bölgenin altyapı durumu hakkında detaylı bilgi girilmemiştir.");
 
-    let tablo = "------------------------------------------\n ÇEVRESEL ÖZELLİKLER TABLOSU\n------------------------------------------\n";
-    const labels = ["UAVT","Koord X","Koord Y","İl","İlçe","Mahalle","Sokak","Kapı No","Kat","Daire No","Gelişim","Yapılaşma","Tip","Gelir","Yakın 1","Yakın 2"];
-    for(let i=1; i<=16; i++){ tablo += `${labels[i-1].padEnd(15,' ')} : ${vData['v'+i]}\n`; }
+    const il = metinVeyaVarsayilan(vData.v4);
+    const ilce = metinVeyaVarsayilan(vData.v5);
+    const mahalle = metinVeyaVarsayilan(vData.v6);
+    const sokak = metinVeyaVarsayilan(vData.v7);
+    const kapiNo = metinVeyaVarsayilan(vData.v8);
+    const kat = metinVeyaVarsayilan(vData.v9);
+    const daire = metinVeyaVarsayilan(vData.v10);
+    const kullanim = metinVeyaVarsayilan(vData.v11);
+    const yapilasma = metinVeyaVarsayilan(vData.v12);
+    const yapiTipi = metinVeyaVarsayilan(yapiTipiniDuzenle(vData.v13));
+    const gelir = metinVeyaVarsayilan(vData.v14);
+    const yakinCevre = metinVeyaVarsayilan(yakinCevreyiDuzenle(vData.yakinCevre));
+    const ulasimTarifi = metinVeyaVarsayilan(vData.ulasimTarifi);
+    const ulasimOlanaklari = metinVeyaVarsayilan(vData.ulasimOlanaklari);
 
-    const f1 = `KONUMU VE ÇEVRESEL ÖZELLİKLERİ (Format 1)\nDeğerlemeye konu taşınmaz, ${vData.v4} ili, ${vData.v5} İlçesi, ${vData.v6} Mahallesi ${vData.v7}, No: ${vData.v8}/${vData.v10} posta adresinde yer almaktadır. Taşınmaza ulaşım; ${vData.ulasimTarifi}. Bölge genelde yapı kalitesine bağlı olarak, ${vData.v14} gelir grubu tarafından yerleşim amaçlı olarak talep görmektedir. Bölge çevresinde ${vData.v12} katlı ${yapiTipiMetni} bulunmaktadır. ${vData.ulasimOlanaklari} Taşınmazın yakın çevresinde ${vData.v15} ve ${vData.v16} yer almaktadır.\n\nBölgenin Gelişimine Analiz: ${vData.v14} grubunun tercih ettiği, yapılaşmanın ${vData.v11} olduğu bir bölgedir.`;
-    const f2 = `TAŞINMAZIN YERİ VE ÇEVRE ÖZELLİKLERİ (Format 2)\nGayrimenkul, ${vData.v6} Mahallesi, ${vData.v7}, No: ${vData.v8}, Kat: ${vData.v9} Daire: ${vData.v10}, ${vData.v5}/${vData.v4} adresindedir. Bölgede ${vData.v12} nitelikli ${yapiTipiMetni} hakimdir. Ulaşım: ${vData.ulasimTarifi}. Yakın çevre: ${vData.v15}, ${vData.v16}.`;
-    const f3 = `ULAŞIM TARİFİ (Format 3)\n${vData.v4} İli, ${vData.v5} İlçesi, ${vData.v6} Mahallesi sınırlarında yer alan taşınmaza ulaşım ${vData.ulasimTarifi}. Bölge ${vData.v11} fonksiyonlu gelişmiş olup, ${vData.v14} gelir grubuna hitap eder. Altyapı: (yol, su, elektrik) ${altyapiMetni}. ${vData.ulasimOlanaklari}`;
+    let tablo = "";
+    tablo += "------------------------------------------\n";
+    tablo += "KONUM VE ÇEVRESEL ÖZELLİKLER TABLOSU\n";
+    tablo += "------------------------------------------\n";
+    tablo += `UAVT                     : ${metinVeyaVarsayilan(vData.v1)}\n`;
+    tablo += `Koordinat X              : ${metinVeyaVarsayilan(vData.v2)}\n`;
+    tablo += `Koordinat Y              : ${metinVeyaVarsayilan(vData.v3)}\n`;
+    tablo += `İl                       : ${il}\n`;
+    tablo += `İlçe                     : ${ilce}\n`;
+    tablo += `Mahalle                  : ${mahalle}\n`;
+    tablo += `Cadde / Sokak            : ${sokak}\n`;
+    tablo += `Dış Kapı No              : ${kapiNo}\n`;
+    tablo += `Kat                      : ${kat}\n`;
+    tablo += `Daire No                 : ${daire}\n`;
+    tablo += `Bölge Kullanım Türü      : ${kullanim}\n`;
+    tablo += `Bölge Yapılaşma Düzeni   : ${yapilasma}\n`;
+    tablo += `Hakim Yapı Tipi          : ${yapiTipi}\n`;
+    tablo += `Gelir Düzeyi             : ${gelir}\n`;
+    tablo += `Yakın Çevre              : ${yakinCevre}\n`;
+    tablo += `Ulaşım Tarifi            : ${ulasimTarifi}\n`;
+    tablo += `Ulaşım Olanakları        : ${ulasimOlanaklari}\n`;
+    tablo += `Altyapı                  : ${altyapiMetni}\n`;
 
-    const sonuc = tablo + "\n" + f1 + "\n\n" + f2 + "\n\n" + f3;
+    const anaMetin =
+`KONUMU VE ÇEVRESEL ÖZELLİKLERİ
+
+Değerlemeye konu taşınmaz; ${il} ili, ${ilce} ilçesi, ${mahalle} mahallesi, ${sokak}, No: ${kapiNo}, Kat: ${kat}, Daire: ${daire} posta adresinde konumlu bulunmaktadır. Taşınmaza ulaşım ${ulasimTarifi}
+
+Taşınmazın bulunduğu bölge genel olarak ${kullanim} kullanım karakterine sahip olup, çevrede ağırlıklı olarak ${yapilasma} düzeninde ${yapiTipi} nitelikli yapılar yer almaktadır. Bölge, genel itibariyle ${gelir} gelir grubuna hitap eden bir yerleşim / kullanım alanı niteliğindedir.
+
+Taşınmazın yakın çevresinde ${yakinCevre} bulunmaktadır. Bölgeye ${ulasimOlanaklari} ${altyapiMetni}`;
+
+    const analizMetni =
+`BÖLGENİN GELİŞİMİNE İLİŞKİN ANALİZ
+
+Taşınmazın bulunduğu bölge, genel olarak ${gelir} gelir grubunun tercih ettiği alanlardan biri olup ${kullanim} kullanım doğrultusunda gelişim göstermektedir. Bölgedeki yapılaşma karakteri ${yapilasma} düzeninde olup çevrede çoğunlukla ${yapiTipi} tarzı yapılar bulunmaktadır.`;
+
+    const sonuc = `${tablo}\n\n${anaMetin}\n\n${analizMetni}`;
     document.getElementById('livePreview').textContent = sonuc;
     return sonuc;
   }
 
-  // ===== Load / Save (STANDARD) =====
   let currentReport = null;
 
   function applyLockedUI(){
@@ -279,7 +377,7 @@
     const saveBtn = document.getElementById('saveBtn');
     saveBtn.disabled = true;
     saveBtn.textContent = "KİLİTLİ";
-    document.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
+    document.querySelectorAll("input, textarea, select").forEach(el => el.disabled = true);
   }
 
   function loadData(){
@@ -292,12 +390,10 @@
     document.getElementById('raporBilgi').textContent =
       `${currentReport.propertyName || "Rapor"} • RID: ${rid}`;
 
-    // il/ilçe/mahalle default
     if(!document.getElementById('v4').value) document.getElementById('v4').value = currentReport.il || "";
     if(!document.getElementById('v5').value) document.getElementById('v5').value = currentReport.ilce || "";
     if(!document.getElementById('v6').value) document.getElementById('v6').value = currentReport.mahalle || "";
 
-    // önce modules.konumCevre, yoksa legacy konumCevre
     const obj = (currentReport?.modules?.konumCevre) || (currentReport?.konumCevre) || null;
 
     if(obj && typeof obj === "object"){
@@ -321,7 +417,6 @@
 
     guncelleOnizleme();
 
-    // kilit
     if(currentReport.isLocked || currentReport.locked || currentReport.final){
       applyLockedUI();
     }
@@ -333,7 +428,9 @@
       if(!r || i < 0){ alert("Rapor bulunamadı!"); return; }
 
       let vData = {};
-      inputIds.forEach(id => { vData[id] = document.getElementById(id).value; });
+      inputIds.forEach(id => {
+        vData[id] = document.getElementById(id).value;
+      });
 
       const payload = {
         ...vData,
@@ -344,8 +441,6 @@
 
       if(!arr[i].modules) arr[i].modules = {};
       arr[i].modules.konumCevre = payload;
-
-      // legacy (geri uyumluluk)
       arr[i].konumCevre = payload;
 
       persist(arr, i, arr[i]);
@@ -364,7 +459,6 @@
   }
   window.anaMenuyeDon = anaMenuyeDon;
 
-  // ===== Init =====
   lockPreviewCopy();
 
   auth.onAuthStateChanged(user => {
@@ -372,12 +466,10 @@
 
     const { r, arr, i } = getLatestData();
     if(!rid || !r || i < 0){
-      // legacy id ile gelmiş olabilir: resolveRidAndMigrateIfNeeded zaten denedi.
       location.href="index.html";
       return;
     }
 
-    // raporu stabilize et (rid migration + updatedAt)
     currentReport = r;
     if(!currentReport.modules) currentReport.modules = {};
     persist(arr, i, currentReport);
