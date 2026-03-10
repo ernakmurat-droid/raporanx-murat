@@ -398,6 +398,17 @@
     tablo += `Altyapı                  : ${altyapiMetni}\n`;
 
     let metin = "";
+    const formatAciklama = format === "1"
+  ? "Şablon 1 - Klasik Bölge Anlatımı"
+  : format === "2"
+    ? "Şablon 2 - Adres ve Çevre Odaklı"
+    : "Şablon 3 - Ulaşım ve Altyapı Odaklı";
+
+const formatNotu =
+`────────────────────────────────────────
+Not: Bu metin ${formatAciklama} kullanılarak oluşturulmuştur.
+Gerekirse yukarıdaki “Rapor Metin Şablonu” alanından farklı bir şablon seçebilirsiniz.
+────────────────────────────────────────`;
 
     if(format === "1"){
       metin =
