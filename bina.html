@@ -299,7 +299,7 @@
     const katDetayTamamlandi = !!(r.katDetayMetni && String(r.katDetayMetni).trim());
 const katMetni = katDetayTamamlandi
   ? r.katDetayMetni
-  : "kat detayları henüz tamamlanmamış olup bağımsız bölüm dağılımı netleştirilememiştir,";
+  : "<span style='color:#d32f2f;font-weight:bold;'>kat detayları henüz tamamlanmamış olup bağımsız bölüm dağılımı netleştirilememiştir</span>,";
 
     const binaObj = getBinaObj(r) || {};
     const bbSayisi =
@@ -326,7 +326,7 @@ Daha sağlıklı metin için “Bina Analizi İçin Kat Detaylarını Tamamla”
     }
 
     const finalMetin = uyariMetni + metin;
-document.getElementById("taslak").innerText = finalMetin;
+document.getElementById("taslak").innerHTML = finalMetin;
 return finalMetin;
   }
   window.taslakOlustur = taslakOlustur;
