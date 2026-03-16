@@ -806,7 +806,7 @@
 
   const hesapSatiri = `(${formatLira(f10Val / f8Val)} TL/m², -% ${e.f14 || 0} pazarlık${shStr} : ${e.f17 || ""})`;
 
-  const kaynakText = (e.f1 || "İsimsiz kaynak").trim();
+  const kaynakText = ((e.f1 || "") + " " + (e.f2 || "")).trim() || "İsimsiz kaynak";
 
   const anaMetin =
     `${kaynakText}. Değerlemeye konu taşınmazla ${e.f3 || "."} konumlu, ` +
