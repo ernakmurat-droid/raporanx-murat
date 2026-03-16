@@ -10,206 +10,345 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-  <!-- Senin tek kaynak config'in -->
+  <!-- Tek kaynak config -->
   <script src="firebase-config.js"></script>
 
   <style>
-    :root { --primary:#1a237e; --secondary:#3f51b5; --success:#2e7d32; --bg:#f4f7f6; --danger:#c62828; --warning:#fbc02d; }
+    :root {
+      --primary:#1a237e;
+      --secondary:#3f51b5;
+      --success:#2e7d32;
+      --bg:#f4f7f6;
+      --danger:#c62828;
+      --warning:#fbc02d;
+    }
+
     * { box-sizing:border-box; }
 
-    body{ font-family:'Segoe UI',Tahoma,sans-serif; background:var(--bg); margin:0; padding-bottom:120px; color:#333; }
-    .header{
-      background:var(--primary); color:#fff; padding:25px; text-align:center;
-      position:sticky; top:0; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,.2);
+    body{
+      font-family:'Segoe UI',Tahoma,sans-serif;
+      background:var(--bg);
+      margin:0;
+      padding-bottom:120px;
+      color:#333;
     }
+
+    .header{
+      background:var(--primary);
+      color:#fff;
+      padding:25px;
+      text-align:center;
+      position:sticky;
+      top:0;
+      z-index:1000;
+      box-shadow:0 2px 10px rgba(0,0,0,.2);
+    }
+
     .back{
-      position:absolute; left:15px; top:22px; background:rgba(255,255,255,.2);
-      padding:8px 15px; border-radius:20px; color:#fff; text-decoration:none; font-weight:bold;
-      cursor:pointer; border:none;
+      position:absolute;
+      left:15px;
+      top:22px;
+      background:rgba(255,255,255,.2);
+      padding:8px 15px;
+      border-radius:20px;
+      color:#fff;
+      text-decoration:none;
+      font-weight:bold;
+      cursor:pointer;
+      border:none;
     }
 
     .status-bar{
-      padding:12px; text-align:center; font-weight:900; position:sticky; top:92px; z-index:999;
-      transition:.25s; box-shadow:0 2px 5px rgba(0,0,0,.1); font-size:14px;
+      padding:12px;
+      text-align:center;
+      font-weight:900;
+      position:sticky;
+      top:92px;
+      z-index:999;
+      transition:.25s;
+      box-shadow:0 2px 5px rgba(0,0,0,.1);
+      font-size:14px;
     }
+
     .status-incomplete{ background:var(--warning); color:#111; }
     .status-complete{ background:var(--success); color:#fff; }
 
-    .container{ max-width:980px; margin:20px auto; padding:0 20px; }
-    .card{ background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,.05); margin-bottom:20px; border:1px solid #e0e6ed; }
-    .section-title{ color:var(--primary); font-size:1.1rem; font-weight:900; border-bottom:2px solid #eee; padding-bottom:8px; margin-bottom:15px; }
-    .grid-form{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; }
-    .input-group label{ display:block; font-size:13px; font-weight:700; color:#555; margin-bottom:5px; }
-    .input-group input,.input-group select{ width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; font-size:14px; outline:none; }
+    .container{
+      max-width:980px;
+      margin:20px auto;
+      padding:0 20px;
+    }
 
-    .btn{ padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:900; transition:.2s; }
-    .btn:active{ transform: translateY(1px); }
-    .btn-add{ background:var(--success); color:#fff; width:100%; box-shadow:0 4px 10px rgba(46,125,50,.2); }
-    .btn-save-final{ background:var(--primary); color:#fff; width:100%; padding:18px; font-size:18px; margin-top:15px; }
+    .card{
+      background:#fff;
+      border-radius:12px;
+      padding:20px;
+      box-shadow:0 4px 12px rgba(0,0,0,.05);
+      margin-bottom:20px;
+      border:1px solid #e0e6ed;
+    }
+
+    .section-title{
+      color:var(--primary);
+      font-size:1.1rem;
+      font-weight:900;
+      border-bottom:2px solid #eee;
+      padding-bottom:8px;
+      margin-bottom:15px;
+    }
+
+    .grid-form{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:15px;
+    }
+
+    .input-group label{
+      display:block;
+      font-size:13px;
+      font-weight:700;
+      color:#555;
+      margin-bottom:5px;
+    }
+
+    .input-group input,
+    .input-group select{
+      width:100%;
+      padding:12px;
+      border:1px solid #ccc;
+      border-radius:8px;
+      font-size:14px;
+      outline:none;
+    }
+
+    .btn{
+      padding:12px 20px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:900;
+      transition:.2s;
+      letter-spacing:.3px;
+    }
+
+    .btn:active{ transform:translateY(1px); }
+
+    .btn-add{
+      background:var(--success);
+      color:#fff;
+      width:100%;
+      box-shadow:0 4px 10px rgba(46,125,50,.2);
+    }
+
+    .btn-add:hover{
+      background:#1b5e20;
+    }
+
+    .btn-save-final{
+      background:var(--primary);
+      color:#fff;
+      width:100%;
+      padding:18px;
+      font-size:18px;
+      margin-top:15px;
+    }
+
+    .btn-save-final:hover{
+      background:#0d164f;
+    }
 
     .final-box{
-      background:#fff; border:2px solid #ddd; padding:25px; border-radius:12px;
-      white-space:pre-wrap; font-size:15px; line-height:1.8; color:#333; min-height:140px;
-      user-select:none; -webkit-user-select:none; transition:filter .25s ease;
+      background:#fff;
+      border:2px solid #ddd;
+      padding:25px;
+      border-radius:12px;
+      white-space:pre-wrap;
+      font-size:15px;
+      line-height:1.8;
+      color:#333;
+      min-height:140px;
+      user-select:none;
+      -webkit-user-select:none;
+      transition:filter .25s ease;
     }
+
     .final-box:not(:hover){ filter:blur(2px); }
-.emsal-liste-item{
-  background:#f8f9fa;
-  padding:12px;
-  border-radius:8px;
-  margin-bottom:8px;
-  border-left:5px solid var(--primary);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  font-size:14px;
-  transition:all .2s ease;
-}
 
-.emsal-liste-item:hover{
-  transform:translateY(-2px);
-  box-shadow:0 6px 14px rgba(0,0,0,.1);
-}
-
-.emsal-liste-item button{
-  padding:8px 10px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  background:var(--primary);
-  color:#fff;
-  font-weight:900;
-}
-
-.emsal-liste-item .del{
-  background:var(--danger);
-  margin-left:6px;
-}
-    .bbbar{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-      padding:12px; border:1px solid #e0e6ed; border-radius:12px; background:#fff; margin-bottom:16px;
+    .emsal-liste-item{
+      background:#f8f9fa;
+      padding:12px;
+      border-radius:8px;
+      margin-bottom:8px;
+      border-left:5px solid var(--primary);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      font-size:14px;
+      transition:all .2s ease;
     }
-    .bbTabs{ display:flex; gap:8px; flex-wrap:wrap; }
-    .bbTab{ padding:10px 12px; border-radius:10px; border:1px solid #ddd; cursor:pointer; background:#fff; color:#333; font-weight:900; }
-    .bbTab.active{ background:var(--primary); color:#fff; border-color:transparent; }
+
+    .emsal-liste-item:hover{
+      transform:translateY(-2px);
+      box-shadow:0 6px 14px rgba(0,0,0,.1);
+    }
+
+    .emsal-liste-item button{
+      padding:8px 10px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      background:var(--primary);
+      color:#fff;
+      font-weight:900;
+    }
+
+    .emsal-liste-item .del{
+      background:var(--danger);
+      margin-left:6px;
+    }
+
+    .bbbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      padding:12px;
+      border:1px solid #e0e6ed;
+      border-radius:12px;
+      background:#fff;
+      margin-bottom:16px;
+    }
+
+    .bbTabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .bbTab{
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid #ddd;
+      cursor:pointer;
+      background:#fff;
+      color:#333;
+      font-weight:900;
+    }
+
+    .bbTab.active{
+      background:var(--primary);
+      color:#fff;
+      border-color:transparent;
+    }
+
     .hidden{ display:none !important; }
 
     .insaat-toggle{
-      background:#fff3e0; border:1px solid #ffe0b2; padding:15px; border-radius:8px; margin-bottom:15px;
-      display:flex; align-items:center; gap:10px; font-weight:900; color:#e65100;
+      background:#fff3e0;
+      border:1px solid #ffe0b2;
+      padding:15px;
+      border-radius:8px;
+      margin-bottom:15px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:900;
+      color:#e65100;
     }
 
-    /* === MOBİLDE EMSAL FORMU TEK SÜTUN (KESİN) === */
-    @media (max-width: 768px){
+    .iletisim-grup label{
+      color:var(--primary);
+      font-weight:900;
+    }
+
+    #emsalFormContainer{
+      scroll-margin-top:120px;
+    }
+
+    #emsalFormContainer .section-title{
+      margin-bottom:20px;
+    }
+
+    #emsalFormContainer .input-group{
+      background:#f8fafc;
+      padding:12px;
+      border:1px solid #e6ebf2;
+      border-radius:10px;
+      transition:all .2s ease;
+    }
+
+    #emsalFormContainer .input-group input,
+    #emsalFormContainer .input-group select{
+      background:#fff;
+    }
+
+    #emsalFormContainer .input-group:hover{
+      border-color:var(--primary);
+      box-shadow:0 4px 12px rgba(0,0,0,.08);
+    }
+
+    #emsalFormContainer .input-group input:focus,
+    #emsalFormContainer .input-group select:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px rgba(26,35,126,.12);
+    }
+
+    /* Mobil */
+    @media (max-width:768px){
       #emsalFormContainer .grid-form{
         display:grid !important;
         grid-template-columns:1fr !important;
         gap:12px !important;
       }
+
       #emsalFormContainer .grid-form > .input-group{
         grid-column:auto !important;
       }
+
       #emsalFormContainer .input-group input,
       #emsalFormContainer .input-group select{
         width:100% !important;
         font-size:16px !important;
       }
-    }
 
-    /* ✅ MOBİLDE GERİ BUTONUNU SABİTLE (GÖRÜNÜR) */
-    @media (max-width: 768px){
       .header{
-        padding-top: calc(18px + env(safe-area-inset-top, 0px)) !important;
+        padding-top:calc(18px + env(safe-area-inset-top, 0px)) !important;
       }
-      .container{ padding-top: 8px; }
+
+      .container{
+        padding-top:8px;
+      }
+
       .back{
-        position: fixed !important;
-        left: 12px !important;
-        top: calc(12px + env(safe-area-inset-top, 0px)) !important;
-        z-index: 99999 !important;
-        padding: 10px 14px !important;
-        border-radius: 14px !important;
-        background: rgba(0,0,0,.55) !important;
-        color: #fff !important;
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        box-shadow: 0 6px 18px rgba(0,0,0,.25);
+        position:fixed !important;
+        left:12px !important;
+        top:calc(12px + env(safe-area-inset-top, 0px)) !important;
+        z-index:99999 !important;
+        padding:10px 14px !important;
+        border-radius:14px !important;
+        background:rgba(0,0,0,.55) !important;
+        color:#fff !important;
+        backdrop-filter:blur(6px);
+        -webkit-backdrop-filter:blur(6px);
+        box-shadow:0 6px 18px rgba(0,0,0,.25);
+      }
+
+      .emsal-liste-item{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+
+      .emsal-liste-item > div:last-child{
+        width:100%;
+        display:flex;
+        gap:8px;
+      }
+
+      .emsal-liste-item > div:last-child button{
+        flex:1;
       }
     }
-    .iletisim-grup label{
-  color: var(--primary);
-  font-weight: 900;
-}
-
-#emsalFormContainer{
-  scroll-margin-top: 120px;
-}
-
-#emsalFormContainer .section-title{
-  margin-bottom: 20px;
-}
-
-#emsalFormContainer .input-group{
-  background: #f8fafc;
-  padding: 12px;
-  border: 1px solid #e6ebf2;
-  border-radius: 10px;
-}
-
-.iletisim-grup label{
-  color: var(--primary);
-  font-weight: 900;
-}
-
-#emsalFormContainer{
-  scroll-margin-top: 120px;
-}
-
-#emsalFormContainer .section-title{
-  margin-bottom: 20px;
-}
-
-#emsalFormContainer .input-group{
-  background:#f8fafc;
-  padding:12px;
-  border:1px solid #e6ebf2;
-  border-radius:10px;
-  transition:all .2s ease;
-}
-
-#emsalFormContainer .input-group input,
-#emsalFormContainer .input-group select{
-  background:#fff;
-}
-
-#emsalFormContainer .input-group:hover{
-  border-color:var(--primary);
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
-}
-
-#emsalFormContainer .input-group input:focus,
-#emsalFormContainer .input-group select:focus{
-  border-color:var(--primary);
-  box-shadow:0 0 0 3px rgba(26,35,126,.12);
-}
-  background:#f8fafc;
-  padding:12px;
-  border:1px solid #e6ebf2;
-  border-radius:10px;
-  transition:all .2s ease;
-}
-
-#emsalFormContainer .input-group:hover{
-  border-color:var(--primary);
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
-}
-
-#emsalFormContainer .input-group input:focus,
-#emsalFormContainer .input-group select:focus{
-  border-color:var(--primary);
-  box-shadow:0 0 0 3px rgba(26,35,126,.12);
-}
   </style>
 </head>
 
@@ -259,14 +398,15 @@
 
     <div class="grid-form">
       <div class="input-group iletisim-grup">
-  <label>(1) Görüşülen Kişi / Emsal Kaynağı</label>
-  <input type="text" id="f1" placeholder="Örn: Ahmet Yılmaz / XYZ Emlak" onfocus="this.select();">
-</div>
+        <label>(1) Görüşülen Kişi / Emsal Kaynağı</label>
+        <input type="text" id="f1" placeholder="Örn: Ahmet Yılmaz / XYZ Emlak" onfocus="this.select();">
+      </div>
 
-<div class="input-group iletisim-grup">
-  <label>(2) Telefon Numarası</label>
-  <input type="text" id="f2" placeholder="(5__) ___ __ __" oninput="formatPhone(this)">
-</div>
+      <div class="input-group iletisim-grup">
+        <label>(2) Telefon Numarası</label>
+        <input type="text" id="f2" placeholder="(5__) ___ __ __" oninput="formatPhone(this)">
+      </div>
+
       <div class="input-group"><label>(3) Konum/Yakınlık</label><input type="text" id="f3" onfocus="this.select();"></div>
       <div class="input-group"><label>(4) Bina Kat Sayısı</label><input type="number" id="f4"></div>
       <div class="input-group"><label>(5) Bulunduğu Kat</label><input type="text" id="f5" onfocus="this.select();"></div>
@@ -281,7 +421,8 @@
         <input type="hidden" id="f10">
       </div>
 
-      <div class="input-group"><label>(11) Durumu</label>
+      <div class="input-group">
+        <label>(11) Durumu</label>
         <select id="f11">
           <option value="satılıktır">Satılıktır</option>
           <option value="kiralıktır">Kiralıktır</option>
@@ -312,7 +453,8 @@
   <div id="insaatdetay" class="card hidden">
     <div class="grid-form">
       <div class="input-group"><label>Mevcut İnşaat Seviyesi (%)</label><input type="number" id="inpseviye" value="81" oninput="finalHesapla()"></div>
-      <div class="input-group"><label>Eksik İmalat (TL)</label>
+      <div class="input-group">
+        <label>Eksik İmalat (TL)</label>
         <input type="text" id="inpeksikmask" oninput="formatMoneyInput(this); finalHesapla();">
         <input type="hidden" id="inpeksik">
       </div>
@@ -322,20 +464,28 @@
   <div class="card">
     <div class="section-title">2. Değerleme ve Birim Analizi (SEÇİLİ BB: <span id="activeBBTitle">...</span>)</div>
     <div class="grid-form">
-      <div class="input-group"><label>Bölge Alt Sınır (TL/m²)</label>
+      <div class="input-group">
+        <label>Bölge Alt Sınır (TL/m²)</label>
         <input type="text" id="inpdusukmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpdusuk">
       </div>
-      <div class="input-group"><label>Bölge Üst Sınır (TL/m²)</label>
+      <div class="input-group">
+        <label>Bölge Üst Sınır (TL/m²)</label>
         <input type="text" id="inpyuksekmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpyuksek">
       </div>
-      <div class="input-group"><label>Uygulanan Birim (TL/m²)</label>
+      <div class="input-group">
+        <label>Uygulanan Birim (TL/m²)</label>
         <input type="text" id="inpuygulananmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpuygulanan">
       </div>
-      <div class="input-group"><label>Yasal Brüt Alan (m²)</label>
+      <div class="input-group">
+        <label>Yasal Brüt Alan (m²)</label>
         <input type="text" id="resbrut" readonly style="background:#eee; font-weight:900;">
       </div>
-      <div class="input-group"><label>Proje Dışı İlave Alan (m²)</label><input type="number" id="inpprojedisi" oninput="finalHesapla()"></div>
-      <div class="input-group"><label>İlave Alan Birim Değeri (TL/m²)</label>
+      <div class="input-group">
+        <label>Proje Dışı İlave Alan (m²)</label>
+        <input type="number" id="inpprojedisi" oninput="finalHesapla()">
+      </div>
+      <div class="input-group">
+        <label>İlave Alan Birim Değeri (TL/m²)</label>
         <input type="text" id="inpprojebirimmask" oninput="formatMoneyInput(this); finalHesapla();"><input type="hidden" id="inpprojebirim">
       </div>
     </div>
@@ -350,19 +500,15 @@
 </div>
 
 <script>
-  // Firebase
   const auth = window.auth || firebase.auth();
   const db   = window.db   || firebase.firestore();
 
-  // URL
   const params = new URLSearchParams(window.location.search);
   let rid = params.get("rid");
-  let id  = params.get("id"); // eski sistem
+  let id  = params.get("id");
 
-  // Storage
   const STORAGE_KEY = "gayrimenkul_reports";
 
-  // ========= TEK DOĞRU BULUT KAYDI (PC/MOBİL AYRIMI YOK) =========
   async function cloudSaveReport(reportObj){
     try{
       const user = auth.currentUser;
@@ -405,7 +551,6 @@
       const cloudReport = snap.data() || {};
       upsertLocalReport(cloudReport);
 
-      // ekranda anlık yenile
       renderBBTabs();
       loadActiveBBPricing();
       listele();
@@ -419,9 +564,7 @@
       }
     });
   }
-  // =============================================================
 
-  // ===== Helpers =====
   function el(...ids){
     for(const x of ids){
       const n = document.getElementById(x);
@@ -429,10 +572,12 @@
     }
     return null;
   }
+
   function val(...ids){
     const n = el(...ids);
     return n ? n.value : "";
   }
+
   function setVal(v, ...ids){
     const n = el(...ids);
     if(n) n.value = v;
@@ -448,10 +593,17 @@
   }
 
   function formatLira(num){
-    return new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num || 0);
+    return new Intl.NumberFormat("tr-TR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num || 0);
   }
+
   function formatLira0(num){
-    return new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num || 0);
+    return new Intl.NumberFormat("tr-TR", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(num || 0);
   }
 
   function formatMoneyInput(input){
@@ -467,19 +619,21 @@
     input.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '');
   }
 
-  // ===== Storage load (array/object) =====
   function loadAllReportsRaw(){
     try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }
     catch(e){ return null; }
   }
+
   function toArray(raw){
     if(Array.isArray(raw)) return raw;
     if(raw && typeof raw === "object") return Object.values(raw);
     return [];
   }
+
   function saveAllReportsArray(arr){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(arr || []));
   }
+
   function upsertLocalReport(reportObj){
     if(!reportObj) return;
     const arr = toArray(loadAllReportsRaw());
@@ -513,27 +667,19 @@
   function saveReport(updatedReport){
     const found = findReport();
     const raw = found.raw;
-
     const arr = toArray(raw);
     let idx = found.i;
 
-    if(idx >= 0){
-      arr[idx] = updatedReport;
-    }else{
-      arr.push(updatedReport);
-    }
+    if(idx >= 0) arr[idx] = updatedReport;
+    else arr.push(updatedReport);
 
-    // local timestamp
     updatedReport.updatedAt = new Date().toISOString();
     updatedReport.updatedAtMs = Date.now();
 
     saveAllReportsArray(arr);
-
-    // ✅ buluta tek rapor yaz
     cloudSaveReport(updatedReport);
   }
 
-  // ===== Pool unify =====
   function getPool(report){
     const pool =
       (Array.isArray(report?.emsaller) ? report.emsaller : null) ||
@@ -544,7 +690,6 @@
     return pool;
   }
 
-  // ===== Active BB =====
   let activeBBIndex = 0;
 
   function ensureBBList(report){
@@ -558,7 +703,6 @@
     return null;
   }
 
-  // ✅ BRÜT: eski/yeni tüm şemaları yakala + input fallback
   function getBrutAny(bb, report){
     const v =
       bb?.bbDetay?.alanBrut ??
@@ -579,8 +723,7 @@
     const fromObj = toNum(v);
     if(fromObj > 0) return fromObj;
 
-    const inputBrut = toNum(val("resbrut","res_brut"));
-    return inputBrut;
+    return toNum(val("resbrut","res_brut"));
   }
 
   function setBrutToUI(report){
@@ -595,7 +738,10 @@
     if(!tabs) return;
 
     const { report } = findReport();
-    if(!report){ tabs.innerHTML = ""; return; }
+    if(!report){
+      tabs.innerHTML = "";
+      return;
+    }
 
     ensureBBList(report);
 
@@ -611,16 +757,13 @@
   }
 
   window.setActiveBB = function(idx){
-    // ✅ önce eski BB'nin fiyatlarını kaydet
     saveActiveBBPricing();
-
     activeBBIndex = idx;
     renderBBTabs();
 
     const { report } = findReport();
     if(report){
       setBrutToUI(report);
-      // ✅ yeni BB'nin fiyatlarını yükle
       loadActiveBBPricing();
 
       const t = report.bbDetayList?.[activeBBIndex]?.baslik || (activeBBIndex+1)+". BB";
@@ -631,13 +774,14 @@
     finalHesapla();
   };
 
-  // ===== Status =====
   function veriKontrol(report){
     const bar = el("durumCubugu");
     if(!bar) return;
+
     const pool = getPool(report);
     const count = pool.length;
     const check = val("inpuygulanan","inp_uygulanan");
+
     if(count >= 1 && toNum(check) > 0){
       bar.textContent = "✅ ANALİZ PARAMETRELERİ TAMAMLANDI";
       bar.className = "status-bar status-complete";
@@ -647,7 +791,6 @@
     }
   }
 
-  // ===== Emsal hesap =====
   function hesapla(){
     const fiyat = toNum(val("f10")) || 0;
     const alan  = toNum(val("f8")) || 1;
@@ -661,34 +804,19 @@
 
   function emsalMetinUret(e){
     const f10Val = toNum(e.f10 || 0);
-    const f8Val  = toNum(e.f8  || 1) || 1;
+    const f8Val  = toNum(e.f8 || 1) || 1;
 
-    const netSeref = toNum(e.f12||0) - toNum(e.f13||0);
+    const netSeref = toNum(e.f12 || 0) - toNum(e.f13 || 0);
     const shStr = netSeref !== 0 ? `, % ${netSeref} şerefiye` : "";
 
     const hesapSatiri = `(${formatLira(f10Val / f8Val)} TL/m², -% ${e.f14 || 0} pazarlık${shStr} : ${e.f17 || ""})`;
+
+    const kaynakText = (e.f1 || "İsimsiz kaynak").trim();
+    const telefonText = (e.f2 || "").trim();
+    const iletisimText = telefonText ? `${kaynakText} - İletişim: ${telefonText}` : kaynakText;
+
     const anaMetin =
-     function emsalMetinUret(e){
-  const f10Val = toNum(e.f10 || 0);
-  const f8Val  = toNum(e.f8  || 1) || 1;
-
-  const netSeref = toNum(e.f12||0) - toNum(e.f13||0);
-  const shStr = netSeref !== 0 ? `, % ${netSeref} şerefiye` : "";
-
-  const hesapSatiri = `(${formatLira(f10Val / f8Val)} TL/m², -% ${e.f14 || 0} pazarlık${shStr} : ${e.f17 || ""})`;
-
-  const kaynakText = (e.f1 || "İsimsiz kaynak").trim();
-  const telefonText = (e.f2 || "").trim();
-  const iletisimText = telefonText ? `${kaynakText} - İletişim: ${telefonText}` : kaynakText;
-
-  const anaMetin =
-    `${iletisimText}. Değerlemeye konu taşınmazla ${e.f3 || "."} konumlu, ` +
-    `${e.f4 || "."} katlı binanın ${e.f5 || "."} katında konumlu, ${e.f6 || "."} tipindeki, ` +
-    `${e.f7 || "."} m² kullanım alanlı beyan edilen, ${e.f8 || "."} m² alanlı tahmin edilen, ` +
-    `${e.f9 || "daire"} ${new Intl.NumberFormat('tr-TR').format(f10Val)} TL bedel ile ${e.f11 || "satılıktır"}.`;
-
-  return { anaMetin, hesapSatiri };
-} 
+      `${iletisimText}. Değerlemeye konu taşınmazla ${e.f3 || "."} konumlu, ` +
       `${e.f4 || "."} katlı binanın ${e.f5 || "."} katında konumlu, ${e.f6 || "."} tipindeki, ` +
       `${e.f7 || "."} m² kullanım alanlı beyan edilen, ${e.f8 || "."} m² alanlı tahmin edilen, ` +
       `${e.f9 || "daire"} ${new Intl.NumberFormat('tr-TR').format(f10Val)} TL bedel ile ${e.f11 || "satılıktır"}.`;
@@ -696,7 +824,6 @@
     return { anaMetin, hesapSatiri };
   }
 
-  // ===== TEK METİN ÜRETİMİ =====
   function getOzetForBB(bb){
     return bb?.degerlemeOzet || bb?.degerleme || bb?.emsalOzet || null;
   }
@@ -717,13 +844,13 @@
     ensureBBList(report);
     const pool = getPool(report);
 
-    // UI brütü güncel tut
     setBrutToUI(report);
 
     const dusuk  = toNum(val("inpdusuk"));
     const yuksek = toNum(val("inpyuksek"));
 
     let metin = `EMSAL BİLGİLERİ\n------------------------------------------\n`;
+
     if(pool.length === 0){
       metin += "Henüz emsal girilmemiştir.\n\n";
     }else{
@@ -737,11 +864,13 @@
     metin += `Emsal Karşılaştırma Yöntemine Göre Değer Analizi\n`;
     metin += `Taşınmazın değer tespitinde "Emsal Karşılaştırma Yöntemi" kullanılmıştır. `;
     metin += `Değerlemeye konu mülk ile emsal mülkler benzer özelliklerde ve birbirlerine baz alınabilecek niteliktedir. `;
+
     if(dusuk > 0 && yuksek > 0){
       metin += `Emsal mülklerin m² birim fiyatları ${formatLira0(dusuk)} TL ile ${formatLira0(yuksek)} TL arasındadır. `;
     }else{
       metin += `Emsal mülklerin m² birim fiyatları bölge alt/üst sınır aralığında değerlendirilmiştir. `;
     }
+
     metin += `Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurulmuştur.\n\n`;
 
     report.bbDetayList.forEach((bb, idx)=>{
@@ -813,55 +942,16 @@
     list.innerHTML = "";
 
     pool.forEach((e, i) => {
-     function listele(){
-  const { report } = findReport();
-  const list = el("emsalListesi");
-  if(!list) return;
+      const kaynak = e.f1 || "-";
+      const telefon = e.f2 || "-";
 
-  if(!report){
-    list.innerHTML = `<div class="card" style="border-left:5px solid #c62828;">Rapor bulunamadı.</div>`;
-    finalHesapla();
-    return;
-  }
-
-  ensureBBList(report);
-  const pool = getPool(report);
-  list.innerHTML = "";
-
-  pool.forEach((e, i) => {
-    const kaynak = e.f1 || "-";
-    const telefon = e.f2 || "-";
-
-    list.innerHTML += `
-      <div class="emsal-liste-item">
-        <div>
-          <strong>Emsal ${i+1}</strong><br>
-          <span style="font-weight:700; color:#1a237e;">${kaynak}</span><br>
-          <span style="font-size:13px; color:#555;">📞 ${telefon}</span>
-        </div>
-        <div>
-          <button onclick="formuAc(${i})" style="border:none; background:#e3f2fd; color:#1976d2; padding:5px 10px; border-radius:4px; cursor:pointer;">Düzenle</button>
-          <button onclick="emsalSil(${i})" style="border:none; background:#ffebee; color:#d32f2f; padding:5px 10px; border-radius:4px; cursor:pointer; margin-left:5px;">Sil</button>
-        </div>
-      </div>
-    `;
-  });
-
-  finalHesapla();
-} 
-list.innerHTML += `
-  <div class="emsal-liste-item">
-    <div>
-      <strong>Emsal ${i+1}</strong><br>
-      <span style="font-weight:700; color:#1a237e;">${kaynak}</span><br>
-      <span style="font-size:13px; color:#555;">📞 ${telefon}</span>
-    </div>
-    <div>
-      <button onclick="formuAc(${i})" style="border:none; background:#e3f2fd; color:#1976d2; padding:5px 10px; border-radius:4px; cursor:pointer;">Düzenle</button>
-      <button onclick="emsalSil(${i})" style="border:none; background:#ffebee; color:#d32f2f; padding:5px 10px; border-radius:4px; cursor:pointer; margin-left:5px;">Sil</button>
-    </div>
-  </div>
-`; 
+      list.innerHTML += `
+        <div class="emsal-liste-item">
+          <div>
+            <strong>Emsal ${i+1}</strong><br>
+            <span style="font-weight:700; color:#1a237e;">${kaynak}</span><br>
+            <span style="font-size:13px; color:#555;">📞 ${telefon}</span>
+          </div>
           <div>
             <button onclick="formuAc(${i})" style="border:none; background:#e3f2fd; color:#1976d2; padding:5px 10px; border-radius:4px; cursor:pointer;">Düzenle</button>
             <button onclick="emsalSil(${i})" style="border:none; background:#ffebee; color:#d32f2f; padding:5px 10px; border-radius:4px; cursor:pointer; margin-left:5px;">Sil</button>
@@ -873,64 +963,71 @@ list.innerHTML += `
     finalHesapla();
   }
 
-  // ===== Form open/close =====
- window.formuAc = function(index = -1){
-  const box = el("emsalFormContainer");
-  if(box) box.style.display = "block";
+  window.formuAc = function(index = -1){
+    const box = el("emsalFormContainer");
+    if(box) box.style.display = "block";
 
-  setVal(String(index), "editEmsalId");
+    setVal(String(index), "editEmsalId");
 
-  const { report } = findReport();
-  const pool = report ? getPool(report) : [];
-  const e = (index >= 0 && pool[index]) ? pool[index] : null;
+    const { report } = findReport();
+    const pool = report ? getPool(report) : [];
+    const e = (index >= 0 && pool[index]) ? pool[index] : null;
 
-  for(let k = 1; k <= 14; k++){
-    const idA = "f" + k;
-    const n = el(idA);
-    if(!n) continue;
-    n.value = e ? (e[idA] || "") : (k === 14 ? "5" : "");
-  }
-
-  const f10mask = el("f10mask");
-  const f10 = el("f10");
-  if(f10mask && f10){
-    const v = e ? (e.f10 || "") : "";
-    f10.value = v;
-    f10mask.value = v ? new Intl.NumberFormat("tr-TR").format(v) : "";
-  }
-
-  hesapla();
-
-  setTimeout(() => {
-    box?.scrollIntoView({ behavior: "smooth", block: "start" });
-    const firstField = el("f1");
-    if(firstField){
-      firstField.focus();
-      firstField.select?.();
+    for(let k = 1; k <= 14; k++){
+      const idA = "f" + k;
+      const n = el(idA);
+      if(!n) continue;
+      n.value = e ? (e[idA] || "") : (k === 14 ? "5" : "");
     }
-  }, 120);
-};
+
+    const f10mask = el("f10mask");
+    const f10 = el("f10");
+    if(f10mask && f10){
+      const v = e ? (e.f10 || "") : "";
+      f10.value = v;
+      f10mask.value = v ? new Intl.NumberFormat("tr-TR").format(v) : "";
+    }
+
+    if(index < 0){
+      const f17 = el("f17");
+      if(f17) f17.value = "";
+    }
+
+    hesapla();
+
+    setTimeout(() => {
+      box?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const firstField = el("f1");
+      if(firstField){
+        firstField.focus();
+        firstField.select?.();
+      }
+    }, 120);
+  };
 
   window.formuKapat = function(){
     const box = el("emsalFormContainer");
     if(box) box.style.display = "none";
-  }
+  };
 
   window.emsalKaydet = async function(){
     const { report } = findReport();
-    if(!report){ alert("Rapor bulunamadı."); return; }
+    if(!report){
+      alert("Rapor bulunamadı.");
+      return;
+    }
 
     const pool = getPool(report);
-
     const idxRaw = val("editEmsalId");
-    const index = parseInt(idxRaw,10);
+    const index = parseInt(idxRaw, 10);
 
     let e = {};
-    for(let k=1; k<=14; k++){
-      const idA = "f"+k;
+    for(let k = 1; k <= 14; k++){
+      const idA = "f" + k;
       const n = el(idA);
       if(n) e[idA] = n.value;
     }
+
     e.f10 = val("f10");
     e.f17 = val("f17");
 
@@ -947,7 +1044,7 @@ list.innerHTML += `
     saveReport(report);
     window.formuKapat();
     listele();
-  }
+  };
 
   window.emsalSil = async function(index){
     const { report } = findReport();
@@ -962,20 +1059,22 @@ list.innerHTML += `
 
     saveReport(report);
     listele();
-  }
+  };
 
   window.toggleInsaat = function(){
     const det = el("insaatdetay");
     const chk = el("chkinsaat");
     if(det && chk) det.classList.toggle("hidden", !chk.checked);
     finalHesapla();
-  }
+  };
 
   window.tumRaporuKaydet = async function(){
     const { report } = findReport();
-    if(!report){ alert("Rapor bulunamadı."); return; }
+    if(!report){
+      alert("Rapor bulunamadı.");
+      return;
+    }
 
-    // aktif BB fiyatlarını rapora yaz
     saveActiveBBPricing();
 
     const metin = (el("yorumMetni")?.innerText || "").trim();
@@ -986,17 +1085,16 @@ list.innerHTML += `
 
     saveReport(report);
     alert("✅ Kaydedildi ve buluta mühürlendi.");
-  }
+  };
 
   window.anaMenuyeDon = function(){
-    saveActiveBBPricing(); // çıkmadan önce BB fiyatlarını yaz
+    saveActiveBBPricing();
 
     if(id) window.location.href = `rapor-detay.html?id=${encodeURIComponent(id)}`;
     else if(rid) window.location.href = `rapor-detay.html?rid=${encodeURIComponent(rid)}`;
     else window.location.href = "rapor-detay.html";
-  }
+  };
 
-  // ===== BB pricing per tab =====
   function getBBPricingFromUI(){
     return {
       dusuk:  toNum(val("inpdusuk")),
@@ -1015,8 +1113,8 @@ list.innerHTML += `
 
     setVal(p.dusuk || "", "inpdusuk");
     setVal(p.yuksek || "", "inpyuksek");
-    setVal(p.uyg   || "", "inpuygulanan");
-    setVal(p.ilaveAlan  || "", "inpprojedisi");
+    setVal(p.uyg || "", "inpuygulanan");
+    setVal(p.ilaveAlan || "", "inpprojedisi");
     setVal(p.ilaveBirim || "", "inpprojebirim");
 
     const dusukMask  = el("inpdusukmask");
@@ -1031,6 +1129,7 @@ list.innerHTML += `
 
     const chk = el("chkinsaat");
     if(chk) chk.checked = !!p.insaatAktif;
+
     setVal(p.insaatSeviye ?? 0, "inpseviye");
     setVal(p.eksikImlat ?? "", "inpeksik");
 
@@ -1066,11 +1165,12 @@ list.innerHTML += `
     applyBBPricingToUI(bb.degerlemeOzet || {});
   }
 
-  // ✅ Kopyala/Yapıştır serbest — sadece metin kutusu (yorumMetni) kopyalanamaz
   (function(){
     const metinEl = document.getElementById("yorumMetni");
     if(!metinEl) return;
+
     metinEl.addEventListener("contextmenu", (e)=> e.preventDefault());
+
     document.addEventListener("copy", (e)=>{
       const t = e.target;
       if (t && (t.closest?.("#yorumMetni") || t === metinEl)) {
@@ -1079,19 +1179,19 @@ list.innerHTML += `
     });
   })();
 
-  // INIT
   auth.onAuthStateChanged(async (user)=>{
-    if(!user){ window.location.href = "index.html"; return; }
-    if(!rid && id){
-      // emsal linki eskiyse id ile de çalışsın ama asıl hedef rid
-      // raporu localden bulacağız, bulamazsak buluttan çekip rid ile devam edeceğiz.
+    if(!user){
+      window.location.href = "index.html";
+      return;
     }
-    if(!rid && !id){ window.location.href = "index.html"; return; }
 
-    // 1) önce localden bulmayı dene
+    if(!rid && !id){
+      window.location.href = "index.html";
+      return;
+    }
+
     let found = findReport();
 
-    // 2) yoksa buluttan rid ile çek (rid varsa)
     if(!found.report && rid){
       const cloud = await cloudLoadReportOnce(user.uid, rid);
       if(cloud){
@@ -1100,8 +1200,6 @@ list.innerHTML += `
       }
     }
 
-    // 3) hala yoksa (eski id ile açılmış olabilir) -> localde id ile bul
-    // (burada cloud fallback yok, çünkü cloud doc id’si artık rid)
     const report = found.report;
 
     const raporBilgi = el("raporBilgi");
@@ -1116,7 +1214,6 @@ list.innerHTML += `
       renderBBTabs();
       setBrutToUI(report);
       loadActiveBBPricing();
-      // ✅ canlı senkron (PC/mobil aynı doc)
       startLiveSync(user.uid, report.rid || rid);
     }
 
@@ -1124,56 +1221,59 @@ list.innerHTML += `
     finalHesapla();
   });
 
-  // globals
   window.formatMoneyInput = formatMoneyInput;
   window.formatPhone = formatPhone;
   window.hesapla = hesapla;
   window.finalHesapla = finalHesapla;
   window.listele = listele;
-  /* ===== FİYATLAMA AUTO-SAVE (AKTİF BB) — EN SONA KOY ===== */
-(function(){
-  let t = null;
 
-  function schedulePriceSave(){
-    if(t) clearTimeout(t);
-    t = setTimeout(()=>{
-      try{ if (typeof saveActiveBBPricing === "function") saveActiveBBPricing(); }catch(e){}
-    }, 400);
-  }
+  (function(){
+    let t = null;
 
-  function hookPricingAutosave(){
-    const ids = [
-      "inpdusukmask","inpyuksekmask","inpuygulananmask",
-      "inpprojedisi","inpprojebirimmask",
-      "chkinsaat","inpseviye","inpeksikmask"
-    ];
-    ids.forEach(id=>{
-      const n = document.getElementById(id);
-      if(!n) return;
-      n.addEventListener("input", schedulePriceSave);
-      n.addEventListener("change", schedulePriceSave);
-    });
+    function schedulePriceSave(){
+      if(t) clearTimeout(t);
+      t = setTimeout(()=>{
+        try{
+          if(typeof saveActiveBBPricing === "function") saveActiveBBPricing();
+        }catch(e){}
+      }, 400);
+    }
 
-    // formatMoneyInput varsa içine dokunmadan, event üzerinden zaten yakalıyoruz.
-  }
+    function hookPricingAutosave(){
+      const ids = [
+        "inpdusukmask","inpyuksekmask","inpuygulananmask",
+        "inpprojedisi","inpprojebirimmask",
+        "chkinsaat","inpseviye","inpeksikmask"
+      ];
 
-  // DOM hazır olunca bağla (fonksiyonların hepsi tanımlanmış olacak)
-  document.addEventListener("DOMContentLoaded", hookPricingAutosave);
+      ids.forEach(id=>{
+        const n = document.getElementById(id);
+        if(!n) return;
+        n.addEventListener("input", schedulePriceSave);
+        n.addEventListener("change", schedulePriceSave);
+      });
+    }
 
-  // BB değişince de garanti kaydet (sekme geçişlerinde kaybolmasın)
-  const _oldSetActiveBB = window.setActiveBB;
-  if(typeof _oldSetActiveBB === "function"){
-    window.setActiveBB = function(idx){
-      try{ if (typeof saveActiveBBPricing==="function") saveActiveBBPricing(); }catch(e){}
-      const r = _oldSetActiveBB(idx);
-      try{ if (typeof loadActiveBBPricing==="function") loadActiveBBPricing(); }catch(e){}
-      return r;
-    };
-  }
-})();
+    document.addEventListener("DOMContentLoaded", hookPricingAutosave);
 
+    const _oldSetActiveBB = window.setActiveBB;
+    if(typeof _oldSetActiveBB === "function"){
+      window.setActiveBB = function(idx){
+        try{
+          if(typeof saveActiveBBPricing === "function") saveActiveBBPricing();
+        }catch(e){}
+
+        const r = _oldSetActiveBB(idx);
+
+        try{
+          if(typeof loadActiveBBPricing === "function") loadActiveBBPricing();
+        }catch(e){}
+
+        return r;
+      };
+    }
+  })();
 </script>
 
 </body>
 </html>
-
