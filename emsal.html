@@ -397,15 +397,10 @@
     <input type="hidden" id="editEmsalId" value="">
 
     <div class="grid-form">
-      <div class="input-group iletisim-grup">
-        <label>(1) Görüşülen Kişi / Emsal Kaynağı</label>
-        <input type="text" id="f1" placeholder="Örn: Ahmet Yılmaz / XYZ Emlak" onfocus="this.select();">
-      </div>
-
-      <div class="input-group iletisim-grup">
-        <label>(2) Telefon Numarası</label>
-        <input type="text" id="f2" placeholder="(5__) ___ __ __" oninput="formatPhone(this)">
-      </div>
+     <div class="input-group iletisim-grup" style="grid-column:span 2;">
+  <label>(1) Emsal Kaynağı / Telefon</label>
+  <input type="text" id="f1" placeholder="Örn: A Emlak - 0532 123 45 67" onfocus="this.select();">
+</div>
 
       <div class="input-group"><label>(3) Konum/Yakınlık</label><input type="text" id="f3" onfocus="this.select();"></div>
       <div class="input-group"><label>(4) Bina Kat Sayısı</label><input type="number" id="f4"></div>
@@ -803,26 +798,24 @@
   }
 
   function emsalMetinUret(e){
-    const f10Val = toNum(e.f10 || 0);
-    const f8Val  = toNum(e.f8 || 1) || 1;
+  const f10Val = toNum(e.f10 || 0);
+  const f8Val  = toNum(e.f8 || 1) || 1;
 
-    const netSeref = toNum(e.f12 || 0) - toNum(e.f13 || 0);
-    const shStr = netSeref !== 0 ? `, % ${netSeref} şerefiye` : "";
+  const netSeref = toNum(e.f12 || 0) - toNum(e.f13 || 0);
+  const shStr = netSeref !== 0 ? `, % ${netSeref} şerefiye` : "";
 
-    const hesapSatiri = `(${formatLira(f10Val / f8Val)} TL/m², -% ${e.f14 || 0} pazarlık${shStr} : ${e.f17 || ""})`;
+  const hesapSatiri = `(${formatLira(f10Val / f8Val)} TL/m², -% ${e.f14 || 0} pazarlık${shStr} : ${e.f17 || ""})`;
 
-    const kaynakText = (e.f1 || "İsimsiz kaynak").trim();
-    const telefonText = (e.f2 || "").trim();
-    const iletisimText = telefonText ? `${kaynakText} - İletişim: ${telefonText}` : kaynakText;
+  const kaynakText = (e.f1 || "İsimsiz kaynak").trim();
 
-    const anaMetin =
-      `${iletisimText}. Değerlemeye konu taşınmazla ${e.f3 || "."} konumlu, ` +
-      `${e.f4 || "."} katlı binanın ${e.f5 || "."} katında konumlu, ${e.f6 || "."} tipindeki, ` +
-      `${e.f7 || "."} m² kullanım alanlı beyan edilen, ${e.f8 || "."} m² alanlı tahmin edilen, ` +
-      `${e.f9 || "daire"} ${new Intl.NumberFormat('tr-TR').format(f10Val)} TL bedel ile ${e.f11 || "satılıktır"}.`;
+  const anaMetin =
+    `${kaynakText}. Değerlemeye konu taşınmazla ${e.f3 || "."} konumlu, ` +
+    `${e.f4 || "."} katlı binanın ${e.f5 || "."} katında konumlu, ${e.f6 || "."} tipindeki, ` +
+    `${e.f7 || "."} m² kullanım alanlı beyan edilen, ${e.f8 || "."} m² alanlı tahmin edilen, ` +
+    `${e.f9 || "daire"} ${new Intl.NumberFormat('tr-TR').format(f10Val)} TL bedel ile ${e.f11 || "satılıktır"}.`;
 
-    return { anaMetin, hesapSatiri };
-  }
+  return { anaMetin, hesapSatiri };
+}
 
   function getOzetForBB(bb){
     return bb?.degerlemeOzet || bb?.degerleme || bb?.emsalOzet || null;
@@ -926,42 +919,40 @@
     veriKontrol(report);
   }
 
-  function listele(){
-    const { report } = findReport();
-    const list = el("emsalListesi");
-    if(!list) return;
+ function listele(){
+  const { report } = findReport();
+  const list = el("emsalListesi");
+  if(!list) return;
 
-    if(!report){
-      list.innerHTML = `<div class="card" style="border-left:5px solid #c62828;">Rapor bulunamadı.</div>`;
-      finalHesapla();
-      return;
-    }
-
-    ensureBBList(report);
-    const pool = getPool(report);
-    list.innerHTML = "";
-
-    pool.forEach((e, i) => {
-      const kaynak = e.f1 || "-";
-      const telefon = e.f2 || "-";
-
-      list.innerHTML += `
-        <div class="emsal-liste-item">
-          <div>
-            <strong>Emsal ${i+1}</strong><br>
-            <span style="font-weight:700; color:#1a237e;">${kaynak}</span><br>
-            <span style="font-size:13px; color:#555;">📞 ${telefon}</span>
-          </div>
-          <div>
-            <button onclick="formuAc(${i})" style="border:none; background:#e3f2fd; color:#1976d2; padding:5px 10px; border-radius:4px; cursor:pointer;">Düzenle</button>
-            <button onclick="emsalSil(${i})" style="border:none; background:#ffebee; color:#d32f2f; padding:5px 10px; border-radius:4px; cursor:pointer; margin-left:5px;">Sil</button>
-          </div>
-        </div>
-      `;
-    });
-
+  if(!report){
+    list.innerHTML = `<div class="card" style="border-left:5px solid #c62828;">Rapor bulunamadı.</div>`;
     finalHesapla();
+    return;
   }
+
+  ensureBBList(report);
+  const pool = getPool(report);
+  list.innerHTML = "";
+
+  pool.forEach((e, i) => {
+    const kaynak = e.f1 || "-";
+
+    list.innerHTML += `
+      <div class="emsal-liste-item">
+        <div>
+          <strong>Emsal ${i+1}</strong><br>
+          <span style="font-weight:700; color:#1a237e;">${kaynak}</span>
+        </div>
+        <div>
+          <button onclick="formuAc(${i})" style="border:none; background:#e3f2fd; color:#1976d2; padding:5px 10px; border-radius:4px; cursor:pointer;">Düzenle</button>
+          <button onclick="emsalSil(${i})" style="border:none; background:#ffebee; color:#d32f2f; padding:5px 10px; border-radius:4px; cursor:pointer; margin-left:5px;">Sil</button>
+        </div>
+      </div>
+    `;
+  });
+
+  finalHesapla();
+}
 
   window.formuAc = function(index = -1){
     const box = el("emsalFormContainer");
