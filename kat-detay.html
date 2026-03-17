@@ -11,409 +11,591 @@
 <script src="firebase-config.js"></script>
 
 <style>
-  :root {
+  :root{
     --primary:#4a148c;
+    --primary-2:#6a1b9a;
     --accent:#7c4dff;
+    --accent-soft:#efe8ff;
     --success:#2e7d32;
-    --bg:#f5f7fa;
-    --danger:#c62828;
+    --success-soft:#edf7ee;
     --warning:#ff9800;
-    --muted:#607d8b;
+    --warning-soft:#fff7e8;
+    --danger:#c62828;
+    --danger-soft:#ffebee;
+    --bg:#f5f7fa;
     --card:#ffffff;
-    --soft:#f8fafc;
-    --line:#e4e7eb;
+    --card-2:#fbfcfe;
+    --line:#e5e7eb;
+    --text:#263238;
+    --muted:#6b7280;
+    --soft-shadow:0 8px 24px rgba(31,41,55,0.06);
+    --soft-shadow-2:0 3px 10px rgba(31,41,55,0.06);
+    --radius:16px;
   }
 
   * { box-sizing:border-box; }
 
-  body {
+  body{
     font-family:'Segoe UI', Arial, sans-serif;
-    background:var(--bg);
+    background:
+      radial-gradient(circle at top left, rgba(124,77,255,0.06), transparent 280px),
+      radial-gradient(circle at top right, rgba(74,20,140,0.05), transparent 260px),
+      var(--bg);
     margin:0;
-    padding-bottom:150px;
-    color:#333;
+    color:var(--text);
+    padding-bottom:155px;
   }
 
-  .header {
+  .header{
     background:linear-gradient(135deg, var(--primary), var(--accent));
     color:white;
-    padding:20px;
+    padding:20px 18px;
     text-align:center;
     position:sticky;
     top:0;
     z-index:1000;
-    box-shadow:0 2px 10px rgba(0,0,0,0.2);
+    box-shadow:0 8px 24px rgba(74,20,140,0.22);
   }
 
-  .back {
+  .header h1{
+    margin:0;
+    font-size:28px;
+    letter-spacing:0.4px;
+  }
+
+  .back{
     position:absolute;
     left:15px;
-    top:22px;
-    background:rgba(255,255,255,0.2);
-    padding:8px 15px;
-    border-radius:20px;
+    top:20px;
+    background:rgba(255,255,255,0.18);
+    padding:9px 15px;
+    border-radius:999px;
     color:white;
     text-decoration:none;
-    font-weight:bold;
+    font-weight:700;
     font-size:14px;
     cursor:pointer;
     border:none;
+    backdrop-filter:blur(8px);
   }
 
-  .container {
-    max-width:900px;
-    margin:20px auto;
+  .container{
+    max-width:940px;
+    margin:22px auto;
     padding:0 15px;
   }
 
-  .top-bar {
+  .top-bar{
     display:flex;
     justify-content:space-between;
     align-items:center;
     gap:12px;
-    margin-bottom:15px;
+    margin-bottom:16px;
     flex-wrap:wrap;
   }
 
-  .reset-btn {
-    background:var(--danger);
-    color:white;
-    border:none;
-    padding:10px 15px;
-    border-radius:8px;
+  .page-kicker{
+    font-weight:800;
+    color:var(--primary);
+    letter-spacing:0.2px;
+  }
+
+  .reset-btn{
+    background:var(--danger-soft);
+    color:var(--danger);
+    border:1px solid #f3c5ca;
+    padding:10px 14px;
+    border-radius:12px;
     cursor:pointer;
-    font-weight:bold;
+    font-weight:700;
     font-size:13px;
   }
 
-  .summary-panel {
+  .summary-panel{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
     gap:12px;
     margin-bottom:18px;
   }
 
-  .summary-box {
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:14px;
-    box-shadow:0 2px 4px rgba(0,0,0,0.04);
+  .summary-box{
+    background:rgba(255,255,255,0.88);
+    backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,0.65);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:var(--soft-shadow);
+    min-height:98px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
   }
 
-  .summary-label {
+  .summary-label{
     color:var(--muted);
     font-size:13px;
     margin-bottom:6px;
+    font-weight:600;
   }
 
-  .summary-value {
-    font-size:24px;
-    font-weight:700;
+  .summary-value{
+    font-size:28px;
+    font-weight:800;
     color:var(--primary);
+    line-height:1;
   }
 
-  .preview-card {
-    background:#e8f5e9;
+  .preview-card{
+    background:linear-gradient(180deg, #f2fbf3, #ebf8ee);
     padding:20px;
-    border-radius:12px;
+    border-radius:18px;
     margin-bottom:20px;
-    border:2px solid #4caf50;
-    user-select:none;
+    border:1px solid #cae9d0;
+    box-shadow:var(--soft-shadow-2);
   }
 
-  #taslakMetin {
+  .preview-title{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    font-weight:800;
+    color:#1b5e20;
+    margin:0 0 10px;
+    letter-spacing:0.2px;
+  }
+
+  #taslakMetin{
     font-size:15px;
-    line-height:1.7;
+    line-height:1.75;
     color:#1b5e20;
     font-weight:500;
     white-space:pre-wrap;
   }
 
-  .onlu-grup {
-    border-radius:12px;
-    margin-bottom:15px;
+  .onlu-grup{
+    border-radius:18px;
+    margin-bottom:16px;
     overflow:hidden;
-    border:1px solid #ddd;
+    border:1px solid #e7eaf0;
     background:#fff;
-    box-shadow:0 2px 4px rgba(0,0,0,0.05);
+    box-shadow:var(--soft-shadow);
   }
 
-  .grup-header {
-    padding:12px 15px;
+  .grup-header{
+    padding:14px 16px;
     cursor:pointer;
-    font-weight:bold;
+    font-weight:800;
     display:flex;
     justify-content:space-between;
+    align-items:center;
     color:#fff;
-    align-items:center;
+    font-size:15px;
+    letter-spacing:0.2px;
   }
 
-  .grup-content {
-    padding:8px;
+  .grup-content{
+    padding:10px;
+    background:linear-gradient(180deg, #fff, #fbfcff);
   }
 
-  .g-0 { background:#5c6bc0; }
-  .g-1 { background:#26a69a; }
-  .g-2 { background:#ef5350; }
-  .g-3 { background:#ab47bc; }
-  .g-4 { background:#ffa726; }
+  .g-0 { background:linear-gradient(135deg,#5c6bc0,#7e57c2); }
+  .g-1 { background:linear-gradient(135deg,#26a69a,#42a5f5); }
+  .g-2 { background:linear-gradient(135deg,#ef5350,#ff7043); }
+  .g-3 { background:linear-gradient(135deg,#ab47bc,#7e57c2); }
+  .g-4 { background:linear-gradient(135deg,#ffa726,#fb8c00); }
 
-  .kat-grup {
-    background:white;
-    margin-bottom:10px;
-    border-radius:10px;
-    border:1px solid #eee;
-    box-shadow:0 1px 3px rgba(0,0,0,0.08);
+  .kat-grup{
+    background:var(--card);
+    margin-bottom:12px;
+    border-radius:16px;
+    border:1px solid #eceff3;
+    box-shadow:0 2px 8px rgba(15,23,42,0.05);
     overflow:hidden;
   }
 
-  .kat-header {
-    padding:14px 12px;
+  .kat-header{
+    padding:15px 14px;
     cursor:pointer;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    gap:10px;
-    background:#fff;
+    gap:12px;
+    background:linear-gradient(180deg, #fff, #fdfdff);
+    transition:0.2s ease;
   }
 
-  .kat-header.completed {
-    background:#f1f8e9;
-    border-left:5px solid var(--success);
-  }
-
-  .kat-header.empty {
+  .kat-header.empty{
     border-left:5px solid #cfd8dc;
   }
 
-  .kat-header.partial {
-    background:#fff8e1;
+  .kat-header.partial{
+    background:linear-gradient(180deg, #fffaf0, #fff6e3);
     border-left:5px solid var(--warning);
   }
 
-  .kat-left {
+  .kat-header.completed{
+    background:linear-gradient(180deg, #f6fbf6, #eef8ef);
+    border-left:5px solid var(--success);
+  }
+
+  .kat-left{
     display:flex;
     flex-direction:column;
-    gap:4px;
+    gap:7px;
     min-width:0;
   }
 
-  .kat-adi {
+  .kat-adi{
+    font-weight:800;
+    color:#2f3640;
+    font-size:16px;
+  }
+
+  .kat-mini{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
     font-weight:700;
-    color:#444;
+    line-height:1;
+    white-space:nowrap;
   }
 
-  .kat-mini {
-    font-size:13px;
-    color:#607d8b;
+  .badge-muted{
+    background:#eef2f7;
+    color:#607080;
   }
 
-  .kat-status-wrap {
+  .badge-bb{
+    background:#f1eaff;
+    color:var(--primary);
+  }
+
+  .badge-ortak{
+    background:#e9f5ff;
+    color:#1565c0;
+  }
+
+  .badge-status{
+    background:#f3f4f6;
+    color:#4b5563;
+  }
+
+  .badge-status.ready{
+    background:var(--success-soft);
+    color:var(--success);
+  }
+
+  .badge-status.partial{
+    background:var(--warning-soft);
+    color:#a16207;
+  }
+
+  .badge-status.empty{
+    background:#eef2f7;
+    color:#64748b;
+  }
+
+  .kat-status-wrap{
     display:flex;
     align-items:center;
     gap:10px;
     flex-shrink:0;
   }
 
-  .status-text {
-    font-size:13px;
-    font-weight:700;
-    white-space:nowrap;
-  }
-
-  .kat-content {
-    padding:15px;
-    background:#fafafa;
-    border-top:1px solid #eee;
-  }
-
-  .hidden { display:none !important; }
-
-  .section-card {
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:14px;
-    margin-bottom:14px;
-  }
-
-  .section-title {
-    font-size:15px;
-    font-weight:700;
-    color:var(--primary);
-    margin-bottom:10px;
-  }
-
-  .section-note {
-    font-size:12px;
-    color:#78909c;
-    margin-bottom:10px;
-  }
-
-  .entry-row {
+  .kat-arrow{
+    width:34px;
+    height:34px;
+    border-radius:50%;
     display:flex;
-    gap:8px;
     align-items:center;
-    background:white;
-    padding:10px;
-    border:1px solid #eee;
-    margin-bottom:8px;
-    border-radius:8px;
+    justify-content:center;
+    background:#f3f4f6;
+    color:#475569;
+    font-size:14px;
+    font-weight:900;
+  }
+
+  .kat-content{
+    padding:16px;
+    background:linear-gradient(180deg, #fbfcfe, #f8fafc);
+    border-top:1px solid #edf0f4;
+  }
+
+  .hidden{
+    display:none !important;
+  }
+
+  .section-card{
+    background:linear-gradient(180deg, #ffffff, #fbfcff);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:15px;
+    margin-bottom:14px;
+    box-shadow:0 2px 10px rgba(15,23,42,0.03);
+  }
+
+  .section-card.bb{
+    border-color:#eadfff;
+    background:linear-gradient(180deg, #ffffff, #faf7ff);
+  }
+
+  .section-card.ortak{
+    border-color:#dbeafe;
+    background:linear-gradient(180deg, #ffffff, #f8fbff);
+  }
+
+  .section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
     flex-wrap:wrap;
+  }
+
+  .section-title{
+    font-size:15px;
+    font-weight:800;
+    color:var(--primary);
+    margin:0;
+  }
+
+  .section-card.ortak .section-title{
+    color:#1565c0;
+  }
+
+  .section-note{
+    font-size:12px;
+    color:#7b8794;
+    margin:0 0 10px;
+    line-height:1.5;
+  }
+
+  .entry-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    background:#fff;
+    padding:10px;
+    border:1px solid #edf0f4;
+    margin-bottom:9px;
+    border-radius:14px;
+    flex-wrap:wrap;
+    box-shadow:0 1px 3px rgba(15,23,42,0.03);
   }
 
   .entry-row input[type="number"],
   .entry-row input[type="text"],
-  .entry-row select {
-    padding:10px;
-    border:1px solid #ccc;
-    border-radius:8px;
+  .entry-row select{
+    padding:11px 12px;
+    border:1px solid #d7dce3;
+    border-radius:12px;
     font-size:14px;
-    min-height:42px;
+    min-height:44px;
+    outline:none;
+    background:#fff;
+    color:var(--text);
+    transition:0.18s ease;
   }
 
-  .qty-input {
-    width:88px;
-    font-weight:700;
+  .entry-row input[type="number"]:focus,
+  .entry-row input[type="text"]:focus,
+  .entry-row select:focus{
+    border-color:#b39ddb;
+    box-shadow:0 0 0 4px rgba(124,77,255,0.10);
+  }
+
+  .qty-input{
+    width:94px;
+    font-weight:800;
     text-align:center;
+    font-size:15px;
   }
 
-  .type-select {
-    min-width:160px;
-    flex:1;
-  }
-
-  .other-input {
-    flex:1.4;
+  .type-select{
     min-width:180px;
-  }
-
-  .common-input {
     flex:1;
-    min-width:220px;
+    font-weight:600;
   }
 
-  .logic-box {
-    background:#fff3e0;
+  .other-input{
+    flex:1.35;
+    min-width:190px;
+  }
+
+  .common-input{
+    flex:1;
+    min-width:240px;
+  }
+
+  .btn-remove{
+    background:#fff1f2;
+    color:var(--danger);
+    border:1px solid #fecdd3;
+    padding:10px 13px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:800;
+    min-height:44px;
+  }
+
+  .ghost-add{
+    background:#fff;
+    border:1.5px dashed #c6b8f8;
+    color:var(--primary);
     padding:12px;
-    border-radius:8px;
-    border:1px dashed var(--warning);
-    margin-top:10px;
-    font-size:13px;
+    border-radius:14px;
+    cursor:pointer;
+    width:100%;
+    margin-top:4px;
+    font-weight:800;
+    font-size:14px;
+    transition:0.18s ease;
   }
 
-  .apply-btn {
-    background:var(--primary);
+  .ghost-add:hover{
+    background:#faf7ff;
+  }
+
+  .section-card.ortak .ghost-add{
+    border-color:#bfdbfe;
+    color:#1565c0;
+  }
+
+  .section-card.ortak .ghost-add:hover{
+    background:#f4f9ff;
+  }
+
+  .logic-box{
+    background:linear-gradient(180deg, #fff8ef, #fff3df);
+    padding:13px;
+    border-radius:16px;
+    border:1px dashed #f1b45a;
+    margin-top:12px;
+    font-size:13px;
+    color:#7a4b00;
+  }
+
+  .logic-box label{
+    font-weight:700;
+  }
+
+  .logic-box select{
+    padding:11px 12px;
+    border-radius:12px;
+    border:1px solid #d7dce3;
+    font-size:14px;
+    background:#fff;
+  }
+
+  .apply-btn{
+    background:linear-gradient(135deg, var(--primary), var(--accent));
     color:white;
     border:none;
-    padding:10px;
-    border-radius:8px;
+    padding:11px 12px;
+    border-radius:12px;
     cursor:pointer;
     width:100%;
     margin-top:8px;
-    font-weight:bold;
+    font-weight:800;
+    box-shadow:0 8px 18px rgba(74,20,140,0.18);
   }
 
-  .add-btn {
-    background:var(--accent);
+  .approve-btn{
+    width:100%;
+    background:linear-gradient(135deg, #2e7d32, #43a047);
     color:white;
     border:none;
-    padding:11px;
-    border-radius:8px;
+    padding:13px;
+    border-radius:14px;
     cursor:pointer;
-    width:100%;
-    margin-top:6px;
-    font-weight:bold;
+    margin-top:12px;
+    font-weight:800;
     font-size:14px;
+    box-shadow:0 8px 18px rgba(46,125,50,0.18);
   }
 
-  .btn-remove {
-    background:var(--danger);
-    color:white;
-    border:none;
-    padding:9px 12px;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:bold;
-  }
-
-  .approve-btn {
-    width:100%;
-    background:#2e7d32;
-    color:white;
-    border:none;
-    padding:12px;
-    border-radius:8px;
-    cursor:pointer;
-    margin-top:10px;
-    font-weight:bold;
-  }
-
-  .footer {
+  .footer{
     position:fixed;
     bottom:0;
     left:50%;
     transform:translateX(-50%);
     width:100%;
-    max-width:900px;
-    padding:20px;
-    background:var(--bg);
-    border-top:1px solid #ddd;
+    max-width:940px;
+    padding:18px 20px 20px;
+    background:rgba(245,247,250,0.92);
+    backdrop-filter:blur(10px);
+    border-top:1px solid #dde3ea;
     z-index:1001;
   }
 
-  .save-btn {
-    background:var(--success);
+  .save-btn{
+    background:linear-gradient(135deg, #2e7d32, #43a047);
     color:white;
     padding:18px;
     width:100%;
     border:none;
-    border-radius:12px;
-    font-size:18px;
-    font-weight:bold;
+    border-radius:16px;
+    font-size:17px;
+    font-weight:800;
     cursor:pointer;
-    box-shadow:0 4px 12px rgba(46,125,50,0.3);
+    box-shadow:0 10px 24px rgba(46,125,50,0.22);
+    letter-spacing:0.2px;
   }
 
-  @media (max-width: 640px) {
-    .back {
+  @media (max-width: 640px){
+    body{
+      padding-bottom:165px;
+    }
+
+    .back{
       position:static;
       display:inline-block;
       margin-bottom:10px;
     }
 
-    .header {
+    .header{
       text-align:left;
       padding:16px;
     }
 
-    .header h1 {
-      margin:8px 0 0;
-      font-size:22px;
+    .header h1{
+      margin:6px 0 0;
+      font-size:24px;
       text-align:center;
     }
 
-    .kat-header {
+    .kat-header{
       align-items:flex-start;
     }
 
-    .kat-status-wrap {
+    .kat-status-wrap{
       flex-direction:column;
       align-items:flex-end;
-      gap:4px;
+      gap:6px;
     }
 
     .qty-input,
     .type-select,
     .other-input,
-    .common-input {
+    .common-input,
+    .btn-remove{
       width:100%;
       min-width:unset;
     }
 
-    .btn-remove {
-      width:100%;
+    .summary-value{
+      font-size:24px;
     }
   }
 </style>
@@ -428,8 +610,8 @@
 
 <div class="container">
   <div class="top-bar">
-    <span style="font-weight:bold; color: var(--primary);">Kat Bazlı Veri Girişi</span>
-    <button class="reset-btn" onclick="verileriSifirla()">❌ VERİLERİ SIFIRLA</button>
+    <span class="page-kicker">Kat Bazlı Veri Girişi</span>
+    <button class="reset-btn" onclick="verileriSifirla()">❌ Verileri Sıfırla</button>
   </div>
 
   <div class="summary-panel">
@@ -448,7 +630,7 @@
   </div>
 
   <div class="preview-card">
-    <h4 style="margin:0 0 10px;">MİMARİ PROJE VE MEVCUT DURUM METNİ</h4>
+    <div class="preview-title">🧾 MİMARİ PROJE VE MEVCUT DURUM METNİ</div>
     <div id="taslakMetin" oncopy="return false">Veri girişi bekleniyor...</div>
   </div>
 
@@ -635,27 +817,33 @@
           <div class="kat-header empty" id="header-${kat.id}" onclick="toggleKat('${kat.id}')">
             <div class="kat-left">
               <span class="kat-adi">${kat.ad}</span>
-              <span class="kat-mini" id="mini-${kat.id}">Henüz veri girilmedi</span>
+              <div class="kat-mini" id="mini-${kat.id}">
+                <span class="badge badge-muted">Henüz veri girilmedi</span>
+              </div>
             </div>
             <div class="kat-status-wrap">
-              <span class="status-text" id="status-${kat.id}">Boş</span>
-              <span id="arrow-${kat.id}">${g === 0 && i === 0 ? '▾' : '▸'}</span>
+              <span class="badge badge-status empty" id="status-${kat.id}">Boş</span>
+              <span class="kat-arrow" id="arrow-${kat.id}">${g === 0 && i === 0 ? '▾' : '▸'}</span>
             </div>
           </div>
 
           <div class="kat-content ${g === 0 && i === 0 ? '' : 'hidden'}" id="content-${kat.id}">
-            <div class="section-card">
-              <div class="section-title">Bağımsız Bölümler</div>
+            <div class="section-card bb">
+              <div class="section-head">
+                <div class="section-title">Bağımsız Bölümler</div>
+              </div>
               <div class="section-note">Sayıyı etkileyen bölümleri burada giriniz. Örnek: daire, dükkan, ofis, depo...</div>
               <div id="bb-rows-${kat.id}"></div>
-              <button class="add-btn" type="button" onclick="bagimsizBolumEkle('${kat.id}')">+ Bağımsız Bölüm Ekle</button>
+              <button class="ghost-add" type="button" onclick="bagimsizBolumEkle('${kat.id}')">＋ Bağımsız Bölüm Ekle</button>
             </div>
 
-            <div class="section-card">
-              <div class="section-title">Ortak Alanlar</div>
-              <div class="section-note">Sayıyı etkilemeyen alanları burada giriniz. Örnek: sığınak, kapıcı dairesi, kazan dairesi...</div>
+            <div class="section-card ortak">
+              <div class="section-head">
+                <div class="section-title">Diğer Bölümler / Alanlar</div>
+              </div>
+              <div class="section-note">Toplam bağımsız bölümü etkilemeyen alanları burada giriniz. Örnek: sığınak, kapıcı dairesi, kazan dairesi...</div>
               <div id="ortak-rows-${kat.id}"></div>
-              <button class="add-btn" type="button" onclick="ortakAlanEkle('${kat.id}')">+ Ortak Alan Ekle</button>
+              <button class="ghost-add" type="button" onclick="ortakAlanEkle('${kat.id}')">＋ Alan Ekle</button>
             </div>
 
             <div class="logic-box">
@@ -664,7 +852,7 @@
                 Bu kat bilgisini üst katlara uygula
               </label>
               <div id="panel-${kat.id}" class="hidden" style="margin-top:10px;">
-                <select id="target-${kat.id}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                <select id="target-${kat.id}" style="width:100%;">
                   ${targetOptions}
                 </select>
                 <div style="margin-top:8px;">
@@ -711,7 +899,6 @@
 
   function bagimsizBolumEkle(katId, data = null) {
     const container = document.getElementById(`bb-rows-${katId}`);
-    const rowId = Math.random().toString(36).slice(2, 8);
     const div = document.createElement('div');
     div.className = 'entry-row';
     div.dataset.type = 'bb';
@@ -732,7 +919,7 @@
       >
 
       <select class="type-select bb-type" onchange="toggleDigerInput(this); renderPreview()">
-        <option value="">Tür Seçiniz</option>
+        <option value="">Bölüm Türü Seçiniz</option>
         <option value="Daire" ${tur === 'Daire' ? 'selected' : ''}>Daire</option>
         <option value="Dükkan" ${tur === 'Dükkan' ? 'selected' : ''}>Dükkan</option>
         <option value="Ofis" ${tur === 'Ofis' ? 'selected' : ''}>Ofis</option>
@@ -746,7 +933,7 @@
         type="text"
         class="other-input bb-other ${tur === 'Diğer' ? '' : 'hidden'}"
         value="${escapeHtmlAttr(diger)}"
-        placeholder="Diğer bölüm türü yazınız"
+        placeholder="Diğer bölüm türünü yazınız"
         oninput="renderPreview()"
       >
 
@@ -925,6 +1112,11 @@
     header.classList.remove('empty', 'partial', 'completed');
     header.classList.add(analysis.status);
 
+    statusEl.className = 'badge badge-status';
+    if (analysis.status === 'completed') statusEl.classList.add('ready');
+    if (analysis.status === 'partial') statusEl.classList.add('partial');
+    if (analysis.status === 'empty') statusEl.classList.add('empty');
+
     let statusText = 'Boş';
     if (analysis.status === 'partial') statusText = 'Eksik';
     if (analysis.status === 'completed') statusText = 'Hazır';
@@ -935,12 +1127,12 @@
     const bbToplam = analysis.toplamBB;
 
     if (bbToplam === 0 && ortakCount === 0) {
-      miniEl.innerText = 'Henüz veri girilmedi';
+      miniEl.innerHTML = `<span class="badge badge-muted">Henüz veri girilmedi</span>`;
     } else {
-      const parts = [];
-      if (bbToplam > 0) parts.push(`${bbToplam} B.B.`);
-      if (ortakCount > 0) parts.push(`${ortakCount} ortak alan`);
-      miniEl.innerText = parts.join(' • ');
+      let html = '';
+      if (bbToplam > 0) html += `<span class="badge badge-bb">${bbToplam} B.B.</span>`;
+      if (ortakCount > 0) html += `<span class="badge badge-ortak">${ortakCount} alan</span>`;
+      miniEl.innerHTML = html;
     }
 
     return analysis;
@@ -1045,7 +1237,7 @@
 
       const parcalar = [];
       if (validBB.length > 0) parcalar.push(validBB.join(", "));
-      if (validOrtak.length > 0) parcalar.push(`ortak alan olarak ${joinWithVe(validOrtak)}`);
+      if (validOrtak.length > 0) parcalar.push(joinWithVe(validOrtak));
 
       const icerik = parcalar.join(", ");
 
