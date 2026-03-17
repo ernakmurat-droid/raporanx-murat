@@ -11,40 +11,412 @@
 <script src="firebase-config.js"></script>
 
 <style>
-  :root { --primary:#4a148c; --accent:#7c4dff; --success:#2e7d32; --bg:#f5f7fa; --danger:#c62828; --warning:#ff9800; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin:0; padding-bottom:140px; color:#333; }
-  .header { background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-  .back { position:absolute; left:15px; top:22px; background:rgba(255,255,255,0.2); padding:8px 15px; border-radius:20px; color:white; text-decoration:none; font-weight:bold; font-size: 14px; cursor:pointer; border:none; }
-  .container { max-width:800px; margin:20px auto; padding:0 15px; }
-  .top-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
-  .reset-btn { background: var(--danger); color:white; border:none; padding:10px 15px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; }
-  .preview-card { background:#e8f5e9; padding:20px; border-radius:12px; margin-bottom:20px; border:2px solid #4caf50; user-select:none; }
-  #taslakMetin { font-size:15px; line-height:1.6; color:#1b5e20; font-weight:500; transition:filter 0.3s ease; white-space:pre-wrap; }
-  #taslakMetin:not(:hover) { filter: blur(2px); }
+  :root {
+    --primary:#4a148c;
+    --accent:#7c4dff;
+    --success:#2e7d32;
+    --bg:#f5f7fa;
+    --danger:#c62828;
+    --warning:#ff9800;
+    --muted:#607d8b;
+    --card:#ffffff;
+    --soft:#f8fafc;
+    --line:#e4e7eb;
+  }
 
-  .onlu-grup { border-radius:12px; margin-bottom:15px; overflow:hidden; border:1px solid #ddd; background:#fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-  .grup-header { padding:12px 15px; cursor:pointer; font-weight:bold; display:flex; justify-content:space-between; color:#fff; }
-  .grup-content { padding:8px; }
-  .g-0 { background:#5c6bc0; } .g-1 { background:#26a69a; } .g-2 { background:#ef5350; } .g-3 { background:#ab47bc; } .g-4 { background:#ffa726; }
+  * { box-sizing:border-box; }
 
-  .kat-grup { background:white; margin-bottom:10px; border-radius:8px; border:1px solid #eee; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .kat-header { padding:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#fff; }
-  .kat-header.completed { background:#f1f8e9; border-left:5px solid var(--success); }
-  .kat-adi { font-weight:bold; color:#444; }
-  .kat-content { padding:15px; background:#fafafa; border-top:1px solid #eee; }
+  body {
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:var(--bg);
+    margin:0;
+    padding-bottom:150px;
+    color:#333;
+  }
+
+  .header {
+    background:linear-gradient(135deg, var(--primary), var(--accent));
+    color:white;
+    padding:20px;
+    text-align:center;
+    position:sticky;
+    top:0;
+    z-index:1000;
+    box-shadow:0 2px 10px rgba(0,0,0,0.2);
+  }
+
+  .back {
+    position:absolute;
+    left:15px;
+    top:22px;
+    background:rgba(255,255,255,0.2);
+    padding:8px 15px;
+    border-radius:20px;
+    color:white;
+    text-decoration:none;
+    font-weight:bold;
+    font-size:14px;
+    cursor:pointer;
+    border:none;
+  }
+
+  .container {
+    max-width:900px;
+    margin:20px auto;
+    padding:0 15px;
+  }
+
+  .top-bar {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:15px;
+    flex-wrap:wrap;
+  }
+
+  .reset-btn {
+    background:var(--danger);
+    color:white;
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    font-size:13px;
+  }
+
+  .summary-panel {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+    gap:12px;
+    margin-bottom:18px;
+  }
+
+  .summary-box {
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  .summary-label {
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:6px;
+  }
+
+  .summary-value {
+    font-size:24px;
+    font-weight:700;
+    color:var(--primary);
+  }
+
+  .preview-card {
+    background:#e8f5e9;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:20px;
+    border:2px solid #4caf50;
+    user-select:none;
+  }
+
+  #taslakMetin {
+    font-size:15px;
+    line-height:1.7;
+    color:#1b5e20;
+    font-weight:500;
+    white-space:pre-wrap;
+  }
+
+  .onlu-grup {
+    border-radius:12px;
+    margin-bottom:15px;
+    overflow:hidden;
+    border:1px solid #ddd;
+    background:#fff;
+    box-shadow:0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .grup-header {
+    padding:12px 15px;
+    cursor:pointer;
+    font-weight:bold;
+    display:flex;
+    justify-content:space-between;
+    color:#fff;
+    align-items:center;
+  }
+
+  .grup-content {
+    padding:8px;
+  }
+
+  .g-0 { background:#5c6bc0; }
+  .g-1 { background:#26a69a; }
+  .g-2 { background:#ef5350; }
+  .g-3 { background:#ab47bc; }
+  .g-4 { background:#ffa726; }
+
+  .kat-grup {
+    background:white;
+    margin-bottom:10px;
+    border-radius:10px;
+    border:1px solid #eee;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08);
+    overflow:hidden;
+  }
+
+  .kat-header {
+    padding:14px 12px;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    background:#fff;
+  }
+
+  .kat-header.completed {
+    background:#f1f8e9;
+    border-left:5px solid var(--success);
+  }
+
+  .kat-header.empty {
+    border-left:5px solid #cfd8dc;
+  }
+
+  .kat-header.partial {
+    background:#fff8e1;
+    border-left:5px solid var(--warning);
+  }
+
+  .kat-left {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    min-width:0;
+  }
+
+  .kat-adi {
+    font-weight:700;
+    color:#444;
+  }
+
+  .kat-mini {
+    font-size:13px;
+    color:#607d8b;
+  }
+
+  .kat-status-wrap {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-shrink:0;
+  }
+
+  .status-text {
+    font-size:13px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+
+  .kat-content {
+    padding:15px;
+    background:#fafafa;
+    border-top:1px solid #eee;
+  }
+
   .hidden { display:none !important; }
 
-  .entry-row { display:flex; gap:8px; align-items:center; background:white; padding:10px; border:1px solid #eee; margin-bottom:8px; border-radius:6px; flex-wrap:wrap; }
-  input[type="number"], input[type="text"], select { padding:8px; border:1px solid #ccc; border-radius:6px; font-size:14px; }
-  .logic-box { background:#fff3e0; padding:12px; border-radius:8px; border:1px dashed var(--warning); margin-top:10px; font-size:13px; }
-  .apply-btn { background: var(--primary); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; width:100%; margin-top:8px; font-weight:bold; }
-  .add-btn { background: var(--accent); color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; width:100%; margin-bottom:10px; font-weight:bold; }
-  .btn-remove { background: var(--danger); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; }
+  .section-card {
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    margin-bottom:14px;
+  }
 
-  .footer { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:800px; padding:20px; background: var(--bg); border-top:1px solid #ddd; z-index:1001; }
-  .save-btn { background: var(--success); color:white; padding:18px; width:100%; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 12px rgba(46,125,50,0.3); }
+  .section-title {
+    font-size:15px;
+    font-weight:700;
+    color:var(--primary);
+    margin-bottom:10px;
+  }
+
+  .section-note {
+    font-size:12px;
+    color:#78909c;
+    margin-bottom:10px;
+  }
+
+  .entry-row {
+    display:flex;
+    gap:8px;
+    align-items:center;
+    background:white;
+    padding:10px;
+    border:1px solid #eee;
+    margin-bottom:8px;
+    border-radius:8px;
+    flex-wrap:wrap;
+  }
+
+  .entry-row input[type="number"],
+  .entry-row input[type="text"],
+  .entry-row select {
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:14px;
+    min-height:42px;
+  }
+
+  .qty-input {
+    width:88px;
+    font-weight:700;
+    text-align:center;
+  }
+
+  .type-select {
+    min-width:160px;
+    flex:1;
+  }
+
+  .other-input {
+    flex:1.4;
+    min-width:180px;
+  }
+
+  .common-input {
+    flex:1;
+    min-width:220px;
+  }
+
+  .logic-box {
+    background:#fff3e0;
+    padding:12px;
+    border-radius:8px;
+    border:1px dashed var(--warning);
+    margin-top:10px;
+    font-size:13px;
+  }
+
+  .apply-btn {
+    background:var(--primary);
+    color:white;
+    border:none;
+    padding:10px;
+    border-radius:8px;
+    cursor:pointer;
+    width:100%;
+    margin-top:8px;
+    font-weight:bold;
+  }
+
+  .add-btn {
+    background:var(--accent);
+    color:white;
+    border:none;
+    padding:11px;
+    border-radius:8px;
+    cursor:pointer;
+    width:100%;
+    margin-top:6px;
+    font-weight:bold;
+    font-size:14px;
+  }
+
+  .btn-remove {
+    background:var(--danger);
+    color:white;
+    border:none;
+    padding:9px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+  }
+
+  .approve-btn {
+    width:100%;
+    background:#2e7d32;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    cursor:pointer;
+    margin-top:10px;
+    font-weight:bold;
+  }
+
+  .footer {
+    position:fixed;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:900px;
+    padding:20px;
+    background:var(--bg);
+    border-top:1px solid #ddd;
+    z-index:1001;
+  }
+
+  .save-btn {
+    background:var(--success);
+    color:white;
+    padding:18px;
+    width:100%;
+    border:none;
+    border-radius:12px;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(46,125,50,0.3);
+  }
+
+  @media (max-width: 640px) {
+    .back {
+      position:static;
+      display:inline-block;
+      margin-bottom:10px;
+    }
+
+    .header {
+      text-align:left;
+      padding:16px;
+    }
+
+    .header h1 {
+      margin:8px 0 0;
+      font-size:22px;
+      text-align:center;
+    }
+
+    .kat-header {
+      align-items:flex-start;
+    }
+
+    .kat-status-wrap {
+      flex-direction:column;
+      align-items:flex-end;
+      gap:4px;
+    }
+
+    .qty-input,
+    .type-select,
+    .other-input,
+    .common-input {
+      width:100%;
+      min-width:unset;
+    }
+
+    .btn-remove {
+      width:100%;
+    }
+  }
 </style>
-
 </head>
 
 <body oncontextmenu="return false;">
@@ -58,6 +430,21 @@
   <div class="top-bar">
     <span style="font-weight:bold; color: var(--primary);">Kat Bazlı Veri Girişi</span>
     <button class="reset-btn" onclick="verileriSifirla()">❌ VERİLERİ SIFIRLA</button>
+  </div>
+
+  <div class="summary-panel">
+    <div class="summary-box">
+      <div class="summary-label">Toplam Kat</div>
+      <div class="summary-value" id="sumToplamKat">0</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-label">Veri Girilen Kat</div>
+      <div class="summary-value" id="sumDoluKat">0</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-label">Toplam B.B.</div>
+      <div class="summary-value" id="sumToplamBB">0</div>
+    </div>
   </div>
 
   <div class="preview-card">
@@ -80,9 +467,6 @@
   let rid        = params.get('rid');
   const legacyId = params.get('id');
 
-  // ===========================
-  // === BULUT KAYDI (BB/BINA) ===
-  // ✅ TEK DOĞRU BULUT KAYDI: users/{uid}/reports/{rid}
   async function cloudSaveReport(reportObj){
     try{
       const user = auth.currentUser;
@@ -98,11 +482,7 @@
       console.warn("cloudSaveReport:", e);
     }
   }
-  // ===========================
 
-  // ================================
-  // === RAPOR VERİ YÖNETİMİ (BB/BINA STANDARD) ===
-  // (Aramak için: "RAPOR VERİ YÖNETİMİ (BB/BINA STANDARD)")
   const STORAGE_KEY = "gayrimenkul_reports";
 
   function genRid(){
@@ -117,13 +497,11 @@
   }
 
   function resolveRidAndMigrateIfNeeded(arr){
-    // 1) rid varsa
     if (rid) {
       const idx = arr.findIndex(x => x && x.rid === rid);
       if (idx >= 0) return { arr, i: idx, r: arr[idx] };
     }
 
-    // 2) rid yoksa legacyId ile bul
     if (legacyId) {
       const idx2 = arr.findIndex(x => x && (String(x.id) === String(legacyId) || String(x.legacyId) === String(legacyId)));
       if (idx2 >= 0) {
@@ -155,7 +533,6 @@
       history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
     }
 
-    // local timestamp
     r.updatedAt   = new Date().toISOString();
     r.updatedAtMs = Date.now();
 
@@ -164,16 +541,15 @@
   }
 
   function getBinaObj(r){
-    // Önce yeni yer: modules.bina
     if(r && r.modules && r.modules.bina) return r.modules.bina;
-    // Sonra eski yer: r.bina
     if(r && r.bina) return r.bina;
     return null;
   }
-  // ================================
 
   document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) { e.preventDefault(); }
+    if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) {
+      e.preventDefault();
+    }
   });
 
   document.addEventListener('contextmenu', (e) => {
@@ -186,20 +562,23 @@
   let savedKatVerileri = {};
 
   auth.onAuthStateChanged((user) => {
-    if (!user) { window.location.href = 'index.html'; return; }
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
 
     const { r, arr, i } = getLatestData();
-    if (!r) { alert("Rapor bulunamadı! (rid/id eşleşmedi)"); return; }
+    if (!r) {
+      alert("Rapor bulunamadı! (rid/id eşleşmedi)");
+      return;
+    }
 
-    // garanti: modules
     if(!r.modules) r.modules = {};
     if(!r.modules.bina) r.modules.bina = (r.bina || {});
     if(!r.modules.katDetay) r.modules.katDetay = (r.modules.katDetay || {});
 
-    // local + bulut mühür (zaten merge)
     persist(arr, i, r);
 
-    // kayıtlı verileri çek
     const kd = r.modules.katDetay || {};
     savedKatVerileri = (kd.tumSatirVerileri || r.katSatirVerileri || kd.katSatirVerileri || {}) || {};
 
@@ -216,7 +595,6 @@
     listContainer.innerHTML = '';
     globalKatlar = [];
 
-    // ✅ Bodrum/Normal sayısı: önce modules.bina, sonra r.bina
     const bObj = getBinaObj(r) || {};
     const bodrumCount = parseInt(bObj.bodrumKatSayisi || r?.bina?.bodrumKatSayisi || "0", 10) || 0;
     const normalCount = parseInt(bObj.normalKatSayisi || r?.bina?.normalKatSayisi || "0", 10) || 0;
@@ -235,9 +613,9 @@
       grupDiv.innerHTML = `
         <div class="grup-header ${renkSinifi}" onclick="toggleGrup('grup-${g}')">
           <span>${globalKatlar[bas].ad} - ${globalKatlar[son-1].ad}</span>
-          <span>⇅</span>
+          <span id="grup-icon-${g}">${g === 0 ? '▾' : '⇅'}</span>
         </div>
-        <div id="grup-${g}" class="grup-content hidden"></div>
+        <div id="grup-${g}" class="grup-content ${g === 0 ? '' : 'hidden'}"></div>
       `;
       listContainer.appendChild(grupDiv);
 
@@ -248,42 +626,66 @@
         const katDiv = document.createElement('div');
         katDiv.className = 'kat-grup';
 
-        let targetOptions = '<option value="">Hedef Kat Seçiniz...</option>';
+        let targetOptions = '<option value="">Nereye kadar uygulasın?</option>';
         for(let j = i + 1; j < globalKatlar.length; j++) {
           targetOptions += `<option value="${j}">${globalKatlar[j].ad}</option>`;
         }
 
         katDiv.innerHTML = `
-          <div class="kat-header" id="header-${kat.id}" onclick="toggleKat('${kat.id}')">
-            <span class="kat-adi">${kat.ad}</span>
-            <span class="status-text" id="status-${kat.id}"></span>
+          <div class="kat-header empty" id="header-${kat.id}" onclick="toggleKat('${kat.id}')">
+            <div class="kat-left">
+              <span class="kat-adi">${kat.ad}</span>
+              <span class="kat-mini" id="mini-${kat.id}">Henüz veri girilmedi</span>
+            </div>
+            <div class="kat-status-wrap">
+              <span class="status-text" id="status-${kat.id}">Boş</span>
+              <span id="arrow-${kat.id}">${g === 0 && i === 0 ? '▾' : '▸'}</span>
+            </div>
           </div>
-          <div class="kat-content hidden" id="content-${kat.id}">
-            <div id="rows-${kat.id}"></div>
-            <button class="add-btn" type="button" onclick="satirEkle('${kat.id}')">+ Giriş Ekle</button>
+
+          <div class="kat-content ${g === 0 && i === 0 ? '' : 'hidden'}" id="content-${kat.id}">
+            <div class="section-card">
+              <div class="section-title">Bağımsız Bölümler</div>
+              <div class="section-note">Sayıyı etkileyen bölümleri burada giriniz. Örnek: daire, dükkan, ofis, depo...</div>
+              <div id="bb-rows-${kat.id}"></div>
+              <button class="add-btn" type="button" onclick="bagimsizBolumEkle('${kat.id}')">+ Bağımsız Bölüm Ekle</button>
+            </div>
+
+            <div class="section-card">
+              <div class="section-title">Ortak Alanlar</div>
+              <div class="section-note">Sayıyı etkilemeyen alanları burada giriniz. Örnek: sığınak, kapıcı dairesi, kazan dairesi...</div>
+              <div id="ortak-rows-${kat.id}"></div>
+              <button class="add-btn" type="button" onclick="ortakAlanEkle('${kat.id}')">+ Ortak Alan Ekle</button>
+            </div>
 
             <div class="logic-box">
-              <label><input type="checkbox" onchange="toggleLogicPanel('${kat.id}', this)"> Ardışık katlara kopyala</label>
+              <label>
+                <input type="checkbox" onchange="toggleLogicPanel('${kat.id}', this)">
+                Bu kat bilgisini üst katlara uygula
+              </label>
               <div id="panel-${kat.id}" class="hidden" style="margin-top:10px;">
-                <select id="target-${kat.id}" style="width:100%">${targetOptions}</select>
-                <div style="margin-top:5px;">
-                  <label><input type="checkbox" id="last-${kat.id}" onchange="document.getElementById('target-${kat.id}').disabled = this.checked"> Son kata kadar uygula</label>
+                <select id="target-${kat.id}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                  ${targetOptions}
+                </select>
+                <div style="margin-top:8px;">
+                  <label>
+                    <input type="checkbox" id="last-${kat.id}" onchange="document.getElementById('target-${kat.id}').disabled = this.checked">
+                    Son kata kadar uygula
+                  </label>
                 </div>
                 <button class="apply-btn" type="button" onclick="mantikUygula('${kat.id}', ${i})">KOPYALAMAYI BAŞLAT</button>
               </div>
             </div>
 
-            <button type="button" onclick="katOnayla('${kat.id}')" style="width:100%; background:#2e7d32; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; margin-top:10px; font-weight:bold;">
+            <button type="button" onclick="katOnayla('${kat.id}')" class="approve-btn">
               KATI ONAYLA
             </button>
           </div>
         `;
         grupContent.appendChild(katDiv);
 
-        if (savedKatVerileri[kat.id] && Array.isArray(savedKatVerileri[kat.id])) {
-          savedKatVerileri[kat.id].forEach(data => satirEkle(kat.id, data));
-          document.getElementById(`header-${kat.id}`).classList.add('completed');
-          document.getElementById(`status-${kat.id}`).innerText = "✔ Tamam";
+        if (savedKatVerileri[kat.id]) {
+          restoreKatVerisi(kat.id, savedKatVerileri[kat.id]);
         }
       }
     }
@@ -291,63 +693,295 @@
     renderPreview();
   }
 
-  function toggleGrup(id) { document.getElementById(id).classList.toggle('hidden'); }
-  function toggleKat(id) { document.getElementById(`content-${id}`).classList.toggle('hidden'); }
-  function toggleLogicPanel(id, cb) { document.getElementById(`panel-${id}`).classList.toggle('hidden', !cb.checked); }
+  function toggleGrup(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('hidden');
+  }
 
-  function satirEkle(katId, data = null) {
-    const container = document.getElementById(`rows-${katId}`);
-    const rowId = Math.random().toString(36).substr(2, 5);
+  function toggleKat(id) {
+    const content = document.getElementById(`content-${id}`);
+    const arrow = document.getElementById(`arrow-${id}`);
+    content.classList.toggle('hidden');
+    arrow.innerText = content.classList.contains('hidden') ? '▸' : '▾';
+  }
+
+  function toggleLogicPanel(id, cb) {
+    document.getElementById(`panel-${id}`).classList.toggle('hidden', !cb.checked);
+  }
+
+  function bagimsizBolumEkle(katId, data = null) {
+    const container = document.getElementById(`bb-rows-${katId}`);
+    const rowId = Math.random().toString(36).slice(2, 8);
     const div = document.createElement('div');
     div.className = 'entry-row';
+    div.dataset.type = 'bb';
 
-    const safeDesc = (data?.desc || '').replace(/"/g,'&quot;');
-    const safeQty = (data?.qty ?? 0);
+    const tur = data?.tur || '';
+    const qty = data?.qty ?? 1;
+    const diger = data?.diger || '';
 
     div.innerHTML = `
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="radio" name="tip_${katId}_${rowId}" value="B.B." ${(!data || data.tip === 'B.B.') ? 'checked' : ''} onchange="renderPreview()"> B.B.
-      </label>
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="radio" name="tip_${katId}_${rowId}" value="Ortak" ${(data?.tip === 'Ortak') ? 'checked' : ''} onchange="renderPreview()"> Ortak
-      </label>
+      <input
+        type="number"
+        class="qty-input bb-qty"
+        min="0"
+        step="1"
+        value="${qty}"
+        placeholder="Adet"
+        oninput="if(this.value==='') this.value=0; if(Number(this.value)<0) this.value=0; renderPreview()"
+      >
 
-      <input type="number" class="qty" value="${safeQty}" min="0" step="1"
-        style="width:60px"
-        oninput="if(this.value==='') this.value=0; if(Number(this.value)<0) this.value=0; renderPreview()">
+      <select class="type-select bb-type" onchange="toggleDigerInput(this); renderPreview()">
+        <option value="">Tür Seçiniz</option>
+        <option value="Daire" ${tur === 'Daire' ? 'selected' : ''}>Daire</option>
+        <option value="Dükkan" ${tur === 'Dükkan' ? 'selected' : ''}>Dükkan</option>
+        <option value="Ofis" ${tur === 'Ofis' ? 'selected' : ''}>Ofis</option>
+        <option value="Büro" ${tur === 'Büro' ? 'selected' : ''}>Büro</option>
+        <option value="Depo" ${tur === 'Depo' ? 'selected' : ''}>Depo</option>
+        <option value="Garaj" ${tur === 'Garaj' ? 'selected' : ''}>Garaj</option>
+        <option value="Diğer" ${tur === 'Diğer' ? 'selected' : ''}>Diğer</option>
+      </select>
 
-      <input type="text" class="desc" value="${safeDesc}" placeholder="Cins"
-        style="flex:1" oninput="renderPreview()">
+      <input
+        type="text"
+        class="other-input bb-other ${tur === 'Diğer' ? '' : 'hidden'}"
+        value="${escapeHtmlAttr(diger)}"
+        placeholder="Diğer bölüm türü yazınız"
+        oninput="renderPreview()"
+      >
 
-      <button class="btn-remove" type="button" onclick="this.parentElement.remove(); renderPreview();">X</button>
+      <button class="btn-remove" type="button" onclick="this.parentElement.remove(); renderPreview();">Sil</button>
     `;
+
     container.appendChild(div);
     renderPreview();
   }
 
-  function mantikUygula(kaynakId, kaynakIndex) {
-    const rows = document.getElementById(`rows-${kaynakId}`).querySelectorAll('.entry-row');
-    if(rows.length === 0) { alert("Kopyalanacak veri bulunamadı!"); return; }
+  function ortakAlanEkle(katId, data = null) {
+    const container = document.getElementById(`ortak-rows-${katId}`);
+    const div = document.createElement('div');
+    div.className = 'entry-row';
+    div.dataset.type = 'ortak';
 
-    const kopyalanacaklar = Array.from(rows).map(r => ({
-      tip: r.querySelector('input:checked').value,
-      qty: Math.max(0, parseInt(r.querySelector('.qty').value, 10) || 0),
-      desc: (r.querySelector('.desc').value || "").trim()
-    }));
+    const ad = data?.ad || '';
+
+    div.innerHTML = `
+      <input
+        type="text"
+        class="common-input ortak-ad"
+        value="${escapeHtmlAttr(ad)}"
+        placeholder="Örnek: Sığınak, kapıcı dairesi, kömürlük, kazan dairesi..."
+        oninput="renderPreview()"
+      >
+
+      <button class="btn-remove" type="button" onclick="this.parentElement.remove(); renderPreview();">Sil</button>
+    `;
+
+    container.appendChild(div);
+    renderPreview();
+  }
+
+  function toggleDigerInput(selectEl) {
+    const row = selectEl.closest('.entry-row');
+    const otherInput = row.querySelector('.bb-other');
+    if (!otherInput) return;
+
+    if (selectEl.value === 'Diğer') {
+      otherInput.classList.remove('hidden');
+    } else {
+      otherInput.classList.add('hidden');
+      otherInput.value = '';
+    }
+  }
+
+  function normalizeSavedKatVerisi(data){
+    if (!data) {
+      return { bagimsizBolumler: [], ortakAlanlar: [] };
+    }
+
+    if (data.bagimsizBolumler || data.ortakAlanlar) {
+      return {
+        bagimsizBolumler: Array.isArray(data.bagimsizBolumler) ? data.bagimsizBolumler : [],
+        ortakAlanlar: Array.isArray(data.ortakAlanlar) ? data.ortakAlanlar : []
+      };
+    }
+
+    if (Array.isArray(data)) {
+      const bagimsizBolumler = [];
+      const ortakAlanlar = [];
+
+      data.forEach(item => {
+        const tip = item?.tip || '';
+        const qty = Math.max(0, parseInt(item?.qty, 10) || 0);
+        const desc = (item?.desc || '').trim();
+
+        if (!desc) return;
+
+        if (tip === 'Ortak') {
+          ortakAlanlar.push({ ad: desc });
+        } else {
+          bagimsizBolumler.push({
+            qty,
+            tur: ['Daire','Dükkan','Ofis','Büro','Depo','Garaj'].includes(desc) ? desc : 'Diğer',
+            diger: ['Daire','Dükkan','Ofis','Büro','Depo','Garaj'].includes(desc) ? '' : desc
+          });
+        }
+      });
+
+      return { bagimsizBolumler, ortakAlanlar };
+    }
+
+    return { bagimsizBolumler: [], ortakAlanlar: [] };
+  }
+
+  function restoreKatVerisi(katId, rawData){
+    const data = normalizeSavedKatVerisi(rawData);
+
+    if (Array.isArray(data.bagimsizBolumler)) {
+      data.bagimsizBolumler.forEach(item => bagimsizBolumEkle(katId, item));
+    }
+
+    if (Array.isArray(data.ortakAlanlar)) {
+      data.ortakAlanlar.forEach(item => ortakAlanEkle(katId, item));
+    }
+
+    updateKatStatus(katId);
+  }
+
+  function getKatData(katId){
+    const bbRows = document.querySelectorAll(`#bb-rows-${katId} .entry-row`);
+    const ortakRows = document.querySelectorAll(`#ortak-rows-${katId} .entry-row`);
+
+    const bagimsizBolumler = [];
+    const ortakAlanlar = [];
+
+    bbRows.forEach(row => {
+      const qty = Math.max(0, parseInt(row.querySelector('.bb-qty')?.value, 10) || 0);
+      const tur = row.querySelector('.bb-type')?.value || '';
+      const diger = (row.querySelector('.bb-other')?.value || '').trim();
+
+      bagimsizBolumler.push({ qty, tur, diger });
+    });
+
+    ortakRows.forEach(row => {
+      const ad = (row.querySelector('.ortak-ad')?.value || '').trim();
+      ortakAlanlar.push({ ad });
+    });
+
+    return { bagimsizBolumler, ortakAlanlar };
+  }
+
+  function analyzeKatData(katId){
+    const data = getKatData(katId);
+
+    const validBB = data.bagimsizBolumler.filter(item => {
+      if (!item) return false;
+      if (!item.tur) return false;
+      if (item.tur === 'Diğer' && !item.diger) return false;
+      return item.qty > 0;
+    });
+
+    const partialBB = data.bagimsizBolumler.filter(item => {
+      const hasAny = (item.qty > 0) || !!item.tur || !!item.diger;
+      const isValid = item.tur && ((item.tur !== 'Diğer') || !!item.diger) && item.qty > 0;
+      return hasAny && !isValid;
+    });
+
+    const validOrtak = data.ortakAlanlar.filter(item => item && item.ad);
+    const partialOrtak = data.ortakAlanlar.filter(item => {
+      const hasAny = !!item.ad;
+      const isValid = !!item.ad;
+      return hasAny && !isValid;
+    });
+
+    const toplamBB = validBB.reduce((sum, item) => sum + item.qty, 0);
+
+    let status = 'empty';
+    if (validBB.length === 0 && validOrtak.length === 0 && partialBB.length === 0 && partialOrtak.length === 0) {
+      status = 'empty';
+    } else if (partialBB.length > 0 || partialOrtak.length > 0) {
+      status = 'partial';
+    } else {
+      status = 'completed';
+    }
+
+    return {
+      data,
+      validBB,
+      partialBB,
+      validOrtak,
+      partialOrtak,
+      toplamBB,
+      status
+    };
+  }
+
+  function updateKatStatus(katId){
+    const analysis = analyzeKatData(katId);
+    const header = document.getElementById(`header-${katId}`);
+    const statusEl = document.getElementById(`status-${katId}`);
+    const miniEl = document.getElementById(`mini-${katId}`);
+
+    header.classList.remove('empty', 'partial', 'completed');
+    header.classList.add(analysis.status);
+
+    let statusText = 'Boş';
+    if (analysis.status === 'partial') statusText = 'Eksik';
+    if (analysis.status === 'completed') statusText = 'Hazır';
+
+    statusEl.innerText = statusText;
+
+    const ortakCount = analysis.validOrtak.length;
+    const bbToplam = analysis.toplamBB;
+
+    if (bbToplam === 0 && ortakCount === 0) {
+      miniEl.innerText = 'Henüz veri girilmedi';
+    } else {
+      const parts = [];
+      if (bbToplam > 0) parts.push(`${bbToplam} B.B.`);
+      if (ortakCount > 0) parts.push(`${ortakCount} ortak alan`);
+      miniEl.innerText = parts.join(' • ');
+    }
+
+    return analysis;
+  }
+
+  function mantikUygula(kaynakId, kaynakIndex) {
+    const kaynakData = getKatData(kaynakId);
+
+    const validBB = kaynakData.bagimsizBolumler.filter(item => {
+      return item.tur && ((item.tur !== 'Diğer') || item.diger) && item.qty > 0;
+    });
+
+    const validOrtak = kaynakData.ortakAlanlar.filter(item => item.ad);
+
+    if(validBB.length === 0 && validOrtak.length === 0) {
+      alert("Kopyalanacak veri bulunamadı!");
+      return;
+    }
 
     const isLast = document.getElementById(`last-${kaynakId}`).checked;
     const targetVal = document.getElementById(`target-${kaynakId}`).value;
     const bitisIndex = isLast ? globalKatlar.length - 1 : parseInt(targetVal,10);
 
-    if(!isLast && targetVal === "") { alert("Lütfen hedef kat seçiniz!"); return; }
+    if(!isLast && targetVal === "") {
+      alert("Lütfen hedef kat seçiniz!");
+      return;
+    }
 
     for (let i = kaynakIndex + 1; i <= bitisIndex; i++) {
       const hKat = globalKatlar[i];
-      const rowContainer = document.getElementById(`rows-${hKat.id}`);
-      rowContainer.innerHTML = "";
-      kopyalanacaklar.forEach(d => satirEkle(hKat.id, d));
-      document.getElementById(`header-${hKat.id}`).classList.add('completed');
-      document.getElementById(`status-${hKat.id}`).innerText = "✔ Tamam";
+
+      const bbContainer = document.getElementById(`bb-rows-${hKat.id}`);
+      const ortakContainer = document.getElementById(`ortak-rows-${hKat.id}`);
+
+      bbContainer.innerHTML = "";
+      ortakContainer.innerHTML = "";
+
+      validBB.forEach(d => bagimsizBolumEkle(hKat.id, d));
+      validOrtak.forEach(d => ortakAlanEkle(hKat.id, d));
+
+      updateKatStatus(hKat.id);
     }
 
     alert("Kopyalama işlemi başarıyla tamamlandı.");
@@ -355,45 +989,80 @@
   }
 
   function katOnayla(id) {
+    updateKatStatus(id);
     toggleKat(id);
-    document.getElementById(`header-${id}`).classList.add('completed');
-    document.getElementById(`status-${id}`).innerText = "✔ Tamam";
-    renderPreview();
+  }
+
+  function escapeHtmlAttr(str){
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function getBBLabel(item){
+    if (!item) return '';
+    if (item.tur === 'Diğer') return (item.diger || '').trim();
+    return item.tur || '';
+  }
+
+  function joinWithVe(arr){
+    const clean = arr.filter(Boolean);
+    if (clean.length === 0) return '';
+    if (clean.length === 1) return clean[0];
+    if (clean.length === 2) return `${clean[0]} ve ${clean[1]}`;
+    return clean.slice(0, -1).join(', ') + ' ve ' + clean[clean.length - 1];
   }
 
   function renderPreview() {
     let gruplanmisKatlar = [];
     let toplamBB = 0;
     let tumSatirVerileri = {};
+    let doluKatSayisi = 0;
 
     globalKatlar.forEach((kat) => {
-      const rows = document.getElementById(`rows-${kat.id}`)?.querySelectorAll('.entry-row') || [];
-      let icerikList = [];
-      let katSatirlari = [];
+      const analysis = updateKatStatus(kat.id);
 
-      rows.forEach(r => {
-        const tip = r.querySelector('input:checked').value;
-        const qty = Math.max(0, parseInt(r.querySelector('.qty').value, 10) || 0);
-        const desc = (r.querySelector('.desc').value || "").trim();
-
-        katSatirlari.push({ tip, qty, desc });
-
-        if (desc && qty > 0) {
-          if (desc.toLowerCase() === "adet") icerikList.push("adet");
-          else icerikList.push(`${qty} ${desc}`.trim());
-
-          if (tip === "B.B.") toplamBB += qty;
-        }
+      const validBB = analysis.validBB.map(item => {
+        const label = getBBLabel(item);
+        toplamBB += item.qty;
+        return `${item.qty} ${label}`;
       });
 
-      tumSatirVerileri[kat.id] = katSatirlari;
+      const validOrtak = analysis.validOrtak.map(item => item.ad);
 
-      const icerik = icerikList.join(", ");
+      tumSatirVerileri[kat.id] = {
+        bagimsizBolumler: analysis.validBB.map(item => ({
+          qty: item.qty,
+          tur: item.tur,
+          diger: item.diger || ''
+        })),
+        ortakAlanlar: analysis.validOrtak.map(item => ({
+          ad: item.ad
+        }))
+      };
+
+      const parcalar = [];
+      if (validBB.length > 0) parcalar.push(validBB.join(", "));
+      if (validOrtak.length > 0) parcalar.push(`ortak alan olarak ${joinWithVe(validOrtak)}`);
+
+      const icerik = parcalar.join(", ");
+
       if (icerik) {
-        if (gruplanmisKatlar.length > 0 && gruplanmisKatlar[gruplanmisKatlar.length - 1].icerik === icerik) {
+        doluKatSayisi++;
+
+        if (
+          gruplanmisKatlar.length > 0 &&
+          gruplanmisKatlar[gruplanmisKatlar.length - 1].icerik === icerik
+        ) {
           gruplanmisKatlar[gruplanmisKatlar.length - 1].bitis = kat.ad;
         } else {
-          gruplanmisKatlar.push({ baslangic: kat.ad, bitis: kat.ad, icerik: icerik });
+          gruplanmisKatlar.push({
+            baslangic: kat.ad,
+            bitis: kat.ad,
+            icerik
+          });
         }
       }
     });
@@ -402,16 +1071,23 @@
     gruplanmisKatlar.forEach((g) => {
       let bAd = g.baslangic.replace(" Kat", "").replace(" kat", "");
       let sAd = g.bitis.replace(" Kat", "").replace(" kat", "");
-      if (g.baslangic === g.bitis) cumleParcalari.push(`${bAd} katında ${g.icerik}`);
-      else cumleParcalari.push(`${bAd} ve ${sAd} katları arasında her birinde ${g.icerik}`);
+
+      if (g.baslangic === g.bitis) {
+        cumleParcalari.push(`${bAd} katında ${g.icerik}`);
+      } else {
+        cumleParcalari.push(`${bAd} ve ${sAd} katları arasında her birinde ${g.icerik}`);
+      }
     });
 
     const katDetayMetni = cumleParcalari.join(", ");
     const tamMetin = katDetayMetni
-      ? ("Mimari Projesinde ve mevcut durumda " + katDetayMetni + ` olmak üzere binada toplam ${toplamBB} adet bağımsız bölüm tescil edilmiştir.`)
+      ? `Mimari Projesinde ve mevcut durumda ${katDetayMetni} olmak üzere binada toplam ${toplamBB} adet bağımsız bölüm tescil edilmiştir.`
       : "Veri girişi bekleniyor...";
 
     document.getElementById('taslakMetin').innerText = tamMetin;
+    document.getElementById('sumToplamKat').innerText = globalKatlar.length;
+    document.getElementById('sumDoluKat').innerText = doluKatSayisi;
+    document.getElementById('sumToplamBB').innerText = toplamBB;
 
     return { katDetayMetni, toplamBB, tumSatirVerileri, tamMetin };
   }
@@ -426,7 +1102,6 @@
     if(!r.modules.katDetay) r.modules.katDetay = {};
     if(!r.modules.bina) r.modules.bina = (r.bina || {});
 
-    // ✅ temizle
     r.modules.katDetay = { katDetayMetni:"", toplamBagimsizBolum:0, tumSatirVerileri:{} };
     r.katSatirVerileri = {};
     r.katDetayMetni = "";
@@ -441,13 +1116,15 @@
   async function tumunuKaydet() {
     const data = renderPreview();
     const { r, arr, i } = getLatestData();
-    if (!r || i < 0) { alert("Rapor bulunamadı!"); return; }
+    if (!r || i < 0) {
+      alert("Rapor bulunamadı!");
+      return;
+    }
 
     if(!r.modules) r.modules = {};
     if(!r.modules.bina) r.modules.bina = (r.bina || {});
     if(!r.modules.katDetay) r.modules.katDetay = {};
 
-    // ✅ Standard: modules.katDetay
     r.modules.katDetay = {
       katDetayMetni: data.katDetayMetni,
       toplamBagimsizBolum: data.toplamBB,
@@ -455,24 +1132,20 @@
       metin: data.tamMetin
     };
 
-    // ✅ Bina’nın ihtiyacı olan sayı (iki yere birden)
     r.modules.bina.toplamBagimsizBolum = data.toplamBB;
 
-    // ✅ Geriye uyumluluk (eski alanları da besle)
     r.katDetayMetni = data.katDetayMetni;
     r.katSatirVerileri = data.tumSatirVerileri;
 
     if(!r.bina) r.bina = {};
     r.bina.toplamBagimsizBolum = data.toplamBB;
 
-    // Bina sayfasında kullanılan alanlarla uyum (isterse okur)
     r.modules.katDetayMetni = data.katDetayMetni;
 
     persist(arr, i, r);
 
     window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
   }
-
 </script>
 
 </body>
