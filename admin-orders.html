@@ -612,10 +612,12 @@ async function loadHakTalepleri(){
 
     container.innerHTML = snap.docs.map(doc=>{
       const d = doc.data() || {};
+      const talepId = doc.id;
+      const status = d.status || "bekliyor";
 
       return `
         <div class="card">
-          <div style="font-weight:900;">
+          <div style="font-weight:900; font-size:16px;">
             ${d.email || "-"}
           </div>
 
@@ -631,10 +633,31 @@ async function loadHakTalepleri(){
             ${d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString("tr-TR") : "-"}
           </div>
 
-          <div style="margin-top:10px;">
-            <button class="btn primary"
-              onclick="copyUid('${d.uid}')">
+          <div style="margin-top:8px;">
+            <span class="tag ${status === "siparis_olusturuldu" ? "ok" : "wait"}">
+              ${status}
+            </span>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            <button class="btn primary" onclick="copyUid('${d.uid || ""}')">
               UID Kopyala
+            </button>
+
+            <button class="btn ghost" onclick="ADMIN_showBilling('${d.uid || ""}')">
+              🧾 Fatura
+            </button>
+
+            <button class="btn warn" onclick="createOrderFromTalep('${d.uid || ""}','${talepId}','4_hak','120 TL • 4 Hak',120,4)">
+              120 TL • 4 Hak
+            </button>
+
+            <button class="btn warn" onclick="createOrderFromTalep('${d.uid || ""}','${talepId}','8_hak','200 TL • 8 Hak',200,8)">
+              200 TL • 8 Hak
+            </button>
+
+            <button class="btn warn" onclick="createOrderFromTalep('${d.uid || ""}','${talepId}','25_hak','500 TL • 25 Hak',500,25)">
+              500 TL • 25 Hak
             </button>
           </div>
         </div>
@@ -642,13 +665,55 @@ async function loadHakTalepleri(){
     }).join("");
 
   }catch(e){
-    container.innerHTML = "Hata: " + e.message;
+    console.error("Hak talepleri yükleme hatası:", e);
+    container.innerHTML = "Hata: " + (e?.message || e);
   }
 }
 
 function copyUid(uid){
   navigator.clipboard.writeText(uid);
   alert("UID kopyalandı");
+}
+async function createOrderFromTalep(uid, talepId, packId, packTitle, priceTL, credits){
+  try{
+    uid = String(uid || "").trim();
+    talepId = String(talepId || "").trim();
+
+    if(!uid) return alert("UID yok");
+    if(!talepId) return alert("Talep ID yok");
+
+    const orderRef = db.collection("kullanicilar").doc(uid).collection("siparisler").doc();
+
+    await orderRef.set({
+      uid: uid,
+      orderId: orderRef.id,
+      packId: packId,
+      packTitle: packTitle,
+      priceTL: priceTL,
+      credits: credits,
+      status: "pending",
+      source: "hak_talebi",
+      talepId: talepId,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await db.collection("hak_talepleri").doc(talepId).set({
+      status: "siparis_olusturuldu",
+      orderId: orderRef.id,
+      packId: packId,
+      packTitle: packTitle,
+      priceTL: priceTL,
+      credits: credits,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    alert("Sipariş oluşturuldu ✅");
+    loadHakTalepleri();
+  }catch(e){
+    console.error("Sipariş oluşturma hatası:", e);
+    alert("Sipariş oluşturulurken hata oluştu: " + (e?.message || e));
+  }
 }
 </script>
 
