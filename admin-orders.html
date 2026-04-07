@@ -141,6 +141,15 @@
 
       <div class="line"></div>
       <div id="list" class="grid"></div>
+      <div class="line"></div>
+
+<div class="card">
+  <div style="font-weight:1000; margin-bottom:10px;">
+    📩 Hak Yükleme Talepleri
+  </div>
+
+  <div id="talepList" class="grid"></div>
+</div>
     </div>
   </div>
 
@@ -580,11 +589,67 @@
       }
       await ensureAdmin(user);
       setMode("list");
+      loadHakTalepleri();
     }catch(e){
       if(_unsub) _unsub();
     }
   });
 })();
+async function loadHakTalepleri(){
+  const container = document.getElementById("talepList");
+  container.innerHTML = "Yükleniyor...";
+
+  try{
+    const snap = await db.collection("hak_talepleri")
+      .orderBy("createdAt","desc")
+      .limit(20)
+      .get();
+
+    if(snap.empty){
+      container.innerHTML = "<div class='muted'>Talep yok</div>";
+      return;
+    }
+
+    container.innerHTML = snap.docs.map(doc=>{
+      const d = doc.data() || {};
+
+      return `
+        <div class="card">
+          <div style="font-weight:900;">
+            ${d.email || "-"}
+          </div>
+
+          <div class="small muted">
+            UID: ${d.uid || "-"}
+          </div>
+
+          <div class="small">
+            Rapor: ${d.rid || "-"}
+          </div>
+
+          <div class="small muted">
+            ${d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString("tr-TR") : "-"}
+          </div>
+
+          <div style="margin-top:10px;">
+            <button class="btn primary"
+              onclick="copyUid('${d.uid}')">
+              UID Kopyala
+            </button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+  }catch(e){
+    container.innerHTML = "Hata: " + e.message;
+  }
+}
+
+function copyUid(uid){
+  navigator.clipboard.writeText(uid);
+  alert("UID kopyalandı");
+}
 </script>
 
 </body>
