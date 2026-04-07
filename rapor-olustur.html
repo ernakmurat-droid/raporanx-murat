@@ -9,7 +9,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-<!-- ✅ Tek kaynak -->
 <script src="/firebase-config.js"></script>
 <script src="/wallet.js"></script>
 
@@ -106,7 +105,6 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 
     <button class="action-btn" id="btnFinalCreate" disabled>🧾 Final Rapor Oluştur (Hak Düş + Kilitle)</button>
 
-    <!-- ✅ Word gibi düzenleme -->
     <button class="action-btn" id="btnEditText" style="background:#1976d2;">✍️ Final Metni Düzenle</button>
     <button class="action-btn" id="btnSaveText" style="background:#6d4c41; display:none;">💾 Düzenlemeyi Kaydet</button>
 
@@ -183,9 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  /* ===============================
-     ✅ KİLİT MOTORU (TEMİZ)
-  =============================== */
   function normRid(x){ return String(x||"").trim(); }
   function lockKey(){ return "report_locked_" + normRid(rid); }
 
@@ -294,9 +289,6 @@ document.addEventListener("DOMContentLoaded", () => {
   async function setLockedRemote(uid){ return await setLockedRemoteHard(uid); }
   async function isLockedRemote(uid){ return await isLockedRemoteHard(uid); }
 
-  /* ===============================
-     ✅ METİN/VERİ YARDIMCILARI
-  =============================== */
   function formatMetin(t){
     if (t === null || t === undefined) return "";
     const s = String(t);
@@ -312,8 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (val === null || val === undefined) break;
           val = val[key];
         }
-        if (val !== null && val !== undefined && val !== '' && String(val).trim() !== "")
-          return val;
+        if (val !== null && val !== undefined && val !== '' && String(val).trim() !== "") return val;
       }catch(e){}
     }
     return "";
@@ -423,10 +414,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     $("imarTablo").innerHTML = pick(r,"imarTablo") || "<div class='warning'>İmar tablosu bulunamadı</div>";
     $("imarMetin").textContent = formatMetin(pick(r,"imarMetni","imar.metin"));
-
     $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin"));
     $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","binaMetni"));
-
     $("bbMetin").textContent = getBagimsizBolumMetni(r);
     $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumMetni"));
     $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1"));
@@ -436,27 +425,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function clearReportView(){
     $("raporTarih").textContent = "";
-  $("genelBilgi").innerHTML = `
-  <div class='warning'>
-    <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
-    Bu raporu görüntülemek için önce hak yüklemesi yapmanız gerekmektedir.<br>
-    Lütfen <b>Cüzdan</b> bölümünden fatura bilgilerinizi kaydedip ödeme yapmak için paket seçiminizi tamamlayınız.<br><br>
-    Dilerseniz aşağıdaki buton ile hak yükleme talebi gönderebilirsiniz.
-  </div>
 
-  <button id="talepBtn" style="
-    margin-top:15px;
-    padding:12px 18px;
-    background:#1976d2;
-    color:white;
-    border:none;
-    border-radius:10px;
-    font-weight:bold;
-    cursor:pointer;
-  ">
-    📩 Hak Yükleme Talebi Gönder
-  </button>
-`;
+    $("genelBilgi").innerHTML = `
+      <div class='warning'>
+        <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
+        Bu raporu görüntülemek için önce hak yüklemesi yapmanız gerekmektedir.<br>
+        Lütfen <b>Cüzdan</b> bölümünden fatura bilgilerinizi kaydedip ödeme yapmak için paket seçiminizi tamamlayınız.<br><br>
+        Dilerseniz aşağıdaki buton ile hak yükleme talebi gönderebilirsiniz.
+      </div>
+
+      <button id="talepBtn" style="
+        margin-top:15px;
+        padding:12px 18px;
+        background:#1976d2;
+        color:white;
+        border:none;
+        border-radius:10px;
+        font-weight:bold;
+        cursor:pointer;
+      ">
+        📩 Hak Yükleme Talebi Gönder
+      </button>
+    `;
+
     $("imarTablo").innerHTML = "";
     $("imarMetin").textContent = "";
     $("belgelerMetin").textContent = "";
@@ -465,121 +456,78 @@ document.addEventListener("DOMContentLoaded", () => {
     $("konumMetin").textContent = "";
     $("tapuMetinB1").textContent = "";
     $("tapuMetinB2").textContent = "";
-    function clearReportView(){
+    $("emsalMetin").textContent = "";
 
-  $("raporTarih").textContent = "";
+    setTimeout(() => {
+      const btn = document.getElementById("talepBtn");
+      if (!btn) return;
 
-  $("genelBilgi").innerHTML = `
-    ... senin uyarı + buton ...
-  `;
+      btn.onclick = async () => {
+        const user = firebase.auth().currentUser;
+        if (!user){
+          alert("Talep göndermek için giriş yapmanız gerekiyor.");
+          return;
+        }
 
-  function clearReportView(){
-  $("raporTarih").textContent = "";
+        btn.disabled = true;
+        btn.textContent = "Gönderiliyor...";
 
-  $("genelBilgi").innerHTML = `
-    <div class='warning'>
-      <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
-      Bu raporu görüntülemek için önce hak yüklemesi yapmanız gerekmektedir.<br>
-      Lütfen <b>Cüzdan</b> bölümünden fatura bilgilerinizi kaydedip ödeme yapmak için paket seçiminizi tamamlayınız.<br><br>
-      Dilerseniz aşağıdaki buton ile hak yükleme talebi gönderebilirsiniz.
-    </div>
+        try {
+          await firebase.firestore().collection("hak_talepleri").add({
+            uid: user.uid,
+            email: user.email || "",
+            rid: rid,
+            status: "bekliyor",
+            type: "hak_yukleme_talebi",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
 
-    <button id="talepBtn" style="
-      margin-top:15px;
-      padding:12px 18px;
-      background:#1976d2;
-      color:white;
-      border:none;
-      border-radius:10px;
-      font-weight:bold;
-      cursor:pointer;
-    ">
-      📩 Hak Yükleme Talebi Gönder
-    </button>
-  `;
+          alert("Talebiniz alındı.");
+          btn.textContent = "✅ Talep Gönderildi";
+        } catch (e) {
+          console.error("Hak talebi gönderme hatası:", e);
+          alert("Hata oluştu.");
+          btn.disabled = false;
+          btn.textContent = "📩 Hak Yükleme Talebi Gönder";
+        }
+      };
+    }, 100);
+  }
 
-  $("imarTablo").innerHTML = "";
-  $("imarMetin").textContent = "";
-  $("belgelerMetin").textContent = "";
-  $("binaMetin").textContent = "";
-  $("bbMetin").textContent = "";
-  $("konumMetin").textContent = "";
-  $("tapuMetinB1").textContent = "";
-  $("tapuMetinB2").textContent = "";
-  $("emsalMetin").textContent = "";
+  function loadReportLocal(){
+    let raporlar = [];
+    try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
+    return raporlar.find(r => String(r?.rid ?? "").trim() === rid) || null;
+  }
 
-  setTimeout(() => {
-    const btn = document.getElementById("talepBtn");
-    if (!btn) return;
+  async function loadReportRemote(uid){
+    try{
+      const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
+      if (snap.exists) return snap.data();
+    }catch(e){}
 
-    btn.onclick = async () => {
-      const user = firebase.auth().currentUser;
-      if (!user){
-        alert("Talep göndermek için giriş yapmanız gerekiyor.");
-        return;
+    try{
+      const snap2 = await db.collection("reports").doc(rid).get();
+      if (snap2.exists) return snap2.data();
+    }catch(e){}
+
+    try{
+      const s = await db.collection("kullanicilar").doc(uid).get();
+      if(s.exists){
+        const d = s.data() || {};
+        const raw = d.gayrimenkul_reports;
+        let arr = [];
+        if(Array.isArray(raw)) arr = raw;
+        else if(raw && typeof raw === "object") arr = Object.values(raw);
+
+        const rep = arr.find(r => String(r?.rid||"").trim() === String(rid));
+        if(rep) return rep;
       }
+    }catch(e){}
 
-      btn.disabled = true;
-      btn.textContent = "Gönderiliyor...";
+    return null;
+  }
 
-      try {
-        await firebase.firestore().collection("hak_talepleri").add({
-          uid: user.uid,
-          email: user.email || "",
-          rid: rid,
-          status: "bekliyor",
-          type: "hak_yukleme_talebi",
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        alert("Talebiniz alındı.");
-        btn.textContent = "✅ Talep Gönderildi";
-      } catch (e) {
-        console.error("Hak talebi gönderme hatası:", e);
-        alert("Hata oluştu.");
-        btn.disabled = false;
-        btn.textContent = "📩 Hak Yükleme Talebi Gönder";
-      }
-    };
-  }, 100);
-}
-
-function loadReportLocal(){
-  let raporlar = [];
-  try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
-  return raporlar.find(r => String(r?.rid ?? "").trim() === rid) || null;
-}
-
-async function loadReportRemote(uid){
-  try{
-    const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
-    if (snap.exists) return snap.data();
-  }catch(e){}
-
-  try{
-    const snap2 = await db.collection("reports").doc(rid).get();
-    if (snap2.exists) return snap2.data();
-  }catch(e){}
-
-  try{
-    const s = await db.collection("kullanicilar").doc(uid).get();
-    if(s.exists){
-      const d = s.data() || {};
-      const raw = d.gayrimenkul_reports;
-      let arr = [];
-      if(Array.isArray(raw)) arr = raw;
-      else if(raw && typeof raw === "object") arr = Object.values(raw);
-
-      const rep = arr.find(r => String(r?.rid||"").trim() === String(rid));
-      if(rep) return rep;
-    }
-  }catch(e){}
-
-  return null;
-}
-  /* ===============================
-     ✅ Word gibi düzenleme (local)
-  =============================== */
   const EDIT_KEY = "final_report_edits_" + rid;
 
   function getEditableBlocks(){
@@ -617,14 +565,12 @@ async function loadReportRemote(uid){
     localStorage.setItem(EDIT_KEY, JSON.stringify(data));
   }
 
-  /* ===============================
-     ✅ FINAL AKIŞI
-  =============================== */
   let finalizing = false;
 
   async function finalizeFlow(user){
     if (finalizing) return;
     finalizing = true;
+
     try{
       const locked = isLockedLocal() || await isLockedRemote(user.uid);
       if (locked){
@@ -644,9 +590,10 @@ async function loadReportRemote(uid){
 
       setStatus("💳 Hak düşürülüyor…", "Cüzdan kontrolü yapılıyor.");
       const res = await Wallet.consumeReport(user.uid, rid);
+
       if (!res){
         clearReportView();
-        setStatus("❌ Başarısız!", "Hak/Bakiye yetersiz veya işlem başarısız.");
+        setStatus("❌ Yetersiz hak", "Raporu görüntülemek için önce hak yüklemelisiniz.");
         return;
       }
 
@@ -702,7 +649,7 @@ async function loadReportRemote(uid){
       $("btnFinalCreate").disabled = true;
     } else {
       clearReportView();
-      setStatus("⛔ Final yapılmadı.", "Raporu görmek için önce final oluşturulmalı.");
+      setStatus("⛔ Rapor kilitli", "Raporu görüntülemek için önce hak yükleyip final oluşturmalısınız.");
       const btn = $("btnFinalCreate");
       btn.disabled = false;
       btn.onclick = () => finalizeFlow(user);
