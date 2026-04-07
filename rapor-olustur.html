@@ -465,9 +465,87 @@ document.addEventListener("DOMContentLoaded", () => {
     $("konumMetin").textContent = "";
     $("tapuMetinB1").textContent = "";
     $("tapuMetinB2").textContent = "";
-    $("emsalMetin").textContent = "";
-  }
+    function clearReportView(){
 
+  $("raporTarih").textContent = "";
+
+  $("genelBilgi").innerHTML = `
+    ... senin uyarı + buton ...
+  `;
+
+  function clearReportView(){
+
+  $("raporTarih").textContent = "";
+
+  $("genelBilgi").innerHTML = `
+    <div class='warning'>
+      <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
+      Bu raporu görüntülemek için önce hak yüklemesi yapmanız gerekmektedir.<br>
+      Lütfen <b>Cüzdan</b> bölümünden fatura bilgilerinizi kaydedip ödeme yapmak için paket seçiminizi tamamlayınız.<br><br>
+      Dilerseniz aşağıdaki buton ile hak yükleme talebi gönderebilirsiniz.
+    </div>
+
+    <button id="talepBtn" style="
+      margin-top:15px;
+      padding:12px 18px;
+      background:#1976d2;
+      color:white;
+      border:none;
+      border-radius:10px;
+      font-weight:bold;
+      cursor:pointer;
+    ">
+      📩 Hak Yükleme Talebi Gönder
+    </button>
+  `;
+
+  // 👇 BUTON EVENT
+  setTimeout(() => {
+    const btn = document.getElementById("talepBtn");
+    if (!btn) return;
+
+    btn.onclick = async () => {
+      const user = firebase.auth().currentUser;
+      if (!user){
+        alert("Talep göndermek için giriş yapmanız gerekiyor.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Gönderiliyor...";
+
+      try {
+        await firebase.firestore().collection("hak_talepleri").add({
+          uid: user.uid,
+          email: user.email || "",
+          rid: rid,
+          status: "bekliyor",
+          type: "hak_yukleme_talebi",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert("Talebiniz alındı.");
+        btn.textContent = "✅ Talep Gönderildi";
+      } catch (e) {
+        console.error(e);
+        alert("Hata oluştu.");
+        btn.disabled = false;
+        btn.textContent = "📩 Hak Yükleme Talebi Gönder";
+      }
+    };
+  }, 100);
+
+  // 👇 TEK SEFER OLACAK
+  $("imarTablo").innerHTML = "";
+  $("imarMetin").textContent = "";
+  $("belgelerMetin").textContent = "";
+  $("binaMetin").textContent = "";
+  $("bbMetin").textContent = "";
+  $("konumMetin").textContent = "";
+  $("tapuMetinB1").textContent = "";
+  $("tapuMetinB2").textContent = "";
+  $("emsalMetin").textContent = "";
+}
   function loadReportLocal(){
     let raporlar = [];
     try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
