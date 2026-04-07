@@ -250,9 +250,31 @@
       updatedAt: FieldValue.serverTimestamp(),
     };
 
-    await ref.set(order, { merge: true });
-    return order;
-  }
+   await ref.set(order, { merge: true });
+
+// 🔥 TELEGRAM BURAYA
+try {
+  fetch("https://api.telegram.org/bot8693963503:AAHXjT9JQ5iXRWxO-R21QY_bGx_K1nfqsZY", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      chat_id: "5547960611",
+      text:
+        "💳 YENİ SİPARİŞ\n\n" +
+        "👤 " + (user.email || "-") + "\n" +
+        "🆔 UID: " + user.uid + "\n" +
+        "📦 Paket: " + pack.title + "\n" +
+        "💰 Tutar: " + pack.priceTL + " TL\n" +
+        "🧾 OrderId: " + ref.id
+    })
+  });
+} catch (e) {
+  console.error("Telegram sipariş hata:", e);
+}
+
+return order;
 
   async function approveOrder(uid, orderId) {
     if (!uid) throw new Error("approveOrder: uid yok");
