@@ -189,7 +189,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function normRid(x){ return String(x||"").trim(); }
   function lockKey(){ return "report_locked_" + normRid(rid); }
 
-  // ✅ daha sağlam local kilit kontrol
   function isLockedLocal(){
     const v = String(localStorage.getItem(lockKey()) || "").trim();
     return (v === "1" || v === "true" || v === "locked");
@@ -200,11 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
     $("hdr").classList.add("locked");
   }
 
-  // ✅ index.html bunu okuyor → en garanti kilit burası
   function setLockedLocalHard(){
     localStorage.setItem(lockKey(), "1");
 
-    // rapor listesine de yaz
     try{
       let arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
       if(!Array.isArray(arr)) arr = [];
@@ -236,7 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
       updatedAt: new Date().toISOString()
     };
 
-    // 1) locks koleksiyonu (olursa olur)
     try{
       await db.collection("locks").doc(`${uid}_${ridN}`).set({ uid, rid: ridN, locked:true, createdAt: now }, { merge:true });
     }catch(e){ console.warn("locks write fail:", e); }
@@ -258,7 +254,6 @@ document.addEventListener("DOMContentLoaded", () => {
       await ref.set({ gayrimenkul_reports: arr, lastUpdate: new Date().toISOString() }, { merge:true });
     }
 
-    // index'in ana kaynağı: kullanicilar
     let ok = false;
     try{ await updateDoc("kullanicilar"); ok = true; }catch(e){ console.warn("kullanicilar lock fail:", e); }
     if(!ok){
@@ -271,13 +266,11 @@ document.addEventListener("DOMContentLoaded", () => {
   async function isLockedRemoteHard(uid){
     const ridN = normRid(rid);
 
-    // 1) locks doc
     try{
       const s = await db.collection("locks").doc(`${uid}_${ridN}`).get();
       if(s.exists && s.data()?.locked === true) return true;
     }catch(e){}
 
-    // 2) kullanicilar/users gayrimenkul_reports içi
     async function checkDoc(path){
       const snap = await db.collection(path).doc(uid).get();
       if(!snap.exists) return false;
@@ -297,7 +290,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return false;
   }
 
-  // ✅ wrapper: eski çağrılar boşa düşmesin
   function setLockedLocal(){ setLockedLocalHard(); }
   async function setLockedRemote(uid){ return await setLockedRemoteHard(uid); }
   async function isLockedRemote(uid){ return await isLockedRemoteHard(uid); }
@@ -442,6 +434,20 @@ document.addEventListener("DOMContentLoaded", () => {
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
+  function clearReportView(){
+    $("raporTarih").textContent = "";
+    $("genelBilgi").innerHTML = "<div class='warning'>Final yapılmadan rapor görüntülenemez.</div>";
+    $("imarTablo").innerHTML = "";
+    $("imarMetin").textContent = "";
+    $("belgelerMetin").textContent = "";
+    $("binaMetin").textContent = "";
+    $("bbMetin").textContent = "";
+    $("konumMetin").textContent = "";
+    $("tapuMetinB1").textContent = "";
+    $("tapuMetinB2").textContent = "";
+    $("emsalMetin").textContent = "";
+  }
+
   function loadReportLocal(){
     let raporlar = [];
     try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
@@ -449,7 +455,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadReportRemote(uid){
-    // fallbackler
     try{
       const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
       if (snap.exists) return snap.data();
@@ -460,7 +465,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (snap2.exists) return snap2.data();
     }catch(e){}
 
-    // ✅ asıl kaynak: kullanicilar/{uid}.gayrimenkul_reports
     try{
       const s = await db.collection("kullanicilar").doc(uid).get();
       if(s.exists){
@@ -527,14 +531,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (finalizing) return;
     finalizing = true;
     try{
-      let rep = loadReportLocal() || await loadReportRemote(user.uid);
-      if (!rep){ setStatus("❌ Rapor yok.", "rid bulunamadı."); return; }
-
-      render(rep);
-      loadEdits();
-
       const locked = isLockedLocal() || await isLockedRemote(user.uid);
       if (locked){
+        let repLocked = loadReportLocal() || await loadReportRemote(user.uid);
+        if (repLocked){
+          render(repLocked);
+          loadEdits();
+        }
         setLockedLocal();
         setStatus("🔒 Zaten kilitli.", "Final yapılmış.");
         return;
@@ -547,11 +550,21 @@ document.addEventListener("DOMContentLoaded", () => {
       setStatus("💳 Hak düşürülüyor…", "Cüzdan kontrolü yapılıyor.");
       const res = await Wallet.consumeReport(user.uid, rid);
       if (!res){
+        clearReportView();
         setStatus("❌ Başarısız!", "Hak/Bakiye yetersiz veya işlem başarısız.");
         return;
       }
 
-      // ✅ kilitle (local + remote)
+      let rep = loadReportLocal() || await loadReportRemote(user.uid);
+      if (!rep){
+        clearReportView();
+        setStatus("❌ Rapor yok.", "Hak düşüldü ama rapor verisi bulunamadı.");
+        return;
+      }
+
+      render(rep);
+      loadEdits();
+
       setLockedLocal();
       await setLockedRemote(user.uid);
 
@@ -568,14 +581,16 @@ document.addEventListener("DOMContentLoaded", () => {
     let rep = loadReportLocal() || await loadReportRemote(user.uid);
     if (!rep){ setStatus("❌ Rapor yok.", `rid: ${rid}`); return; }
 
-    render(rep);
-    loadEdits();
-
-    // ✅ düzenleme butonları her zaman açık
     $("btnEditText").onclick = ()=>{
+      const lockedNow = $("btnFinalCreate").disabled === true;
+      if (!lockedNow){
+        setStatus("⛔ Düzenleme kapalı", "Önce final rapor oluşturulmalı.");
+        return;
+      }
       setEditMode(true);
       setStatus("✍️ Düzenleme açık", "Metin alanlarına tıkla yaz. Bitince Kaydet.");
     };
+
     $("btnSaveText").onclick = ()=>{
       saveEdits();
       setEditMode(false);
@@ -585,11 +600,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const locked = isLockedLocal() || await isLockedRemote(user.uid);
 
     if (locked){
-      setLockedLocal(); // badge + header rengi
+      render(rep);
+      loadEdits();
+      setLockedLocal();
       setStatus("🔒 Kilitli.", "Bu rapor final yapılmış. Metni düzenleyip PDF alabilirsin.");
       $("btnFinalCreate").disabled = true;
     } else {
-      setStatus("✅ Hazır.", "Final butonunu kullanın.");
+      clearReportView();
+      setStatus("⛔ Final yapılmadı.", "Raporu görmek için önce final oluşturulmalı.");
       const btn = $("btnFinalCreate");
       btn.disabled = false;
       btn.onclick = () => finalizeFlow(user);
