@@ -436,11 +436,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function clearReportView(){
     $("raporTarih").textContent = "";
-    $("genelBilgi").innerHTML = `
+   $("genelBilgi").innerHTML = `
   <div class='warning'>
-    <b>Yetersiz rapor hakkı</b><br><br>
-    Bu raporu görüntülemek için aktif rapor hakkınız bulunmuyor.<br>
-    Raporu görmek istiyorsanız lütfen önce hak yükleyiniz.
+    <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
+    Bu raporu görüntüleyebilmek için önce hak yüklemesi yapmanız gerekmektedir.<br>
+    Lütfen <b>Cüzdan</b> bölümünden fatura bilgilerinizi kaydedip ödeme yapmak için paket seçiminizi tamamlayınız.<br>
+    Ödeme onaylandıktan sonra rapor hakkınız hesabınıza tanımlanacaktır.
   </div>
 `;
     $("imarTablo").innerHTML = "";
