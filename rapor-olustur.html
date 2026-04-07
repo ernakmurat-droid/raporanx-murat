@@ -436,7 +436,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function clearReportView(){
     $("raporTarih").textContent = "";
-    $("genelBilgi").innerHTML = "<div class='warning'>Final yapılmadan rapor görüntülenemez.</div>";
+    $("genelBilgi").innerHTML = `
+  <div class='warning'>
+    <b>Yetersiz rapor hakkı</b><br><br>
+    Bu raporu görüntülemek için aktif rapor hakkınız bulunmuyor.<br>
+    Raporu görmek istiyorsanız lütfen önce hak yükleyiniz.
+  </div>
+`;
     $("imarTablo").innerHTML = "";
     $("imarMetin").textContent = "";
     $("belgelerMetin").textContent = "";
