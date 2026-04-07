@@ -474,7 +474,6 @@ document.addEventListener("DOMContentLoaded", () => {
   `;
 
   function clearReportView(){
-
   $("raporTarih").textContent = "";
 
   $("genelBilgi").innerHTML = `
@@ -499,7 +498,16 @@ document.addEventListener("DOMContentLoaded", () => {
     </button>
   `;
 
-  // 👇 BUTON EVENT
+  $("imarTablo").innerHTML = "";
+  $("imarMetin").textContent = "";
+  $("belgelerMetin").textContent = "";
+  $("binaMetin").textContent = "";
+  $("bbMetin").textContent = "";
+  $("konumMetin").textContent = "";
+  $("tapuMetinB1").textContent = "";
+  $("tapuMetinB2").textContent = "";
+  $("emsalMetin").textContent = "";
+
   setTimeout(() => {
     const btn = document.getElementById("talepBtn");
     if (!btn) return;
@@ -527,59 +535,48 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("Talebiniz alındı.");
         btn.textContent = "✅ Talep Gönderildi";
       } catch (e) {
-        console.error(e);
+        console.error("Hak talebi gönderme hatası:", e);
         alert("Hata oluştu.");
         btn.disabled = false;
         btn.textContent = "📩 Hak Yükleme Talebi Gönder";
       }
     };
   }, 100);
-
-  // 👇 TEK SEFER OLACAK
-  $("imarTablo").innerHTML = "";
-  $("imarMetin").textContent = "";
-  $("belgelerMetin").textContent = "";
-  $("binaMetin").textContent = "";
-  $("bbMetin").textContent = "";
-  $("konumMetin").textContent = "";
-  $("tapuMetinB1").textContent = "";
-  $("tapuMetinB2").textContent = "";
-  $("emsalMetin").textContent = "";
 }
-  function loadReportLocal(){
-    let raporlar = [];
-    try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
-    return raporlar.find(r => String(r?.rid ?? "").trim() === rid) || null;
-  }
 
-  async function loadReportRemote(uid){
-    try{
-      const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
-      if (snap.exists) return snap.data();
-    }catch(e){}
+function loadReportLocal(){
+  let raporlar = [];
+  try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
+  return raporlar.find(r => String(r?.rid ?? "").trim() === rid) || null;
+}
 
-    try{
-      const snap2 = await db.collection("reports").doc(rid).get();
-      if (snap2.exists) return snap2.data();
-    }catch(e){}
+async function loadReportRemote(uid){
+  try{
+    const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
+    if (snap.exists) return snap.data();
+  }catch(e){}
 
-    try{
-      const s = await db.collection("kullanicilar").doc(uid).get();
-      if(s.exists){
-        const d = s.data() || {};
-        const raw = d.gayrimenkul_reports;
-        let arr = [];
-        if(Array.isArray(raw)) arr = raw;
-        else if(raw && typeof raw === "object") arr = Object.values(raw);
+  try{
+    const snap2 = await db.collection("reports").doc(rid).get();
+    if (snap2.exists) return snap2.data();
+  }catch(e){}
 
-        const rep = arr.find(r => String(r?.rid||"").trim() === String(rid));
-        if(rep) return rep;
-      }
-    }catch(e){}
+  try{
+    const s = await db.collection("kullanicilar").doc(uid).get();
+    if(s.exists){
+      const d = s.data() || {};
+      const raw = d.gayrimenkul_reports;
+      let arr = [];
+      if(Array.isArray(raw)) arr = raw;
+      else if(raw && typeof raw === "object") arr = Object.values(raw);
 
-    return null;
-  }
+      const rep = arr.find(r => String(r?.rid||"").trim() === String(rid));
+      if(rep) return rep;
+    }
+  }catch(e){}
 
+  return null;
+}
   /* ===============================
      ✅ Word gibi düzenleme (local)
   =============================== */
