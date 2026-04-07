@@ -463,34 +463,54 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!btn) return;
 
       btn.onclick = async () => {
-        const user = firebase.auth().currentUser;
-        if (!user){
-          alert("Talep göndermek için giriş yapmanız gerekiyor.");
-          return;
-        }
+  const user = firebase.auth().currentUser;
+  if (!user){
+    alert("Talep göndermek için giriş yapmanız gerekiyor.");
+    return;
+  }
 
-        btn.disabled = true;
-        btn.textContent = "Gönderiliyor...";
+  btn.disabled = true;
+  btn.textContent = "Gönderiliyor...";
 
-        try {
-          await firebase.firestore().collection("hak_talepleri").add({
-            uid: user.uid,
-            email: user.email || "",
-            rid: rid,
-            status: "bekliyor",
-            type: "hak_yukleme_talebi",
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
+  try {
+    await firebase.firestore().collection("hak_talepleri").add({
+      uid: user.uid,
+      email: user.email || "",
+      rid: rid,
+      status: "bekliyor",
+      type: "hak_yukleme_talebi",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-          alert("Talebiniz alındı.");
-          btn.textContent = "✅ Talep Gönderildi";
-        } catch (e) {
-          console.error("Hak talebi gönderme hatası:", e);
-          alert("Hata oluştu.");
-          btn.disabled = false;
-          btn.textContent = "📩 Hak Yükleme Talebi Gönder";
-        }
-      };
+    // TELEGRAM BİLDİRİM
+    try {
+      await fetch("https://api.telegram.org/bot8693963503:AAHXjT9JQ5iXRWxO-R21QY_bGx_K1nfqsZY/sendMessage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          chat_id: "5547960611",
+          text:
+            "📩 Yeni Hak Yükleme Talebi\n" +
+            "👤 E-posta: " + (user.email || "-") + "\n" +
+            "🆔 UID: " + user.uid + "\n" +
+            "📄 Rapor ID: " + rid
+        })
+      });
+    } catch (tgErr) {
+      console.error("Telegram gönderim hatası:", tgErr);
+    }
+
+    alert("Talebiniz alındı.");
+    btn.textContent = "✅ Talep Gönderildi";
+  } catch (e) {
+    console.error("Hak talebi gönderme hatası:", e);
+    alert("Hata oluştu.");
+    btn.disabled = false;
+    btn.textContent = "📩 Hak Yükleme Talebi Gönder";
+  }
+};
     }, 100);
   }
 
