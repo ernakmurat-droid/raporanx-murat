@@ -254,7 +254,7 @@
 
   // 🔥 TELEGRAM - YENİ SİPARİŞ BİLDİRİMİ
   try {
-    await fetch("https://api.telegram.org/bot8693963503:AAHXjT9JQ5iXRWxO-R21QY_bGx_K1nfqsZY", {
+    await fetch("https://api.telegram.org/bot8693963503:AAHXjT9JQ5iXRWxO-R21QY_bGx_K1nfqsZY/sendMessage", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
