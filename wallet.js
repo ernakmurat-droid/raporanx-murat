@@ -253,26 +253,31 @@
   await ref.set(order, { merge: true });
 
   // 🔥 TELEGRAM - YENİ SİPARİŞ BİLDİRİMİ
-  try {
-    await fetch("https://api.telegram.org/bot8693963503:AAHXjT9JQ5iXRWxO-R21QY_bGx_K1nfqsZY/sendMessage", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        chat_id: "5547960611",
-        text:
-          "💳 YENİ SİPARİŞ\n\n" +
-          "👤 " + (user.email || "-") + "\n" +
-          "🆔 UID: " + user.uid + "\n" +
-          "📦 Paket: " + pack.title + "\n" +
-          "💰 Tutar: " + pack.priceTL + " TL\n" +
-          "🧾 OrderId: " + ref.id
-      })
-    });
-  } catch (e) {
-    console.error("Telegram sipariş hata:", e);
+try {
+  const res = await fetch("https://sendtelegramorder-x4xkrwcz4q-ew.a.run.app", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      uid: user.uid,
+      email: user.email || "",
+      packTitle: pack.title,
+      priceTL: pack.priceTL,
+      credits: pack.credits,
+      orderId: ref.id
+    })
+  });
+
+  const data = await res.json();
+  console.log("Function telegram cevabı:", data);
+
+  if (!res.ok || !data.ok) {
+    console.error("Function telegram başarısız:", data);
   }
+} catch (e) {
+  console.error("Function telegram hata:", e);
+}
 
   return order;
 }
