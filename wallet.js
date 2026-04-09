@@ -1,3 +1,4 @@
+
 /**
  * wallet.js (TEK DOSYA - HAK + SİPARİŞ + HAK DÜŞÜRME + FATURA)
  * Firestore (TEK KÖK: kullanicilar):
@@ -254,7 +255,7 @@
 
   // 🔥 TELEGRAM - YENİ SİPARİŞ BİLDİRİMİ
 try {
-  const res = await fetch("https://sendtelegramorder-x4xkrwcz4q-ew.a.run.app", {
+const res = await fetch("https://us-central1-SENIN_PROJE_ID.cloudfunctions.net/sendTelegramOrder", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
