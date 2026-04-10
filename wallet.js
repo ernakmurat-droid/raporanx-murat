@@ -402,7 +402,70 @@ const res = await fetch("https://sendtelegramorder-x4okwzc4q-uc.a.run.app", {
 
     return { ok: true };
   }
+  async function getOrdersOnce(uid) {
+    return await listOrders(uid);
+  }
 
+  async function updateOrder(orderId, patch) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("updateOrder: giriş yok");
+    if (!orderId) throw new Error("updateOrder: orderId yok");
+
+    await orderRef(user.uid, orderId).set({
+      ...(patch || {}),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    return { ok: true };
+  }
+
+  async function sendOrderTelegram(orderId) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("sendOrderTelegram: giriş yok");
+    if (!orderId) throw new Error("sendOrderTelegram: orderId yok");
+
+    const oSnap = await orderRef(user.uid, orderId).get();
+    if (!oSnap.exists) throw new Error("Sipariş bulunamadı");
+
+    const o = oSnap.data() || {};
+
+    if (o.telegramSent) {
+      return { ok: true, already: true };
+    }
+
+    const res = await fetch("https://sendtelegramorder-x4okwzc4q-uc.a.run.app", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        uid: user.uid,
+        email: user.email || "",
+        packTitle: o.packTitle || o.packId || "",
+        priceTL: o.priceTL || 0,
+        credits: o.credits || 0,
+        orderId: o.orderId || orderId
+      })
+    });
+
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (_) {}
+
+    if (!res.ok || data.ok === false) {
+      console.error("sendOrderTelegram başarısız:", data);
+      throw new Error(data?.error || data?.message || "Telegram gönderilemedi");
+    }
+
+    await orderRef(user.uid, orderId).set({
+      telegramSent: true,
+      telegramSentAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    return { ok: true };
+  }
   // =====================
   // ✅ FATURA PROFİLİ (kullanicilar/{uid}/invoiceProfile/main)
   // =====================
@@ -441,31 +504,36 @@ const res = await fetch("https://sendtelegramorder-x4okwzc4q-uc.a.run.app", {
   }
 
   // ✅ dışa aç
-  window.Wallet = {
-    PACKS,
-    load: loadWallet,
-    ensure: ensureWallet,
-    consumeReport,
+ window.Wallet = {
+  PACKS,
+  load: loadWallet,
+  ensure: ensureWallet,
+  consumeReport,
 
-    listen: listenWallet,
-    listenWallet: listenWallet,
+  listen: listenWallet,
+  listenWallet: listenWallet,
 
-    createOrder,
-    approveOrder,
-    setPaymentLink,
-    markPaid,
+  createOrder,
+  approveOrder,
+  setPaymentLink,
+  markPaid,
 
-    listOrders,
-    listenOrders,
+  listOrders,
+  listenOrders,
 
-    ref: walletMainRef,
-    ordersRef: ordersColRef,
+  // 🔥 EKLEDİKLERİMİZ
+  getOrdersOnce,
+  updateOrder,
+  sendOrderTelegram,
 
-    // ✅ FATURA
-    getBillingProfile,
-    saveBillingProfile,
-    listenBillingProfile,
-  };
+  ref: walletMainRef,
+  ordersRef: ordersColRef,
+
+  // ✅ FATURA
+  getBillingProfile,
+  saveBillingProfile,
+  listenBillingProfile,
+};
 
   auth.onAuthStateChanged(async (user) => {
     if (!user) return;
