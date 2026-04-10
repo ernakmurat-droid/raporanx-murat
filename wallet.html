@@ -57,7 +57,6 @@
       <div class="muted" id="walletSub">—</div>
     </div>
 
-    <!-- ✅ FATURA -->
     <div class="card">
       <div class="row" style="align-items:flex-end;">
         <div>
@@ -67,7 +66,6 @@
         <div class="pill" id="billingStatus">—</div>
       </div>
 
-      <!-- ✅ Telefon/E-posta uyarısı (kartın içinde!) -->
       <div id="billingNeedContact"
            class="muted small"
            style="display:none;margin-top:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);padding:10px 12px;border-radius:12px;">
@@ -126,7 +124,6 @@
       </div>
     </div>
 
-    <!-- ✅ PAKET -->
     <div class="card">
       <div style="font-weight:900;margin-bottom:10px;">Paket Satın Al</div>
       <div class="row">
@@ -139,7 +136,6 @@
       </div>
     </div>
 
-    <!-- ✅ SİPARİŞLER -->
     <div class="card">
       <div style="font-weight:900;margin-bottom:10px;">Siparişlerim</div>
       <div id="orders" class="muted">Yükleniyor…</div>
@@ -149,6 +145,7 @@
   <script>
   (function(){
     const auth = window.auth || firebase.auth();
+    const db = window.db || firebase.firestore();
 
     const elMe = document.getElementById("me");
     const elOrders = document.getElementById("orders");
@@ -163,13 +160,21 @@
     const bpEmail = document.getElementById("bpEmail");
     const bpAddress = document.getElementById("bpAddress");
 
-    let unsubOrders=null, unsubBilling=null, unsubWallet=null;
-    let savingBilling=false;
+    let unsubOrders = null;
+    let unsubBilling = null;
+    let unsubWallet = null;
+    let savingBilling = false;
 
     function esc(s){
-      return String(s||"").replace(/[&<>"']/g, m => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-      }[m]));
+      return String(s || "").replace(/[&<>"']/g, function(m){
+        return ({
+          '&':'&amp;',
+          '<':'&lt;',
+          '>':'&gt;',
+          '"':'&quot;',
+          "'":'&#39;'
+        })[m];
+      });
     }
 
     function setBillingStatus(has){
@@ -177,8 +182,8 @@
     }
 
     function hasContact(profile){
-      const phone = String(profile?.phone || "").trim();
-      const email = String(profile?.email || "").trim();
+      const phone = String(profile && profile.phone ? profile.phone : "").trim();
+      const email = String(profile && profile.email ? profile.email : "").trim();
       return !!(phone || email);
     }
 
@@ -188,8 +193,12 @@
     }
 
     function scrollToBilling(){
-      bpPhone?.scrollIntoView({ behavior:"smooth", block:"center" });
-      bpPhone?.focus();
+      if(bpPhone && bpPhone.scrollIntoView){
+        bpPhone.scrollIntoView({ behavior:"smooth", block:"center" });
+      }
+      if(bpPhone && bpPhone.focus){
+        bpPhone.focus();
+      }
     }
 
     function fillBillingForm(profile){
@@ -204,8 +213,6 @@
 
       const okCore = !!(p.fullName && p.tcOrVkn && p.address);
       setBillingStatus(okCore);
-
-      // ✅ Telefon/email yoksa uyarıyı göster
       showNeedContactWarn(!hasContact(p));
     }
 
@@ -217,116 +224,228 @@
         taxOffice: (bpTaxOffice.value || "").trim(),
         address: (bpAddress.value || "").trim(),
         phone: (bpPhone.value || "").trim(),
-        email: (bpEmail.value || "").trim(),
+        email: (bpEmail.value || "").trim()
       };
     }
 
     function pickLink(o){
-      return (o?.paymentLink || o?.payment?.link || "").trim();
+      if(!o) return "";
+      return String(o.paymentLink || (o.payment && o.payment.link) || "").trim();
     }
 
     function statusTr(s){
-      if(s==="pending") return "Yeni sipariş (link hazırlanıyor) ⏳";
-      if(s==="link_sent") return "Link gönderildi ✅";
-      if(s==="user_marked_paid") return "Ödeme bildirildi ⏳";
-      if(s==="approved") return "Onaylandı ✅";
-      if(s==="expired") return "Süresi doldu ⏱️";
-      if(s==="rejected") return "Reddedildi ❌";
-      if(s==="cancelled") return "İptal 🚫";
+      if(s === "pending") return "Yeni sipariş (link hazırlanıyor) ⏳";
+      if(s === "link_sent") return "Link gönderildi ✅";
+      if(s === "user_marked_paid") return "Ödeme bildirildi ⏳";
+      if(s === "approved") return "Onaylandı ✅";
+      if(s === "expired") return "Süresi doldu ⏱️";
+      if(s === "rejected") return "Reddedildi ❌";
+      if(s === "cancelled") return "İptal 🚫";
       return s || "-";
     }
 
     function renderOrders(arr){
       if(!arr || !arr.length){
-        elOrders.innerHTML = `<div class="muted">Henüz sipariş yok.</div>`;
+        elOrders.innerHTML = '<div class="muted">Henüz sipariş yok.</div>';
         return;
       }
 
-      arr = [...arr].sort((a,b)=>{
-        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      arr = arr.slice().sort(function(a, b){
+        const ta = a && a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+        const tb = b && b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
         return tb - ta;
       });
 
-      elOrders.innerHTML = arr.map(o=>{
+      elOrders.innerHTML = arr.map(function(o){
         const orderId = o.orderId || o.id || "";
         const link = pickLink(o);
         const approved = (o.status === "approved");
 
         const btnPay = (link && !approved)
-          ? `<a class="link" href="${encodeURI(link)}" target="_blank" rel="noopener">🔗 Ödemeye Git</a>`
-          : `<span class="muted">${link ? "Link var" : "Link yok"}</span>`;
+          ? '<a class="link" href="' + encodeURI(link) + '" target="_blank" rel="noopener">🔗 Ödemeye Git</a>'
+          : '<span class="muted">' + (link ? 'Link var' : 'Link yok') + '</span>';
 
         const btnMarkPaid = (!approved)
-          ? `<button class="warn" onclick="markPaid('${esc(orderId)}')">Ödedim</button>`
-          : ``;
+          ? '<button class="warn" onclick="markPaid(\'' + esc(orderId) + '\')">Ödedim</button>'
+          : '';
 
-        return `
-          <div style="padding:10px 0;border-top:1px solid rgba(255,255,255,.10)">
-            <div class="row">
-              <div>
-                <div style="font-weight:900">
-                  ${esc(o.packTitle || o.packId)} • ${esc(o.priceTL)} TL • ${esc(o.credits)} Hak
-                </div>
-                <div class="muted small">
-                  Durum: <b>${esc(statusTr(o.status))}</b> • orderId: <span class="mono">${esc(orderId)}</span>
-                </div>
-              </div>
-              <div class="row">
-                ${btnPay}
-                ${btnMarkPaid}
-              </div>
-            </div>
-          </div>
-        `;
+        const btnTelegram = (!o.telegramSent)
+          ? '<button class="btn" onclick="sendOrderTelegram(\'' + esc(orderId) + '\', this)">📩 Bildir</button>'
+          : '<span class="pill">✅ Bildirildi</span>';
+
+        return ''
+          + '<div style="padding:10px 0;border-top:1px solid rgba(255,255,255,.10)">'
+          + '  <div class="row">'
+          + '    <div>'
+          + '      <div style="font-weight:900">'
+          +          esc(o.packTitle || o.packId) + ' • ' + esc(o.priceTL) + ' TL • ' + esc(o.credits) + ' Hak'
+          + '      </div>'
+          + '      <div class="muted small">'
+          + '        Durum: <b>' + esc(statusTr(o.status)) + '</b> • orderId: <span class="mono">' + esc(orderId) + '</span>'
+          + '      </div>'
+          + '    </div>'
+          + '    <div class="row">'
+          +         btnPay
+          +         btnMarkPaid
+          +         btnTelegram
+          + '    </div>'
+          + '  </div>'
+          + '</div>';
       }).join("");
     }
 
-    // ✅ Paket satın al: siparişten önce telefon/email kontrol
+    async function getOrderDocRef(uid, orderId){
+      const ref1 = db.collection("kullanicilar").doc(uid).collection("orders").doc(orderId);
+      const snap1 = await ref1.get();
+      if(snap1.exists) return ref1;
+
+      const ref2 = db.collection("users").doc(uid).collection("orders").doc(orderId);
+      const snap2 = await ref2.get();
+      if(snap2.exists) return ref2;
+
+      return ref1;
+    }
+
+    async function getOrdersOnce(uid){
+      if(window.Wallet && typeof window.Wallet.getOrdersOnce === "function"){
+        return await window.Wallet.getOrdersOnce(uid);
+      }
+
+      let snap = await db.collection("kullanicilar").doc(uid).collection("orders").get();
+      if(snap.empty){
+        snap = await db.collection("users").doc(uid).collection("orders").get();
+      }
+
+      return snap.docs.map(function(d){
+        return Object.assign({ id: d.id }, d.data());
+      });
+    }
+
+    async function updateOrderSafe(uid, orderId, patch){
+      if(window.Wallet && typeof window.Wallet.updateOrder === "function"){
+        return await window.Wallet.updateOrder(orderId, patch);
+      }
+
+      const ref = await getOrderDocRef(uid, orderId);
+      return await ref.update(patch);
+    }
+
+    window.sendOrderTelegram = async function(orderId, btnEl){
+      try{
+        const u = auth.currentUser;
+        if(!u) return alert("Giriş yok.");
+
+        if(btnEl){
+          btnEl.disabled = true;
+          btnEl.textContent = "Gönderiliyor...";
+        }
+
+        const orders = await getOrdersOnce(u.uid);
+        const order = orders.find(function(o){
+          return (o.orderId || o.id) === orderId;
+        });
+
+        if(!order){
+          if(btnEl){
+            btnEl.disabled = false;
+            btnEl.textContent = "📩 Bildir";
+          }
+          return alert("Sipariş bulunamadı");
+        }
+
+        if(order.telegramSent){
+          if(btnEl){
+            btnEl.disabled = true;
+            btnEl.textContent = "✅ Bildirildi";
+          }
+          return alert("Bu sipariş için mesaj zaten gönderilmiş");
+        }
+
+        if(typeof window.sendTelegramMessage !== "function"){
+          if(btnEl){
+            btnEl.disabled = false;
+            btnEl.textContent = "📩 Bildir";
+          }
+          return alert("sendTelegramMessage fonksiyonu bulunamadı");
+        }
+
+        await window.sendTelegramMessage(
+          "🆕 Yeni Sipariş\n"
+          + "Sipariş No: " + orderId + "\n"
+          + "Kullanıcı: " + u.uid + "\n"
+          + "Paket: " + (order.packTitle || order.packId || "-") + "\n"
+          + "Tutar: " + (order.priceTL || "-") + " TL\n"
+          + "Hak: " + (order.credits || "-")
+        );
+
+        await updateOrderSafe(u.uid, orderId, {
+          telegramSent: true,
+          telegramSentAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        if(btnEl){
+          btnEl.disabled = true;
+          btnEl.textContent = "✅ Bildirildi";
+        }
+
+        alert("Telegram gönderildi ✅");
+      }catch(e){
+        console.error("sendOrderTelegram hata:", e);
+        if(btnEl){
+          btnEl.disabled = false;
+          btnEl.textContent = "📩 Bildir";
+        }
+        alert("Telegram hatası: " + (e && e.message ? e.message : e));
+      }
+    };
+
     window.buy = async function(packId){
       try{
         const u = auth.currentUser;
         if(!u) return alert("Giriş yapmalısın.");
 
-        const profile = await Wallet.getBillingProfile(u.uid);
+        const profile = await window.Wallet.getBillingProfile(u.uid);
         if(!hasContact(profile)){
           showNeedContactWarn(true);
           scrollToBilling();
           return alert("Ödeme için Telefon veya E-posta zorunlu. Lütfen Fatura Bilgilerim bölümünü doldur.");
         }
 
-        await Wallet.createOrder(packId);
+        await window.Wallet.createOrder(packId);
         alert("Sipariş oluşturuldu ✅");
       }catch(e){
-        alert("Hata: " + (e?.message || e));
+        alert("Hata: " + (e && e.message ? e.message : e));
       }
     };
 
     window.markPaid = async function(orderId){
       try{
         const ref = prompt("Varsa dekont no yaz (opsiyonel):") || "";
-        await Wallet.markPaid(orderId, ref);
+        await window.Wallet.markPaid(orderId, ref);
         alert("Bildirim gönderildi ✅");
       }catch(e){
-        alert("Hata: " + (e?.message || e));
+        alert("Hata: " + (e && e.message ? e.message : e));
       }
     };
 
-    document.getElementById("btnLogout").onclick = ()=> auth.signOut();
-    document.getElementById("btnRefresh").onclick = async ()=>{
-      const u = auth.currentUser;
-      if(u) await Wallet.load(u.uid);
+    document.getElementById("btnLogout").onclick = function(){
+      auth.signOut();
     };
 
-    document.getElementById("btnBillingReload").onclick = async ()=>{
+    document.getElementById("btnRefresh").onclick = async function(){
+      const u = auth.currentUser;
+      if(u) await window.Wallet.load(u.uid);
+    };
+
+    document.getElementById("btnBillingReload").onclick = async function(){
       const u = auth.currentUser;
       if(!u) return alert("Giriş yok.");
-      const profile = await Wallet.getBillingProfile(u.uid);
+      const profile = await window.Wallet.getBillingProfile(u.uid);
       fillBillingForm(profile);
       alert("Fatura bilgileri getirildi ✅");
     };
 
-    document.getElementById("btnBillingSave").onclick = async ()=>{
+    document.getElementById("btnBillingSave").onclick = async function(){
       const u = auth.currentUser;
       if(!u) return alert("Giriş yok.");
       if(savingBilling) return;
@@ -335,42 +454,40 @@
       try{
         const profile = readBillingForm();
 
-        // ✅ Telefon veya E-posta zorunlu
         if(!(profile.phone || profile.email)){
           showNeedContactWarn(true);
           return alert("Telefon veya E-posta zorunlu.");
         }
 
-        await Wallet.saveBillingProfile(u.uid, profile);
+        await window.Wallet.saveBillingProfile(u.uid, profile);
         alert("Fatura bilgileri kaydedildi ✅");
       }catch(e){
-        alert("Hata: " + (e?.message || e));
+        alert("Hata: " + (e && e.message ? e.message : e));
       }finally{
         savingBilling = false;
       }
     };
 
-    auth.onAuthStateChanged(async (user)=>{
-      if(unsubOrders){unsubOrders();unsubOrders=null;}
-      if(unsubBilling){unsubBilling();unsubBilling=null;}
-      if(unsubWallet){unsubWallet();unsubWallet=null;}
+    auth.onAuthStateChanged(async function(user){
+      if(unsubOrders){ unsubOrders(); unsubOrders = null; }
+      if(unsubBilling){ unsubBilling(); unsubBilling = null; }
+      if(unsubWallet){ unsubWallet(); unsubWallet = null; }
 
       if(!user){
         elMe.textContent = "Giriş yapmalısın.";
-        elOrders.innerHTML = `<div class="muted">Siparişleri görmek için giriş yap.</div>`;
+        elOrders.innerHTML = '<div class="muted">Siparişleri görmek için giriş yap.</div>';
         fillBillingForm(null);
         setBillingStatus(false);
         showNeedContactWarn(false);
         return;
       }
 
-      elMe.innerHTML = `Giriş: <b>${esc(user.email || user.uid)}</b>`;
+      elMe.innerHTML = 'Giriş: <b>' + esc(user.email || user.uid) + '</b>';
 
-      await Wallet.load(user.uid);
-      unsubWallet = Wallet.listen(user.uid);
-
-      unsubBilling = Wallet.listenBillingProfile(user.uid, (p)=>fillBillingForm(p));
-      unsubOrders = Wallet.listenOrders(user.uid, (arr)=>renderOrders(arr));
+      await window.Wallet.load(user.uid);
+      unsubWallet = window.Wallet.listen(user.uid);
+      unsubBilling = window.Wallet.listenBillingProfile(user.uid, function(p){ fillBillingForm(p); });
+      unsubOrders = window.Wallet.listenOrders(user.uid, function(arr){ renderOrders(arr); });
     });
   })();
   </script>
