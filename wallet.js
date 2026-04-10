@@ -255,7 +255,7 @@
 
   // 🔥 TELEGRAM - YENİ SİPARİŞ BİLDİRİMİ
 try {
-const res = await fetch("https://us-central1-SENIN_PROJE_ID.cloudfunctions.net/sendTelegramOrder", {
+const res = await fetch("https://sendtelegramorder-x4okwzc4q-uc.a.run.app", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
