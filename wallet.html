@@ -411,8 +411,49 @@
           return alert("Ödeme için Telefon veya E-posta zorunlu. Lütfen Fatura Bilgilerim bölümünü doldur.");
         }
 
-        await window.Wallet.createOrder(packId);
-        alert("Sipariş oluşturuldu ✅");
+    const created = await window.Wallet.createOrder(packId);
+
+// createOrder orderId döndürüyorsa bunu kullan
+const newOrderId = created && (created.orderId || created.id || created);
+
+// orderId dönmezse siparişleri çekip en yenisini bul
+let targetOrder = null;
+
+if (newOrderId) {
+  const orders = await getOrdersOnce(u.uid);
+  targetOrder = orders.find(function(o){
+    return (o.orderId || o.id) === newOrderId;
+  });
+} else {
+  const orders = await getOrdersOnce(u.uid);
+  orders.sort(function(a, b){
+    const ta = a && a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+    const tb = b && b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+    return tb - ta;
+  });
+  targetOrder = orders[0] || null;
+}
+
+if (targetOrder && !targetOrder.telegramSent && typeof window.sendTelegramMessage === "function") {
+  const orderId = targetOrder.orderId || targetOrder.id || "-";
+
+  await window.sendTelegramMessage(
+    "🆕 Yeni Sipariş\n"
+    + "Sipariş No: " + orderId + "\n"
+    + "Kullanıcı: " + u.uid + "\n"
+    + "E-posta: " + (u.email || "-") + "\n"
+    + "Paket: " + (targetOrder.packTitle || targetOrder.packId || "-") + "\n"
+    + "Tutar: " + (targetOrder.priceTL || "-") + " TL\n"
+    + "Hak: " + (targetOrder.credits || "-")
+  );
+
+  await updateOrderSafe(u.uid, orderId, {
+    telegramSent: true,
+    telegramSentAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+alert("Sipariş oluşturuldu ✅");    
       }catch(e){
         alert("Hata: " + (e && e.message ? e.message : e));
       }
