@@ -227,7 +227,7 @@
   const pack = PACKS[String(packId)];
   if (!pack) throw new Error("createOrder: packId geçersiz");
 
-  const ref = ordersColRef(user.uid).doc(); // auto id
+  const ref = ordersColRef(user.uid).doc();
 
   const order = {
     orderId: ref.id,
@@ -253,32 +253,58 @@
 
   await ref.set(order, { merge: true });
 
-  // 🔥 TELEGRAM - YENİ SİPARİŞ BİLDİRİMİ
-try {
-const res = await fetch("https://sendtelegramorder-x4okwzc4q-uc.a.run.app", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      uid: user.uid,
-      email: user.email || "",
-      packTitle: pack.title,
-      priceTL: pack.priceTL,
-      credits: pack.credits,
-      orderId: ref.id
-    })
-  });
+  // ===============================
+  // QNB PAYMENT FUNCTION
+  // ===============================
+  const payRes = await fetch(
+    "https://europe-west1-raporanx.cloudfunctions.net/createQnbPayment",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        uid: user.uid,
+        orderId: ref.id,
+        amount: String(pack.priceTL),
+        customerEmail: user.email || "",
+      }),
+    }
+  );
 
-  const data = await res.json();
-  console.log("Function telegram cevabı:", data);
+  const payData = await payRes.json();
 
-  if (!res.ok || !data.ok) {
-    console.error("Function telegram başarısız:", data);
+  console.log("QNB FUNCTION:", payData);
+
+  if (!payRes.ok || !payData.ok) {
+    throw new Error(
+      payData?.error || "QNB ödeme başlatılamadı"
+    );
   }
-} catch (e) {
-  console.error("Function telegram hata:", e);
-}
+
+  // ===============================
+  // FORM OLUŞTUR
+  // ===============================
+  const form = document.createElement("form");
+
+  form.method = "POST";
+  form.action = payData.gateway;
+
+  Object.entries(payData.formData).forEach(
+    ([key, value]) => {
+      const input = document.createElement("input");
+
+      input.type = "hidden";
+      input.name = key;
+      input.value = value;
+
+      form.appendChild(input);
+    }
+  );
+
+  document.body.appendChild(form);
+
+  form.submit();
 
   return order;
 }
