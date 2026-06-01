@@ -286,33 +286,7 @@
 
     await ref.set(order, { merge: true });
 
-    // 🔥 TELEGRAM - YENİ SİPARİŞ BİLDİRİMİ
-    try {
-      const res = await fetch("https://us-central1-raporanx.cloudfunctions.net/sendTelegramOrder", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          uid: user.uid,
-          email: user.email || "",
-          packTitle: pack.title,
-          priceTL: pack.priceTL,
-          credits: pack.credits,
-          orderId: ref.id,
-        }),
-      });
-
-      const data = await res.json();
-      console.log("Function telegram cevabı:", data);
-
-      if (!res.ok || !data.ok) {
-        console.error("Function telegram başarısız:", data);
-      }
-    } catch (e) {
-      console.error("Function telegram hata:", e);
-    }
-
+   
     return order;
   }
   function submitQnbForm(gateway, formData) {
