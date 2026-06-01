@@ -1,4 +1,3 @@
-
 /**
  * wallet.js (TEK DOSYA - HAK + SİPARİŞ + HAK DÜŞÜRME + FATURA)
  * Firestore (TEK KÖK: kullanicilar):
@@ -26,7 +25,9 @@
     P500: { priceTL: 500, credits: 25, title: "500 TL • 25 Hak" },
   };
 
-  function n(v) { return Number(v ?? 0) || 0; }
+  function n(v) {
+    return Number(v ?? 0) || 0;
+  }
 
   function tl(nm) {
     return new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(n(nm));
@@ -62,7 +63,7 @@
     }
 
     const snap = await q.get();
-    return snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
   }
 
   // ✅ Siparişleri canlı dinle (EN GARANTİ: status filtresi yok)
@@ -75,12 +76,20 @@
       .limit(50)
       .onSnapshot(
         (snap) => {
-          const arr = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+          const arr = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
           cb(arr);
         },
         (err) => {
           console.error("listenOrders snapshot ERR:", err);
-          cb([{ id: "ERR", packTitle: "HATA", status: err?.message || String(err), priceTL:"", credits:"" }]);
+          cb([
+            {
+              id: "ERR",
+              packTitle: "HATA",
+              status: err?.message || String(err),
+              priceTL: "",
+              credits: "",
+            },
+          ]);
         }
       );
   }
@@ -152,7 +161,7 @@
       const useSnap = await tx.get(useRef);
       if (useSnap.exists) {
         const mainSnap2 = await tx.get(mainRef);
-        const w2 = mainSnap2.exists ? (mainSnap2.data() || {}) : {};
+        const w2 = mainSnap2.exists ? mainSnap2.data() || {} : {};
         return { ok: true, already: true, wallet: w2 };
       }
 
@@ -168,7 +177,7 @@
         tx.set(mainRef, init, { merge: true });
       }
 
-      const w = (mainSnap.exists ? (mainSnap.data() || {}) : {});
+      const w = mainSnap.exists ? mainSnap.data() || {} : {};
       let freeLeft = n(w.freeReportsLeft);
       let credits = n(w.reportCredits);
       const balance = n(w.balance);
@@ -176,33 +185,57 @@
       if (freeLeft > 0) {
         freeLeft -= 1;
 
-        tx.set(mainRef, {
-          freeReportsLeft: freeLeft,
-          updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
+        tx.set(
+          mainRef,
+          {
+            freeReportsLeft: freeLeft,
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
 
-        tx.set(useRef, {
-          usedAt: FieldValue.serverTimestamp(),
-          kind: "free"
-        }, { merge: true });
+        tx.set(
+          useRef,
+          {
+            usedAt: FieldValue.serverTimestamp(),
+            kind: "free",
+          },
+          { merge: true }
+        );
 
-        return { ok: true, already: false, wallet: { ...w, freeReportsLeft: freeLeft, reportCredits: credits, balance } };
+        return {
+          ok: true,
+          already: false,
+          wallet: { ...w, freeReportsLeft: freeLeft, reportCredits: credits, balance },
+        };
       }
 
       if (credits > 0) {
         credits -= 1;
 
-        tx.set(mainRef, {
-          reportCredits: credits,
-          updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
+        tx.set(
+          mainRef,
+          {
+            reportCredits: credits,
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
 
-        tx.set(useRef, {
-          usedAt: FieldValue.serverTimestamp(),
-          kind: "credit"
-        }, { merge: true });
+        tx.set(
+          useRef,
+          {
+            usedAt: FieldValue.serverTimestamp(),
+            kind: "credit",
+          },
+          { merge: true }
+        );
 
-        return { ok: true, already: false, wallet: { ...w, freeReportsLeft: freeLeft, reportCredits: credits, balance } };
+        return {
+          ok: true,
+          already: false,
+          wallet: { ...w, freeReportsLeft: freeLeft, reportCredits: credits, balance },
+        };
       }
 
       return { ok: false, reason: "Hak bitti. Paket satın alman gerekiyor.", wallet: w };
@@ -221,94 +254,113 @@
   }
 
   async function createOrder(packId) {
-  const user = auth.currentUser;
-  if (!user) throw new Error("createOrder: giriş yok");
+    const user = auth.currentUser;
+    if (!user) throw new Error("createOrder: giriş yok");
 
-  const pack = PACKS[String(packId)];
-  if (!pack) throw new Error("createOrder: packId geçersiz");
+    const pack = PACKS[String(packId)];
+    if (!pack) throw new Error("createOrder: packId geçersiz");
 
-  const ref = ordersColRef(user.uid).doc();
+    const ref = ordersColRef(user.uid).doc(); // auto id
 
-  const order = {
-    orderId: ref.id,
+    const order = {
+      orderId: ref.id,
 
-    uid: user.uid,
-    userEmail: user.email || "",
-    userName: user.displayName || "",
+      uid: user.uid,
+      userEmail: user.email || "",
+      userName: user.displayName || "",
 
-    packId: String(packId),
-    packTitle: pack.title,
-    priceTL: pack.priceTL,
-    credits: pack.credits,
+      packId: String(packId),
+      packTitle: pack.title,
+      priceTL: pack.priceTL,
+      credits: pack.credits,
 
-    status: "pending",
-    appliedToWallet: false,
+      status: "pending",
+      appliedToWallet: false,
 
-    paymentLink: "",
-    payment: {},
+      paymentLink: "",
+      payment: {},
 
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-  };
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
 
-  await ref.set(order, { merge: true });
+    await ref.set(order, { merge: true });
 
-  // ===============================
-  // QNB PAYMENT FUNCTION
-  // ===============================
-  const payRes = await fetch(
-    "https://europe-west1-raporanx.cloudfunctions.net/createQnbPayment",
-    {
+    // 🔥 TELEGRAM - YENİ SİPARİŞ BİLDİRİMİ
+    try {
+      const res = await fetch("https://us-central1-raporanx.cloudfunctions.net/sendTelegramOrder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email || "",
+          packTitle: pack.title,
+          priceTL: pack.priceTL,
+          credits: pack.credits,
+          orderId: ref.id,
+        }),
+      });
+
+      const data = await res.json();
+      console.log("Function telegram cevabı:", data);
+
+      if (!res.ok || !data.ok) {
+        console.error("Function telegram başarısız:", data);
+      }
+    } catch (e) {
+      console.error("Function telegram hata:", e);
+    }
+
+    return order;
+  }
+  function submitQnbForm(gateway, formData) {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = gateway;
+    form.style.display = "none";
+
+    Object.keys(formData || {}).forEach((key) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = formData[key] ?? "";
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  async function startQnbPayment(packId) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("startQnbPayment: giriş yok");
+
+    const order = await createOrder(packId);
+
+    const res = await fetch("https://europe-west1-raporanx.cloudfunctions.net/createQnbPayment", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         uid: user.uid,
-        orderId: ref.id,
-        amount: String(pack.priceTL),
+        orderId: order.orderId,
+        amount: order.priceTL,
         customerEmail: user.email || "",
       }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      console.error("QNB ödeme başlatma hatası:", data);
+      throw new Error(data?.error || "QNB ödeme başlatılamadı.");
     }
-  );
 
-  const payData = await payRes.json();
-
-  console.log("QNB FUNCTION:", payData);
-
-  if (!payRes.ok || !payData.ok) {
-    throw new Error(
-      payData?.error || "QNB ödeme başlatılamadı"
-    );
+    submitQnbForm(data.gateway, data.formData);
   }
-
-  // ===============================
-  // FORM OLUŞTUR
-  // ===============================
-  const form = document.createElement("form");
-
-  form.method = "POST";
-  form.action = payData.gateway;
-
-  Object.entries(payData.formData).forEach(
-    ([key, value]) => {
-      const input = document.createElement("input");
-
-      input.type = "hidden";
-      input.name = key;
-      input.value = value;
-
-      form.appendChild(input);
-    }
-  );
-
-  document.body.appendChild(form);
-
-  form.submit();
-
-  return order;
-}
-
   async function approveOrder(uid, orderId) {
     if (!uid) throw new Error("approveOrder: uid yok");
     if (!orderId) throw new Error("approveOrder: orderId yok");
@@ -330,29 +382,41 @@
 
       const wSnap = await tx.get(wRef);
       if (!wSnap.exists) {
-        tx.set(wRef, {
-          balance: 0,
-          freeReportsLeft: 5,
-          reportCredits: 0,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
+        tx.set(
+          wRef,
+          {
+            balance: 0,
+            freeReportsLeft: 5,
+            reportCredits: 0,
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
       }
 
-      const w = (wSnap.exists ? (wSnap.data() || {}) : {});
+      const w = wSnap.exists ? wSnap.data() || {} : {};
       const newCredits = n(w.reportCredits) + creditsToAdd;
 
-      tx.set(wRef, {
-        reportCredits: newCredits,
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
+      tx.set(
+        wRef,
+        {
+          reportCredits: newCredits,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
 
-      tx.set(oRef, {
-        status: "approved",
-        appliedToWallet: true,
-        approvedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
+      tx.set(
+        oRef,
+        {
+          status: "approved",
+          appliedToWallet: true,
+          approvedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
 
       return { ok: true, already: false, newCredits };
     });
@@ -384,17 +448,21 @@
       const o = oSnap.data() || {};
       if (o.status === "approved") throw new Error("Bu sipariş zaten onaylanmış.");
 
-      tx.set(oRef, {
-        paymentLink: clean,
-        payment: {
-          ...(o.payment || {}),
-          method: "QNB_LINKPOS",
-          link: clean,
-          addedAt: FieldValue.serverTimestamp(),
+      tx.set(
+        oRef,
+        {
+          paymentLink: clean,
+          payment: {
+            ...(o.payment || {}),
+            method: "QNB_LINKPOS",
+            link: clean,
+            addedAt: FieldValue.serverTimestamp(),
+          },
+          status: o.status === "pending" ? "link_sent" : o.status,
+          updatedAt: FieldValue.serverTimestamp(),
         },
-        status: (o.status === "pending" ? "link_sent" : o.status),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
+        { merge: true }
+      );
     });
 
     return { ok: true };
@@ -415,83 +483,24 @@
       const o = oSnap.data() || {};
       if (o.status === "approved") return;
 
-      tx.set(oRef, {
-        status: "user_marked_paid",
-        payment: {
-          ...(o.payment || {}),
-          paidClaimedAt: FieldValue.serverTimestamp(),
-          ref: refStr,
+      tx.set(
+        oRef,
+        {
+          status: "user_marked_paid",
+          payment: {
+            ...(o.payment || {}),
+            paidClaimedAt: FieldValue.serverTimestamp(),
+            ref: refStr,
+          },
+          updatedAt: FieldValue.serverTimestamp(),
         },
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
+        { merge: true }
+      );
     });
 
     return { ok: true };
   }
-  async function getOrdersOnce(uid) {
-    return await listOrders(uid);
-  }
 
-  async function updateOrder(orderId, patch) {
-    const user = auth.currentUser;
-    if (!user) throw new Error("updateOrder: giriş yok");
-    if (!orderId) throw new Error("updateOrder: orderId yok");
-
-    await orderRef(user.uid, orderId).set({
-      ...(patch || {}),
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-
-    return { ok: true };
-  }
-
-  async function sendOrderTelegram(orderId) {
-    const user = auth.currentUser;
-    if (!user) throw new Error("sendOrderTelegram: giriş yok");
-    if (!orderId) throw new Error("sendOrderTelegram: orderId yok");
-
-    const oSnap = await orderRef(user.uid, orderId).get();
-    if (!oSnap.exists) throw new Error("Sipariş bulunamadı");
-
-    const o = oSnap.data() || {};
-
-    if (o.telegramSent) {
-      return { ok: true, already: true };
-    }
-
-    const res = await fetch("https://sendtelegramorder-x4okwzc4q-uc.a.run.app", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        uid: user.uid,
-        email: user.email || "",
-        packTitle: o.packTitle || o.packId || "",
-        priceTL: o.priceTL || 0,
-        credits: o.credits || 0,
-        orderId: o.orderId || orderId
-      })
-    });
-
-    let data = {};
-    try {
-      data = await res.json();
-    } catch (_) {}
-
-    if (!res.ok || data.ok === false) {
-      console.error("sendOrderTelegram başarısız:", data);
-      throw new Error(data?.error || data?.message || "Telegram gönderilemedi");
-    }
-
-    await orderRef(user.uid, orderId).set({
-      telegramSent: true,
-      telegramSentAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-
-    return { ok: true };
-  }
   // =====================
   // ✅ FATURA PROFİLİ (kullanicilar/{uid}/invoiceProfile/main)
   // =====================
@@ -502,16 +511,19 @@
   async function getBillingProfile(uid) {
     if (!uid) throw new Error("getBillingProfile: uid yok");
     const snap = await billingRef(uid).get();
-    return snap.exists ? (snap.data() || {}) : {};
+    return snap.exists ? snap.data() || {} : {};
   }
 
   async function saveBillingProfile(uid, profile) {
     if (!uid) throw new Error("saveBillingProfile: uid yok");
 
-    await billingRef(uid).set({
-      ...(profile || {}),
-      updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
+    await billingRef(uid).set(
+      {
+        ...(profile || {}),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
 
     return { ok: true };
   }
@@ -521,7 +533,7 @@
     if (typeof cb !== "function") throw new Error("listenBillingProfile: cb function olmalı");
 
     return billingRef(uid).onSnapshot(
-      (snap) => cb(snap.exists ? (snap.data() || {}) : {}),
+      (snap) => cb(snap.exists ? snap.data() || {} : {}),
       (err) => {
         console.error("listenBillingProfile ERR:", err);
         cb({});
@@ -530,40 +542,39 @@
   }
 
   // ✅ dışa aç
- window.Wallet = {
-  PACKS,
-  load: loadWallet,
-  ensure: ensureWallet,
-  consumeReport,
+  window.Wallet = {
+    PACKS,
+    load: loadWallet,
+    ensure: ensureWallet,
+    consumeReport,
 
-  listen: listenWallet,
-  listenWallet: listenWallet,
+    listen: listenWallet,
+    listenWallet: listenWallet,
 
-  createOrder,
-  approveOrder,
-  setPaymentLink,
-  markPaid,
+    createOrder,
+        startQnbPayment,
+    approveOrder,
+    setPaymentLink,
+    markPaid,
 
-  listOrders,
-  listenOrders,
+    listOrders,
+    listenOrders,
 
-  // 🔥 EKLEDİKLERİMİZ
-  getOrdersOnce,
-  updateOrder,
-  sendOrderTelegram,
+    ref: walletMainRef,
+    ordersRef: ordersColRef,
 
-  ref: walletMainRef,
-  ordersRef: ordersColRef,
-
-  // ✅ FATURA
-  getBillingProfile,
-  saveBillingProfile,
-  listenBillingProfile,
-};
+    // ✅ FATURA
+    getBillingProfile,
+    saveBillingProfile,
+    listenBillingProfile,
+  };
 
   auth.onAuthStateChanged(async (user) => {
     if (!user) return;
-    try { await loadWallet(user.uid); }
-    catch (e) { console.log("wallet load error:", e?.message || e); }
+    try {
+      await loadWallet(user.uid);
+    } catch (e) {
+      console.log("wallet load error:", e?.message || e);
+    }
   });
 })();
