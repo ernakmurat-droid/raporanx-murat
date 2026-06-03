@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ödeme Başarısız - RaporanX</title>
+</head>
+<body style="font-family:Arial,sans-serif;padding:24px;">
+  <h1>Ödeme Başarısız</h1>
+  <p>QNB ödeme işlemi başarısız döndü.</p>
+
+  <h3>QNB'den Gelen Bilgiler</h3>
+  <pre id="out" style="background:#f4f4f4;padding:16px;white-space:pre-wrap;"></pre>
+
+  <p>
+    <a href="/wallet.html?v=104">Cüzdana Dön</a>
+  </p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const all = {};
+    for (const [k, v] of params.entries()) {
+      all[k] = v;
+    }
+
+    document.getElementById("out").textContent =
+      Object.keys(all).length
+        ? JSON.stringify(all, null, 2)
+        : "URL parametresi gelmedi. QNB POST ile veri göndermiş olabilir.";
+  </script>
+</body>
+</html>
