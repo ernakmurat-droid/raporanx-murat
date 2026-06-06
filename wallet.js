@@ -312,6 +312,12 @@
     if (!user) throw new Error("startQnbPayment: giriş yok");
 
     const order = await createOrder(packId);
+    await orderRef(user.uid, order.orderId).set({
+  status: "qnb_started",
+  paymentMethod: "qnb_3dhost",
+  paymentStartedAt: FieldValue.serverTimestamp(),
+  updatedAt: FieldValue.serverTimestamp(),
+}, { merge: true });
 
     const res = await fetch("https://europe-west1-raporanx.cloudfunctions.net/createQnbPayment", {
       method: "POST",
