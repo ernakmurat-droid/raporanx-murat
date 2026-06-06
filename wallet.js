@@ -293,6 +293,7 @@
     const form = document.createElement("form");
     form.method = "POST";
     form.action = gateway;
+    form.target = "_top";
     form.style.display = "none";
 
     Object.keys(formData || {}).forEach((key) => {
@@ -311,7 +312,7 @@
     const user = auth.currentUser;
     if (!user) throw new Error("startQnbPayment: giriş yok");
 
-    const order = await createOrder(packId);
+    const order = await createOrder(packId);    
     await orderRef(user.uid, order.orderId).set({
   status: "qnb_started",
   paymentMethod: "qnb_3dhost",
