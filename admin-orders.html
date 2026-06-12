@@ -319,8 +319,18 @@
     if(q){
       out = out.filter(x => {
         const blob = [
-          x.orderId, x.packId, x.packTitle, x.userEmail, x.userName, x.uid, x._parentUid
-        ].join(" ").toLowerCase();
+  x._docId,
+  x.orderId,
+  x.packId,
+  x.packTitle,
+  x.userEmail,
+  x.userName,
+  x.uid,
+  x._parentUid,
+  x.status,
+  x.invoiceStatus,
+  x.faturaDurumu
+].join(" ").toLowerCase();
         return blob.includes(q);
       });
     }
