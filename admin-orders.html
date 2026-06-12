@@ -126,6 +126,9 @@
         <select id="statusFilter" style="max-width:420px;">
           <option value="active">Aktif (pending/link_sent/user_marked_paid)</option>
           <option value="all">Hepsi</option>
+          <option value="invoice_waiting">🧾 Fatura Bekleyenler</option>
+          <option value="invoice_issued">✅ Fatura Kesilenler</option>
+          <option value="invoice_not_required">⚪ Fatura Gerekmeyenler</option>
           <option value="pending">pending</option>
           <option value="link_sent">link_sent</option>
           <option value="user_marked_paid">user_marked_paid</option>
@@ -321,11 +324,28 @@ function invoiceTagClass(s){
     let out = rows;
 
     if(modeF === "active"){
-      out = out.filter(x => ["pending","link_sent","user_marked_paid"].includes(x.status));
-    } else if(modeF !== "all"){
-      out = out.filter(x => x.status === modeF);
-    }
+  out = out.filter(x => ["pending","link_sent","user_marked_paid"].includes(x.status));
 
+} else if(modeF === "invoice_waiting"){
+  out = out.filter(x => {
+    const inv = x.invoiceStatus || x.faturaDurumu || "";
+    return x.status === "approved" && !["issued","kesildi","not_required","gerekmez"].includes(inv);
+  });
+
+} else if(modeF === "invoice_issued"){
+  out = out.filter(x => ["issued","kesildi"].includes(x.invoiceStatus || x.faturaDurumu || ""));
+
+} else if(modeF === "invoice_not_required"){
+  out = out.filter(x => ["not_required","gerekmez"].includes(x.invoiceStatus || x.faturaDurumu || ""));
+
+} else if(modeF !== "all"){
+  out = out.filter(x => x.status === modeF);
+}
+out = out.sort((a,b)=>{
+  const ta = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+  const tb = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+  return tb - ta;
+});
     if(q){
       out = out.filter(x => {
         const blob = [
