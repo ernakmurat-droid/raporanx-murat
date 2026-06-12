@@ -291,7 +291,17 @@
     if(["pending","link_sent","user_marked_paid","expired","cancelled"].includes(s)) return "wait";
     return "";
   }
+function trInvoiceStatus(s){
+  if(s === "issued" || s === "kesildi") return "Fatura Kesildi ✅";
+  if(s === "not_required" || s === "gerekmez") return "Fatura Gerekmez";
+  return "Fatura Bekliyor";
+}
 
+function invoiceTagClass(s){
+  if(s === "issued" || s === "kesildi") return "ok";
+  if(s === "not_required" || s === "gerekmez") return "wait";
+  return "";
+}
   function ts(x){
     try{
       const d = x?.toDate ? x.toDate() : (x ? new Date(x) : null);
