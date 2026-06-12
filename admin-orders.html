@@ -360,6 +360,11 @@
               <span class="tag ${tagClass(o.status)}">${esc(trStatus(o.status))}</span>
               <div class="small muted" style="margin-top:8px">Tutar: <b>${esc(o.priceTL || "-")} TL</b> • Hak: <b>${esc(o.credits || "-")}</b></div>
               <div class="small muted">updated: ${esc(ts(o.updatedAt))}</div>
+              <div class="small muted" style="margin-top:6px">
+  <span class="tag ${invoiceTagClass(o.invoiceStatus || o.faturaDurumu)}">
+    ${esc(trInvoiceStatus(o.invoiceStatus || o.faturaDurumu))}
+  </span>
+</div>
             </div>
 
             <div>
@@ -369,6 +374,8 @@
 
             <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
               <button class="btn ghost" onclick="ADMIN_showBilling('${esc(uid)}')">🧾 Fatura</button>
+              <button class="btn ghost" onclick="ADMIN_markInvoice('${esc(uid)}','${esc(oid)}')">🧾 Fatura Kesildi</button>
+              <button class="btn ghost" onclick="ADMIN_noInvoice('${esc(uid)}','${esc(oid)}')">⚪ Fatura Gerekmez</button>
               <button class="btn warn" onclick="ADMIN_setLink('${esc(uid)}','${esc(oid)}')">🔗 Link Ekle</button>
               <button class="btn ghost" onclick="ADMIN_expire('${esc(uid)}','${esc(oid)}')">⏱ Expired</button>
               <button class="btn primary" onclick="ADMIN_approve('${esc(uid)}','${esc(oid)}')">✅ Onayla</button>
@@ -497,7 +504,64 @@
       alert(e?.message || e);
     }
   };
+window.ADMIN_markInvoice = async function(uid, orderId){
+  try{
+    uid = String(uid||"").trim();
+    orderId = String(orderId||"").trim();
+    if(!uid || !orderId) return alert("uid/orderId yok");
 
+    const invoiceNo = (prompt("Fatura no gir (opsiyonel):") || "").trim();
+
+    await db.collection("kullanicilar").doc(uid).collection("siparisler").doc(orderId).set({
+      invoiceStatus: "issued",
+      faturaDurumu: "kesildi",
+      invoiceNo: invoiceNo,
+      invoiceIssuedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge:true });
+
+    await db.collection("odeme_kayitlari").doc(orderId).set({
+      invoiceStatus: "issued",
+      faturaDurumu: "kesildi",
+      invoiceNo: invoiceNo,
+      invoiceIssuedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge:true });
+
+    alert("Fatura kesildi olarak işaretlendi ✅");
+  }catch(e){
+    alert(e?.message || e);
+  }
+};
+
+window.ADMIN_noInvoice = async function(uid, orderId){
+  try{
+    uid = String(uid||"").trim();
+    orderId = String(orderId||"").trim();
+    if(!uid || !orderId) return alert("uid/orderId yok");
+
+    const ok = confirm("Bu sipariş için fatura gerekmez olarak işaretlensin mi?");
+    if(!ok) return;
+
+    await db.collection("kullanicilar").doc(uid).collection("siparisler").doc(orderId).set({
+      invoiceStatus: "not_required",
+      faturaDurumu: "gerekmez",
+      invoiceUpdatedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge:true });
+
+    await db.collection("odeme_kayitlari").doc(orderId).set({
+      invoiceStatus: "not_required",
+      faturaDurumu: "gerekmez",
+      invoiceUpdatedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge:true });
+
+    alert("Fatura gerekmez olarak işaretlendi ✅");
+  }catch(e){
+    alert(e?.message || e);
+  }
+};
   window.ADMIN_delete = async function(uid, orderId){
     try{
       uid = String(uid||"").trim();
