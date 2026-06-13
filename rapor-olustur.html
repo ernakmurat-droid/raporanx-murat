@@ -1,630 +1,439 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<title>Gayrimenkul Değerleme Raporu</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-<script src="/firebase-config.js"></script>
-<script src="/wallet.js"></script>
+  <!-- ✅ Tek kaynak (absolute) -->
+  <script src="/firebase-config.js"></script>
+  <script src="/wallet.js"></script>
 
-<style>
-:root{--primary:#1a237e;--secondary:#3949ab;--bg:#f4f7f9;}
-body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e50;}
-.header{
-  background:linear-gradient(135deg,var(--primary),var(--secondary));
-  color:#fff;
-  padding: calc(30px + env(safe-area-inset-top, 0px)) 20px 30px;
-  text-align:center;
-  position:relative;
-}
-.header.locked{background:linear-gradient(135deg,#263238,#455a64);}
-.back{
-  position:absolute;left:20px;top: calc(25px + env(safe-area-inset-top, 0px));
-  background:rgba(255,255,255,.2);padding:8px 15px;border-radius:30px;color:#fff;
-  border:none;cursor:pointer;font-weight:900;
-}
-.badge{
-  display:none;margin:10px auto 0;width:fit-content;padding:6px 10px;border-radius:999px;
-  font-size:13px;font-weight:900;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.22);
-}
-.main-wrapper{max-width:1300px;margin:14px auto 30px;display:grid;grid-template-columns:270px 1fr;gap:25px;padding:0 20px;}
-.toc-container{position:sticky;top:20px;height:fit-content;}
-.toc{background:#fff;padding:18px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.05);border-left:6px solid var(--primary);}
-.toc-title{font-weight:bold;color:var(--primary);margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:6px;}
-.toc ul{list-style:none;padding:0;margin:0;}
-.toc li{margin:6px 0;}
-.toc a{color:#444;text-decoration:none;font-size:.9em;display:block;padding:4px 6px;border-radius:4px;}
-.toc a:hover{background:#f0f2ff;color:var(--primary);}
-.container{background:#fff;padding:35px;border-radius:12px;box-shadow:0 0 25px rgba(0,0,0,.05);}
-.section{margin-bottom:45px;}
-.section h2{color:var(--primary);border-bottom:2px solid #eee;padding-bottom:8px;font-size:1.2em;}
-.text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;color:#34495e;}
-.warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
-.print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto;display:block;cursor:pointer;font-weight:900;}
-.print-btn:hover{background:#1e874e;}
-.action-btn{
-  background:#ff5722;color:#fff;padding:13px 26px;border:none;border-radius:50px;
-  margin:10px auto 0;display:block;cursor:pointer;font-weight:900;
-}
-.action-btn:hover{opacity:.92;}
-.action-btn:disabled{opacity:.55;cursor:not-allowed;}
-#statusBar{
-  max-width:1300px;margin:12px auto 0;padding:10px 14px;border-radius:12px;background:#fff;
-  box-shadow:0 4px 14px rgba(0,0,0,.06);border-left:6px solid var(--secondary);
-  color:#2c3e50;font-weight:900;
-}
-#statusBar small{display:block;font-weight:700;opacity:.88;margin-top:4px}
-@media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
-@media print{
-  .header,.toc-container,.print-btn,.action-btn,#statusBar{display:none!important;}
-  body{background:#fff;}
-  .container{box-shadow:none;padding:0;width:100%;}
-  .section{page-break-inside:avoid;}
-}
-</style>
+  <title>Rapor Ana Menü - RaporanX</title>
+
+  <style>
+    :root{ --hdrH: 78px; }
+
+    body {
+      font-family: Arial;
+      background: linear-gradient(135deg,#4a148c,#7c4dff);
+      margin:0;
+      color:white;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      overflow-x:hidden;
+    }
+
+    .header {
+      padding: calc(16px + env(safe-area-inset-top, 0px)) 14px 14px;
+      text-align:center;
+      font-size:26px;
+      font-weight:bold;
+      position: sticky;
+      top: 0;
+      z-index: 999999;
+      background: linear-gradient(135deg,#4a148c,#7c4dff);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+    }
+
+    .back {
+      position: relative;
+      display: inline-block;
+      margin: 10px auto 0;
+      background:rgba(255,255,255,0.22);
+      padding:10px 14px;
+      border-radius:999px;
+      text-decoration:none;
+      color:white;
+      font-weight:900;
+      z-index: 1000000;
+      max-width: 44vw;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #baslik{ padding: 0 64px; line-height: 1.2; }
+
+    #kilitMesaji{
+      display:none;
+      max-width:1100px;
+      margin:10px auto 0;
+      width: calc(100% - 40px);
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 14px;
+      padding:10px 14px;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+
+    .topbar{
+      max-width:1100px;
+      width: calc(100% - 40px);
+      margin: 0 auto 10px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      padding: 0 20px;
+    }
+
+    .wallet-card{
+      flex: 1 1 420px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      cursor: pointer;
+      user-select:none;
+    }
+    .wallet-title{ font-weight:900; letter-spacing:.4px; display:flex; align-items:center; gap:10px; }
+    .wallet-sub{ font-size:12px; opacity:.9; margin-top:6px; line-height:1.35; }
+    .wallet-amount{
+      font-size:20px;
+      font-weight:900;
+      margin-left:auto;
+      padding:6px 10px;
+      border-radius:12px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .wallet-hidden{ filter: blur(6px); transition: filter .2s ease; }
+    .wallet-card.reveal .wallet-hidden{ filter: blur(0); }
+
+    .menu {
+      flex:1;
+      display:flex;
+      flex-wrap:wrap;
+      gap:20px;
+      padding:30px;
+      justify-content:center;
+      align-content:flex-start;
+    }
+
+    .btn {
+      flex:1 1 350px;
+      background:#6a1b9a;
+      padding:35px;
+      font-size:24px;
+      font-weight:bold;
+      border:none;
+      border-radius:20px;
+      color:white;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,0.4);
+      transition: 0.3s;
+      position:relative;
+    }
+    .btn:hover { background:#8e24aa; transform:scale(1.05); }
+    .btn-main-feature { background: #4527a0; border: 2px solid #b39ddb; }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+    .btn:hover:disabled{ background:#6a1b9a; transform:none; }
+
+    .footer-btn {
+      background:#ff5722;
+      padding:25px;
+      font-size:28px;
+      width:90%;
+      max-width:600px;
+      margin:20px auto;
+      border-radius:20px;
+      border:none;
+      color:white;
+      font-weight:bold;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+    .footer-btn.locked{ background:#2196F3; }
+
+    @media (max-width: 600px){
+      .header{
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        font-size:20px;
+        padding: calc(14px + env(safe-area-inset-top, 0px)) 12px 12px;
+      }
+      body{ padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px)); }
+      .menu{ padding: 20px; }
+      .btn{ flex:1 1 100%; padding: 26px; font-size: 20px; }
+      .footer-btn{ font-size: 24px; padding: 20px; }
+      .back{ padding: 10px 12px; }
+      #baslik{ padding: 0 56px; }
+    }
+  </style>
 </head>
 
-<body>
-
-<div class="header" id="hdr">
-  <button class="back" id="btnBack">← Geri</button>
-  <h1 style="margin:0;">GAYRİMENKUL DEĞERLEME RAPORU</h1>
-  <div id="raporTarih" style="margin-top:6px;"></div>
-  <div id="finalBadge" class="badge">🔒 FINAL / KİLİTLİ</div>
-</div>
-
-<div id="statusBar">
-  Hazır.
-  <small>Rapor metinleri yükleniyor…</small>
-</div>
-
-<div class="main-wrapper">
-  <aside class="toc-container">
-    <div class="toc">
-      <div class="toc-title">📋 RAPOR BÖLÜMLERİ</div>
-      <ul>
-        <li><a href="#genel">1. Genel Bilgiler</a></li>
-        <li><a href="#imar">2. İmar Durumu</a></li>
-        <li><a href="#belgeler">3. Belgeler</a></li>
-        <li><a href="#bina">4. Ana Bina Bilgileri</a></li>
-        <li><a href="#bb">5. Bağımsız Bölüm</a></li>
-        <li><a href="#konum">6. Konum Analizi</a></li>
-        <li><a href="#tapu">7. Tapu Bilgileri</a></li>
-        <li><a href="#emsal">8. Değerleme / Emsal</a></li>
-      </ul>
-    </div>
-  </aside>
-
-  <main class="container">
-    <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
-
-    <button class="action-btn" id="btnFinalCreate" disabled>🧾 Final Rapor Oluştur (Hak Düş + Kilitle)</button>
-
-    <button class="action-btn" id="btnEditText" style="background:#1976d2;">✍️ Final Metni Düzenle</button>
-    <button class="action-btn" id="btnSaveText" style="background:#6d4c41; display:none;">💾 Düzenlemeyi Kaydet</button>
-
-    <section id="genel" class="section">
-      <h2>1. Genel Bilgiler</h2>
-      <div id="genelBilgi"></div>
-    </section>
-
-    <section id="imar" class="section">
-      <h2>2. İmar Durumu</h2>
-      <div id="imarTablo"></div>
-      <div class="text-block" id="imarMetin"></div>
-    </section>
-
-    <section id="belgeler" class="section">
-      <h2>3. Belgeler</h2>
-      <div class="text-block" id="belgelerMetin"></div>
-    </section>
-
-    <section id="bina" class="section">
-      <h2>4. Ana Bina Bilgileri</h2>
-      <div class="text-block" id="binaMetin"></div>
-    </section>
-
-    <section id="bb" class="section">
-      <h2>5. Bağımsız Bölüm</h2>
-      <div class="text-block" id="bbMetin"></div>
-    </section>
-
-    <section id="konum" class="section">
-      <h2>6. Konum Analizi</h2>
-      <div class="text-block" id="konumMetin"></div>
-    </section>
-
-    <section id="tapu" class="section">
-      <h2>7. Tapu Bilgileri</h2>
-      <div class="text-block" id="tapuMetinB1"></div>
-      <div class="text-block" id="tapuMetinB2"></div>
-    </section>
-
-    <section id="emsal" class="section">
-      <h2>8. Değerleme / Emsal</h2>
-      <div class="text-block" id="emsalMetin"></div>
-    </section>
-  </main>
-</div>
+<body oncontextmenu="return false;">
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const auth = window.auth || firebase.auth();
-  const db   = window.db   || firebase.firestore();
-  const $ = (id) => document.getElementById(id);
+(function(){
+  const p = new URLSearchParams(location.search);
+  const rid0 = (p.get("rid") || "").toString().trim();
+  window.__RID__ = rid0;
+  window.__LOCKED__ = false;
 
-  function setStatus(title, sub){
-    const el = $("statusBar");
-    el.textContent = title;
-    const sm = document.createElement("small");
-    sm.textContent = sub || "";
-    el.appendChild(sm);
-  }
-
-  const params = new URLSearchParams(location.search);
-  const rid = (params.get("rid") || params.get("id") || "").toString().trim();
-  const confirmParam = params.get("confirm") === "1";
-
-  $("btnBack").onclick = () => {
-    if (!rid) location.href="/index.html";
-    else location.href="/rapor-detay.html?rid=" + encodeURIComponent(rid);
+  window.go = function(page){
+    const rid = (window.__RID__ || "").toString().trim();
+    if (!rid) { location.href = "/index.html"; return; }
+    location.href = page + "?rid=" + encodeURIComponent(rid);
   };
 
-  if (!rid){
-    setStatus("❌ rid yok.", "Ana sayfaya dön.");
-    alert("Rapor id (rid) bulunamadı!");
+ window.raporOlusturUyari = async function(){
+  const rid = (window.__RID__ || "").toString().trim();
+  if (!rid) { location.href="/index.html"; return; }
+
+  if (window.__LOCKED__){
+    location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
     return;
   }
 
-  function normRid(x){ return String(x||"").trim(); }
-  function lockKey(){ return "report_locked_" + normRid(rid); }
+  const user = firebase.auth().currentUser;
+  if(!user){
+    alert("Giriş bulunamadı.");
+    return;
+  }
 
-  function isLockedLocal(){
+  let w = {};
+  try{
+    w = await Wallet.load(user.uid);
+  }catch(e){
+    console.warn(e);
+  }
+
+  const totalHak =
+    Number(w?.reportCredits || 0) +
+    Number(w?.freeReportsLeft || 0);
+
+  if(totalHak <= 0){
+    alert("Aktif rapor hakkınız bulunmamaktadır. Rapor verileriniz silinmedi. Lütfen cüzdandan hak yükleyiniz.");
+
+    const modal = document.getElementById("walletModal");
+    if(modal){
+      modal.style.display = "block";
+    }else{
+      location.href = "/wallet.html";
+    }
+    return;
+  }
+
+  const msg =
+`UYARI! (ÖNEMLİ)
+Tam rapor oluşturulduğunda ücretli veya ücretsiz hakkınızdan 1 adet düşecektir.
+Bütün modüllerde veri girişlerinin tamam olduğunu kontrol ediniz.
+Devam etmek istiyor musunuz?`;
+
+  if (!confirm(msg)) return;
+
+  location.href =
+    "/rapor-olustur.html?rid=" +
+    encodeURIComponent(rid) +
+    "&confirm=1";
+};
+})();
+</script>
+
+  <div class="header">
+    <div id="baslik">Gayrimenkul Raporu</div>
+  </div>
+
+  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüllere giriş kapalı. Sadece raporu görüntüleyebilirsin.</div>
+
+  <div class="topbar">
+    <div id="walletCard" class="wallet-card">
+      <div class="wallet-title">
+        💳 Cüzdan
+        <span id="walletAmount" class="wallet-amount wallet-hidden">yükleniyor...</span>
+      </div>
+      <div id="walletSub" class="wallet-sub">Bakiye gizlidir. Görmek için karta tıkla.</div>
+    </div>
+  </div>
+
+  <a href="/index.html" class="back">← Ana Sayfa</a>
+
+  <div class="menu">
+    <button class="btn btn-main-feature modül-btn" onclick="go('/konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
+    <button class="btn modül-btn" onclick="go('/tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
+    <button class="btn modül-btn" onclick="go('/imar.html')">İMAR DURUMU</button>
+    <button class="btn modül-btn" onclick="go('/belgeler.html')">İNCELENEN BELGELER</button>
+    <button class="btn modül-btn" onclick="go('/bina.html')">BİNA BİLGİLERİ</button>
+    <button class="btn modül-btn" onclick="go('/bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+    <button class="btn modül-btn" onclick="go('/emsal.html')">EMSAL KARŞILAŞTIRMA</button>
+  </div>
+
+  <button id="btnRaporOlustur" class="footer-btn" onclick="raporOlusturUyari()">TAM RAPOR OLUŞTUR</button>
+
+<script>
+  const auth = window.auth || firebase.auth();
+  const db   = window.db   || firebase.firestore();
+
+  const params = new URLSearchParams(location.search);
+  const rid = (params.get("rid") || "").toString().trim();
+  window.__RID__ = rid;
+
+  function lockKey(){ return "report_locked_" + String(rid || "").trim(); }
+  function isLockedLS(){
     const v = String(localStorage.getItem(lockKey()) || "").trim();
     return (v === "1" || v === "true" || v === "locked");
   }
 
-  function applyLockedUIBadge(){
-    $("finalBadge").style.display = "block";
-    $("hdr").classList.add("locked");
+  function readReports(){
+    try{ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
+    catch(e){ return []; }
+  }
+  function findByRid(arr, rid){
+    return (arr||[]).find(r => r && String(r.rid) === String(rid)) || null;
   }
 
-  function setLockedLocalHard(){
-    localStorage.setItem(lockKey(), "1");
+  function applyLockedUI(){
+    window.__LOCKED__ = true;
 
-    try{
-      let arr = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]");
-      if(!Array.isArray(arr)) arr = [];
-      const ridN = normRid(rid);
-      const i = arr.findIndex(r => normRid(r?.rid) === ridN);
-      const patch = {
-        final:true, locked:true, isLocked:true,
-        lockedAt: Date.now(),
-        updatedAt: new Date().toISOString()
-      };
-      if(i >= 0){
-        arr[i] = { ...(arr[i]||{}), ...patch };
-      }else{
-        arr.unshift({ rid: ridN, propertyName: document.title || "Rapor", ...patch });
-      }
-      localStorage.setItem("gayrimenkul_reports", JSON.stringify(arr));
-    }catch(e){ console.warn("local lock write fail:", e); }
+    document.getElementById("kilitMesaji").style.display = "block";
 
-    applyLockedUIBadge();
+    // ✅ Sadece modülleri kapat
+    document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+
+    // ✅ Alt buton: raporu görüntüle
+    const btn = document.getElementById("btnRaporOlustur");
+    btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
+    btn.classList.add("locked");
+    btn.onclick = () => location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
   }
 
-  async function setLockedRemoteHard(uid){
-    const now = firebase.firestore.FieldValue.serverTimestamp();
-    const ridN = normRid(rid);
-
-    const lockPatch = {
-      final: true, locked: true, isLocked: true,
-      lockedAt: now,
-      updatedAt: new Date().toISOString()
-    };
-
+  async function isLockedRemoteStrict(uid){
+    // locks/{uid_rid}
     try{
-      await db.collection("locks").doc(`${uid}_${ridN}`).set({ uid, rid: ridN, locked:true, createdAt: now }, { merge:true });
-    }catch(e){ console.warn("locks write fail:", e); }
-
-    async function updateDoc(path){
-      const ref = db.collection(path).doc(uid);
-      const snap = await ref.get();
-      const d = snap.exists ? (snap.data() || {}) : {};
-      const raw = d.gayrimenkul_reports;
-
-      let arr = [];
-      if(Array.isArray(raw)) arr = raw;
-      else if(raw && typeof raw === "object") arr = Object.values(raw);
-
-      const i = arr.findIndex(r => normRid(r?.rid) === ridN);
-      if(i >= 0) arr[i] = { ...(arr[i]||{}), ...lockPatch };
-      else arr.unshift({ rid: ridN, ...lockPatch });
-
-      await ref.set({ gayrimenkul_reports: arr, lastUpdate: new Date().toISOString() }, { merge:true });
-    }
-
-    let ok = false;
-    try{ await updateDoc("kullanicilar"); ok = true; }catch(e){ console.warn("kullanicilar lock fail:", e); }
-    if(!ok){
-      try{ await updateDoc("users"); ok = true; }catch(e){ console.warn("users lock fail:", e); }
-    }
-
-    return ok;
-  }
-
-  async function isLockedRemoteHard(uid){
-    const ridN = normRid(rid);
-
-    try{
-      const s = await db.collection("locks").doc(`${uid}_${ridN}`).get();
-      if(s.exists && s.data()?.locked === true) return true;
+      const lockId = `${uid}_${rid}`;
+      const s = await db.collection("locks").doc(lockId).get();
+      if (s.exists && s.data()?.locked === true) return true;
     }catch(e){}
 
-    async function checkDoc(path){
-      const snap = await db.collection(path).doc(uid).get();
-      if(!snap.exists) return false;
-      const d = snap.data() || {};
-      const raw = d.gayrimenkul_reports;
-      let arr = [];
-      if(Array.isArray(raw)) arr = raw;
-      else if(raw && typeof raw === "object") arr = Object.values(raw);
-
-      const rep = arr.find(r => normRid(r?.rid) === ridN);
-      return !!(rep && (rep.final===true || rep.locked===true || rep.isLocked===true));
-    }
-
-    try{ if(await checkDoc("kullanicilar")) return true; }catch(e){}
-    try{ if(await checkDoc("users")) return true; }catch(e){}
-
-    return false;
-  }
-
-  function setLockedLocal(){ setLockedLocalHard(); }
-  async function setLockedRemote(uid){ return await setLockedRemoteHard(uid); }
-  async function isLockedRemote(uid){ return await isLockedRemoteHard(uid); }
-
-  function formatMetin(t){
-    if (t === null || t === undefined) return "";
-    const s = String(t);
-    return s.replace(/\r\n/g,"\n").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
-  }
-
-  function pick(obj, ...paths){
-    for (const p of paths){
-      try{
-        const keys = p.split('.');
-        let val = obj;
-        for (const key of keys) {
-          if (val === null || val === undefined) break;
-          val = val[key];
-        }
-        if (val !== null && val !== undefined && val !== '' && String(val).trim() !== "") return val;
-      }catch(e){}
-    }
-    return "";
-  }
-
-  function buildBBTextFromDetay(d){
-    d = d || {};
-    const v = (k) => (d[k] ?? "").toString().trim();
-    const n = (k) => {
-      const x = Number(v(k));
-      return Number.isFinite(x) ? x : 0;
-    };
-
-    const kat = v("kat") || "...";
-    const bbNo = v("bbNo") || "...";
-    const kapiNo = v("kapiNo") || "...";
-    const nitelik = v("nitelik") || "...";
-    const konum = v("konum") || "...";
-
-    const cepheler = Array.isArray(d.cepheler) ? d.cepheler : [];
-    const cepheText = cepheler.length ? cepheler.join(", ") : "...";
-
-    const net = n("alanNet");
-    const brut = n("alanBrut");
-    const netParca = net > 0 ? `net ${net} ` : "";
-    const brutParca = `brüt ${brut} m²`;
-
-    const sayi = (k) => parseInt(v(k) || "0", 10) || 0;
-    const hacimler = [
-      sayi("count_salon")  ? `${sayi("count_salon")} adet salon` : "",
-      sayi("count_oda")    ? `${sayi("count_oda")} adet oda` : "",
-      sayi("count_mutfak") ? `${sayi("count_mutfak")} adet mutfak` : "",
-      sayi("count_banyo")  ? `${sayi("count_banyo")} adet banyo` : "",
-      sayi("count_wc")     ? `${sayi("count_wc")} adet wc` : "",
-      sayi("count_antre")  ? `${sayi("count_antre")} adet antre/hol` : "",
-      sayi("count_balkon") ? `${sayi("count_balkon")} adet balkon` : ""
-    ].filter(Boolean).join(", ") || "...";
-
-    const antreZemin = v("antreZemin") || "...";
-    const antreDuvar = v("antreDuvar") || "...";
-    const salonZemin = v("salonZemin") || "...";
-    const salonDuvar = v("salonDuvar") || "...";
-    const odaZemin = v("odaZemin") || "...";
-    const odaDuvar = v("odaDuvar") || "...";
-    const mutfakZemin = v("mutfakZemin") || "...";
-    const mutfakDuvar = v("mutfakDuvar") || "...";
-    const mutfakDolap = v("mutfakDolap") || "...";
-    const mutfakTezgah = v("mutfakTezgah") || "...";
-    const islakHacim = v("islakHacim") || "...";
-    const banyoDonanim = v("banyoDonanim") || "...";
-    const girisKapi = v("daireKapi") || "...";
-    const icKapi = v("icKapi") || "...";
-    const pencere = v("pencere") || "...";
-    const isitma = v("isitma") || "...";
-
-    const tesisatVar = (d.tesisatVar || "evet").toString();
-    const tesisatAciklama = v("tesisatAciklama");
-    const tesisatMetin = (tesisatVar === "evet") ? "mevcuttur" : (tesisatAciklama || "...");
-
-    const metin =
-`Değerleme konusu taşınmaz binanın ${kat} katında yer alan ${bbNo} bağımsız bölüm ve ${kapiNo} kapı numaralı ${nitelik} nitelikli taşınmazdır. Bina girişine göre ${konum} yer almaktadır. ${cepheText} cephelidir. Projesinde ve yerinde yapılan tespit ve ölçümlere göre ${netParca}${brutParca} kullanım alanına sahiptir. Taşınmaz ${hacimler} hacimlerinden oluşmaktadır. Taşınmazın antre ve hol zeminleri ${antreZemin} duvarları ${antreDuvar}. Salon zemini ${salonZemin}, duvarları ${salonDuvar} oda zeminleri ${odaZemin} duvarları ${odaDuvar}. Mutfak zemini ${mutfakZemin} ve duvarları ${mutfakDuvar} malzemedir. Mutfak dolabı ${mutfakDolap} tezgâhı ${mutfakTezgah} malzemedir. Taşınmazın ıslak hacimlerin zeminleri ve duvarları ${islakHacim}. Banyoda ${banyoDonanim} bulunmaktadır. Taşınmazın giriş kapısı ${girisKapi} ve iç kapıları ${icKapi}. Pencereleri ise ${pencere} doğramadır. Elektrik, su ve haberleşme tesisatları ${tesisatMetin} durumdaki gayrimenkulün ısıtılması ${isitma} ile sağlanmaktadır.`;
-
-    return formatMetin(metin);
-  }
-
-  function getBagimsizBolumMetni(rep){
-    const topluMetin = formatMetin(pick(rep, "modules.bagimsizBolum.text", "bagimsizBolumMetni"));
-    if (topluMetin) return topluMetin;
-
-    const list = Array.isArray(rep?.bbDetayList) ? rep.bbDetayList :
-                 Array.isArray(rep?.bbList) ? rep.bbList : [];
-
-    if (list.length === 0) return "Bağımsız bölüm verisi bulunamadı";
-
-    return list.map((bb, i) => {
-      const baslik = bb?.baslik || bb?.title || `${i+1}. Bağımsız Bölüm`;
-      const d = bb?.bbDetay || bb || {};
-
-      const savedText = formatMetin(pick(bb, "taslakMetin", "metin", "bbDetay.taslakMetin"));
-      if (savedText) return `### ${baslik} ###\n${savedText}`;
-
-      return `### ${baslik} ###\n${buildBBTextFromDetay(d)}`;
-    }).join("\n\n");
-  }
-
-  function emsalMetni(rep){
-    const modDirect = pick(rep, "modules.emsal.text", "emsalFinalMetni");
-    if (modDirect) return formatMetin(modDirect);
-
-    const list = Array.isArray(rep?.bbDetayList) ? rep.bbDetayList :
-                 Array.isArray(rep?.bbList) ? rep.bbList : [];
-
-    return list.map((bb, i) => {
-      const t = pick(bb, "degerlemeOzet.emsalFinalMetni", "emsalFinalMetni");
-      return t ? `[${bb.baslik || 'BB '+(i+1)}] emsal:\n${formatMetin(t)}` : null;
-    }).filter(Boolean).join("\n\n") || "Emsal analizi bulunamadı";
-  }
-
-  function render(r){
-    $("raporTarih").textContent = "Tarih: " + new Date().toLocaleDateString("tr-TR");
-
-    $("genelBilgi").innerHTML = `
-      <div><b>İl / İlçe:</b> ${pick(r,"il") || "-"} / ${pick(r,"ilce") || "-"}</div>
-      <div><b>Ada / Parsel:</b> ${pick(r,"ada") || "-"} / ${pick(r,"parsel") || "-"}</div>
-      <div><b>Taşınmaz:</b> ${pick(r,"propertyName","tasınmazAdi","tasinmazAdi") || "Tanımsız"}</div>
-    `;
-
-    $("imarTablo").innerHTML = pick(r,"imarTablo") || "<div class='warning'>İmar tablosu bulunamadı</div>";
-    $("imarMetin").textContent = formatMetin(pick(r,"imarMetni","imar.metin"));
-    $("belgelerMetin").textContent = formatMetin(pick(r,"belgelerMetni","belgeler.metin"));
-    $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","binaMetni"));
-    $("bbMetin").textContent = getBagimsizBolumMetni(r);
-    $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumMetni"));
-    $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1"));
-    $("tapuMetinB2").textContent = formatMetin(pick(r,"tapuMetniB2","tapu.b2"));
-    $("emsalMetin").textContent = emsalMetni(r);
-  }
-function clearReportView(){
-  $("raporTarih").textContent = "";
-
-  $("genelBilgi").innerHTML = `
-    <div class='warning'>
-      <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
-      Rapor verileriniz silinmedi. Final raporu oluşturmak için önce cüzdandan hak yükleyiniz.<br><br>
-      <button onclick="location.href='/rapor-detay.html?rid=${encodeURIComponent(rid)}'" style="
-        margin-top:12px;
-        padding:12px 18px;
-        background:#1976d2;
-        color:white;
-        border:none;
-        border-radius:10px;
-        font-weight:bold;
-        cursor:pointer;
-      ">
-        ← Rapor Detayına Dön
-      </button>
-    </div>
-  `;
-
-  $("imarTablo").innerHTML = "";
-  $("imarMetin").textContent = "";
-  $("belgelerMetin").textContent = "";
-  $("binaMetin").textContent = "";
-  $("bbMetin").textContent = "";
-  $("konumMetin").textContent = "";
-  $("tapuMetinB1").textContent = "";
-  $("tapuMetinB2").textContent = "";
-  $("emsalMetin").textContent = "";
-}
- 
-  function loadReportLocal(){
-    let raporlar = [];
-    try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
-    return raporlar.find(r => String(r?.rid ?? "").trim() === rid) || null;
-  }
-
-  async function loadReportRemote(uid){
+    // kullanicilar/{uid}.gayrimenkul_reports içi (final flag)
     try{
-      const snap = await db.collection("users").doc(uid).collection("reports").doc(rid).get();
-      if (snap.exists) return snap.data();
-    }catch(e){}
-
-    try{
-      const snap2 = await db.collection("reports").doc(rid).get();
-      if (snap2.exists) return snap2.data();
-    }catch(e){}
-
-    try{
-      const s = await db.collection("kullanicilar").doc(uid).get();
-      if(s.exists){
-        const d = s.data() || {};
+      const snap = await db.collection("kullanicilar").doc(uid).get();
+      if(snap.exists){
+        const d = snap.data() || {};
         const raw = d.gayrimenkul_reports;
         let arr = [];
         if(Array.isArray(raw)) arr = raw;
         else if(raw && typeof raw === "object") arr = Object.values(raw);
-
-        const rep = arr.find(r => String(r?.rid||"").trim() === String(rid));
-        if(rep) return rep;
+        const rep = arr.find(r => r && String(r.rid) === String(rid));
+        if(rep && (rep.final===true || rep.locked===true || rep.isLocked===true)) return true;
       }
     }catch(e){}
 
-    return null;
+    return false;
   }
 
-  const EDIT_KEY = "final_report_edits_" + rid;
+  // ✅ canlı sync: kullanicilar/{uid} dinle → başlık + kilit
+   let _unsubReport = null;
+function startLiveSyncRoot(user){
+  try{ if(_unsubReport) _unsubReport(); }catch(e){}
+  if(!user || !rid) return;
 
-  function getEditableBlocks(){
-    return ["imarMetin","belgelerMetin","binaMetin","bbMetin","konumMetin","tapuMetinB1","tapuMetinB2","emsalMetin"]
-      .map(id => document.getElementById(id))
-      .filter(Boolean);
-  }
+  const ref = db.collection("users").doc(user.uid).collection("reports").doc(String(rid));
+  _unsubReport = ref.onSnapshot((snap)=>{
+    if(!snap.exists) return;
+    const cloudReport = { rid: snap.id, ...(snap.data()||{}) };
 
-  function loadEdits(){
-    try{
-      const data = JSON.parse(localStorage.getItem(EDIT_KEY) || "{}");
-      for(const [id, txt] of Object.entries(data)){
-        const el = document.getElementById(id);
-        if(el) el.textContent = String(txt ?? "");
-      }
-    }catch(e){}
-  }
+    // başlık
+    const baslikEl = document.getElementById("baslik");
+    if (baslikEl) baslikEl.textContent = cloudReport.propertyName || "Rapor Detayı";
 
-  function setEditMode(on){
-    getEditableBlocks().forEach(el=>{
-      el.contentEditable = on ? "true" : "false";
-      el.style.outline = on ? "2px dashed rgba(25,118,210,.55)" : "none";
-      el.style.padding = on ? "8px" : "";
-      el.style.borderRadius = on ? "10px" : "";
-      el.style.background = on ? "rgba(25,118,210,.06)" : "";
-    });
-    $("btnSaveText").style.display = on ? "block" : "none";
-  }
-
-  function saveEdits(){
-    const data = {};
-    getEditableBlocks().forEach(el=>{
-      data[el.id] = el.textContent || "";
-    });
-    localStorage.setItem(EDIT_KEY, JSON.stringify(data));
-  }
-
-  let finalizing = false;
-
-  async function finalizeFlow(user){
-    if (finalizing) return;
-    finalizing = true;
-
-    try{
-      const locked = isLockedLocal() || await isLockedRemote(user.uid);
-      if (locked){
-        let repLocked = loadReportLocal() || await loadReportRemote(user.uid);
-        if (repLocked){
-          render(repLocked);
-          loadEdits();
-        }
-        setLockedLocal();
-        setStatus("🔒 Zaten kilitli.", "Final yapılmış.");
-        return;
-      }
-
-      if (!confirmParam){
-        if (!confirm("Final rapor oluşturulduğunda hak düşebilir ve rapor kilitlenir. Devam?")) return;
-      }
-
-      setStatus("💳 Hak düşürülüyor…", "Cüzdan kontrolü yapılıyor.");
-      const res = await Wallet.consumeReport(user.uid, rid);
-
-      if (!res){
-        clearReportView();
-        setStatus("❌ Yetersiz hak", "Raporu görüntülemek için önce hak yüklemelisiniz.");
-        return;
-      }
-
-      let rep = loadReportLocal() || await loadReportRemote(user.uid);
-      if (!rep){
-        clearReportView();
-        setStatus("❌ Rapor yok.", "Hak düşüldü ama rapor verisi bulunamadı.");
-        return;
-      }
-
-      render(rep);
-      loadEdits();
-
-      setLockedLocal();
-      await setLockedRemote(user.uid);
-
-      setStatus("✅ Kilitlendi.", "Rapor final yapıldı. İstersen metni düzenleyip PDF alabilirsin.");
-    } finally {
-      finalizing = false;
+    // kilit
+    if (cloudReport.final===true || cloudReport.locked===true || cloudReport.isLocked===true) {
+      applyLockedUI();
     }
-  }
-
-  async function boot(){
-    const user = await new Promise((resolve)=> auth.onAuthStateChanged(u=> resolve(u)));
-    if (!user){ alert("Giriş yok!"); location.href="/index.html"; return; }
-
-    let rep = loadReportLocal() || await loadReportRemote(user.uid);
-    if (!rep){ setStatus("❌ Rapor yok.", `rid: ${rid}`); return; }
-
-    $("btnEditText").onclick = ()=>{
-      const lockedNow = $("btnFinalCreate").disabled === true;
-      if (!lockedNow){
-        setStatus("⛔ Düzenleme kapalı", "Önce final rapor oluşturulmalı.");
-        return;
-      }
-      setEditMode(true);
-      setStatus("✍️ Düzenleme açık", "Metin alanlarına tıkla yaz. Bitince Kaydet.");
-    };
-
-    $("btnSaveText").onclick = ()=>{
-      saveEdits();
-      setEditMode(false);
-      setStatus("💾 Kaydedildi", "Bu cihazda saklandı. PDF alabilirsin.");
-    };
-
-    const locked = isLockedLocal() || await isLockedRemote(user.uid);
-
-    if (locked){
-      render(rep);
-      loadEdits();
-      setLockedLocal();
-      setStatus("🔒 Kilitli.", "Bu rapor final yapılmış. Metni düzenleyip PDF alabilirsin.");
-      $("btnFinalCreate").disabled = true;
-    } else {
-      clearReportView();
-      setStatus("⛔ Rapor kilitli", "Raporu görüntülemek için önce hak yükleyip final oluşturmalısınız.");
-      const btn = $("btnFinalCreate");
-      btn.disabled = false;
-      btn.onclick = () => finalizeFlow(user);
-    }
-
-    if (confirmParam) setTimeout(()=> finalizeFlow(user), 150);
-  }
-
-  boot().catch((e)=>{
-    console.error(e);
-    setStatus("⚠️ Hata", e?.message || String(e));
   });
-});
+}
+
+  // ✅ wallet modal
+  window.openWalletModal = function(){
+    const m = document.getElementById("walletModal");
+    if(m) m.style.display = "block";
+  };
+  window.closeWalletModal = function(){
+    const m = document.getElementById("walletModal");
+    if(m) m.style.display = "none";
+  };
+  document.getElementById("walletCard").addEventListener("click", openWalletModal);
+
+  auth.onAuthStateChanged(async (user)=>{
+    if (!user || !rid) { location.href="/index.html"; return; }
+
+    startLiveSyncRoot(user);
+
+    const reports = readReports();
+    const report = findByRid(reports, rid);
+    if (!report) { location.href="/index.html"; return; }
+
+    document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
+
+    // ✅ cüzdan üst kartı
+    try{ await Wallet.load(user.uid); }catch(e){ console.warn("Wallet.load fail:", e); }
+
+    // ✅ TEK lockedLocal (DÜZELTİLDİ!)
+    const lockedLocal =
+      isLockedLS() ||
+      (report.final === true || report.locked === true || report.isLocked === true);
+
+    const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
+
+    if (lockedLocal || lockedRemote) applyLockedUI();
+  });
 </script>
+
+<!-- ✅ WALLET MODAL (TEK KAYNAK: /wallet.html iframe) -->
+<div id="walletModal" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.55);
+  overflow:auto;
+  padding: 12px;
+">
+  <div style="
+    max-width:900px;
+    width: calc(100% - 24px);
+    margin: 12px auto;
+    background:#111827;
+    color:#e5e7eb;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.12);
+    padding:12px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+  ">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div style="font-weight:900; font-size:18px;">💳 Cüzdan</div>
+      <button onclick="closeWalletModal()"
+              style="border:none; background:rgba(255,255,255,.12); color:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:900;">
+        Kapat ✖
+      </button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <iframe
+        src="/wallet.html"
+        style="width:100%; height:82vh; border:0; border-radius:14px; background:#0f172a;"
+        loading="lazy"
+      ></iframe>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
+
