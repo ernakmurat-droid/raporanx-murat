@@ -809,12 +809,9 @@ window.ADMIN_addFreeCredits = async function(){
     if(!hak || hak < 1) return alert("Hak adedi 1 veya daha büyük olmalı");
 
     const ref = db.collection("kullanicilar")
-      .doc(ADMIN_UID)
-      await db.collection("kullanicilar")
   .doc(ADMIN_UID)
   .collection("cüzdan")
-  .doc("ana")
-      .doc("ana");
+  .doc("ana");
 
     await ref.set({
   "ÜcretsizRaporlarSol": FieldValue.increment(hak),
