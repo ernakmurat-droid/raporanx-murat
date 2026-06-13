@@ -797,10 +797,9 @@ window.ADMIN_addFreeCredits = async function(){
     const FieldValue = firebase.firestore.FieldValue;
     const user = firebase.auth().currentUser;
 
-    if(!user) return alert("Giriş yok");
-
     const ADMIN_UID = "qqNiOTkBC0eKMGb5cKFnD9CsoPx2";
 
+    if(!user) return alert("Giriş yok");
     if(user.uid !== ADMIN_UID){
       return alert("Bu işlem sadece admin hesabına yapılabilir.");
     }
@@ -809,25 +808,33 @@ window.ADMIN_addFreeCredits = async function(){
     if(!hak || hak < 1) return alert("Hak adedi 1 veya daha büyük olmalı");
 
     const ref = db.collection("kullanicilar")
-  .doc(ADMIN_UID)
-  .collection("cüzdan")
-  .doc("ana");
+      .doc(ADMIN_UID)
+      .collection("cüzdan")
+      .doc("ana");
 
     await ref.set({
-  "ÜcretsizRaporlarSol": FieldValue.increment(hak),
-  ucretsizRaporlarSol: FieldValue.increment(hak),
-  guncellendi: FieldValue.serverTimestamp()
-}, { merge:true });
+      "ÜcretsizRaporlarSol": FieldValue.increment(hak),
+      ucretsizRaporlarSol: FieldValue.increment(hak),
+      guncellendi: FieldValue.serverTimestamp(),
+      sonBedavaHakYukleme: {
+        hak: hak,
+        adminEmail: user.email || "",
+        adminUid: user.uid,
+        tarih: FieldValue.serverTimestamp()
+      }
+    }, { merge:true });
 
     const snap = await ref.get();
     const data = snap.data() || {};
 
     alert(
-  "Bedava hak yüklendi ✅\nÜcretsiz hak: " +
-  (data["ÜcretsizRaporlarSol"] ?? data.ucretsizRaporlarSol ?? "-") +
-  "\nRapor kredileri: " +
-  (data.raporKrediler ?? "-")
-);
+      "Bedava hak yüklendi ✅\n" +
+      "Cüzdan yolu: kullanicilar/" + ADMIN_UID + "/cüzdan/ana\n" +
+      "ÜcretsizRaporlarSol: " + (data["ÜcretsizRaporlarSol"] ?? "-") + "\n" +
+      "ucretsizRaporlarSol: " + (data.ucretsizRaporlarSol ?? "-") + "\n" +
+      "raporKrediler: " + (data.raporKrediler ?? "-")
+    );
+
   }catch(e){
     console.error("Bedava hak yükleme hatası:", e);
     alert("Hata: " + (e?.message || e));
