@@ -148,10 +148,30 @@
 
 <div class="card">
   <div style="font-weight:1000; margin-bottom:10px;">
-    📩 Hak Yükleme Talepleri
+    🎁 Bedava Hak Yükle
   </div>
 
-  <div id="talepList" class="grid"></div>
+  <div class="two">
+    <div>
+      <div class="small muted" style="margin-bottom:6px;">Kullanıcı UID</div>
+      <input id="freeUid" placeholder="UID yapıştır" />
+    </div>
+
+    <div>
+      <div class="small muted" style="margin-bottom:6px;">Hak Adedi</div>
+      <input id="freeAmount" type="number" min="1" value="4" />
+    </div>
+  </div>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+    <button class="btn primary" onclick="ADMIN_addFreeCredits()">
+      🎁 Bedava Hak Yükle
+    </button>
+  </div>
+
+  <div class="small muted" style="margin-top:10px;">
+    Bu işlem satın alınan haklara dokunmaz. Sadece ücretsiz hak alanını artırır.
+  </div>
 </div>
     </div>
   </div>
@@ -693,7 +713,7 @@ window.ADMIN_noInvoice = async function(uid, orderId){
       }
       await ensureAdmin(user);
       setMode("list");
-      loadHakTalepleri();
+      // loadHakTalepleri(); // eski hak talep sistemi kaldırıldı
     }catch(e){
       if(_unsub) _unsub();
     }
@@ -778,47 +798,40 @@ function copyUid(uid){
   navigator.clipboard.writeText(uid);
   alert("UID kopyalandı");
 }
-async function createOrderFromTalep(uid, talepId, packId, packTitle, priceTL, credits){
+window.ADMIN_addFreeCredits = async function(){
   try{
-    uid = String(uid || "").trim();
-    talepId = String(talepId || "").trim();
+    const db = window.db || firebase.firestore();
+    const FieldValue = firebase.firestore.FieldValue;
 
-    if(!uid) return alert("UID yok");
-    if(!talepId) return alert("Talep ID yok");
+    const uid = String(document.getElementById("freeUid").value || "").trim();
+    const hak = parseInt(document.getElementById("freeAmount").value || "0", 10);
 
-    const orderRef = db.collection("kullanicilar").doc(uid).collection("siparisler").doc();
+    if(!uid) return alert("UID gir hacı");
+    if(!hak || hak < 1) return alert("Hak adedi 1 veya daha büyük olmalı");
 
-    await orderRef.set({
-      uid: uid,
-      orderId: orderRef.id,
-      packId: packId,
-      packTitle: packTitle,
-      priceTL: priceTL,
-      credits: credits,
-      status: "pending",
-      source: "hak_talebi",
-      talepId: talepId,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    const ok = confirm(uid + " kullanıcısına " + hak + " bedava hak yüklensin mi?");
+    if(!ok) return;
 
-    await db.collection("hak_talepleri").doc(talepId).set({
-      status: "siparis_olusturuldu",
-      orderId: orderRef.id,
-      packId: packId,
-      packTitle: packTitle,
-      priceTL: priceTL,
-      credits: credits,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    await db.collection("kullanicilar")
+      .doc(uid)
+      .collection("cüzdan")
+      .doc("ana")
+      .set({
+        ucretsizRaporlarSol: FieldValue.increment(hak),
+        guncellendi: FieldValue.serverTimestamp(),
+        sonBedavaHakYukleme: {
+          hak: hak,
+          adminEmail: firebase.auth().currentUser?.email || "",
+          tarih: FieldValue.serverTimestamp()
+        }
+      }, { merge:true });
 
-    alert("Sipariş oluşturuldu ✅");
-    loadHakTalepleri();
+    alert("Bedava hak yüklendi ✅");
   }catch(e){
-    console.error("Sipariş oluşturma hatası:", e);
-    alert("Sipariş oluşturulurken hata oluştu: " + (e?.message || e));
+    console.error("Bedava hak yükleme hatası:", e);
+    alert("Hata: " + (e?.message || e));
   }
-}
+};
 </script>
 
 </body>
