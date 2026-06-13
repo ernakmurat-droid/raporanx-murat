@@ -371,7 +371,12 @@ function startLiveSyncRoot(user){
   document.getElementById("walletCard").addEventListener("click", openWalletModal);
 
   auth.onAuthStateChanged(async (user)=>{
-    if (!user || !rid) { location.href="/index.html"; return; }
+   if (!user) { location.href="/index.html"; return; }
+
+if (!rid) {
+  alert("Rapor ID bulunamadı.");
+  return;
+} 
 
     startLiveSyncRoot(user);
 
@@ -392,9 +397,8 @@ if (report) {
 
     // ✅ TEK lockedLocal (DÜZELTİLDİ!)
     const lockedLocal =
-      isLockedLS() ||
-      (report.final === true || report.locked === true || report.isLocked === true);
-
+  isLockedLS() ||
+  (report && (report.final === true || report.locked === true || report.isLocked === true));
     const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
 
     if (lockedLocal || lockedRemote) applyLockedUI();
