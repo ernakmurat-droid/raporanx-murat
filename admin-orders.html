@@ -831,12 +831,11 @@ window.ADMIN_addFreeCredits = async function(){
     const data = snap.data() || {};
 
     alert(
-      "Bedava hak yüklendi ✅\n" +
-      "Cüzdan yolu: kullanicilar/" + ADMIN_UID + "/cüzdan/ana\n" +
-      "ÜcretsizRaporlarSol: " + (data["ÜcretsizRaporlarSol"] ?? "-") + "\n" +
-      "ucretsizRaporlarSol: " + (data.ucretsizRaporlarSol ?? "-") + "\n" +
-      "raporKrediler: " + (data.raporKrediler ?? "-")
-    );
+  "Bedava hak yüklendi ✅\n" +
+  "Cüzdan yolu: kullanicilar/" + ADMIN_UID + "/cüzdan/ana\n" +
+  "Rapor kredileri: " + (data.raporKrediler ?? "-") + "\n" +
+  "Bedava hak toplam: " + (data.bedavaHakToplam ?? "-")
+);
 
   }catch(e){
     console.error("Bedava hak yükleme hatası:", e);
