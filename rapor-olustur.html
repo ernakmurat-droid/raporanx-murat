@@ -422,20 +422,15 @@ document.addEventListener("DOMContentLoaded", () => {
     $("tapuMetinB2").textContent = formatMetin(pick(r,"tapuMetniB2","tapu.b2"));
     $("emsalMetin").textContent = emsalMetni(r);
   }
+function clearReportView(){
+  $("raporTarih").textContent = "";
 
-  function clearReportView(){
-    $("raporTarih").textContent = "";
-
-    $("genelBilgi").innerHTML = `
-      <div class='warning'>
-        <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
-        Bu raporu görüntülemek için önce hak yüklemesi yapmanız gerekmektedir.<br>
-        Lütfen <b>Cüzdan</b> bölümünden fatura bilgilerinizi kaydedip ödeme yapmak için paket seçiminizi tamamlayınız.<br><br>
-        Dilerseniz aşağıdaki buton ile hak yükleme talebi gönderebilirsiniz.
-      </div>
-
-      <button id="talepBtn" style="
-        margin-top:15px;
+  $("genelBilgi").innerHTML = `
+    <div class='warning'>
+      <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
+      Rapor verileriniz silinmedi. Final raporu oluşturmak için önce cüzdandan hak yükleyiniz.<br><br>
+      <button onclick="location.href='/rapor-detay.html?rid=${encodeURIComponent(rid)}'" style="
+        margin-top:12px;
         padding:12px 18px;
         background:#1976d2;
         color:white;
@@ -444,76 +439,22 @@ document.addEventListener("DOMContentLoaded", () => {
         font-weight:bold;
         cursor:pointer;
       ">
-        📩 Hak Yükleme Talebi Gönder
+        ← Rapor Detayına Dön
       </button>
-    `;
+    </div>
+  `;
 
-    $("imarTablo").innerHTML = "";
-    $("imarMetin").textContent = "";
-    $("belgelerMetin").textContent = "";
-    $("binaMetin").textContent = "";
-    $("bbMetin").textContent = "";
-    $("konumMetin").textContent = "";
-    $("tapuMetinB1").textContent = "";
-    $("tapuMetinB2").textContent = "";
-    $("emsalMetin").textContent = "";
-
-    setTimeout(() => {
-      const btn = document.getElementById("talepBtn");
-      if (!btn) return;
-
-      btn.onclick = async () => {
-  const user = firebase.auth().currentUser;
-  if (!user){
-    alert("Talep göndermek için giriş yapmanız gerekiyor.");
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "Gönderiliyor...";
-
-  try {
-    await firebase.firestore().collection("hak_talepleri").add({
-      uid: user.uid,
-      email: user.email || "",
-      rid: rid,
-      status: "bekliyor",
-      type: "hak_yukleme_talebi",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    // TELEGRAM BİLDİRİM
-    try {
-      await fetch("https://api.telegram.org/bot8693963503:AAHXjT9JQ5iXRWxO-R21QY_bGx_K1nfqsZY/sendMessage", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          chat_id: "5547960611",
-          text:
-            "📩 Yeni Hak Yükleme Talebi\n" +
-            "👤 E-posta: " + (user.email || "-") + "\n" +
-            "🆔 UID: " + user.uid + "\n" +
-            "📄 Rapor ID: " + rid
-        })
-      });
-    } catch (tgErr) {
-      console.error("Telegram gönderim hatası:", tgErr);
-    }
-
-    alert("Talebiniz alındı.");
-    btn.textContent = "✅ Talep Gönderildi";
-  } catch (e) {
-    console.error("Hak talebi gönderme hatası:", e);
-    alert("Hata oluştu.");
-    btn.disabled = false;
-    btn.textContent = "📩 Hak Yükleme Talebi Gönder";
-  }
-};
-    }, 100);
-  }
-
+  $("imarTablo").innerHTML = "";
+  $("imarMetin").textContent = "";
+  $("belgelerMetin").textContent = "";
+  $("binaMetin").textContent = "";
+  $("bbMetin").textContent = "";
+  $("konumMetin").textContent = "";
+  $("tapuMetinB1").textContent = "";
+  $("tapuMetinB2").textContent = "";
+  $("emsalMetin").textContent = "";
+}
+ 
   function loadReportLocal(){
     let raporlar = [];
     try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
