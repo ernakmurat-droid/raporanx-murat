@@ -191,24 +191,57 @@
     location.href = page + "?rid=" + encodeURIComponent(rid);
   };
 
-  window.raporOlusturUyari = function(){
-    const rid = (window.__RID__ || "").toString().trim();
-    if (!rid) { location.href="/index.html"; return; }
+ window.raporOlusturUyari = async function(){
+  const rid = (window.__RID__ || "").toString().trim();
+  if (!rid) { location.href="/index.html"; return; }
 
-    // ✅ kilitliyse: uyarısız direkt görüntüle
-    if (window.__LOCKED__){
-      location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
-      return;
+  if (window.__LOCKED__){
+    location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
+    return;
+  }
+
+  const user = firebase.auth().currentUser;
+  if(!user){
+    alert("Giriş bulunamadı.");
+    return;
+  }
+
+  let w = {};
+  try{
+    w = await Wallet.load(user.uid);
+  }catch(e){
+    console.warn(e);
+  }
+
+  const totalHak =
+    Number(w?.reportCredits || 0) +
+    Number(w?.freeReportsLeft || 0);
+
+  if(totalHak <= 0){
+    alert("Aktif rapor hakkınız bulunmamaktadır. Rapor verileriniz silinmedi. Lütfen cüzdandan hak yükleyiniz.");
+
+    const modal = document.getElementById("walletModal");
+    if(modal){
+      modal.style.display = "block";
+    }else{
+      location.href = "/wallet.html";
     }
+    return;
+  }
 
-    const msg =
+  const msg =
 `UYARI! (ÖNEMLİ)
-Tam rapor oluşturulduğunda ücret/ücretsiz hak düşebilir. Para ve zaman kaybı yaşamamak için bütün modüllerde veri girişlerinizin tamam olduğunu kontrol edin.
+Tam rapor oluşturulduğunda ücretli veya ücretsiz hakkınızdan 1 adet düşecektir.
+Bütün modüllerde veri girişlerinin tamam olduğunu kontrol ediniz.
 Devam etmek istiyor musunuz?`;
-    if (!confirm(msg)) return;
 
-    location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&confirm=1";
-  };
+  if (!confirm(msg)) return;
+
+  location.href =
+    "/rapor-olustur.html?rid=" +
+    encodeURIComponent(rid) +
+    "&confirm=1";
+};
 })();
 </script>
 
@@ -342,12 +375,18 @@ function startLiveSyncRoot(user){
 
     startLiveSyncRoot(user);
 
-    const reports = readReports();
-    const report = findByRid(reports, rid);
-    if (!report) { location.href="/index.html"; return; }
+      const reports = readReports();
+const report = findByRid(reports, rid);
 
-    document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
+// Eskisi:
+// if (!report) { location.href="/index.html"; return; }
 
+if (report) {
+  document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
+} else {
+  document.getElementById("baslik").textContent = "Rapor Detayı";
+}
+  
     // ✅ cüzdan üst kartı
     try{ await Wallet.load(user.uid); }catch(e){ console.warn("Wallet.load fail:", e); }
 
