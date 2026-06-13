@@ -151,24 +151,17 @@
     🎁 Bedava Hak Yükle
   </div>
 
-  <div class="two">
     <div>
-      <div class="small muted" style="margin-bottom:6px;">Kullanıcı UID</div>
-      <input id="freeUid" placeholder="UID yapıştır" />
-    </div>
-
-    <div>
-      <div class="small muted" style="margin-bottom:6px;">Hak Adedi</div>
-      <input id="freeAmount" type="number" min="1" value="4" />
-    </div>
+    <div class="small muted" style="margin-bottom:6px;">Hak Adedi</div>
+    <input id="freeAmount" type="number" min="1" value="4" />
   </div>
 
   <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
     <button class="btn primary" onclick="ADMIN_addFreeCredits()">
-      🎁 Bedava Hak Yükle
+      🎁 Kendi Hesabıma Bedava Hak Yükle
     </button>
   </div>
-
+</div>
   <div class="small muted" style="margin-top:10px;">
     Bu işlem satın alınan haklara dokunmaz. Sadece ücretsiz hak alanını artırır.
   </div>
@@ -802,18 +795,21 @@ window.ADMIN_addFreeCredits = async function(){
   try{
     const db = window.db || firebase.firestore();
     const FieldValue = firebase.firestore.FieldValue;
+    const user = firebase.auth().currentUser;
 
-    const uid = String(document.getElementById("freeUid").value || "").trim();
+    if(!user) return alert("Giriş yok");
+    if(user.uid !== "qqNiOTkBC0eKMGb5cKFnD9CsoPx2"){
+      return alert("Bu işlem sadece adminin kendi hesabına yapılabilir.");
+    }
+
     const hak = parseInt(document.getElementById("freeAmount").value || "0", 10);
-
-    if(!uid) return alert("UID gir hacı");
     if(!hak || hak < 1) return alert("Hak adedi 1 veya daha büyük olmalı");
 
-    const ok = confirm(uid + " kullanıcısına " + hak + " bedava hak yüklensin mi?");
+    const ok = confirm("KENDİ hesabına " + hak + " bedava hak yüklensin mi?");
     if(!ok) return;
 
     await db.collection("kullanicilar")
-      .doc(uid)
+      .doc(user.uid)
       .collection("cüzdan")
       .doc("ana")
       .set({
@@ -821,12 +817,13 @@ window.ADMIN_addFreeCredits = async function(){
         guncellendi: FieldValue.serverTimestamp(),
         sonBedavaHakYukleme: {
           hak: hak,
-          adminEmail: firebase.auth().currentUser?.email || "",
+          adminEmail: user.email || "",
+          adminUid: user.uid,
           tarih: FieldValue.serverTimestamp()
         }
       }, { merge:true });
 
-    alert("Bedava hak yüklendi ✅");
+    alert("Kendi hesabına bedava hak yüklendi ✅");
   }catch(e){
     console.error("Bedava hak yükleme hatası:", e);
     alert("Hata: " + (e?.message || e));
