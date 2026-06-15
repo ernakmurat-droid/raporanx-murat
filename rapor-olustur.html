@@ -482,28 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // TELEGRAM BİLDİRİM
-    try {
-      await fetch("https://api.telegram.org/bot8693963503:AAHXjT9JQ5iXRWxO-R21QY_bGx_K1nfqsZY/sendMessage", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          chat_id: "5547960611",
-          text:
-            "📩 Yeni Hak Yükleme Talebi\n" +
-            "👤 E-posta: " + (user.email || "-") + "\n" +
-            "🆔 UID: " + user.uid + "\n" +
-            "📄 Rapor ID: " + rid
-        })
-      });
-    } catch (tgErr) {
-      console.error("Telegram gönderim hatası:", tgErr);
-    }
-
-    alert("Talebiniz alındı.");
-    btn.textContent = "✅ Talep Gönderildi";
+    
   } catch (e) {
     console.error("Hak talebi gönderme hatası:", e);
     alert("Hata oluştu.");
