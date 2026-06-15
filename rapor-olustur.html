@@ -360,80 +360,52 @@ function startLiveSyncRoot(user){
 }
 
   // ✅ wallet modal
-  window.openWalletModal = function(){
-    const m = document.getElementById("walletModal");
-    if(m) m.style.display = "block";
-  };
-  window.closeWalletModal = function(){
-    const m = document.getElementById("walletModal");
-    if(m) m.style.display = "none";
-  };
-  document.getElementById("walletCard").addEventListener("click", openWalletModal);
+window.openWalletModal = function(){
+  const m = document.getElementById("walletModal");
+  if(m) m.style.display = "block";
+};
 
-  auth.onAuthStateChanged(async (user)=>{
-    if (!user || !rid) { location.href="/index.html"; return; }
+window.closeWalletModal = function(){
+  const m = document.getElementById("walletModal");
+  if(m) m.style.display = "none";
+};
 
-    startLiveSyncRoot(user);
+document.getElementById("walletCard").addEventListener("click", openWalletModal);
 
-    const reports = readReports();
-    const report = findByRid(reports, rid);
-    if (!report) { location.href="/index.html"; return; }
+auth.onAuthStateChanged(async (user)=>{
+  if (!user || !rid) {
+    location.href="/index.html";
+    return;
+  }
 
-    document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
+  startLiveSyncRoot(user);
 
-    // ✅ cüzdan üst kartı
-    try{ await Wallet.load(user.uid); }catch(e){ console.warn("Wallet.load fail:", e); }
+  const reports = readReports();
+  const report = findByRid(reports, rid);
 
-    // ✅ TEK lockedLocal (DÜZELTİLDİ!)
-    const lockedLocal =
-      isLockedLS() ||
-      (report.final === true || report.locked === true || report.isLocked === true);
+  if (report) {
+    document.getElementById("baslik").textContent =
+      report.propertyName || "Rapor Detayı";
+  } else {
+    document.getElementById("baslik").textContent = "Rapor Detayı";
+  }
 
-    const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
+  try{
+    await Wallet.load(user.uid);
+  }catch(e){
+    console.warn("Wallet.load fail:", e);
+  }
 
-    if (lockedLocal || lockedRemote) applyLockedUI();
-  });
+  const lockedLocal =
+    isLockedLS() ||
+    (report && (report.final === true || report.locked === true || report.isLocked === true));
+
+  const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
+
+  if (lockedLocal || lockedRemote) applyLockedUI();
+});
+
 </script>
-
-<!-- ✅ WALLET MODAL (TEK KAYNAK: /wallet.html iframe) -->
-<div id="walletModal" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:9999999;
-  background:rgba(0,0,0,.55);
-  overflow:auto;
-  padding: 12px;
-">
-  <div style="
-    max-width:900px;
-    width: calc(100% - 24px);
-    margin: 12px auto;
-    background:#111827;
-    color:#e5e7eb;
-    border-radius:16px;
-    border:1px solid rgba(255,255,255,.12);
-    padding:12px;
-    box-shadow:0 20px 60px rgba(0,0,0,.35);
-  ">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-      <div style="font-weight:900; font-size:18px;">💳 Cüzdan</div>
-      <button onclick="closeWalletModal()"
-              style="border:none; background:rgba(255,255,255,.12); color:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:900;">
-        Kapat ✖
-      </button>
-    </div>
-
-    <div style="margin-top:12px;">
-      <iframe
-        src="/wallet.html"
-        style="width:100%; height:82vh; border:0; border-radius:14px; background:#0f172a;"
-        loading="lazy"
-      ></iframe>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
 
