@@ -195,10 +195,11 @@
   const rid = (window.__RID__ || "").toString().trim();
   if (!rid) { location.href="/index.html"; return; }
 
-  if (window.__LOCKED__){
-    location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
-    return;
-  }
+ if (window.__LOCKED__){
+  location.href =
+    "/rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&view=1";
+  return;
+}
 
   const user = firebase.auth().currentUser;
   if(!user){
@@ -297,21 +298,22 @@ Devam etmek istiyor musunuz?`;
     return (arr||[]).find(r => r && String(r.rid) === String(rid)) || null;
   }
 
-  function applyLockedUI(){
-    window.__LOCKED__ = true;
+ function applyLockedUI(){
+  window.__LOCKED__ = true;
 
-    document.getElementById("kilitMesaji").style.display = "block";
+  document.getElementById("kilitMesaji").style.display = "block";
 
-    // ✅ Sadece modülleri kapat
-    document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+  document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
 
-    // ✅ Alt buton: raporu görüntüle
-    const btn = document.getElementById("btnRaporOlustur");
-    btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
-    btn.classList.add("locked");
-    btn.onclick = () => location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
-  }
+  const btn = document.getElementById("btnRaporOlustur");
+  btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
+  btn.classList.add("locked");
 
+  btn.onclick = () => {
+    location.href =
+      "/rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&view=1";
+  };
+}
   async function isLockedRemoteStrict(uid){
     // locks/{uid_rid}
     try{
@@ -360,52 +362,95 @@ function startLiveSyncRoot(user){
 }
 
   // ✅ wallet modal
-window.openWalletModal = function(){
-  const m = document.getElementById("walletModal");
-  if(m) m.style.display = "block";
-};
+  window.openWalletModal = function(){
+    const m = document.getElementById("walletModal");
+    if(m) m.style.display = "block";
+  };
+  window.closeWalletModal = function(){
+    const m = document.getElementById("walletModal");
+    if(m) m.style.display = "none";
+  };
+  document.getElementById("walletCard").addEventListener("click", openWalletModal);
 
-window.closeWalletModal = function(){
-  const m = document.getElementById("walletModal");
-  if(m) m.style.display = "none";
-};
+  auth.onAuthStateChanged(async (user)=>{
+   if (!user) { location.href="/index.html"; return; }
 
-document.getElementById("walletCard").addEventListener("click", openWalletModal);
+if (!rid) {
+  alert("Rapor ID bulunamadı.");
+  return;
+} 
 
-auth.onAuthStateChanged(async (user)=>{
-  if (!user || !rid) {
-    location.href="/index.html";
-    return;
-  }
+    startLiveSyncRoot(user);
 
-  startLiveSyncRoot(user);
+      const reports = readReports();
+const report = findByRid(reports, rid);
 
-  const reports = readReports();
-  const report = findByRid(reports, rid);
+// Eskisi:
+if (report) {
+  document.getElementById("baslik").textContent =
+    report.propertyName || "Rapor Detayı";
+} else {
+  document.getElementById("baslik").textContent = "Rapor Detayı";
+}
 
-  if (report) {
-    document.getElementById("baslik").textContent =
-      report.propertyName || "Rapor Detayı";
-  } else {
-    document.getElementById("baslik").textContent = "Rapor Detayı";
-  }
+if (report) {
+  document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
+} else {
+  document.getElementById("baslik").textContent = "Rapor Detayı";
+}
+  
+    // ✅ cüzdan üst kartı
+    try{ await Wallet.load(user.uid); }catch(e){ console.warn("Wallet.load fail:", e); }
 
-  try{
-    await Wallet.load(user.uid);
-  }catch(e){
-    console.warn("Wallet.load fail:", e);
-  }
+    // ✅ TEK lockedLocal (DÜZELTİLDİ!)
+    const lockedLocal =
+  isLockedLS() ||
+  (report && (report.final === true || report.locked === true || report.isLocked === true));
+    const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
 
-  const lockedLocal =
-    isLockedLS() ||
-    (report && (report.final === true || report.locked === true || report.isLocked === true));
-
-  const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
-
-  if (lockedLocal || lockedRemote) applyLockedUI();
-});
-
+    if (lockedLocal || lockedRemote) applyLockedUI();
+  });
 </script>
+
+<!-- ✅ WALLET MODAL (TEK KAYNAK: /wallet.html iframe) -->
+<div id="walletModal" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.55);
+  overflow:auto;
+  padding: 12px;
+">
+  <div style="
+    max-width:900px;
+    width: calc(100% - 24px);
+    margin: 12px auto;
+    background:#111827;
+    color:#e5e7eb;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.12);
+    padding:12px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+  ">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div style="font-weight:900; font-size:18px;">💳 Cüzdan</div>
+      <button onclick="closeWalletModal()"
+              style="border:none; background:rgba(255,255,255,.12); color:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:900;">
+        Kapat ✖
+      </button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <iframe
+        src="/wallet.html"
+        style="width:100%; height:82vh; border:0; border-radius:14px; background:#0f172a;"
+        loading="lazy"
+      ></iframe>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
 
