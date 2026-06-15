@@ -195,10 +195,11 @@
   const rid = (window.__RID__ || "").toString().trim();
   if (!rid) { location.href="/index.html"; return; }
 
-  if (window.__LOCKED__){
-    location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
-    return;
-  }
+ if (window.__LOCKED__){
+  location.href =
+    "/rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&view=1";
+  return;
+}
 
   const user = firebase.auth().currentUser;
   if(!user){
@@ -297,21 +298,22 @@ Devam etmek istiyor musunuz?`;
     return (arr||[]).find(r => r && String(r.rid) === String(rid)) || null;
   }
 
-  function applyLockedUI(){
-    window.__LOCKED__ = true;
+ function applyLockedUI(){
+  window.__LOCKED__ = true;
 
-    document.getElementById("kilitMesaji").style.display = "block";
+  document.getElementById("kilitMesaji").style.display = "block";
 
-    // ✅ Sadece modülleri kapat
-    document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+  document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
 
-    // ✅ Alt buton: raporu görüntüle
-    const btn = document.getElementById("btnRaporOlustur");
-    btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
-    btn.classList.add("locked");
-    btn.onclick = () => location.href = "/rapor-olustur.html?rid=" + encodeURIComponent(rid);
-  }
+  const btn = document.getElementById("btnRaporOlustur");
+  btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
+  btn.classList.add("locked");
 
+  btn.onclick = () => {
+    location.href =
+      "/rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&view=1";
+  };
+}
   async function isLockedRemoteStrict(uid){
     // locks/{uid_rid}
     try{
@@ -384,10 +386,9 @@ if (!rid) {
 const report = findByRid(reports, rid);
 
 // Eskisi:
-// if (!report) { location.href="/index.html"; return; }
-
 if (report) {
-  document.getElementById("baslik").textContent = report.propertyName || "Rapor Detayı";
+  document.getElementById("baslik").textContent =
+    report.propertyName || "Rapor Detayı";
 } else {
   document.getElementById("baslik").textContent = "Rapor Detayı";
 }
