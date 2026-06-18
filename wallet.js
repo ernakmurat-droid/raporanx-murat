@@ -289,127 +289,112 @@
    
     return order;
   }
-  function submitQnbForm(gateway, formData) {
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = gateway;
-    form.target = "_top";
-    form.style.display = "none";
+ function submitQnbForm(gateway, formData) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = gateway;
+  form.target = "_top";
+  form.style.display = "none";
 
-    Object.keys(formData || {}).forEach((key) => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = key;
-      input.value = formData[key] ?? "";
-      form.appendChild(input);
-    });
+  Object.keys(formData || {}).forEach((key) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = formData[key] ?? "";
+    form.appendChild(input);
+  });
 
-    document.body.appendChild(form);
-    form.submit();
-  }
+  document.body.appendChild(form);
+  form.submit();
+}
 
-  async function startQnbPayment(packId) {
-    const user = auth.currentUser;
-    if (!user) throw new Error("startQnbPayment: giriş yok");
+async function startQnbPayment(packId) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("startQnbPayment: giriş yok");
 
-    const order = await createOrder(packId);    
-    await orderRef(user.uid, order.orderId).set({
-  status: "qnb_started",
-  paymentMethod: "qnb_3dhost",
-  paymentStartedAt: FieldValue.serverTimestamp(),
-  updatedAt: FieldValue.serverTimestamp(),
-}, { merge: true });
+  const order = await createOrder(packId);
 
-    const res = await fetch("https://europe-west1-raporanx.cloudfunctions.net/createQnbPayment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        uid: user.uid,
-        orderId: order.orderId,
-        amount: order.priceTL,
-        customerEmail: user.email || "",
-      }),
-    });
+  await orderRef(user.uid, order.orderId).set({
+    status: "qnb_started",
+    paymentMethod: "qnb_3dhost_server_post",
+    paymentStartedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
 
-    const data = await res.json();
+  window.location.href =
+    "https://europe-west1-raporanx.cloudfunctions.net/createQnbPaymentPage" +
+    "?uid=" + encodeURIComponent(user.uid) +
+    "&orderId=" + encodeURIComponent(order.orderId);
+}
 
-    if (!res.ok || !data.ok) {
-      console.error("QNB ödeme başlatma hatası:", data);
-      throw new Error(data?.error || "QNB ödeme başlatılamadı.");
+async function approveOrder(uid, orderId) {
+  if (!uid) throw new Error("approveOrder: uid yok");
+  if (!orderId) throw new Error("approveOrder: orderId yok");
+
+  const oRef = orderRef(uid, orderId);
+  const wRef = walletMainRef(uid);
+
+  const out = await db.runTransaction(async (tx) => {
+    const oSnap = await tx.get(oRef);
+    if (!oSnap.exists) return { ok: false, reason: "Sipariş bulunamadı." };
+
+    const o = oSnap.data() || {};
+    if (o.appliedToWallet === true || o.status === "approved") {
+      return { ok: true, already: true };
     }
 
-    submitQnbForm(data.gateway, data.formData);
-  }
-  async function approveOrder(uid, orderId) {
-    if (!uid) throw new Error("approveOrder: uid yok");
-    if (!orderId) throw new Error("approveOrder: orderId yok");
+    const creditsToAdd = n(o.credits);
+    if (creditsToAdd <= 0) return { ok: false, reason: "Siparişte hak yok." };
 
-    const oRef = orderRef(uid, orderId);
-    const wRef = walletMainRef(uid);
-
-    const out = await db.runTransaction(async (tx) => {
-      const oSnap = await tx.get(oRef);
-      if (!oSnap.exists) return { ok: false, reason: "Sipariş bulunamadı." };
-
-      const o = oSnap.data() || {};
-      if (o.appliedToWallet === true || o.status === "approved") {
-        return { ok: true, already: true };
-      }
-
-      const creditsToAdd = n(o.credits);
-      if (creditsToAdd <= 0) return { ok: false, reason: "Siparişte hak yok." };
-
-      const wSnap = await tx.get(wRef);
-      if (!wSnap.exists) {
-        tx.set(
-          wRef,
-          {
-            balance: 0,
-            freeReportsLeft: 5,
-            reportCredits: 0,
-            createdAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
-      }
-
-      const w = wSnap.exists ? wSnap.data() || {} : {};
-      const newCredits = n(w.reportCredits) + creditsToAdd;
-
+    const wSnap = await tx.get(wRef);
+    if (!wSnap.exists) {
       tx.set(
         wRef,
         {
-          reportCredits: newCredits,
+          balance: 0,
+          freeReportsLeft: 5,
+          reportCredits: 0,
+          createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
-
-      tx.set(
-        oRef,
-        {
-          status: "approved",
-          appliedToWallet: true,
-          approvedAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
-
-      return { ok: true, already: false, newCredits };
-    });
-
-    const cur = auth.currentUser;
-    if (cur && cur.uid === uid) {
-      const w = await walletMainRef(uid).get();
-      if (w.exists) updateWalletUI(w.data() || {});
     }
 
-    return out;
+    const w = wSnap.exists ? wSnap.data() || {} : {};
+    const newCredits = n(w.reportCredits) + creditsToAdd;
+
+    tx.set(
+      wRef,
+      {
+        reportCredits: newCredits,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    tx.set(
+      oRef,
+      {
+        status: "approved",
+        appliedToWallet: true,
+        approvedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    return { ok: true, already: false, newCredits };
+  });
+
+  const cur = auth.currentUser;
+  if (cur && cur.uid === uid) {
+    const w = await walletMainRef(uid).get();
+    if (w.exists) updateWalletUI(w.data() || {});
   }
+
+  return out;
+}
 
   async function setPaymentLink(uid, orderId, link) {
     if (!uid) throw new Error("setPaymentLink: uid yok");
