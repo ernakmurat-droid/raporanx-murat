@@ -494,53 +494,32 @@ async function approveOrder(uid, orderId) {
     return { ok: true };
   }
 
-  function listenBillingProfile(uid, cb) {
-    if (!uid) throw new Error("listenBillingProfile: uid yok");
-    if (typeof cb !== "function") throw new Error("listenBillingProfile: cb function olmalı");
+ function listenBillingProfile(uid, cb) {
+  if (!uid) throw new Error("listenBillingProfile: uid yok");
+  if (typeof cb !== "function") throw new Error("listenBillingProfile: cb function olmalı");
 
-    return billingRef(uid).onSnapshot(
-      (snap) => cb(snap.exists ? snap.data() || {} : {}),
-      (err) => {
-        console.error("listenBillingProfile ERR:", err);
-        cb({});
-      }
-    );
-  }
-
-  // ✅ dışa aç
-  window.Wallet = {
-    PACKS,
-    load: loadWallet,
-    ensure: ensureWallet,
-    consumeReport,
-
-    listen: listenWallet,
-    listenWallet: listenWallet,
-
-    createOrder,
-        startQnbPayment,
-    approveOrder,
-    setPaymentLink,
-    markPaid,
-
-    listOrders,
-    listenOrders,
-
-    ref: walletMainRef,
-    ordersRef: ordersColRef,
-
-    // ✅ FATURA
-    getBillingProfile,
-    saveBillingProfile,
-    listenBillingProfile,
-  };
-
-  auth.onAuthStateChanged(async (user) => {
-    if (!user) return;
-    try {
-      await loadWallet(user.uid);
-    } catch (e) {
-      console.log("wallet load error:", e?.message || e);
+  return billingRef(uid).onSnapshot(
+    (snap) => cb(snap.exists ? snap.data() || {} : {}),
+    (err) => {
+      console.error("listenBillingProfile ERR:", err);
+      cb({});
     }
-  });
+  );
+}
+
+window.Wallet = {
+  PACKS,
+  load,
+  listen,
+  listenOrders,
+  createOrder,
+  startQnbPayment,
+  approveOrder,
+  setPaymentLink,
+  markPaid,
+  getBillingProfile,
+  saveBillingProfile,
+  listenBillingProfile,
+};
+
 })();
