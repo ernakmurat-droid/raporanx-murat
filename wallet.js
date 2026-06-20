@@ -506,10 +506,9 @@ async function approveOrder(uid, orderId) {
     }
   );
 }
-
 window.Wallet = {
   PACKS,
-  load,
+  load: loadWallet,
   listen,
   listenOrders,
   createOrder,
@@ -521,5 +520,4 @@ window.Wallet = {
   saveBillingProfile,
   listenBillingProfile,
 };
-
 })();
