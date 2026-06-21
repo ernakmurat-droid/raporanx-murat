@@ -94,41 +94,55 @@
       );
   }
 
-  async function ensureWallet(uid) {
-    const ref = walletMainRef(uid);
+ async function ensureWallet(uid) {
+  const ref = walletMainRef(uid);
 
-    return await db.runTransaction(async (tx) => {
-      const snap = await tx.get(ref);
+  return await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
 
-      if (!snap.exists) {
-        const init = {
-          balance: 0,
-          freeReportsLeft: 5,
-          reportCredits: 0,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        tx.set(ref, init, { merge: true });
-        return init;
-      }
+    if (!snap.exists) {
+      const init = {
+        balance: 0,
+        freeReportsLeft: 5,
+        reportCredits: 0,
+        denge: 0,
+        "ücretsizRaporlarSol": 5,
+        "raporKrediler": 0,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      tx.set(ref, init, { merge: true });
+      return init;
+    }
 
-      const data = snap.data() || {};
-      const patch = {};
+    const data = snap.data() || {};
 
-      if (typeof data.balance !== "number") patch.balance = n(data.balance);
-      if (typeof data.freeReportsLeft !== "number") patch.freeReportsLeft = n(data.freeReportsLeft);
-      if (typeof data.reportCredits !== "number") patch.reportCredits = n(data.reportCredits);
+    const normalized = {
+      ...data,
+      balance: n(data.balance ?? data.denge),
+      freeReportsLeft: n(data.freeReportsLeft ?? data["ücretsizRaporlarSol"]),
+      reportCredits: n(data.reportCredits ?? data["raporKrediler"]),
+    };
 
-      if (Object.keys(patch).length) {
-        patch.updatedAt = FieldValue.serverTimestamp();
-        tx.set(ref, patch, { merge: true });
-        return { ...data, ...patch };
-      }
+    const patch = {};
 
-      return data;
-    });
-  }
+    if (typeof data.balance !== "number") patch.balance = normalized.balance;
+    if (typeof data.freeReportsLeft !== "number") patch.freeReportsLeft = normalized.freeReportsLeft;
+    if (typeof data.reportCredits !== "number") patch.reportCredits = normalized.reportCredits;
 
+    if (typeof data.denge !== "number") patch.denge = normalized.balance;
+    if (typeof data["ücretsizRaporlarSol"] !== "number") patch["ücretsizRaporlarSol"] = normalized.freeReportsLeft;
+    if (typeof data["raporKrediler"] !== "number") patch["raporKrediler"] = normalized.reportCredits;
+
+    if (Object.keys(patch).length) {
+      patch.updatedAt = FieldValue.serverTimestamp();
+      tx.set(ref, patch, { merge: true });
+      return { ...normalized, ...patch };
+    }
+
+    return normalized;
+  });
+}
   function updateWalletUI(w) {
     const amountEl = document.getElementById("walletAmount");
     const subEl = document.getElementById("walletSub");
