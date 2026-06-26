@@ -523,7 +523,7 @@ async function approveOrder(uid, orderId) {
 window.Wallet = {
   PACKS,
   load: loadWallet,
-  listen,
+  listen: listenWallet,
   listenOrders,
   createOrder,
   startQnbPayment,
