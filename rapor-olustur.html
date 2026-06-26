@@ -423,76 +423,48 @@ document.addEventListener("DOMContentLoaded", () => {
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
-  function clearReportView(){
-    $("raporTarih").textContent = "";
+ function clearReportView(){
+  $("raporTarih").textContent = "";
 
-    $("genelBilgi").innerHTML = `
-      <div class='warning'>
-        <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
-        Bu raporu görüntülemek için önce hak yüklemesi yapmanız gerekmektedir.<br>
-        Lütfen <b>Cüzdan</b> bölümünden fatura bilgilerinizi kaydedip ödeme yapmak için paket seçiminizi tamamlayınız.<br><br>
-        Dilerseniz aşağıdaki buton ile hak yükleme talebi gönderebilirsiniz.
-      </div>
+  $("genelBilgi").innerHTML = `
+    <div class='warning'>
+      <b>Aktif rapor hakkınız bulunmamaktadır.</b><br><br>
+      Bu raporu oluşturmak/görüntülemek için önce hak yüklemesi yapmanız gerekmektedir.<br>
+      Lütfen <b>Cüzdan</b> bölümünden paket seçiminizi tamamlayınız.
+    </div>
 
-      <button id="talepBtn" style="
-        margin-top:15px;
-        padding:12px 18px;
-        background:#1976d2;
-        color:white;
-        border:none;
-        border-radius:10px;
-        font-weight:bold;
-        cursor:pointer;
-      ">
-        📩 Hak Yükleme Talebi Gönder
-      </button>
-    `;
+    <button id="walletBtn" style="
+      margin-top:15px;
+      padding:12px 18px;
+      background:#1976d2;
+      color:white;
+      border:none;
+      border-radius:10px;
+      font-weight:bold;
+      cursor:pointer;
+    ">
+      🎟️ Cüzdana Git
+    </button>
+  `;
 
-    $("imarTablo").innerHTML = "";
-    $("imarMetin").textContent = "";
-    $("belgelerMetin").textContent = "";
-    $("binaMetin").textContent = "";
-    $("bbMetin").textContent = "";
-    $("konumMetin").textContent = "";
-    $("tapuMetinB1").textContent = "";
-    $("tapuMetinB2").textContent = "";
-    $("emsalMetin").textContent = "";
+  $("imarTablo").innerHTML = "";
+  $("imarMetin").textContent = "";
+  $("belgelerMetin").textContent = "";
+  $("binaMetin").textContent = "";
+  $("bbMetin").textContent = "";
+  $("konumMetin").textContent = "";
+  $("tapuMetinB1").textContent = "";
+  $("tapuMetinB2").textContent = "";
+  $("emsalMetin").textContent = "";
 
-    setTimeout(() => {
-      const btn = document.getElementById("talepBtn");
-      if (!btn) return;
-
-      btn.onclick = async () => {
-  const user = firebase.auth().currentUser;
-  if (!user){
-    alert("Talep göndermek için giriş yapmanız gerekiyor.");
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "Gönderiliyor...";
-
-  try {
-    await firebase.firestore().collection("hak_talepleri").add({
-      uid: user.uid,
-      email: user.email || "",
-      rid: rid,
-      status: "bekliyor",
-      type: "hak_yukleme_talebi",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    
-  } catch (e) {
-    console.error("Hak talebi gönderme hatası:", e);
-    alert("Hata oluştu.");
-    btn.disabled = false;
-    btn.textContent = "📩 Hak Yükleme Talebi Gönder";
-  }
-};
-    }, 100);
-  }
-
+  setTimeout(() => {
+    const btn = document.getElementById("walletBtn");
+    if (!btn) return;
+    btn.onclick = () => {
+      location.href = "/wallet.html";
+    };
+  }, 100);
+}
   function loadReportLocal(){
     let raporlar = [];
     try{ raporlar = JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }catch{ raporlar = []; }
@@ -640,19 +612,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const locked = isLockedLocal() || await isLockedRemote(user.uid);
 
-    if (locked){
-      render(rep);
-      loadEdits();
-      setLockedLocal();
-      setStatus("🔒 Kilitli.", "Bu rapor final yapılmış. Metni düzenleyip PDF alabilirsin.");
-      $("btnFinalCreate").disabled = true;
-    } else {
-      clearReportView();
-      setStatus("⛔ Rapor kilitli", "Raporu görüntülemek için önce hak yükleyip final oluşturmalısınız.");
-      const btn = $("btnFinalCreate");
-      btn.disabled = false;
-      btn.onclick = () => finalizeFlow(user);
-    }
+   if (locked){
+  render(rep);
+  loadEdits();
+  setLockedLocal();
+  setStatus("🔒 Kilitli.", "Bu rapor final yapılmış. Metni düzenleyip PDF alabilirsin.");
+  $("btnFinalCreate").disabled = true;
+} else {
+  render(rep);
+  loadEdits();
+
+  setStatus("📝 Ön izleme", "Rapor bilgileri yüklendi. Final oluşturursan hak düşer ve rapor kilitlenir.");
+
+  const btn = $("btnFinalCreate");
+  btn.disabled = false;
+  btn.onclick = () => finalizeFlow(user);
+}
 
     if (confirmParam) setTimeout(()=> finalizeFlow(user), 150);
   }
