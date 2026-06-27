@@ -321,6 +321,8 @@
   document.body.appendChild(form);
   form.submit();
 }
+const PAYMENT_SERVER_URL =
+  "https://europe-west1-raporanx.cloudfunctions.net";
 
 async function startQnbPayment(packId) {
   const user = auth.currentUser;
@@ -335,10 +337,13 @@ async function startQnbPayment(packId) {
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
 
-  window.location.href =
-    "https://europe-west1-raporanx.cloudfunctions.net/createQnbPaymentPage" +
+  const url =
+    PAYMENT_SERVER_URL +
+    "/createQnbPaymentPage" +
     "?uid=" + encodeURIComponent(user.uid) +
     "&orderId=" + encodeURIComponent(order.orderId);
+
+  window.location.href = url;
 }
 
 async function approveOrder(uid, orderId) {
