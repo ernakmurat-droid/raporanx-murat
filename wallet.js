@@ -343,7 +343,7 @@ async function startQnbPayment(packId) {
     "?uid=" + encodeURIComponent(user.uid) +
     "&orderId=" + encodeURIComponent(order.orderId);
 
-  window.location.href = url;
+  window.open(url, "_blank");
 }
 
 async function approveOrder(uid, orderId) {
