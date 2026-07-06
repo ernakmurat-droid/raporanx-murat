@@ -28,7 +28,21 @@
   function n(v) {
     return Number(v ?? 0) || 0;
   }
+function getCredits(w) {
+  return Math.max(
+    n(w?.reportCredits),
+    n(w?.raporKrediler),
+    n(w?.RaporKredileri)
+  );
+}
 
+function getFreeLeft(w) {
+  return Math.max(
+    n(w?.freeReportsLeft),
+    n(w?.["ücretsizRaporlarSol"]),
+    n(w?.["ÜcretsizRaporlarSol"])
+  );
+}
   function tl(nm) {
     return new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(n(nm));
   }
@@ -118,11 +132,11 @@
     const data = snap.data() || {};
 
     const normalized = {
-      ...data,
-      balance: n(data.balance ?? data.denge),
-      freeReportsLeft: n(data.freeReportsLeft ?? data["ücretsizRaporlarSol"]),
-      reportCredits: n(data.reportCredits ?? data["raporKrediler"]),
-    };
+  ...data,
+  balance: n(data.balance ?? data.denge),
+  freeReportsLeft: getFreeLeft(data),
+  reportCredits: getCredits(data),
+};
 
     const patch = {};
 
@@ -149,8 +163,8 @@
   if (!amountEl || !subEl) return;
 
   const balance = Number(w?.balance ?? w?.denge ?? 0);
-  const freeLeft = Number(w?.freeReportsLeft ?? w?.["ücretsizRaporlarSol"] ?? w?.["ÜcretsizRaporlarSol"] ?? 0);
-  const credits = Number(w?.reportCredits ?? w?.raporKrediler ?? w?.RaporKredileri ?? 0);
+  const freeLeft = getFreeLeft(w);
+const credits = getCredits(w);
 
   amountEl.textContent = `🎟️ ${freeLeft + credits} Hak`;
   subEl.textContent = `🎁 Ücretsiz: ${freeLeft} • 🧾 Paket: ${credits} • 💰 Bakiye: ${balance} TL`;
@@ -196,8 +210,8 @@
       }
 
       const w = mainSnap.exists ? mainSnap.data() || {} : {};
-      let freeLeft = n(w.freeReportsLeft ?? w["ücretsizRaporlarSol"] ?? w["ÜcretsizRaporlarSol"]);
-      let credits = n(w.reportCredits ?? w.raporKrediler ?? w.RaporKredileri);
+     let freeLeft = getFreeLeft(w);
+let credits = getCredits(w);
       const balance = n(w.balance ?? w.denge);
 if (freeLeft > 0) {
   freeLeft -= 1;
@@ -384,16 +398,18 @@ async function approveOrder(uid, orderId) {
     }
 
     const w = wSnap.exists ? wSnap.data() || {} : {};
-    const newCredits = n(w.reportCredits) + creditsToAdd;
+    const newCredits = getCredits(w) + creditsToAdd;
 
-    tx.set(
-      wRef,
-      {
-        reportCredits: newCredits,
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+   tx.set(
+  wRef,
+  {
+    reportCredits: newCredits,
+    raporKrediler: newCredits,
+    updatedAt: FieldValue.serverTimestamp(),
+    guncellendi: FieldValue.serverTimestamp(),
+  },
+  { merge: true }
+);
 
     tx.set(
       oRef,
