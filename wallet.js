@@ -143,21 +143,20 @@
     return normalized;
   });
 }
-  function updateWalletUI(w) {
-    const amountEl = document.getElementById("walletAmount");
-    const subEl = document.getElementById("walletSub");
-    if (!amountEl || !subEl) return;
+ function updateWalletUI(w) {
+  const amountEl = document.getElementById("walletAmount");
+  const subEl = document.getElementById("walletSub");
+  if (!amountEl || !subEl) return;
 
-    const balance = n(w?.balance);
-    const freeLeft = n(w?.freeReportsLeft);
-    const credits = n(w?.reportCredits);
+  const balance = n(w?.balance ?? w?.denge);
+  const freeLeft = n(w?.freeReportsLeft ?? w?.ücretsizRaporlarSol ?? w?.["ücretsizRaporlarSol"]);
+  const credits = n(w?.reportCredits ?? w?.raporKrediler ?? w?.RaporKredileri);
 
-    amountEl.textContent = `🎟️ ${freeLeft + credits} Hak`;
-    subEl.textContent = `🎁 Ücretsiz: ${freeLeft} • 🧾 Paket: ${credits} • 💰 Bakiye: ${tl(balance)} TL`;
+  amountEl.textContent = `🎟️ ${freeLeft + credits} Hak`;
+  subEl.textContent = `🎁 Ücretsiz: ${freeLeft} • 🧾 Paket: ${credits} • 💰 Bakiye: ${tl(balance)} TL`;
 
-    window.WALLET = { balance, freeReportsLeft: freeLeft, reportCredits: credits };
-  }
-
+  window.WALLET = { balance, freeReportsLeft: freeLeft, reportCredits: credits };
+}
   async function loadWallet(uid) {
     const w = await ensureWallet(uid);
     updateWalletUI(w);
@@ -192,9 +191,9 @@
       }
 
       const w = mainSnap.exists ? mainSnap.data() || {} : {};
-      let freeLeft = n(w.freeReportsLeft);
-      let credits = n(w.reportCredits);
-      const balance = n(w.balance);
+      let freeLeft = n(w.freeReportsLeft ?? w.ücretsizRaporlarSol ?? w["ücretsizRaporlarSol"]);
+      let credits = n(w.reportCredits ?? w.raporKrediler ?? w.RaporKredileri);
+      const balance = n(w.balance ?? w.denge);
 
       if (freeLeft > 0) {
         freeLeft -= 1;
