@@ -191,7 +191,7 @@
       }
 
       const w = mainSnap.exists ? mainSnap.data() || {} : {};
-      let freeLeft = n(w.freeReportsLeft ?? w.ücretsizRaporlarSol ?? w["ücretsizRaporlarSol"]);
+      let freeLeft = n(w.freeReportsLeft ?? w["ücretsizRaporlarSol"] ?? w["ÜcretsizRaporlarSol"]);
       let credits = n(w.reportCredits ?? w.raporKrediler ?? w.RaporKredileri);
       const balance = n(w.balance ?? w.denge);
 
@@ -223,35 +223,35 @@
         };
       }
 
-      if (credits > 0) {
-        credits -= 1;
+    if (credits > 0) {
+  credits -= 1;
 
-        tx.set(
-          mainRef,
-          {
-            reportCredits: credits,
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
+  tx.set(mainRef, {
+    reportCredits: credits,
+    raporKrediler: credits,
+    updatedAt: FieldValue.serverTimestamp(),
+    guncellendi: FieldValue.serverTimestamp(),
+  }, { merge: true });
 
-        tx.set(
-          useRef,
-          {
-            usedAt: FieldValue.serverTimestamp(),
-            kind: "credit",
-          },
-          { merge: true }
-        );
+  tx.set(useRef, {
+    usedAt: FieldValue.serverTimestamp(),
+    kind: "credit",
+  }, { merge: true });
 
-        return {
-          ok: true,
-          already: false,
-          wallet: { ...w, freeReportsLeft: freeLeft, reportCredits: credits, balance },
-        };
-      }
+  return {
+    ok: true,
+    already: false,
+    wallet: {
+      ...w,
+      freeReportsLeft: freeLeft,
+      reportCredits: credits,
+      raporKrediler: credits,
+      balance,
+    },
+  };
+}
 
-      return { ok: false, reason: "Hak bitti. Paket satın alman gerekiyor.", wallet: w };
+return { ok: false, reason: "Hak bitti. Paket satın alman gerekiyor.", wallet: w };
     });
 
     if (result?.wallet) updateWalletUI(result.wallet);
