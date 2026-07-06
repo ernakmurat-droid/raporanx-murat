@@ -527,16 +527,17 @@ async function approveOrder(uid, orderId) {
 }
 window.Wallet = {
   PACKS,
-  load: loadWallet,
-  listen: listenWallet,
+  load,
+  listen,
   listenOrders,
   createOrder,
   startQnbPayment,
   approveOrder,
   setPaymentLink,
   markPaid,
+  consumeReport,
   getBillingProfile,
   saveBillingProfile,
-  listenBillingProfile,
+  listenBillingProfile
 };
 })();
