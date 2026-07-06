@@ -214,9 +214,9 @@
     console.warn(e);
   }
 
-  const totalHak =
-    Number(w?.reportCredits || 0) +
-    Number(w?.freeReportsLeft || 0);
+ const totalHak =
+  Number(w?.reportCredits ?? w?.raporKrediler ?? w?.RaporKredileri ?? 0) +
+  Number(w?.freeReportsLeft ?? w?.["ücretsizRaporlarSol"] ?? w?.["ÜcretsizRaporlarSol"] ?? 0);
 
   if(totalHak <= 0){
     alert("Aktif rapor hakkınız bulunmamaktadır. Rapor verileriniz silinmedi. Lütfen cüzdandan hak yükleyiniz.");
