@@ -148,14 +148,19 @@
   const subEl = document.getElementById("walletSub");
   if (!amountEl || !subEl) return;
 
-  const balance = n(w?.balance ?? w?.denge);
-  const freeLeft = n(w?.freeReportsLeft ?? w?.ücretsizRaporlarSol ?? w?.["ücretsizRaporlarSol"]);
-  const credits = n(w?.reportCredits ?? w?.raporKrediler ?? w?.RaporKredileri);
+  const balance = Number(w?.balance ?? w?.denge ?? 0);
+  const freeLeft = Number(w?.freeReportsLeft ?? w?.["ücretsizRaporlarSol"] ?? w?.["ÜcretsizRaporlarSol"] ?? 0);
+  const credits = Number(w?.reportCredits ?? w?.raporKrediler ?? w?.RaporKredileri ?? 0);
 
   amountEl.textContent = `🎟️ ${freeLeft + credits} Hak`;
-  subEl.textContent = `🎁 Ücretsiz: ${freeLeft} • 🧾 Paket: ${credits} • 💰 Bakiye: ${tl(balance)} TL`;
+  subEl.textContent = `🎁 Ücretsiz: ${freeLeft} • 🧾 Paket: ${credits} • 💰 Bakiye: ${balance} TL`;
 
-  window.WALLET = { balance, freeReportsLeft: freeLeft, reportCredits: credits };
+  window.WALLET = {
+    balance,
+    freeReportsLeft: freeLeft,
+    reportCredits: credits,
+    raporKrediler: credits
+  };
 }
   async function loadWallet(uid) {
     const w = await ensureWallet(uid);
@@ -194,35 +199,34 @@
       let freeLeft = n(w.freeReportsLeft ?? w["ücretsizRaporlarSol"] ?? w["ÜcretsizRaporlarSol"]);
       let credits = n(w.reportCredits ?? w.raporKrediler ?? w.RaporKredileri);
       const balance = n(w.balance ?? w.denge);
+if (freeLeft > 0) {
+  freeLeft -= 1;
 
-      if (freeLeft > 0) {
-        freeLeft -= 1;
+  tx.set(mainRef, {
+    freeReportsLeft: freeLeft,
+    "ücretsizRaporlarSol": freeLeft,
+    updatedAt: FieldValue.serverTimestamp(),
+    guncellendi: FieldValue.serverTimestamp(),
+  }, { merge: true });
 
-        tx.set(
-          mainRef,
-          {
-            freeReportsLeft: freeLeft,
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
+  tx.set(useRef, {
+    usedAt: FieldValue.serverTimestamp(),
+    kind: "free",
+  }, { merge: true });
 
-        tx.set(
-          useRef,
-          {
-            usedAt: FieldValue.serverTimestamp(),
-            kind: "free",
-          },
-          { merge: true }
-        );
-
-        return {
-          ok: true,
-          already: false,
-          wallet: { ...w, freeReportsLeft: freeLeft, reportCredits: credits, balance },
-        };
-      }
-
+  return {
+    ok: true,
+    already: false,
+    wallet: {
+      ...w,
+      freeReportsLeft: freeLeft,
+      "ücretsizRaporlarSol": freeLeft,
+      reportCredits: credits,
+      raporKrediler: credits,
+      balance,
+    },
+  };
+}
     if (credits > 0) {
   credits -= 1;
 
