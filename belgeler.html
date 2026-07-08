@@ -222,9 +222,17 @@
   // === UI helper ===
   const fieldsToRemember = ['belediye','il','ilce','projeTarihiText','denetimFirma','yikimAciklamaInput','uyumAciklama','arsivAda','arsivParsel'];
 
-  document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && (e.key === 'c' || e.key === 'p' || e.key === 's' || e.key === 'u')) e.preventDefault();
-  });
+ document.addEventListener('keydown', function(e) {
+  const k = (e.key || '').toLowerCase();
+
+  // Kopyala / kes / yapıştır serbest
+  if (e.ctrlKey && (k === 'c' || k === 'v' || k === 'x')) return;
+
+  // Sadece tarayıcı kısayollarını engelle
+  if (e.ctrlKey && (k === 'p' || k === 's' || k === 'u')) {
+    e.preventDefault();
+  }
+}); 
 
   function checkBila() {
     const textVal = (document.getElementById('projeTarihiText').value || "").toLowerCase();
