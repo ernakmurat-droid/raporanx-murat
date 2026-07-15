@@ -339,7 +339,7 @@ return { ok: false, reason: "Hak bitti. Paket satın alman gerekiyor.", wallet: 
   form.submit();
 }
 const PAYMENT_SERVER_URL =
-  "https://europe-west1-raporanx.cloudfunctions.net";
+  "https://pay.raporanx.com";
 
 async function startQnbPayment(packId) {
   const user = auth.currentUser;
