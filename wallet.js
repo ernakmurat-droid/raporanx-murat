@@ -356,7 +356,7 @@ async function startQnbPayment(packId) {
 
   const url =
     PAYMENT_SERVER_URL +
-    "/createQnbPaymentPage" +
+    "/create-payment" +
     "?uid=" + encodeURIComponent(user.uid) +
     "&orderId=" + encodeURIComponent(order.orderId);
 
