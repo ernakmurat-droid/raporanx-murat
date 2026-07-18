@@ -349,6 +349,28 @@
         flex:1;
       }
     }
+    .ai-emsal-card{
+      margin:18px 0;
+      padding:18px;
+      border:2px solid #d1c4e9;
+      border-radius:16px;
+      background:linear-gradient(135deg,#faf8ff,#f3e5f5);
+      box-shadow:0 7px 18px rgba(49,27,146,.10);
+    }
+    .ai-emsal-title{font-size:19px;font-weight:900;color:#4527a0;margin-bottom:8px;}
+    .ai-emsal-card textarea{
+      width:100%; min-height:110px; resize:vertical; box-sizing:border-box;
+      padding:12px; border:1px solid #b39ddb; border-radius:10px;
+      font:inherit; background:#fff;
+    }
+    .ai-emsal-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+    .ai-emsal-actions button{flex:1;min-width:180px;margin:0;}
+    .ai-status{margin-top:10px;font-weight:800;color:#4527a0;min-height:22px;}
+    .ai-preview{display:none;margin-top:14px;overflow-x:auto;}
+    .ai-preview table{width:100%;border-collapse:collapse;background:#fff;}
+    .ai-preview th,.ai-preview td{border:1px solid #ddd;padding:8px;text-align:left;}
+    .ai-preview th{background:#ede7f6;color:#311b92;min-width:150px;}
+    .ai-preview input,.ai-preview select{width:100%;box-sizing:border-box;padding:8px;border:1px solid #bbb;border-radius:6px;}
   </style>
 </head>
 
@@ -390,6 +412,21 @@
 
   <div class="section-title">1. Kayıtlı Emsaller (ORTAK HAVUZ)</div>
   <div id="emsalListesi"></div>
+
+  <div class="ai-emsal-card">
+    <div class="ai-emsal-title">🎙️ Yapay Zekâ ile Emsal Girişi</div>
+    <div style="font-size:13px;color:#555;margin-bottom:9px;">
+      Emsali doğal şekilde anlatın. Yapay zekâ bilgileri tabloya ayırır; siz onaylamadan kaydetmez.
+    </div>
+    <textarea id="aiEmsalMetni" placeholder="Örnek: Ural Emlak 0532..., konu taşınmaza yakın, 5 katlı binanın 2. katında, 3+1 daire, beyan 110 m², tahmini 105 m², 3.500.000 TL satılık..."></textarea>
+    <div class="ai-emsal-actions">
+      <button type="button" class="btn" id="aiSesBtn" onclick="aiSesliEmsalBaslat()" style="background:#00695c;color:#fff;">🎙️ SESLİ ANLAT</button>
+      <button type="button" class="btn" id="aiAyirBtn" onclick="aiEmsaliAyir()" style="background:#5e35b1;color:#fff;">✨ TABLOYA AYIR</button>
+    </div>
+    <div id="aiEmsalDurum" class="ai-status"></div>
+    <div id="aiEmsalOnizleme" class="ai-preview"></div>
+  </div>
+
   <button class="btn btn-add" onclick="formuAc()">+ YENİ EMSAL ARAŞTIRMASI EKLE</button>
 
   <div id="emsalFormContainer" class="card" style="display:none; border-top:5px solid var(--primary);">
@@ -1264,6 +1301,160 @@
       };
     }
   })();
+
+  const RAPORANX_AI_SERVER = window.RAPORANX_AI_SERVER || "https://pay.raporanx.com";
+  const AI_EMSAL_FIELDS = [
+    ["f1", "Emsal Kaynağı / Telefon"],
+    ["f3", "Konum / Yakınlık"],
+    ["f4", "Bina Kat Sayısı"],
+    ["f5", "Bulunduğu Kat"],
+    ["f6", "Oda Sayısı"],
+    ["f7", "Beyan Alan (m²)"],
+    ["f8", "Tahmini Alan (m²)"],
+    ["f9", "Taşınmaz Cinsi"],
+    ["f10", "İstenen Fiyat (TL)"],
+    ["f11", "Durumu"],
+    ["f14", "Pazarlık Payı %"],
+    ["f12", "Şerefiye Olumlu %"],
+    ["f13", "Şerefiye Olumsuz %"],
+  ];
+
+  let aiRecognition = null;
+
+  window.aiSesliEmsalBaslat = function(){
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const status = el("aiEmsalDurum");
+    const button = el("aiSesBtn");
+    if(!Recognition){
+      if(status) status.textContent = "Bu tarayıcı sesli girişi desteklemiyor. Metni yazarak devam edebilirsiniz.";
+      return;
+    }
+
+    if(aiRecognition){
+      try{ aiRecognition.stop(); }catch(e){}
+      return;
+    }
+
+    const recognition = new Recognition();
+    aiRecognition = recognition;
+    recognition.lang = "tr-TR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = ()=>{
+      if(status) status.textContent = "Dinliyorum… Emsali doğal şekilde anlatın.";
+      if(button) button.textContent = "⏹️ DİNLEMEYİ BİTİR";
+    };
+    recognition.onresult = (event)=>{
+      const transcript = Array.from(event.results)
+        .map(result => result[0]?.transcript || "")
+        .join(" ")
+        .trim();
+      const area = el("aiEmsalMetni");
+      if(area && transcript) area.value = [area.value.trim(), transcript].filter(Boolean).join(" ");
+      if(status) status.textContent = "Ses yazıya çevrildi. Kontrol edip TABLOYA AYIR düğmesine basın.";
+    };
+    recognition.onerror = (event)=>{
+      if(status) status.textContent = event.error === "not-allowed"
+        ? "Mikrofon izni verilmedi. Tarayıcıdan mikrofon iznini açın."
+        : "Ses alınamadı. Tekrar deneyin veya metni yazın.";
+    };
+    recognition.onend = ()=>{
+      aiRecognition = null;
+      if(button) button.textContent = "🎙️ SESLİ ANLAT";
+    };
+    recognition.start();
+  };
+
+  function aiEmsalOnizlemeGoster(data){
+    const preview = el("aiEmsalOnizleme");
+    if(!preview) return;
+
+    const rows = AI_EMSAL_FIELDS.map(([id, label]) => {
+      const control = id === "f11"
+        ? `<select id="aip_${id}"><option value="satılıktır">Satılıktır</option><option value="kiralıktır">Kiralıktır</option></select>`
+        : `<input id="aip_${id}" type="text">`;
+      return `<tr><th>${label}</th><td>${control}</td></tr>`;
+    }).join("");
+
+    preview.innerHTML = `
+      <div style="font-weight:900;color:#2e7d32;margin-bottom:8px;">Kontrol Tablosu — değiştirmek istediğiniz alanı düzeltin.</div>
+      <table><tbody>${rows}</tbody></table>
+      <div class="ai-emsal-actions">
+        <button type="button" class="btn" onclick="aiEmsaliFormaAktar()" style="background:#2e7d32;color:#fff;">✅ ONAYLA VE FORMA AKTAR</button>
+        <button type="button" class="btn" onclick="aiEmsalOnizlemeKapat()" style="background:#757575;color:#fff;">VAZGEÇ</button>
+      </div>`;
+
+    AI_EMSAL_FIELDS.forEach(([id]) => {
+      const node = el("aip_" + id);
+      if(node) node.value = data?.[id] ?? (id === "f14" ? "5" : (id === "f12" || id === "f13" ? "0" : ""));
+    });
+    preview.style.display = "block";
+    preview.scrollIntoView({ behavior:"smooth", block:"nearest" });
+  }
+
+  window.aiEmsaliAyir = async function(){
+    const text = val("aiEmsalMetni").trim();
+    const status = el("aiEmsalDurum");
+    const button = el("aiAyirBtn");
+    if(text.length < 10){
+      if(status) status.textContent = "Önce emsal bilgisini anlatın veya yazın.";
+      return;
+    }
+
+    try{
+      const user = auth.currentUser;
+      if(!user) throw new Error("Önce RaporanX’e giriş yapın.");
+      if(button){ button.disabled = true; button.textContent = "⏳ AYRILIYOR…"; }
+      if(status) status.textContent = "Yapay zekâ emsal bilgilerini tabloya ayırıyor…";
+
+      const token = await user.getIdToken();
+      const response = await fetch(`${RAPORANX_AI_SERVER}/ai/parse-emsal`, {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":`Bearer ${token}`,
+        },
+        body:JSON.stringify({ text }),
+      });
+      const result = await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(result.error || "Yapay zekâ cevabı alınamadı.");
+
+      aiEmsalOnizlemeGoster(result.emsal || {});
+      if(status) status.textContent = "Bilgiler hazır. Kontrol edin; siz onaylamadan emsale kaydedilmez.";
+    }catch(error){
+      console.error("aiEmsaliAyir:", error);
+      if(status) status.textContent = error.message || "Yapay zekâ işlemi başarısız oldu.";
+    }finally{
+      if(button){ button.disabled = false; button.textContent = "✨ TABLOYA AYIR"; }
+    }
+  };
+
+  window.aiEmsaliFormaAktar = function(){
+    window.formuAc(-1);
+    AI_EMSAL_FIELDS.forEach(([id]) => {
+      const source = el("aip_" + id);
+      if(!source) return;
+      if(id === "f10"){
+        const digits = String(source.value || "").replace(/\D/g, "");
+        setVal(digits, "f10");
+        setVal(digits ? new Intl.NumberFormat("tr-TR").format(digits) : "", "f10mask");
+      }else{
+        setVal(source.value, id);
+      }
+    });
+    hesapla();
+    const status = el("aiEmsalDurum");
+    if(status) status.textContent = "Forma aktarıldı. Son kontrolü yapıp LİSTEYE İŞLE VE MÜHÜRLE düğmesine basın.";
+    el("emsalFormContainer")?.scrollIntoView({ behavior:"smooth", block:"start" });
+  };
+
+  window.aiEmsalOnizlemeKapat = function(){
+    const preview = el("aiEmsalOnizleme");
+    if(preview){ preview.style.display = "none"; preview.innerHTML = ""; }
+    const status = el("aiEmsalDurum");
+    if(status) status.textContent = "Önizleme kapatıldı; anlatım metniniz korunuyor.";
+  };
 </script>
 
 </body>
