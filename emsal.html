@@ -799,6 +799,14 @@
         <label>(17) Düzeltilmiş Birim Değer (m²)</label>
         <input type="text" id="f17" readonly style="background:#e8f5e9; font-weight:900; color:#2e7d32;">
       </div>
+      <div class="input-group" style="grid-column:span 2;">
+  <label>(18) Emsal Koordinatı <span style="font-weight:400;color:#777;">(İsteğe Bağlı)</span></label>
+  <input
+    type="text"
+    id="f18"
+    placeholder="Örn: 41.282345, 31.419876"
+    onfocus="this.select();">
+</div>
     </div>
 
     <div style="display:flex; gap:10px; margin-top:20px;">
@@ -1180,8 +1188,13 @@
     `${e.f4 || "."} katlı binanın ${e.f5 || "."} katında konumlu, ${e.f6 || "."} tipindeki, ` +
     `${e.f7 || "."} m² kullanım alanlı beyan edilen, ${e.f8 || "."} m² alanlı tahmin edilen, ` +
     `${e.f9 || "daire"} ${new Intl.NumberFormat('tr-TR').format(f10Val)} TL bedel ile ${e.f11 || "satılıktır"}.`;
-
-  return { anaMetin, hesapSatiri };
+    const koordinatMetni = e.f18
+  ? ` Emsal koordinatı: ${e.f18}.`
+  : "";
+  return {
+  anaMetin: anaMetin + koordinatMetni,
+  hesapSatiri
+};
 }
 
   function getOzetForBB(bb){
@@ -1331,7 +1344,7 @@
     const pool = report ? getPool(report) : [];
     const e = (index >= 0 && pool[index]) ? pool[index] : null;
 
-    for(let k = 1; k <= 14; k++){
+    for(let k = 1; k <= 18; k++){
       const idA = "f" + k;
       const n = el(idA);
       if(!n) continue;
@@ -1380,7 +1393,7 @@
     const index = parseInt(idxRaw, 10);
 
     let e = {};
-    for(let k = 1; k <= 14; k++){
+    for(let k = 1; k <= 18; k++){
       const idA = "f" + k;
       const n = el(idA);
       if(n) e[idA] = n.value;
@@ -1785,6 +1798,107 @@
     const status = el("aiEmsalDurum");
     if(status) status.textContent = "Önizleme kapatıldı; anlatım metniniz korunuyor.";
   };
+  let aiSecilenGorsel = null;
+
+window.aiYontemSec = function(yontem){
+  const paneller = {
+    metin: el("aiMetinPanel"),
+    gorsel: el("aiGorselPanel"),
+    beyan: el("aiBeyanPanel")
+  };
+
+  const sekmeler = {
+    metin: el("aiMetinTab"),
+    gorsel: el("aiGorselTab"),
+    beyan: el("aiBeyanTab")
+  };
+
+  Object.keys(paneller).forEach((key)=>{
+    paneller[key]?.classList.toggle("hidden", key !== yontem);
+    sekmeler[key]?.classList.toggle("active", key === yontem);
+  });
+
+  const status = el("aiEmsalDurum");
+  if(status) status.textContent = "";
+};
+
+window.aiEmsalGorselSecildi = function(event){
+  const file = event.target.files?.[0];
+  const status = el("aiEmsalDurum");
+
+  if(!file) return;
+
+  const izinliTipler = [
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ];
+
+  if(!izinliTipler.includes(file.type)){
+    event.target.value = "";
+    aiSecilenGorsel = null;
+
+    if(status){
+      status.textContent = "Yalnızca JPG, PNG veya WEBP görsel yükleyebilirsiniz.";
+    }
+    return;
+  }
+
+  if(file.size > 8 * 1024 * 1024){
+    event.target.value = "";
+    aiSecilenGorsel = null;
+
+    if(status){
+      status.textContent = "Görsel en fazla 8 MB olabilir.";
+    }
+    return;
+  }
+
+  aiSecilenGorsel = file;
+
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+    const img = el("aiGorselResim");
+    const preview = el("aiGorselOnizleme");
+
+    if(img) img.src = e.target.result;
+    preview?.classList.remove("hidden");
+
+    if(status){
+      status.textContent =
+        "Görsel hazır. İLANI OKU VE BİLGİLERİ HAZIRLA düğmesine basın.";
+    }
+  };
+
+  reader.onerror = function(){
+    aiSecilenGorsel = null;
+
+    if(status){
+      status.textContent = "Görsel okunamadı. Başka bir görsel deneyin.";
+    }
+  };
+
+  reader.readAsDataURL(file);
+};
+
+window.aiEmsalGorselTemizle = function(){
+  aiSecilenGorsel = null;
+
+  const input = el("aiEmsalGorsel");
+  const preview = el("aiGorselOnizleme");
+  const img = el("aiGorselResim");
+  const status = el("aiEmsalDurum");
+
+  if(input) input.value = "";
+  if(img) img.removeAttribute("src");
+
+  preview?.classList.add("hidden");
+
+  if(status){
+    status.textContent = "Görsel kaldırıldı.";
+  }
+};
 </script>
 
 </body>
