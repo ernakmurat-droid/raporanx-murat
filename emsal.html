@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
@@ -1773,24 +1773,51 @@
     }
   };
 
-  window.aiEmsaliFormaAktar = function(){
-    window.formuAc(-1);
-    AI_EMSAL_FIELDS.forEach(([id]) => {
-      const source = el("aip_" + id);
-      if(!source) return;
-      if(id === "f10"){
-        const digits = String(source.value || "").replace(/\D/g, "");
-        setVal(digits, "f10");
-        setVal(digits ? new Intl.NumberFormat("tr-TR").format(digits) : "", "f10mask");
-      }else{
-        setVal(source.value, id);
-      }
-    });
-    hesapla();
-    const status = el("aiEmsalDurum");
-    if(status) status.textContent = "Forma aktarıldı. Son kontrolü yapıp LİSTEYE İŞLE VE MÜHÜRLE düğmesine basın.";
-    el("emsalFormContainer")?.scrollIntoView({ behavior:"smooth", block:"start" });
-  };
+ window.aiEmsaliFormaAktar = function(){
+  window.formuAc(-1);
+
+  AI_EMSAL_FIELDS.forEach(([id]) => {
+    const source = el("aip_" + id);
+    if(!source) return;
+
+    if(id === "f10"){
+      const digits = String(source.value || "").replace(/\D/g, "");
+      setVal(digits, "f10");
+      setVal(
+        digits ? new Intl.NumberFormat("tr-TR").format(digits) : "",
+        "f10mask"
+      );
+    }else{
+      setVal(source.value, id);
+    }
+  });
+
+  hesapla();
+
+  const preview = el("aiEmsalOnizleme");
+  if(preview){
+    preview.style.display = "none";
+    preview.innerHTML = "";
+  }
+
+  aiEmsalGorselTemizle();
+
+  const textArea = el("aiEmsalMetni");
+  if(textArea){
+    textArea.value = "";
+  }
+
+  const status = el("aiEmsalDurum");
+  if(status){
+    status.textContent =
+      "Forma aktarıldı. Son kontrolü yapıp LİSTEYE İŞLE VE MÜHÜRLE düğmesine basın.";
+  }
+
+  el("emsalFormContainer")?.scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+};
 
   window.aiEmsalOnizlemeKapat = function(){
     const preview = el("aiEmsalOnizleme");
