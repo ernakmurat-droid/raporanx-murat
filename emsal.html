@@ -1899,6 +1899,91 @@ window.aiEmsalGorselTemizle = function(){
     status.textContent = "Görsel kaldırıldı.";
   }
 };
+window.aiEmsalGorselOku = async function(){
+  const status = el("aiEmsalDurum");
+  const button = el("aiGorselOkuBtn");
+
+  if(!aiSecilenGorsel){
+    if(status) status.textContent = "Önce bir ilan görseli seçin.";
+    return;
+  }
+
+  try{
+    const user = auth.currentUser;
+    if(!user) throw new Error("Önce RaporanX’e giriş yapın.");
+
+    if(button){
+      button.disabled = true;
+      button.textContent = "⏳ İLAN OKUNUYOR…";
+    }
+
+    if(status){
+      status.textContent = "Yapay zekâ ilan görselindeki bilgileri okuyor…";
+    }
+
+    const imageData = await new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+
+      reader.onload = ()=>{
+        if(typeof reader.result !== "string"){
+          reject(new Error("Görsel verisi hazırlanamadı."));
+          return;
+        }
+
+        resolve(reader.result);
+      };
+
+      reader.onerror = ()=>{
+        reject(new Error("Görsel okunamadı."));
+      };
+
+      reader.readAsDataURL(aiSecilenGorsel);
+    });
+
+    const token = await user.getIdToken();
+
+    const response = await fetch(
+      `${RAPORANX_AI_SERVER}/ai/parse-emsal-image`,
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":`Bearer ${token}`,
+        },
+        body:JSON.stringify({ image:imageData }),
+      }
+    );
+
+    const result = await response.json().catch(()=>({}));
+
+    if(!response.ok){
+      throw new Error(
+        result.error || "İlan görseli yapay zekâ tarafından okunamadı."
+      );
+    }
+
+    aiEmsalOnizlemeGoster(result.emsal || {});
+
+    if(status){
+      status.textContent =
+        "İlan bilgileri hazır. Kontrol edin; siz onaylamadan emsale kaydedilmez.";
+    }
+
+  }catch(error){
+    console.error("aiEmsalGorselOku:", error);
+
+    if(status){
+      status.textContent =
+        error.message || "İlan görseli işlenemedi.";
+    }
+
+  }finally{
+    if(button){
+      button.disabled = false;
+      button.textContent = "🔍 İLANI OKU VE BİLGİLERİ HAZIRLA";
+    }
+  }
+};
 </script>
 
 </body>
