@@ -371,7 +371,209 @@
     .ai-preview th,.ai-preview td{border:1px solid #ddd;padding:8px;text-align:left;}
     .ai-preview th{background:#ede7f6;color:#311b92;min-width:150px;}
     .ai-preview input,.ai-preview select{width:100%;box-sizing:border-box;padding:8px;border:1px solid #bbb;border-radius:6px;}
+  .ai-emsal-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.ai-emsal-subtitle{
+  font-size:14px;
+  line-height:1.55;
+  color:#555;
+}
+
+.ai-method-tabs{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-bottom:16px;
+}
+
+.ai-method-tab{
+  min-height:52px;
+  padding:10px;
+  border:1px solid #d1c4e9;
+  border-radius:12px;
+  background:#fff;
+  color:#4527a0;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.ai-method-tab.active{
+  background:#4527a0;
+  color:#fff;
+  border-color:#4527a0;
+  box-shadow:0 5px 12px rgba(69,39,160,.22);
+}
+
+.ai-method-panel{
+  background:rgba(255,255,255,.72);
+  border:1px solid #e1d8f1;
+  border-radius:14px;
+  padding:14px;
+}
+
+.ai-panel-label{
+  display:block;
+  margin-bottom:8px;
+  font-size:14px;
+  font-weight:900;
+  color:#311b92;
+}
+
+.ai-voice-btn{
+  background:#00695c;
+  color:#fff;
+}
+
+.ai-analyse-btn{
+  background:#5e35b1;
+  color:#fff;
+}
+
+.ai-full-btn{
+  width:100%;
+  margin-top:12px;
+}
+
+.ai-upload-box{
+  min-height:150px;
+  border:2px dashed #9575cd;
+  border-radius:14px;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:20px;
+  text-align:center;
+  cursor:pointer;
+  color:#4527a0;
+}
+
+.ai-upload-box:hover{
+  background:#f7f3ff;
+  border-color:#4527a0;
+}
+
+.ai-upload-icon{
+  font-size:38px;
+}
+
+.ai-upload-box small{
+  color:#777;
+}
+
+.ai-image-preview{
+  margin-top:12px;
+  padding:10px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:12px;
+}
+
+.ai-image-preview img{
+  display:block;
+  width:100%;
+  max-height:360px;
+  object-fit:contain;
+  border-radius:8px;
+}
+
+.ai-image-remove{
+  width:100%;
+  margin-top:8px;
+  padding:10px;
+  border:0;
+  border-radius:8px;
+  background:#ffebee;
+  color:#c62828;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.ai-beyan-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+/* Yapay zekâ kontrol alanı: tablo yerine rahat kartlar */
+.ai-preview{
+  overflow:visible;
+}
+
+.ai-preview-table{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.ai-preview-row{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:10px;
+}
+
+.ai-preview-row label{
+  display:block;
+  color:#311b92;
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+
+.ai-preview-row input,
+.ai-preview-row select{
+  width:100%;
+  padding:11px;
+  border:1px solid #bbb;
+  border-radius:8px;
+  background:#fff;
+  font-size:15px;
+}
+
+@media (max-width:768px){
+  .ai-method-tabs{
+    grid-template-columns:1fr;
+  }
+
+  .ai-method-tab{
+    width:100%;
+    min-height:48px;
+  }
+
+  .ai-beyan-grid{
+    grid-template-columns:1fr;
+  }
+
+  .ai-preview-table{
+    grid-template-columns:1fr;
+  }
+
+  .ai-emsal-card{
+    padding:14px;
+    border-radius:14px;
+  }
+
+  .ai-emsal-actions{
+    flex-direction:column;
+  }
+
+  .ai-emsal-actions button{
+    width:100%;
+    min-width:0;
+  }
+}
   </style>
+
 </head>
 
 <body>
@@ -413,19 +615,146 @@
   <div class="section-title">1. Kayıtlı Emsaller (ORTAK HAVUZ)</div>
   <div id="emsalListesi"></div>
 
-  <div class="ai-emsal-card">
-    <div class="ai-emsal-title">🎙️ Yapay Zekâ ile Emsal Girişi</div>
-    <div style="font-size:13px;color:#555;margin-bottom:9px;">
-      Emsali doğal şekilde anlatın. Yapay zekâ bilgileri tabloya ayırır; siz onaylamadan kaydetmez.
+ <div class="ai-emsal-card">
+  <div class="ai-emsal-header">
+    <div>
+      <div class="ai-emsal-title">✨ Akıllı Emsal Girişi</div>
+      <div class="ai-emsal-subtitle">
+        Emsali sesle anlatın, yazın veya ilan ekran görüntüsünü yükleyin.
+        Bilgiler siz onaylamadan kaydedilmez.
+      </div>
     </div>
-    <textarea id="aiEmsalMetni" placeholder="Örnek: Ural Emlak 0532..., konu taşınmaza yakın, 5 katlı binanın 2. katında, 3+1 daire, beyan 110 m², tahmini 105 m², 3.500.000 TL satılık..."></textarea>
-    <div class="ai-emsal-actions">
-      <button type="button" class="btn" id="aiSesBtn" onclick="aiSesliEmsalBaslat()" style="background:#00695c;color:#fff;">🎙️ SESLİ ANLAT</button>
-      <button type="button" class="btn" id="aiAyirBtn" onclick="aiEmsaliAyir()" style="background:#5e35b1;color:#fff;">✨ TABLOYA AYIR</button>
-    </div>
-    <div id="aiEmsalDurum" class="ai-status"></div>
-    <div id="aiEmsalOnizleme" class="ai-preview"></div>
   </div>
+
+  <div class="ai-method-tabs">
+    <button
+      type="button"
+      id="aiMetinTab"
+      class="ai-method-tab active"
+      onclick="aiYontemSec('metin')">
+      🎙️ Ses / Metin
+    </button>
+
+    <button
+      type="button"
+      id="aiGorselTab"
+      class="ai-method-tab"
+      onclick="aiYontemSec('gorsel')">
+      📷 İlan Görseli
+    </button>
+
+    <button
+      type="button"
+      id="aiBeyanTab"
+      class="ai-method-tab"
+      onclick="aiYontemSec('beyan')">
+      🗣️ Emlakçı / Muhtar Beyanı
+    </button>
+  </div>
+
+  <!-- SES VE METİN -->
+  <div id="aiMetinPanel" class="ai-method-panel">
+    <label class="ai-panel-label">Emsali doğal şekilde anlatın</label>
+
+    <textarea
+      id="aiEmsalMetni"
+      placeholder="Örnek: Ural Emlak, konu taşınmaza yakın, 5 katlı binanın 2. katında, 3+1 daire, beyan 110 m², tahmini 105 m², 3.500.000 TL satılık.">
+    </textarea>
+
+    <div class="ai-emsal-actions">
+      <button
+        type="button"
+        class="btn ai-voice-btn"
+        id="aiSesBtn"
+        onclick="aiSesliEmsalBaslat()">
+        🎙️ SESLİ ANLAT
+      </button>
+
+      <button
+        type="button"
+        class="btn ai-analyse-btn"
+        id="aiAyirBtn"
+        onclick="aiEmsaliAyir()">
+        ✨ BİLGİLERİ HAZIRLA
+      </button>
+    </div>
+  </div>
+
+  <!-- İLAN GÖRSELİ -->
+  <div id="aiGorselPanel" class="ai-method-panel hidden">
+    <label class="ai-panel-label">İlan ekran görüntüsünü veya fotoğrafını yükleyin</label>
+
+    <label for="aiEmsalGorsel" class="ai-upload-box">
+      <span class="ai-upload-icon">📷</span>
+      <strong>Görsel seçmek için dokunun</strong>
+      <small>JPG, PNG veya WEBP</small>
+    </label>
+
+    <input
+      type="file"
+      id="aiEmsalGorsel"
+      accept="image/jpeg,image/png,image/webp"
+      class="hidden"
+      onchange="aiEmsalGorselSecildi(event)">
+
+    <div id="aiGorselOnizleme" class="ai-image-preview hidden">
+      <img id="aiGorselResim" alt="Emsal ilan görseli">
+      <button
+        type="button"
+        class="ai-image-remove"
+        onclick="aiEmsalGorselTemizle()">
+        Görseli Kaldır
+      </button>
+    </div>
+
+    <button
+      type="button"
+      class="btn ai-analyse-btn ai-full-btn"
+      id="aiGorselOkuBtn"
+      onclick="aiEmsalGorselOku()">
+      🔍 İLANI OKU VE BİLGİLERİ HAZIRLA
+    </button>
+  </div>
+
+  <!-- BEYAN -->
+  <div id="aiBeyanPanel" class="ai-method-panel hidden">
+    <label class="ai-panel-label">Emlakçı veya muhtar beyanını girin</label>
+
+    <div class="ai-beyan-grid">
+      <div class="input-group">
+        <label>Beyan Kaynağı</label>
+        <input
+          type="text"
+          id="aiBeyanKaynak"
+          placeholder="Örn: Ural Gayrimenkul / Köy Muhtarı">
+      </div>
+
+      <div class="input-group">
+        <label>Telefon</label>
+        <input
+          type="text"
+          id="aiBeyanTelefon"
+          placeholder="05xx xxx xx xx">
+      </div>
+    </div>
+
+    <textarea
+      id="aiBeyanMetni"
+      placeholder="Örnek: Bölgede 3+1 dairelerin yaklaşık 50.000 TL/m² birim değer üzerinden alıcı bulabileceği beyan edilmiştir.">
+    </textarea>
+
+    <button
+      type="button"
+      class="btn ai-analyse-btn ai-full-btn"
+      onclick="aiBeyanHazirla()">
+      ✅ BEYANI EMSAL BİLGİSİNE DÖNÜŞTÜR
+    </button>
+  </div>
+
+  <div id="aiEmsalDurum" class="ai-status"></div>
+
+  <div id="aiEmsalOnizleme" class="ai-preview"></div>
+</div>
 
   <button class="btn btn-add" onclick="formuAc()">+ YENİ EMSAL ARAŞTIRMASI EKLE</button>
 
