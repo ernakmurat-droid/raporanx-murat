@@ -163,6 +163,7 @@
     </div>
 
     <button class="btn btn-save-final" type="button" onclick="kaydet()">TAPU VERİLERİNİ VE METİNLERİ KAYDET</button>
+    <button class="btn btn-outline-danger w-100 mt-3 py-2 fw-bold" type="button" onclick="tapuKayitlariniTemizle()">TAPU KAYITLARINI TEMİZLE VE YENİDEN BAŞLA</button>
     <div id="saveStatus" class="save-status">✅ Kaydedildi! Takyidat Tarih ve Sayıları Metne İşlendi.</div>
   </div>
 
@@ -726,6 +727,37 @@
     setTimeout(()=> status.style.display='none', 3000);
   }
   window.kaydet = kaydet;
+
+  async function tapuKayitlariniTemizle(){
+    const onay=confirm('Bu rapora ait tapu, malik ve takyidat kayıtları silinecek. Diğer rapor bölümleri etkilenmeyecek. Devam edilsin mi?');
+    if(!onay) return;
+    const { arr,i,r }=getLatestData();
+    if(!r || i<0){ alert('Rapor bulunamadı.'); return; }
+    if(arr[i].modules && arr[i].modules.tapu) delete arr[i].modules.tapu;
+    const eskiAlanlar=['tapuTarih','tapuSaat','ciltNo','sayfaNo','tasinmazId','tapuBelgeTarihi','tapuKayitBilgileri','tapuTakyidatDizi','tapuIpotekDizi','tapuMalikDizi','tapuMetniB1','tapuMetniB2','tapu_tamamlandi'];
+    eskiAlanlar.forEach(k => delete arr[i][k]);
+    arr[i].updatedAt=new Date().toISOString(); arr[i].updatedAtMs=Date.now();
+    writeReports(arr);
+    try{
+      const user=auth.currentUser;
+      if(user){
+        const sil=firebase.firestore.FieldValue.delete();
+        const updates={ 'modules.tapu':sil };
+        eskiAlanlar.forEach(k => updates[k]=sil);
+        updates.updatedAt=new Date().toISOString(); updates.updatedAtMs=Date.now();
+        await db.collection('users').doc(user.uid).collection('reports').doc(String(rid)).update(updates);
+      }
+    }catch(error){ console.warn('Tapu bulut temizleme:',error); }
+    document.getElementById('tarihInput').value=''; document.getElementById('saatInput').value='';
+    Object.keys(TAPU_ALANLARI).forEach(k => { const el=document.getElementById(k+'Input'); if(el) el.value=''; });
+    document.getElementById('tabloGövde').innerHTML=''; document.getElementById('malikGövde').innerHTML='';
+    takyidatEkle(); malikEkle(); takbisAiSonuc=null;
+    document.getElementById('takbisDosyalari').value='';
+    document.getElementById('takbisAiOnizleme').style.display='none';
+    document.getElementById('takbisAiDurum').textContent='Tapu kayıtları temizlendi. Yeni belge yükleyebilirsiniz.';
+    guncelle(); window.scrollTo({top:0,behavior:'smooth'});
+  }
+  window.tapuKayitlariniTemizle=tapuKayitlariniTemizle;
 
   function anaMenuyeDon(){
     if(!rid){ location.href="index.html"; return; }
