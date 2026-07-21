@@ -332,6 +332,11 @@
       const v = localStorage.getItem(lockKey(rid));
       return v === "1" || v === "true" || v === "locked";
     }
+    const remoteLockedRids = new Set();
+    function isReportLocked(rid, report){
+      return isLockedLS(rid) || remoteLockedRids.has(String(rid)) ||
+        report?.final===true || report?.locked===true || report?.isLocked===true;
+    }
 
     function setLocalReports(arr){
       localStorage.setItem("gayrimenkul_reports", JSON.stringify(Array.isArray(arr)?arr:[]));
@@ -353,7 +358,7 @@
 
       reports.forEach((report)=>{
         const rid = String(report.rid || "");
-        const locked = isLockedLS(rid) || report.final===true || report.locked===true || report.isLocked===true;
+        const locked = isReportLocked(rid, report);
 
         const card = document.createElement("div");
         card.className = "report-card";
@@ -423,7 +428,8 @@
       if(!activeRid) return;
       const rid = activeRid;
       closeSheet();
-      if(isLockedLS(rid)){
+      const activeReport = reports.find(x => String(x.rid) === String(rid));
+      if(isReportLocked(rid, activeReport)){
         alert("🔒 Bu rapor kilitli. Final alındığı için düzenlenemez.");
         return;
       }
@@ -452,6 +458,21 @@
 
     // ✅ TEK KAYNAK: users/{uid}/reports realtime
     let _unsub = null;
+    let _unsubLocks = null;
+    function listenRemoteLocks(user){
+      try{ if(_unsubLocks) _unsubLocks(); }catch(e){}
+      remoteLockedRids.clear();
+      _unsubLocks = db.collection("locks").where("uid","==",user.uid).onSnapshot((snap)=>{
+        remoteLockedRids.clear();
+        snap.forEach(doc=>{
+          const d=doc.data() || {};
+          if(d.locked===true && d.rid!==undefined && d.rid!==null) remoteLockedRids.add(String(d.rid));
+        });
+        loadReports();
+      },(err)=>{
+        console.warn("locks listen error:",err);
+      });
+    }
     function listenReports(user){
       try{ if(_unsub) _unsub(); }catch(e){}
       const ref = db.collection("users").doc(user.uid).collection("reports");
@@ -485,6 +506,7 @@
       loadReports();
 
       // sonra cloud
+      listenRemoteLocks(user);
       listenReports(user);
     });
   </script>
