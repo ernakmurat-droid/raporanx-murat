@@ -27,6 +27,9 @@
     .help-text { color:#6c757d; font-size:.86rem; margin-top:5px; }
     .copy-btn { border:0; background:#e7f1ff; color:#0d6efd; border-radius:7px; padding:5px 9px; font-size:.78rem; font-weight:700; }
     .section-title { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .ai-card { background:linear-gradient(135deg,#eef6ff,#f7f0ff); border:2px solid #8bb8ff; border-radius:15px; padding:20px; margin-bottom:24px; }
+    .ai-preview { display:none; background:#fff; border:1px solid #b6d4fe; border-radius:12px; padding:15px; margin-top:15px; }
+    .ai-status { margin-top:10px; font-weight:700; color:#495057; }
   </style>
 </head>
 
@@ -38,6 +41,15 @@
       <button onclick="anaMenuyeDon()" class="btn-geri" type="button">← ANA MENÜYE DÖN</button>
     </div>
     <h4 class="text-primary mb-4 border-bottom pb-2 text-center">Tapu Kayıt Giriş Ekranı</h4>
+
+    <div class="ai-card">
+      <h5 class="text-primary">Takbis PDF / Resimlerini AI ile Oku</h5>
+      <p class="mb-2 text-secondary">PDF’yi veya Takbis sayfa resimlerini birlikte seç. Sonuçlar sen onaylamadan kaydedilmez.</p>
+      <input id="takbisDosyalari" class="form-control" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple>
+      <button id="takbisOkuBtn" class="btn btn-primary mt-3" type="button" onclick="takbisAnalizEt()">AI İLE OKU VE KONTROL ET</button>
+      <div id="takbisAiDurum" class="ai-status"></div>
+      <div id="takbisAiOnizleme" class="ai-preview"></div>
+    </div>
 
     <div class="section-box">
       <div class="section-title mb-3">
@@ -386,6 +398,78 @@
     girisNo:'Giriş No', bbNo:'Bağımsız Bölüm No', arsaPayi:'Arsa Payı', arsaPaydasi:'Arsa Paydası',
     anaNitelik:'Ana Taşınmaz Niteliği', kayitDurumu:'Kayıt Durumu'
   };
+
+  const TAKBIS_AI_URL = "https://pay.raporanx.com/ai/parse-takbis";
+  let takbisAiSonuc = null;
+
+  function dosyayiDataUrlYap(file){
+    return new Promise((resolve,reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ name:file.name, data:String(reader.result || '') });
+      reader.onerror = () => reject(new Error(file.name + ' okunamadı'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function takbisAnalizEt(){
+    const input=document.getElementById('takbisDosyalari'), durum=document.getElementById('takbisAiDurum');
+    const btn=document.getElementById('takbisOkuBtn'), files=Array.from(input.files || []);
+    if(!files.length){ alert('Lütfen Takbis PDF veya resimlerini seçin.'); return; }
+    if(files.length > 8){ alert('En fazla 8 dosya seçebilirsiniz.'); return; }
+    btn.disabled=true; durum.textContent='Belgeler hazırlanıyor ve AI tarafından okunuyor…';
+    document.getElementById('takbisAiOnizleme').style.display='none';
+    try{
+      const user=auth.currentUser;
+      if(!user) throw new Error('Oturum bulunamadı.');
+      const token=await user.getIdToken();
+      const payload=await Promise.all(files.map(dosyayiDataUrlYap));
+      const response=await fetch(TAKBIS_AI_URL, {
+        method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+        body:JSON.stringify({ files:payload })
+      });
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.error || 'Takbis okunamadı.');
+      takbisAiSonuc=data.takbis;
+      takbisOnizlemeGoster(takbisAiSonuc);
+      durum.textContent='Okuma tamamlandı. Bilgileri kontrol edip alanlara yerleştirin.';
+    }catch(error){
+      console.error('Takbis AI:',error); durum.textContent='Hata: ' + (error.message || 'Belge okunamadı.');
+    }finally{ btn.disabled=false; }
+  }
+  window.takbisAnalizEt=takbisAnalizEt;
+
+  function takbisOnizlemeGoster(sonuc){
+    const kutu=document.getElementById('takbisAiOnizleme'), tapu=sonuc?.tapu || {};
+    const satirlar=Object.entries(TAPU_ALANLARI).filter(([k]) => tapu[k]).map(([k,etiket]) =>
+      `<tr><th>${escapeHtml(etiket)}</th><td>${escapeHtml(tapu[k])}</td></tr>`).join('');
+    const uyarilar=Array.isArray(sonuc?.uyarilar) ? sonuc.uyarilar : [];
+    kutu.innerHTML=`<h6>AI Kontrol Özeti</h6>
+      <div class="table-responsive"><table class="table table-sm table-bordered"><tbody>${satirlar || '<tr><td>Tapu alanı okunamadı.</td></tr>'}</tbody></table></div>
+      <p><b>Malik:</b> ${(sonuc?.malikler || []).length} kayıt &nbsp; <b>Takyidat:</b> ${(sonuc?.takyidatlar || []).length} kayıt</p>
+      ${uyarilar.length ? `<div class="alert alert-warning"><b>Kontrol edilecekler:</b><ul class="mb-0">${uyarilar.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : '<div class="alert alert-success">AI ayrıca bir belirsizlik bildirmedi.</div>'}
+      <button class="btn btn-success" type="button" onclick="takbisAlanlaraYerlestir()">ONAYLA VE ALANLARA YERLEŞTİR</button>
+      <button class="btn btn-outline-secondary ms-2" type="button" onclick="document.getElementById('takbisAiOnizleme').style.display='none'">İPTAL</button>`;
+    kutu.style.display='block';
+  }
+
+  function takbisAlanlaraYerlestir(){
+    if(!takbisAiSonuc) return;
+    const tapu=takbisAiSonuc.tapu || {};
+    Object.keys(TAPU_ALANLARI).forEach(k => { const el=document.getElementById(k+'Input'); if(el) el.value=tapu[k] || ''; });
+    if(tapu.takbisTarihi) document.getElementById('tarihInput').value=tapu.takbisTarihi;
+    if(tapu.takbisSaati) document.getElementById('saatInput').value=tapu.takbisSaati;
+    document.getElementById('tabloGövde').innerHTML='';
+    (takbisAiSonuc.takyidatlar || []).forEach(d => takyidatEkle(d.tur,d.acik,d.tesisTarihi,d.tesisYevmiye,d.engel,d));
+    if(!(takbisAiSonuc.takyidatlar || []).length) takyidatEkle();
+    document.getElementById('malikGövde').innerHTML='';
+    (takbisAiSonuc.malikler || []).forEach(m => malikEkle(m.ad,m.pay,m.payda,m.edinmeSebebi,m.edinmeTarihi,m));
+    if(!(takbisAiSonuc.malikler || []).length) malikEkle();
+    guncelle();
+    document.getElementById('takbisAiOnizleme').style.display='none';
+    document.getElementById('takbisAiDurum').textContent='Bilgiler alanlara yerleştirildi. Kontrol edip TAPU VERİLERİNİ KAYDET düğmesine basın.';
+    window.scrollTo({ top:document.querySelector('.section-box').offsetTop-15, behavior:'smooth' });
+  }
+  window.takbisAlanlaraYerlestir=takbisAlanlaraYerlestir;
 
   function tapuAlanlariniOku(){
     const data = {};
