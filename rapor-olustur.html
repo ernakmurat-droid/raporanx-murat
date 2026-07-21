@@ -44,6 +44,10 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 .section{margin-bottom:45px;}
 .section h2{color:var(--primary);border-bottom:2px solid #eee;padding-bottom:8px;font-size:1.2em;}
 .text-block{white-space:pre-wrap;font-size:15px;line-height:1.6;color:#34495e;}
+.report-table{width:100%;border-collapse:collapse;margin:10px 0 20px;font-size:14px;}
+.report-table th,.report-table td{border:1px solid #cfd8dc;padding:8px 10px;text-align:left;vertical-align:top;}
+.report-table th{background:#e8eaf6;color:#1a237e;width:18%;}
+.report-table td{width:32%;}
 .warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
 .print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto;display:block;cursor:pointer;font-weight:900;}
 .print-btn:hover{background:#1e874e;}
@@ -141,6 +145,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 
     <section id="tapu" class="section">
       <h2>7. Tapu Bilgileri</h2>
+      <div id="tapuKayitTablosu"></div>
       <div class="text-block" id="tapuMetinB1"></div>
       <div class="text-block" id="tapuMetinB2"></div>
     </section>
@@ -310,6 +315,39 @@ document.addEventListener("DOMContentLoaded", () => {
     return "";
   }
 
+  function escapeHtml(s){
+    return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function tapuKayitTablosu(rep){
+    const mod=pick(rep,"modules.tapu") || {};
+    const d=pick(mod,"tapuKayitBilgileri") || pick(rep,"tapuKayitBilgileri") || {};
+    const tarih=pick(mod,"tapuTarih") || pick(rep,"tapuTarih");
+    const saat=pick(mod,"tapuSaat") || pick(rep,"tapuSaat");
+    const alanlar=[
+      ["Takbis Tarihi",tarih],["İnceleme Saati",saat],
+      ["Makbuz No",d.makbuzNo],["Dekont No",d.dekontNo],
+      ["Başvuru No",d.basvuruNo],["Zemin Tipi",d.zeminTipi],
+      ["Taşınmaz Kimlik No",d.tasinmazId],["Tapu Tarihi",d.tapuTarihi],
+      ["İl",d.il],["İlçe",d.ilce],
+      ["Kurum Adı",d.kurumAdi],["Mahalle / Köy",d.mahalleKoy],
+      ["Mevkii",d.mevkii],["Cilt / Sayfa",[d.ciltNo,d.sayfaNo].filter(Boolean).join(" / ")],
+      ["Kayıt Durumu",d.kayitDurumu],["Ada / Parsel",[d.ada,d.parsel].filter(Boolean).join(" / ")],
+      ["Ana Taşınmaz Yüzölçümü",d.anaYuzolcumu ? d.anaYuzolcumu+" m²" : ""],["BB Niteliği",d.bbNitelik],
+      ["BB Brüt Yüzölçümü",d.bbBrut ? d.bbBrut+" m²" : ""],["BB Net Yüzölçümü",d.bbNet ? d.bbNet+" m²" : ""],
+      ["Blok / Kat",[d.blokNo,d.katNo].filter(Boolean).join(" / ")],["Giriş / BB No",[d.girisNo,d.bbNo].filter(Boolean).join(" / ")],
+      ["Arsa Payı / Payda",[d.arsaPayi,d.arsaPaydasi].filter(Boolean).join(" / ")],["Ana Taşınmaz Niteliği",d.anaNitelik]
+    ];
+    const veriVar=alanlar.some(x => x[1]);
+    if(!veriVar) return "<div class='warning'>Tapu kayıt tablosu bulunamadı.</div>";
+    let html="<table class='report-table'><tbody>";
+    for(let i=0;i<alanlar.length;i+=2){
+      const a=alanlar[i], b=alanlar[i+1] || ["",""];
+      html+=`<tr><th>${escapeHtml(a[0])}</th><td>${escapeHtml(a[1] || "-")}</td><th>${escapeHtml(b[0])}</th><td>${escapeHtml(b[1] || "-")}</td></tr>`;
+    }
+    return html+"</tbody></table>";
+  }
+
   function buildBBTextFromDetay(d){
     d = d || {};
     const v = (k) => (d[k] ?? "").toString().trim();
@@ -418,8 +456,9 @@ document.addEventListener("DOMContentLoaded", () => {
     $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","binaMetni"));
     $("bbMetin").textContent = getBagimsizBolumMetni(r);
     $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumMetni"));
-    $("tapuMetinB1").textContent = formatMetin(pick(r,"tapuMetniB1","tapu.b1"));
-    $("tapuMetinB2").textContent = formatMetin(pick(r,"tapuMetniB2","tapu.b2"));
+    $("tapuKayitTablosu").innerHTML = tapuKayitTablosu(r);
+    $("tapuMetinB1").textContent = formatMetin(pick(r,"modules.tapu.tapuMetniB1","tapuMetniB1","tapu.b1"));
+    $("tapuMetinB2").textContent = formatMetin(pick(r,"modules.tapu.tapuMetniB2","tapuMetniB2","tapu.b2"));
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
@@ -453,6 +492,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("binaMetin").textContent = "";
   $("bbMetin").textContent = "";
   $("konumMetin").textContent = "";
+  $("tapuKayitTablosu").innerHTML = "";
   $("tapuMetinB1").textContent = "";
   $("tapuMetinB2").textContent = "";
   $("emsalMetin").textContent = "";
