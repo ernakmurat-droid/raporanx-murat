@@ -46,6 +46,151 @@
   </div>
 
   <div class="container">
+    <div class="form-group" style="border:2px solid #7c4dff; background:#f7f3ff;">
+  <strong>📄 Belgeyi Yapay Zekâyla Oku</strong>
+
+  <p style="margin:8px 0 15px; color:#555; line-height:1.5;">
+    Ruhsat, yapı kullanma izin belgesi veya Enerji Kimlik Belgesi
+    fotoğrafını ya da PDF dosyasını yükleyin.
+  </p>
+
+  <input
+    type="file"
+    id="belgeDosyasi"
+    accept="image/*,.pdf,application/pdf"
+    style="display:none;"
+  >
+
+  <button
+    type="button"
+    class="add-btn"
+    onclick="document.getElementById('belgeDosyasi').click()"
+    style="width:100%; padding:15px;"
+  >
+    📷 FOTOĞRAF VEYA PDF SEÇ
+  </button>
+
+  <div
+    id="secilenBelgeBilgisi"
+    style="display:none; margin-top:12px; padding:12px;
+           background:white; border:1px solid #ddd; border-radius:8px;"
+  ></div>
+
+  <button
+    type="button"
+    id="belgeOkuBtn"
+    class="add-btn"
+    onclick="belgeyiOku()"
+    style="display:none; width:100%; margin-top:12px;
+           padding:15px; background:#7c4dff;"
+  >
+    ✨ YAPAY ZEKÂYLA OKU
+  </button>
+
+  <div
+    id="belgeOkumaDurumu"
+    style="display:none; margin-top:12px; padding:12px;
+           border-radius:8px; font-weight:bold;"
+  ></div>
+  <div
+  id="belgeOnayKarti"
+  style="display:none; margin-top:15px; padding:15px;
+         background:white; border:2px solid #00c853;
+         border-radius:10px;"
+>
+  <strong>Okunan Belge Bilgileri</strong>
+
+  <p style="margin:7px 0 15px; color:#555;">
+    Bilgileri kontrol edin. Hatalı veya okunamayan alanları elle düzeltebilirsiniz.
+  </p>
+
+  <div class="grid3">
+    <div>
+      <span class="field-label">Belge Türü</span>
+      <select
+        id="aiBelgeTuru"
+        style="width:100%; padding:12px; border:1px solid #ccc;
+               border-radius:8px; font-size:16px;"
+      >
+        <option value="">Belge türünü seçin</option>
+        <option value="ruhsat">Yapı Ruhsatı</option>
+        <option value="iskan">Yapı Kullanma İzin Belgesi</option>
+        <option value="enerji">Enerji Kimlik Belgesi</option>
+      </select>
+    </div>
+
+    <div>
+      <span class="field-label">Belge Tarihi</span>
+      <input type="date" id="aiBelgeTarihi">
+    </div>
+
+    <div>
+      <span class="field-label">Belge No</span>
+      <input
+        type="text"
+        id="aiBelgeNo"
+        placeholder="Okunamadı — manuel giriş yapınız"
+      >
+    </div>
+  </div>
+
+  <div class="grid3">
+    <div>
+      <span class="field-label">Belgenin Amacı</span>
+      <input
+        type="text"
+        id="aiBelgeAmaci"
+        placeholder="Okunamadı — manuel giriş yapınız"
+      >
+    </div>
+
+    <div>
+      <span class="field-label">Bağımsız Bölüm Sayısı</span>
+      <input
+        type="number"
+        id="aiBagimsizBolumSayisi"
+        placeholder="Okunamadı"
+      >
+    </div>
+
+    <div>
+      <span class="field-label">Enerji Sınıfı</span>
+      <input
+        type="text"
+        id="aiEnerjiSinifi"
+        placeholder="Yalnızca EKB için"
+      >
+    </div>
+  </div>
+
+  <div
+    id="aiOkunamayanUyarisi"
+    style="display:none; margin:10px 0; padding:12px;
+           background:#fff3cd; color:#856404;
+           border-radius:8px;"
+  >
+    ⚠️ Bazı alanlar okunamadı. Lütfen sarı işaretli alanları manuel giriniz.
+  </div>
+
+  <button
+    type="button"
+    class="add-btn"
+    onclick="okunanBelgeyiAktar()"
+    style="width:100%; padding:15px; background:#00a846;"
+  >
+    ✓ ONAYLA VE ALANLARA AKTAR
+  </button>
+
+  <button
+    type="button"
+    class="remove-btn"
+    onclick="belgeOkumayiIptalEt()"
+    style="width:100%; padding:12px; margin-top:10px;"
+  >
+    İPTAL ET
+  </button>
+</div>
+</div>
     <div class="form-group">
       <strong>1. Belediye ve Lokasyon Bilgisi</strong>
       <div class="grid3">
@@ -95,9 +240,42 @@
         <button type="button" class="add-btn" onclick="addIskan()">+ Yeni İskân Ekle</button>
       </div>
     </div>
+     <div class="form-group">
+  <strong>5. Enerji Kimlik Belgesi</strong>
 
+  <div class="radio-group">
+    <label>
+      <input type="radio" name="enerjiBelgesiVar" value="evet">
+      Evet (Var)
+    </label>
+
+    <label>
+      <input type="radio" name="enerjiBelgesiVar" value="hayir" checked>
+      Hayır / Görülmedi
+    </label>
+  </div>
+
+  <div id="enerjiBelgesiSection" class="conditional">
+    <div class="grid3">
+      <div>
+        <span class="field-label">Belge No</span>
+        <input type="text" id="enerjiBelgeNo" placeholder="Enerji Kimlik Belgesi No">
+      </div>
+
+      <div>
+        <span class="field-label">Belge Tarihi</span>
+        <input type="date" id="enerjiBelgeTarihi">
+      </div>
+
+      <div>
+        <span class="field-label">Enerji Sınıfı</span>
+        <input type="text" id="enerjiSinifi" placeholder="Örn: A, B, C">
+      </div>
+    </div>
+  </div>
+</div>
     <div class="form-group" id="yapiDenetimSection">
-      <strong>5. Yapı Denetim Bilgileri (İskân Yoksa)</strong>
+      <strong>6. Yapı Denetim Bilgileri (İskân Yoksa)</strong>
       <div class="radio-group">
         <label><input type="radio" name="denetimDevam" value="evet"> Devam Ediyor</label>
         <label><input type="radio" name="denetimDevam" value="hayir" checked> Ayrılmış / Bilgi Yok</label>
@@ -109,7 +287,7 @@
     </div>
 
     <div class="form-group">
-      <strong>6. Belgeler Nasıl Teyit Edildi?</strong>
+      <strong>7. Belgeler Nasıl Teyit Edildi?</strong>
       <div class="radio-group">
         <label><input type="radio" name="belgeGoruldumu" value="görüldü" checked> Görüldü</label>
         <label><input type="radio" name="belgeGoruldumu" value="incelendi"> İncelendi</label>
@@ -118,7 +296,7 @@
     </div>
 
     <div class="form-group">
-      <strong>7. Belediye Arşiv Tespitleri</strong>
+      <strong>8. Belediye Arşiv Tespitleri</strong>
       <div class="radio-group">
         <label><input type="radio" name="yikim" value="hayir" checked> Olumsuzluk Yok</label>
         <label><input type="radio" name="yikim" value="evet"> Olumsuz Karar ve Tespit Tutanağı Var</label>
@@ -141,7 +319,339 @@
 <script>
   const auth = firebase.auth();
   const db   = firebase.firestore();
+let secilenBelgeDosyasi = null;
 
+document.getElementById('belgeDosyasi').addEventListener('change', function () {
+  const dosya = this.files && this.files[0];
+  const bilgiKutusu = document.getElementById('secilenBelgeBilgisi');
+  const okuButonu = document.getElementById('belgeOkuBtn');
+  const durumKutusu = document.getElementById('belgeOkumaDurumu');
+
+  durumKutusu.style.display = 'none';
+  durumKutusu.innerText = '';
+
+  if (!dosya) {
+    secilenBelgeDosyasi = null;
+    bilgiKutusu.style.display = 'none';
+    okuButonu.style.display = 'none';
+    return;
+  }
+
+  const izinliDosya =
+    dosya.type.startsWith('image/') ||
+    dosya.type === 'application/pdf';
+
+  if (!izinliDosya) {
+    alert('Lütfen fotoğraf veya PDF dosyası seçiniz.');
+    this.value = '';
+    secilenBelgeDosyasi = null;
+    bilgiKutusu.style.display = 'none';
+    okuButonu.style.display = 'none';
+    return;
+  }
+
+  const maksimumBoyut = 15 * 1024 * 1024;
+
+  if (dosya.size > maksimumBoyut) {
+    alert('Dosya en fazla 15 MB olabilir.');
+    this.value = '';
+    secilenBelgeDosyasi = null;
+    bilgiKutusu.style.display = 'none';
+    okuButonu.style.display = 'none';
+    return;
+  }
+
+  secilenBelgeDosyasi = dosya;
+
+  bilgiKutusu.innerHTML =
+    `<strong>Seçilen belge:</strong><br>${dosya.name}<br>` +
+    `<small>${(dosya.size / 1024 / 1024).toFixed(2)} MB</small>`;
+
+  bilgiKutusu.style.display = 'block';
+  okuButonu.style.display = 'block';
+});
+function dosyayiBase64Yap(dosya) {
+  return new Promise((resolve, reject) => {
+    const okuyucu = new FileReader();
+
+    okuyucu.onload = () => {
+      const sonuc = String(okuyucu.result || '');
+      const base64 = sonuc.includes(',')
+        ? sonuc.split(',')[1]
+        : sonuc;
+
+      resolve(base64);
+    };
+
+    okuyucu.onerror = () => {
+      reject(new Error('Dosya okunamadı.'));
+    };
+
+    okuyucu.readAsDataURL(dosya);
+  });
+}
+
+async function belgeyiOku() {
+  const durumKutusu =
+    document.getElementById('belgeOkumaDurumu');
+
+  const okuButonu =
+    document.getElementById('belgeOkuBtn');
+
+  if (!secilenBelgeDosyasi) {
+    alert('Önce fotoğraf veya PDF seçiniz.');
+    return;
+  }
+
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert('Oturum bulunamadı. Lütfen yeniden giriş yapınız.');
+    return;
+  }
+
+  try {
+    okuButonu.disabled = true;
+    okuButonu.innerText = '⏳ BELGE OKUNUYOR...';
+
+    durumKutusu.style.display = 'block';
+    durumKutusu.style.background = '#e3f2fd';
+    durumKutusu.style.color = '#0d47a1';
+    durumKutusu.innerText =
+      'Belge inceleniyor. Bu işlem biraz sürebilir...';
+
+    document.getElementById('belgeOnayKarti').style.display =
+      'none';
+
+    const fileBase64 =
+      await dosyayiBase64Yap(secilenBelgeDosyasi);
+
+    const idToken = await user.getIdToken();
+
+    const response = await fetch(
+      'https://europe-west1-raporanx.cloudfunctions.net/belgeOku',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          fileBase64: fileBase64,
+          mimeType: secilenBelgeDosyasi.type,
+          fileName: secilenBelgeDosyasi.name
+        })
+      }
+    );
+
+    const sonuc = await response.json();
+
+    if (!response.ok || !sonuc.ok) {
+      throw new Error(
+        sonuc.error || 'Belge okunamadı.'
+      );
+    }
+
+    const bilgi = sonuc.data || {};
+
+    document.getElementById('aiBelgeTuru').value =
+      bilgi.belgeTuru === 'bilinmiyor'
+        ? ''
+        : (bilgi.belgeTuru || '');
+
+    document.getElementById('aiBelgeTarihi').value =
+      bilgi.belgeTarihi || '';
+
+    document.getElementById('aiBelgeNo').value =
+      bilgi.belgeNo || '';
+
+    document.getElementById('aiBelgeAmaci').value =
+      bilgi.amac || '';
+
+    document.getElementById('aiBagimsizBolumSayisi').value =
+      bilgi.bbSayisi || '';
+
+    document.getElementById('aiEnerjiSinifi').value =
+      (bilgi.enerjiSinifi || '').toUpperCase();
+
+    const alanlar = [
+      {
+        id: 'aiBelgeTuru',
+        bos: !bilgi.belgeTuru ||
+             bilgi.belgeTuru === 'bilinmiyor'
+      },
+      {
+        id: 'aiBelgeTarihi',
+        bos: !bilgi.belgeTarihi
+      },
+      {
+        id: 'aiBelgeNo',
+        bos: !bilgi.belgeNo
+      },
+      {
+        id: 'aiBelgeAmaci',
+        bos: !bilgi.amac
+      }
+    ];
+
+    alanlar.forEach(alan => {
+      const element = document.getElementById(alan.id);
+
+      element.style.background =
+        alan.bos ? '#fff3cd' : '#ffffff';
+
+      element.style.borderColor =
+        alan.bos ? '#ffc107' : '#ccc';
+    });
+
+    const okunamayanlar =
+      Array.isArray(bilgi.okunamayanAlanlar)
+        ? bilgi.okunamayanAlanlar
+        : [];
+
+    const okunamayanUyarisi =
+      document.getElementById('aiOkunamayanUyarisi');
+
+    if (okunamayanlar.length > 0) {
+      okunamayanUyarisi.style.display = 'block';
+      okunamayanUyarisi.innerText =
+        '⚠️ Okunamayan alanlar: ' +
+        okunamayanlar.join(', ') +
+        '. Lütfen manuel giriş yapınız.';
+    } else {
+      okunamayanUyarisi.style.display = 'none';
+    }
+
+    durumKutusu.style.background = '#e8f5e9';
+    durumKutusu.style.color = '#1b5e20';
+    durumKutusu.innerText =
+      '✅ Belge okundu. Bilgileri kontrol ederek onaylayınız.';
+
+    document.getElementById('belgeOnayKarti').style.display =
+      'block';
+
+    document.getElementById('belgeOnayKarti')
+      .scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+
+  } catch (err) {
+    console.error('Belge okuma hatası:', err);
+
+    durumKutusu.style.display = 'block';
+    durumKutusu.style.background = '#ffebee';
+    durumKutusu.style.color = '#b71c1c';
+    durumKutusu.innerText =
+      '❌ ' + (err.message || 'Belge okunamadı.');
+  } finally {
+    okuButonu.disabled = false;
+    okuButonu.innerText = '✨ YAPAY ZEKÂYLA OKU';
+  }
+}
+function okunanBelgeyiAktar() {
+  const belgeTuru = document.getElementById('aiBelgeTuru').value;
+  const tarih = document.getElementById('aiBelgeTarihi').value;
+  const belgeNo = document.getElementById('aiBelgeNo').value.trim();
+  const belgeAmaci = document.getElementById('aiBelgeAmaci').value.trim();
+  const bbSayisi = document.getElementById('aiBagimsizBolumSayisi').value;
+  const enerjiSinifi = document.getElementById('aiEnerjiSinifi').value.trim().toUpperCase();
+
+  if (!belgeTuru) {
+    alert('Lütfen belge türünü seçiniz.');
+    return;
+  }
+
+  if (belgeTuru === 'ruhsat') {
+    const bosRuhsat = Array.from(
+      document.querySelectorAll('#ruhsatList .dynamic-item')
+    ).find(item =>
+      !item.querySelector('.r-tarih')?.value &&
+      !item.querySelector('.r-no')?.value &&
+      !item.querySelector('.r-amac')?.value
+    );
+
+    if (bosRuhsat) {
+      bosRuhsat.querySelector('.r-tarih').value = tarih;
+      bosRuhsat.querySelector('.r-no').value = belgeNo;
+      bosRuhsat.querySelector('.r-amac').value = belgeAmaci;
+    } else {
+      addRuhsat({
+        tarih_raw: tarih,
+        no: belgeNo,
+        amac: belgeAmaci
+      });
+    }
+  }
+
+  if (belgeTuru === 'iskan') {
+    const iskanEvet = document.querySelector(
+      'input[name="iskanVar"][value="evet"]'
+    );
+
+    if (iskanEvet) {
+      iskanEvet.checked = true;
+      document.getElementById('iskanSection').style.display = 'block';
+      document.getElementById('yapiDenetimSection').style.display = 'none';
+    }
+
+    const bosIskan = Array.from(
+      document.querySelectorAll('#iskanList .dynamic-item')
+    ).find(item =>
+      !item.querySelector('.i-tarih')?.value &&
+      !item.querySelector('.i-no')?.value
+    );
+
+    if (bosIskan) {
+      bosIskan.querySelector('.i-tarih').value = tarih;
+      bosIskan.querySelector('.i-no').value = belgeNo;
+      bosIskan.querySelector('.i-amac').value =
+        belgeAmaci || 'Yapı Kullanma İzin Belgesi';
+
+      if (bosIskan.querySelector('.i-bb-sayisi')) {
+        bosIskan.querySelector('.i-bb-sayisi').value = bbSayisi;
+      }
+    } else {
+      addIskan({
+        tarih_raw: tarih,
+        no: belgeNo,
+        amac: belgeAmaci || 'Yapı Kullanma İzin Belgesi',
+        bbSayisi: bbSayisi
+      });
+    }
+  }
+
+  if (belgeTuru === 'enerji') {
+    const enerjiEvet = document.querySelector(
+      'input[name="enerjiBelgesiVar"][value="evet"]'
+    );
+
+    if (enerjiEvet) enerjiEvet.checked = true;
+
+    document.getElementById('enerjiBelgesiSection').style.display = 'block';
+    document.getElementById('enerjiBelgeNo').value = belgeNo;
+    document.getElementById('enerjiBelgeTarihi').value = tarih;
+    document.getElementById('enerjiSinifi').value = enerjiSinifi;
+  }
+
+  document.getElementById('belgeOnayKarti').style.display = 'none';
+
+  const durumKutusu = document.getElementById('belgeOkumaDurumu');
+  durumKutusu.style.display = 'block';
+  durumKutusu.style.background = '#e8f5e9';
+  durumKutusu.style.color = '#1b5e20';
+  durumKutusu.innerText = '✅ Belge bilgileri ilgili alanlara aktarıldı.';
+}
+
+function belgeOkumayiIptalEt() {
+  secilenBelgeDosyasi = null;
+
+  document.getElementById('belgeDosyasi').value = '';
+  document.getElementById('secilenBelgeBilgisi').style.display = 'none';
+  document.getElementById('belgeOkuBtn').style.display = 'none';
+  document.getElementById('belgeOkumaDurumu').style.display = 'none';
+  document.getElementById('belgeOnayKarti').style.display = 'none';
+}
   // =========================
   // === RID + STORAGE FIX ===
   const STORAGE_KEY = "gayrimenkul_reports";
@@ -278,7 +788,15 @@
     document.getElementById('yapiDenetimSection').style.display = iskanVar ? 'none' : 'block';
     if (iskanVar && document.getElementById('iskanList').children.length === 0) addIskan();
   });
+  document.querySelectorAll('input[name="enerjiBelgesiVar"]').forEach(radio => {
+  radio.onchange = () => {
+    const belgeVar =
+      document.querySelector('input[name="enerjiBelgesiVar"]:checked')?.value === 'evet';
 
+    document.getElementById('enerjiBelgesiSection').style.display =
+      belgeVar ? 'block' : 'none';
+  };
+});
   document.querySelectorAll('input[name="denetimDevam"]').forEach(r => r.onchange = () => {
     document.getElementById('denetimEvet').style.display =
       (document.querySelector('input[name="denetimDevam"]:checked')?.value === 'evet') ? 'block' : 'none';
@@ -339,6 +857,7 @@
       <div><strong>Tarih</strong><input type="date" class="i-tarih" value="${data.tarih_raw || ''}"></div>
       <div><strong>No</strong><input type="text" class="i-no" value="${data.no || ''}"></div>
       <div><strong>Amacı</strong><input type="text" class="i-amac" value="${data.amac || 'Yapı Kullanma İzin Belgesi'}"></div>
+      <div><strong>Bağımsız Bölüm Sayısı</strong><input type="number" class="i-bb-sayisi" value="${data.bbSayisi || ''}" placeholder="Belgede yazan sayı"></div>
       <div><strong>Kapsam</strong><br>
         <label><input type="radio" name="ik-${uid}" value="tam" ${kapsamType !== 'kismi' ? 'checked' : ''}> Tam</label>
         <label><input type="radio" name="ik-${uid}" value="kismi" ${kapsamType === 'kismi' ? 'checked' : ''}> Kısmi</label>
@@ -386,25 +905,75 @@
       return { uid, tarih_raw, tarih, no, amac, kapsam_type, kismi_text, kapsam };
     });
 
-    const iskanVar = document.querySelector('input[name="iskanVar"]:checked')?.value === 'evet';
-    const iskanlar = iskanVar ? Array.from(document.querySelectorAll('#iskanList .dynamic-item')).map((el) => {
+    const iskanVar =
+  document.querySelector('input[name="iskanVar"]:checked')?.value === 'evet';
+
+const iskanlar = iskanVar
+  ? Array.from(
+      document.querySelectorAll('#iskanList .dynamic-item')
+    ).map((el) => {
       const uid = el.dataset.uid;
-      const tarih_raw = el.querySelector('.i-tarih').value;
-      const tarih = tarih_raw ? new Date(tarih_raw).toLocaleDateString('tr-TR') : '...';
-      const no = el.querySelector('.i-no').value || '...';
-      const amac = el.querySelector('.i-amac').value || '...';
-      const kapsam_type = el.querySelector(`input[name="ik-${uid}"]:checked`)?.value || 'tam';
-      const kismi_text = el.querySelector('.i-kismi')?.value || '';
-      const kapsam = (kapsam_type === 'tam') ? 'binanın tamı için' : (kismi_text || 'kısmi');
-      return { uid, tarih_raw, tarih, no, amac, kapsam_type, kismi_text, kapsam };
-    }) : [];
+
+      const tarih_raw =
+        el.querySelector('.i-tarih').value;
+
+      const tarih = tarih_raw
+        ? new Date(tarih_raw).toLocaleDateString('tr-TR')
+        : '...';
+
+      const no =
+        el.querySelector('.i-no').value || '...';
+
+      const amac =
+        el.querySelector('.i-amac').value ||
+        'Yapı Kullanma İzin Belgesi';
+
+      const bbSayisi =
+        el.querySelector('.i-bb-sayisi')?.value || '';
+
+      const kapsam_type =
+        el.querySelector(
+          `input[name="ik-${uid}"]:checked`
+        )?.value || 'tam';
+
+      const kismi_text =
+        el.querySelector('.i-kismi')?.value || '';
+
+      const kapsam =
+        kapsam_type === 'tam'
+          ? 'binanın tamı için'
+          : (kismi_text || 'kısmi');
+
+      return {
+        uid,
+        tarih_raw,
+        tarih,
+        no,
+        amac,
+        bbSayisi,
+        kapsam_type,
+        kismi_text,
+        kapsam
+      };
+    })
+  : [];
 
     const yikimVar = document.querySelector('input[name="yikim"]:checked')?.value === 'evet';
     const yikimAciklama = document.getElementById('yikimAciklamaInput').value.trim();
     const denetimDevam = document.querySelector('input[name="denetimDevam"]:checked')?.value || 'hayir';
     const denetimFirma = document.getElementById('denetimFirma').value || "";
     const bitmislikOrani = document.getElementById('bitmislikOrani').value || "";
+    const enerjiBelgesiVar =
+  document.querySelector('input[name="enerjiBelgesiVar"]:checked')?.value === 'evet';
 
+const enerjiBelgeNo =
+  document.getElementById('enerjiBelgeNo').value.trim();
+
+const enerjiBelgeTarihi =
+  document.getElementById('enerjiBelgeTarihi').value;
+
+const enerjiSinifi =
+  document.getElementById('enerjiSinifi').value.trim().toUpperCase();
     let metin = "";
     metin += `${belediye} İmar ve Şehircilik Müdürlüğü'nden alınan bilgilere göre, rapora konu ana taşınmazın konumu uygundur. `;
     metin += `İmar paftasıyla, bağımsız bölüm bazında taşınmazın bina içindeki konumu ve büyüklüğü; ${ilce} Tapu Müdürlüğü Web Tapu sistemi ve ${belediye}'nde bulunan ${pTar} tarihli mimari projesiyle ${uyumDurumText}. `;
@@ -454,6 +1023,10 @@
       denetimDevam: denetimDevam,
       denetimFirma: document.getElementById('denetimFirma').value,
       bitmislikOrani: document.getElementById('bitmislikOrani').value,
+      enerjiBelgesiVar: enerjiBelgesiVar,
+      enerjiBelgeNo: enerjiBelgeNo,
+      enerjiBelgeTarihi: enerjiBelgeTarihi,
+      enerjiSinifi: enerjiSinifi,
       teyit: teyit,
       yikim: yikimVar ? 'evet' : 'hayir',
       yikimAciklama: yikimAciklama,
@@ -557,7 +1130,27 @@
       document.getElementById('denetimFirma').value = saved.denetimFirma || "";
       document.getElementById('bitmislikOrani').value = saved.bitmislikOrani || "";
     }
+    if (saved.enerjiBelgesiVar) {
+  const enerjiDurumu = saved.enerjiBelgesiVar ? 'evet' : 'hayir';
 
+  const enerjiRadio = document.querySelector(
+    `input[name="enerjiBelgesiVar"][value="${enerjiDurumu}"]`
+  );
+
+  if (enerjiRadio) enerjiRadio.checked = true;
+
+  document.getElementById('enerjiBelgesiSection').style.display =
+    saved.enerjiBelgesiVar ? 'block' : 'none';
+
+  document.getElementById('enerjiBelgeNo').value =
+    saved.enerjiBelgeNo || '';
+
+  document.getElementById('enerjiBelgeTarihi').value =
+    saved.enerjiBelgeTarihi || '';
+
+  document.getElementById('enerjiSinifi').value =
+    saved.enerjiSinifi || '';
+}
     if (saved.teyit) {
       const t = document.querySelector(`input[name="belgeGoruldumu"][value="${saved.teyit}"]`);
       if (t) t.checked = true;
