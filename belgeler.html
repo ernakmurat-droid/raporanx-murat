@@ -67,8 +67,9 @@
     class="add-btn"
     onclick="document.getElementById('belgeDosyasi').click()"
    id="belgeSecBtn"
-   style="width:100%; padding:15px;"
-    📄 YENİ BELGE FOTOĞRAFI / PDF SEÇ
+style="width:100%; padding:15px;"
+>
+  📄 YENİ BELGE FOTOĞRAFI / PDF SEÇ
   </button>
 
   <div
@@ -102,6 +103,16 @@
     style="display:none; margin-top:12px; padding:12px;
            border-radius:8px; font-weight:bold;"
   ></div>
+  <button
+  type="button"
+  id="yeniBelgeyeGecBtn"
+  class="add-btn"
+  onclick="yeniBelgeyeGec()"
+  style="display:none; width:100%; margin-top:12px;
+         padding:15px; background:#ff8f00;"
+>
+  ✅ BU BELGE TAMAM — YENİ BELGEYE GEÇ
+</button>
   <div
   id="belgeOnayKarti"
   style="display:none; margin-top:15px; padding:15px;
@@ -305,9 +316,18 @@
 
       <div>
         <span class="field-label">Enerji Sınıfı</span>
-        <input type="text" id="enerjiSinifi" placeholder="Örn: A, B, C">
+       <input type="text" id="enerjiSinifi" placeholder="Örn: A, B, C">
       </div>
     </div>
+
+    <button
+      type="button"
+      class="remove-btn"
+      onclick="enerjiBelgesiniSil()"
+      style="width:100%; margin-top:12px; padding:12px;"
+    >
+      🗑 ENERJİ KİMLİK BELGESİNİ SİL
+    </button>
   </div>
 </div>
     <div class="form-group" id="yapiDenetimSection">
@@ -525,7 +545,7 @@ secButonu.innerText =
     : '📷 SEÇİLEN 2 FOTOĞRAF';
 
 secButonu.disabled = tumDosyalar.length >= 2;
-secButonu.disabled = tumDosyalar.length >= 2;
+
 
 durumKutusu.style.display = 'block';
 durumKutusu.style.background = '#e3f2fd';
@@ -536,7 +556,6 @@ durumKutusu.innerText =
     ? '1 fotoğraf seçildi. Belgeyi şimdi okuyabilir veya aynı belgenin 2. fotoğrafını ekleyebilirsiniz.'
     : 'Aynı belgeye ait 2 fotoğraf seçildi. İki fotoğraf birlikte okunacaktır.';
 
-this.value = '';
 this.value = '';
   }
 );
@@ -644,6 +663,46 @@ function belgeGorselleriniKapat() {
     URL.revokeObjectURL(belgeOnizlemeUrl);
     belgeOnizlemeUrl = '';
   }
+}
+function enerjiBelgesiniSil() {
+  const onay = confirm(
+    'Enerji Kimlik Belgesi bilgileri silinsin mi?'
+  );
+
+  if (!onay) return;
+
+  document.getElementById('enerjiBelgeNo').value = '';
+  document.getElementById('enerjiBelgeTarihi').value = '';
+  document.getElementById('enerjiSinifi').value = '';
+
+  const hayirSecenegi = document.querySelector(
+    'input[name="enerjiBelgesiVar"][value="hayir"]'
+  );
+
+  if (hayirSecenegi) hayirSecenegi.checked = true;
+
+  document.getElementById('enerjiBelgesiSection').style.display = 'none';
+}
+function yeniBelgeyeGec() {
+  secilenBelgeDosyalari = [];
+
+  document.getElementById('belgeDosyasi').value = '';
+  document.getElementById('secilenBelgeBilgisi').style.display = 'none';
+  document.getElementById('belgeOkuBtn').style.display = 'none';
+  document.getElementById('belgeOnayKarti').style.display = 'none';
+  document.getElementById('yeniBelgeyeGecBtn').style.display = 'none';
+
+  const secButonu = document.getElementById('belgeSecBtn');
+  secButonu.style.display = 'block';
+  secButonu.disabled = false;
+  secButonu.innerText = '📄 YENİ BELGE FOTOĞRAFI / PDF SEÇ';
+
+  const durumKutusu = document.getElementById('belgeOkumaDurumu');
+  durumKutusu.style.display = 'block';
+  durumKutusu.style.background = '#e3f2fd';
+  durumKutusu.style.color = '#0d47a1';
+  durumKutusu.innerText =
+    'Yeni belge için fotoğraf veya PDF seçebilirsiniz.';
 }
 async function belgeyiOku() {
   const durumKutusu =
@@ -1016,6 +1075,10 @@ secButonu.innerText = '✅ BU BELGE TAMAM — YENİ BELGE YÜKLE';
 
 document.getElementById('belgeGoruntuleBtn').style.display =
   belgeGorselArsivi.length > 0 ? 'block' : 'none';
+
+secButonu.style.display = 'none';
+
+document.getElementById('yeniBelgeyeGecBtn').style.display = 'block';
 }
 
 function belgeOkumayiIptalEt() {
