@@ -66,8 +66,8 @@
     type="button"
     class="add-btn"
     onclick="document.getElementById('belgeDosyasi').click()"
-    style="width:100%; padding:15px;"
-  >
+   id="belgeSecBtn"
+   style="width:100%; padding:15px;"
     📷 FOTOĞRAF VEYA PDF SEÇ
   </button>
 
@@ -76,7 +76,16 @@
     style="display:none; margin-top:12px; padding:12px;
            background:white; border:1px solid #ddd; border-radius:8px;"
   ></div>
-
+  <button
+    type="button"
+    id="belgeGoruntuleBtn"
+    class="add-btn"
+    onclick="belgeGorselleriniAc()"
+    style="display:none; width:100%; margin-top:10px;
+           padding:13px; background:#455a64;"
+  >
+    👁 BELGE GÖRSELLERİNİ AÇ
+  </button>
   <button
     type="button"
     id="belgeOkuBtn"
@@ -342,7 +351,68 @@
     <datalist id="h_belgeler_denetimFirma"></datalist><datalist id="h_belgeler_yikimAciklama"></datalist>
     <datalist id="h_belgeler_uyumAciklama"></datalist><datalist id="h_belgeler_arsivAda"></datalist><datalist id="h_belgeler_arsivParsel"></datalist>
   </div>
+<div
+  id="belgeGoruntulemePenceresi"
+  style="display:none; position:fixed; inset:0; z-index:9999;
+         background:rgba(0,0,0,0.88); padding:15px; box-sizing:border-box;"
+>
+  <div style="height:100%; max-width:1100px; margin:auto;
+              display:flex; flex-direction:column; gap:10px;">
 
+    <div style="display:flex; justify-content:space-between;
+                align-items:center; color:white;">
+      <strong id="belgeGorselBaslik">Belge Görseli</strong>
+
+      <button
+        type="button"
+        onclick="belgeGorselleriniKapat()"
+        style="background:#d32f2f; color:white; border:none;
+               border-radius:8px; padding:10px 16px; font-weight:bold;"
+      >
+        ✕ KAPAT
+      </button>
+    </div>
+
+    <div style="flex:1; min-height:0; background:#222;
+                border-radius:10px; overflow:auto;
+                display:flex; justify-content:center; align-items:flex-start;">
+      <img
+        id="belgeGorselOnizleme"
+        alt="Belge görseli"
+        style="display:none; max-width:100%; height:auto;"
+      >
+
+      <iframe
+        id="belgePdfOnizleme"
+        title="PDF belge"
+        style="display:none; width:100%; height:100%; border:none;"
+      ></iframe>
+    </div>
+
+    <div
+      id="belgeGorselGezinti"
+      style="display:flex; gap:10px;"
+    >
+      <button
+        type="button"
+        class="add-btn"
+        onclick="oncekiBelgeGorseli()"
+        style="flex:1; margin:0;"
+      >
+        ← ÖNCEKİ
+      </button>
+
+      <button
+        type="button"
+        class="add-btn"
+        onclick="sonrakiBelgeGorseli()"
+        style="flex:1; margin:0;"
+      >
+        SONRAKİ →
+      </button>
+    </div>
+  </div>
+</div>
 <script>
  const auth = firebase.auth();
 const db = firebase.firestore();
@@ -352,8 +422,13 @@ let secilenBelgeDosyalari = [];
 document.getElementById('belgeDosyasi').addEventListener(
   'change',
   function () {
-    const tumDosyalar =
-      Array.from(this.files || []);
+   const yeniDosyalar =
+  Array.from(this.files || []);
+
+const tumDosyalar = [
+  ...secilenBelgeDosyalari,
+  ...yeniDosyalar
+];
 
     const bilgiKutusu =
       document.getElementById('secilenBelgeBilgisi');
@@ -366,7 +441,7 @@ document.getElementById('belgeDosyasi').addEventListener(
 
     durumKutusu.style.display = 'none';
     durumKutusu.innerText = '';
-
+    document.getElementById('belgeOnayKarti').style.display = 'none';
     if (tumDosyalar.length === 0) {
       secilenBelgeDosyalari = [];
       bilgiKutusu.style.display = 'none';
@@ -441,6 +516,17 @@ document.getElementById('belgeDosyasi').addEventListener(
 
     bilgiKutusu.style.display = 'block';
     okuButonu.style.display = 'block';
+    document.getElementById('belgeGoruntuleBtn').style.display = 'block';
+    const secButonu = document.getElementById('belgeSecBtn');
+
+secButonu.innerText =
+  tumDosyalar.length === 1
+    ? '➕ İKİNCİ FOTOĞRAF EKLE'
+    : '📷 SEÇİLEN 2 FOTOĞRAF';
+
+secButonu.disabled = tumDosyalar.length >= 2;
+
+this.value = '';
   }
 );
 function dosyayiBase64Yap(dosya) {
@@ -463,7 +549,90 @@ function dosyayiBase64Yap(dosya) {
     okuyucu.readAsDataURL(dosya);
   });
 }
+let aktifBelgeGorselIndex = 0;
+let belgeOnizlemeUrl = '';
 
+function belgeGorselleriniAc() {
+  if (secilenBelgeDosyalari.length === 0) {
+    alert('Önce fotoğraf veya PDF seçiniz.');
+    return;
+  }
+
+  aktifBelgeGorselIndex = 0;
+
+  document.getElementById(
+    'belgeGoruntulemePenceresi'
+  ).style.display = 'block';
+
+  belgeGorseliniGoster();
+}
+
+function belgeGorseliniGoster() {
+  const dosya =
+    secilenBelgeDosyalari[aktifBelgeGorselIndex];
+
+  if (!dosya) return;
+
+  if (belgeOnizlemeUrl) {
+    URL.revokeObjectURL(belgeOnizlemeUrl);
+  }
+
+  belgeOnizlemeUrl = URL.createObjectURL(dosya);
+
+  const resim =
+    document.getElementById('belgeGorselOnizleme');
+
+  const pdf =
+    document.getElementById('belgePdfOnizleme');
+
+  document.getElementById('belgeGorselBaslik').innerText =
+    `${aktifBelgeGorselIndex + 1} / ${secilenBelgeDosyalari.length} — ${dosya.name}`;
+
+  if (dosya.type === 'application/pdf') {
+    resim.style.display = 'none';
+    resim.removeAttribute('src');
+
+    pdf.style.display = 'block';
+    pdf.src = belgeOnizlemeUrl;
+  } else {
+    pdf.style.display = 'none';
+    pdf.removeAttribute('src');
+
+    resim.style.display = 'block';
+    resim.src = belgeOnizlemeUrl;
+  }
+
+  document.getElementById('belgeGorselGezinti').style.display =
+    secilenBelgeDosyalari.length > 1 ? 'flex' : 'none';
+}
+
+function oncekiBelgeGorseli() {
+  aktifBelgeGorselIndex =
+    (aktifBelgeGorselIndex - 1 +
+      secilenBelgeDosyalari.length) %
+    secilenBelgeDosyalari.length;
+
+  belgeGorseliniGoster();
+}
+
+function sonrakiBelgeGorseli() {
+  aktifBelgeGorselIndex =
+    (aktifBelgeGorselIndex + 1) %
+    secilenBelgeDosyalari.length;
+
+  belgeGorseliniGoster();
+}
+
+function belgeGorselleriniKapat() {
+  document.getElementById(
+    'belgeGoruntulemePenceresi'
+  ).style.display = 'none';
+
+  if (belgeOnizlemeUrl) {
+    URL.revokeObjectURL(belgeOnizlemeUrl);
+    belgeOnizlemeUrl = '';
+  }
+}
 async function belgeyiOku() {
   const durumKutusu =
     document.getElementById('belgeOkumaDurumu');
@@ -831,6 +1000,13 @@ function belgeOkumayiIptalEt() {
   document.getElementById('belgeDosyasi').value = '';
   document.getElementById('secilenBelgeBilgisi').style.display = 'none';
   document.getElementById('belgeOkuBtn').style.display = 'none';
+  document.getElementById('belgeGoruntuleBtn').style.display = 'none';
+
+const secButonu = document.getElementById('belgeSecBtn');
+secButonu.disabled = false;
+secButonu.innerText = '📷 FOTOĞRAF VEYA PDF SEÇ';
+
+belgeGorselleriniKapat();
   document.getElementById('belgeOkumaDurumu').style.display = 'none';
   document.getElementById('belgeOnayKarti').style.display = 'none';
 }
