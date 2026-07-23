@@ -418,7 +418,7 @@
 const db = firebase.firestore();
 
 let secilenBelgeDosyalari = [];
-
+let belgeGorselArsivi = [];
 document.getElementById('belgeDosyasi').addEventListener(
   'change',
   function () {
@@ -500,7 +500,7 @@ const tumDosyalar = [
       okuButonu.style.display = 'none';
       return;
     }
-
+    belgeGorselArsivi.push(...yeniDosyalar); 
     secilenBelgeDosyalari = tumDosyalar;
 
     bilgiKutusu.innerHTML =
@@ -553,7 +553,7 @@ let aktifBelgeGorselIndex = 0;
 let belgeOnizlemeUrl = '';
 
 function belgeGorselleriniAc() {
-  if (secilenBelgeDosyalari.length === 0) {
+  if (belgeGorselArsivi.length === 0) {
     alert('Önce fotoğraf veya PDF seçiniz.');
     return;
   }
@@ -569,7 +569,7 @@ function belgeGorselleriniAc() {
 
 function belgeGorseliniGoster() {
   const dosya =
-    secilenBelgeDosyalari[aktifBelgeGorselIndex];
+    belgeGorselArsivi[aktifBelgeGorselIndex];
 
   if (!dosya) return;
 
@@ -586,7 +586,7 @@ function belgeGorseliniGoster() {
     document.getElementById('belgePdfOnizleme');
 
   document.getElementById('belgeGorselBaslik').innerText =
-    `${aktifBelgeGorselIndex + 1} / ${secilenBelgeDosyalari.length} — ${dosya.name}`;
+    `${aktifBelgeGorselIndex + 1} / ${belgeGorselArsivi.length} — ${dosya.name}`;
 
   if (dosya.type === 'application/pdf') {
     resim.style.display = 'none';
@@ -603,14 +603,14 @@ function belgeGorseliniGoster() {
   }
 
   document.getElementById('belgeGorselGezinti').style.display =
-    secilenBelgeDosyalari.length > 1 ? 'flex' : 'none';
+    belgeGorselArsivi.length > 1 ? 'flex' : 'none';
 }
 
 function oncekiBelgeGorseli() {
   aktifBelgeGorselIndex =
     (aktifBelgeGorselIndex - 1 +
-      secilenBelgeDosyalari.length) %
-    secilenBelgeDosyalari.length;
+      belgeGorselArsivi.length) %
+    belgeGorselArsivi.length;
 
   belgeGorseliniGoster();
 }
@@ -618,10 +618,11 @@ function oncekiBelgeGorseli() {
 function sonrakiBelgeGorseli() {
   aktifBelgeGorselIndex =
     (aktifBelgeGorselIndex + 1) %
-    secilenBelgeDosyalari.length;
+    belgeGorselArsivi.length;
 
   belgeGorseliniGoster();
 }
+
 
 function belgeGorselleriniKapat() {
   document.getElementById(
@@ -992,6 +993,18 @@ if (
   durumKutusu.style.background = '#e8f5e9';
   durumKutusu.style.color = '#1b5e20';
   durumKutusu.innerText = '✅ Belge bilgileri ilgili alanlara aktarıldı.';
+  secilenBelgeDosyalari = [];
+
+document.getElementById('belgeDosyasi').value = '';
+document.getElementById('secilenBelgeBilgisi').style.display = 'none';
+document.getElementById('belgeOkuBtn').style.display = 'none';
+
+const secButonu = document.getElementById('belgeSecBtn');
+secButonu.disabled = false;
+secButonu.innerText = '📄 BAŞKA RUHSAT / İSKÂN OKU';
+
+document.getElementById('belgeGoruntuleBtn').style.display =
+  belgeGorselArsivi.length > 0 ? 'block' : 'none';
 }
 
 function belgeOkumayiIptalEt() {
@@ -1000,11 +1013,15 @@ function belgeOkumayiIptalEt() {
   document.getElementById('belgeDosyasi').value = '';
   document.getElementById('secilenBelgeBilgisi').style.display = 'none';
   document.getElementById('belgeOkuBtn').style.display = 'none';
-  document.getElementById('belgeGoruntuleBtn').style.display = 'none';
+  document.getElementById('belgeGoruntuleBtn').style.display =
+  belgeGorselArsivi.length > 0 ? 'block' : 'none';
 
 const secButonu = document.getElementById('belgeSecBtn');
 secButonu.disabled = false;
-secButonu.innerText = '📷 FOTOĞRAF VEYA PDF SEÇ';
+secButonu.innerText =
+  belgeGorselArsivi.length > 0
+    ? '📄 BAŞKA RUHSAT / İSKÂN OKU'
+    : '📷 FOTOĞRAF VEYA PDF SEÇ';
 
 belgeGorselleriniKapat();
   document.getElementById('belgeOkumaDurumu').style.display = 'none';
