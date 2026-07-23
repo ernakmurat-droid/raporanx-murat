@@ -430,6 +430,14 @@ style="width:100%; padding:15px;"
       >
         SONRAKİ →
       </button>
+      <button
+  type="button"
+  class="remove-btn"
+  onclick="aktifBelgeGorseliniSil()"
+  style="flex:1; margin:0;"
+>
+  🗑 BU GÖRSELİ SİL
+</button>
     </div>
   </div>
 </div>
@@ -653,7 +661,85 @@ function sonrakiBelgeGorseli() {
   belgeGorseliniGoster();
 }
 
+function aktifBelgeGorseliniSil() {
+  const silinecek =
+    belgeGorselArsivi[aktifBelgeGorselIndex];
 
+  if (!silinecek) return;
+
+  const onay = confirm(
+    `"${silinecek.name}" adlı görsel silinsin mi?`
+  );
+
+  if (!onay) return;
+
+  belgeGorselArsivi.splice(aktifBelgeGorselIndex, 1);
+
+  secilenBelgeDosyalari =
+    secilenBelgeDosyalari.filter(
+      dosya => dosya !== silinecek
+    );
+
+  if (belgeOnizlemeUrl) {
+    URL.revokeObjectURL(belgeOnizlemeUrl);
+    belgeOnizlemeUrl = '';
+  }
+
+  const bilgiKutusu =
+    document.getElementById('secilenBelgeBilgisi');
+
+  const okuButonu =
+    document.getElementById('belgeOkuBtn');
+
+  const secButonu =
+    document.getElementById('belgeSecBtn');
+
+  if (secilenBelgeDosyalari.length === 0) {
+    bilgiKutusu.style.display = 'none';
+    okuButonu.style.display = 'none';
+
+    secButonu.style.display = 'block';
+    secButonu.disabled = false;
+    secButonu.innerText =
+      '📄 YENİ BELGE FOTOĞRAFI / PDF SEÇ';
+  } else {
+    bilgiKutusu.innerHTML =
+      secilenBelgeDosyalari.map((dosya, index) =>
+        `<div style="margin-bottom:6px;">
+          <strong>${index + 1}. dosya:</strong>
+          ${dosya.name}
+        </div>`
+      ).join('');
+
+    bilgiKutusu.style.display = 'block';
+    okuButonu.style.display = 'block';
+
+    secButonu.disabled =
+      secilenBelgeDosyalari.length >= 2;
+
+    secButonu.innerText =
+      secilenBelgeDosyalari.length === 1
+        ? '➕ AYNI BELGENİN 2. FOTOĞRAFINI EKLE'
+        : '📷 SEÇİLEN 2 FOTOĞRAF';
+  }
+
+  if (belgeGorselArsivi.length === 0) {
+    belgeGorselleriniKapat();
+
+    document.getElementById(
+      'belgeGoruntuleBtn'
+    ).style.display = 'none';
+
+    return;
+  }
+
+  aktifBelgeGorselIndex = Math.min(
+    aktifBelgeGorselIndex,
+    belgeGorselArsivi.length - 1
+  );
+
+  belgeGorseliniGoster();
+}
 function belgeGorselleriniKapat() {
   document.getElementById(
     'belgeGoruntulemePenceresi'
