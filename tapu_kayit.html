@@ -44,9 +44,23 @@
 
     <div class="ai-card">
       <h5 class="text-primary">Takbis PDF / Resimlerini AI ile Oku</h5>
-      <p class="mb-2 text-secondary">PDF’yi veya Takbis sayfa resimlerini birlikte seç. Sonuçlar sen onaylamadan kaydedilmez.</p>
+      <div class="alert alert-info mb-3">
+  <strong>Önerilen yükleme şekli: TAKBİS PDF</strong><br>
+  Çok sayfalı TAKBİS belgesini mümkünse PDF olarak yükleyiniz.
+  Belgenin tüm sayfaları tek PDF üzerinden birlikte okunur.
+  Fotoğraf seçeneğini yalnızca PDF dosyasına ulaşılamadığında kullanınız.
+  Sonuçlar siz onaylamadan kaydedilmez.
+</div>
       <input id="takbisDosyalari" class="form-control" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple>
       <button id="takbisOkuBtn" class="btn btn-primary mt-3" type="button" onclick="takbisAnalizEt()">AI İLE OKU VE KONTROL ET</button>
+      <button
+  id="takbisDosyaSilBtn"
+  class="btn btn-outline-danger mt-3 ms-2"
+  type="button"
+  onclick="takbisDosyalariniSil()"
+>
+  SEÇİLEN PDF / RESİMLERİ SİL
+</button>
       <div id="takbisAiDurum" class="ai-status"></div>
       <div id="takbisAiOnizleme" class="ai-preview"></div>
     </div>
@@ -402,7 +416,43 @@
 
   const TAKBIS_AI_URL = "https://pay.raporanx.com/ai/parse-takbis";
   let takbisAiSonuc = null;
+function takbisDosyalariniSil() {
+  const input =
+    document.getElementById('takbisDosyalari');
 
+  const dosyaSayisi =
+    Array.from(input.files || []).length;
+
+  if (dosyaSayisi === 0 && !takbisAiSonuc) {
+    alert('Silinecek PDF veya resim bulunmamaktadır.');
+    return;
+  }
+
+  const onay = confirm(
+    'Seçilen TAKBİS PDF veya resimleri silinsin mi?'
+  );
+
+  if (!onay) return;
+
+  input.value = '';
+  takbisAiSonuc = null;
+
+  document.getElementById(
+    'takbisAiOnizleme'
+  ).style.display = 'none';
+
+  document.getElementById(
+    'takbisAiOnizleme'
+  ).innerHTML = '';
+
+  document.getElementById(
+    'takbisAiDurum'
+  ).textContent =
+    'Seçilen TAKBİS dosyaları silindi. Yeni PDF veya resim yükleyebilirsiniz.';
+}
+
+window.takbisDosyalariniSil =
+  takbisDosyalariniSil;
   function dosyayiDataUrlYap(file){
     return new Promise((resolve,reject) => {
       const reader = new FileReader();
