@@ -640,8 +640,15 @@ function belgeGorseliniGoster() {
     resim.src = belgeOnizlemeUrl;
   }
 
-  document.getElementById('belgeGorselGezinti').style.display =
-    belgeGorselArsivi.length > 1 ? 'flex' : 'none';
+  const gezinme =
+  document.getElementById('belgeGorselGezinti');
+
+gezinme.style.display = 'flex';
+
+gezinme.querySelectorAll('.add-btn').forEach(buton => {
+  buton.style.display =
+    belgeGorselArsivi.length > 1 ? 'block' : 'none';
+});
 }
 
 function oncekiBelgeGorseli() {
