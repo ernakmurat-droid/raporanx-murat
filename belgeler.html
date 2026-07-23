@@ -68,7 +68,7 @@
     onclick="document.getElementById('belgeDosyasi').click()"
    id="belgeSecBtn"
    style="width:100%; padding:15px;"
-    📷 FOTOĞRAF VEYA PDF SEÇ
+    📄 YENİ BELGE FOTOĞRAFI / PDF SEÇ
   </button>
 
   <div
@@ -94,7 +94,7 @@
     style="display:none; width:100%; margin-top:12px;
            padding:15px; background:#7c4dff;"
   >
-    ✨ YAPAY ZEKÂYLA OKU
+    ✨ BU BELGEYİ ŞİMDİ OKU
   </button>
 
   <div
@@ -521,11 +521,22 @@ const tumDosyalar = [
 
 secButonu.innerText =
   tumDosyalar.length === 1
-    ? '➕ İKİNCİ FOTOĞRAF EKLE'
+    ? '➕ AYNI BELGENİN 2. FOTOĞRAFINI EKLE'
     : '📷 SEÇİLEN 2 FOTOĞRAF';
 
 secButonu.disabled = tumDosyalar.length >= 2;
+secButonu.disabled = tumDosyalar.length >= 2;
 
+durumKutusu.style.display = 'block';
+durumKutusu.style.background = '#e3f2fd';
+durumKutusu.style.color = '#0d47a1';
+
+durumKutusu.innerText =
+  tumDosyalar.length === 1
+    ? '1 fotoğraf seçildi. Belgeyi şimdi okuyabilir veya aynı belgenin 2. fotoğrafını ekleyebilirsiniz.'
+    : 'Aynı belgeye ait 2 fotoğraf seçildi. İki fotoğraf birlikte okunacaktır.';
+
+this.value = '';
 this.value = '';
   }
 );
@@ -801,7 +812,7 @@ aiKismiAlaniGoster();
       '❌ ' + (err.message || 'Belge okunamadı.');
   } finally {
     okuButonu.disabled = false;
-    okuButonu.innerText = '✨ YAPAY ZEKÂYLA OKU';
+    okuButonu.innerText = '✨ BU BELGEYİ ŞİMDİ OKU';
   }
 }
 function aiKismiAlaniGoster() {
@@ -1001,7 +1012,7 @@ document.getElementById('belgeOkuBtn').style.display = 'none';
 
 const secButonu = document.getElementById('belgeSecBtn');
 secButonu.disabled = false;
-secButonu.innerText = '📄 BAŞKA RUHSAT / İSKÂN OKU';
+secButonu.innerText = '✅ BU BELGE TAMAM — YENİ BELGE YÜKLE';
 
 document.getElementById('belgeGoruntuleBtn').style.display =
   belgeGorselArsivi.length > 0 ? 'block' : 'none';
@@ -1020,7 +1031,7 @@ const secButonu = document.getElementById('belgeSecBtn');
 secButonu.disabled = false;
 secButonu.innerText =
   belgeGorselArsivi.length > 0
-    ? '📄 BAŞKA RUHSAT / İSKÂN OKU'
+    ? '✅ BU BELGE TAMAM — YENİ BELGE YÜKLE'
     : '📷 FOTOĞRAF VEYA PDF SEÇ';
 
 belgeGorselleriniKapat();
