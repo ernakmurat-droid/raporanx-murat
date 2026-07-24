@@ -52,6 +52,7 @@
   Sonuçlar siz onaylamadan kaydedilmez.
 </div>
       <input id="takbisDosyalari" class="form-control" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple>
+      <div id="takbisSecilenDosyalar" class="mt-3" style="display:none;"></div>
       <button id="takbisOkuBtn" class="btn btn-primary mt-3" type="button" onclick="takbisAnalizEt()">AI İLE OKU VE KONTROL ET</button>
       <button
   id="takbisDosyaSilBtn"
@@ -416,6 +417,93 @@
 
   const TAKBIS_AI_URL = "https://pay.raporanx.com/ai/parse-takbis";
   let takbisAiSonuc = null;
+
+function takbisDosyaListesiniGoster() {
+  const input = document.getElementById('takbisDosyalari');
+  const kutu = document.getElementById('takbisSecilenDosyalar');
+  const dosyalar = Array.from(input.files || []);
+
+  kutu.innerHTML = '';
+
+  if (dosyalar.length === 0) {
+    kutu.style.display = 'none';
+    return;
+  }
+
+  const baslik = document.createElement('div');
+  baslik.className = 'fw-bold mb-2';
+  baslik.textContent = 'Seçilen TAKBİS dosyaları:';
+  kutu.appendChild(baslik);
+
+  dosyalar.forEach((dosya, index) => {
+    const satir = document.createElement('div');
+    satir.className =
+      'd-flex align-items-center justify-content-between gap-2 border rounded p-2 mb-2 bg-white';
+
+    const bilgi = document.createElement('div');
+    bilgi.style.minWidth = '0';
+
+    const ad = document.createElement('div');
+    ad.className = 'fw-semibold text-break';
+    ad.textContent = dosya.name;
+
+    const boyut = document.createElement('small');
+    boyut.className = 'text-muted';
+    boyut.textContent =
+      (dosya.size / 1024 / 1024).toFixed(2) + ' MB';
+
+    const silButonu = document.createElement('button');
+    silButonu.type = 'button';
+    silButonu.className = 'btn btn-outline-danger btn-sm flex-shrink-0';
+    silButonu.textContent = 'SİL';
+    silButonu.onclick = () => takbisTekDosyaSil(index);
+
+    bilgi.appendChild(ad);
+    bilgi.appendChild(boyut);
+    satir.appendChild(bilgi);
+    satir.appendChild(silButonu);
+    kutu.appendChild(satir);
+  });
+
+  kutu.style.display = 'block';
+}
+
+function takbisTekDosyaSil(silinecekIndex) {
+  const input = document.getElementById('takbisDosyalari');
+  const dosyalar = Array.from(input.files || []);
+  const silinecekDosya = dosyalar[silinecekIndex];
+
+  if (!silinecekDosya) return;
+
+  if (!confirm(silinecekDosya.name + ' silinsin mi?')) return;
+
+  const yeniListe = new DataTransfer();
+  dosyalar.forEach((dosya, index) => {
+    if (index !== silinecekIndex) yeniListe.items.add(dosya);
+  });
+
+  input.files = yeniListe.files;
+  takbisAiSonuc = null;
+  document.getElementById('takbisAiOnizleme').style.display = 'none';
+  document.getElementById('takbisAiOnizleme').innerHTML = '';
+  document.getElementById('takbisAiDurum').textContent =
+    'Yanlış seçilen dosya kaldırıldı.';
+  takbisDosyaListesiniGoster();
+}
+
+document.getElementById('takbisDosyalari').addEventListener(
+  'change',
+  function () {
+    takbisAiSonuc = null;
+    document.getElementById('takbisAiOnizleme').style.display = 'none';
+    document.getElementById('takbisAiOnizleme').innerHTML = '';
+    document.getElementById('takbisAiDurum').textContent = '';
+    takbisDosyaListesiniGoster();
+  }
+);
+
+window.takbisTekDosyaSil = takbisTekDosyaSil;
+
 function takbisDosyalariniSil() {
   const input =
     document.getElementById('takbisDosyalari');
@@ -436,6 +524,7 @@ function takbisDosyalariniSil() {
 
   input.value = '';
   takbisAiSonuc = null;
+  takbisDosyaListesiniGoster();
 
   document.getElementById(
     'takbisAiOnizleme'
