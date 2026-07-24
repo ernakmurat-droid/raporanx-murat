@@ -30,6 +30,10 @@
     .ai-card { background:linear-gradient(135deg,#eef6ff,#f7f0ff); border:2px solid #8bb8ff; border-radius:15px; padding:20px; margin-bottom:24px; }
     .ai-preview { display:none; background:#fff; border:1px solid #b6d4fe; border-radius:12px; padding:15px; margin-top:15px; }
     .ai-status { margin-top:10px; font-weight:700; color:#495057; }
+    .tapu-mode-card { background:#fff8e1; border:2px solid #ffc107; border-radius:15px; padding:18px; margin-bottom:22px; }
+    .tapu-tabs { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:14px; }
+    .tapu-tab-active { background:#0d6efd !important; color:#fff !important; border-color:#0d6efd !important; }
+    .saved-tapu-card { background:#f0fff4; border:2px solid #8fd19e; border-radius:15px; padding:18px; margin-top:22px; }
   </style>
 </head>
 
@@ -42,6 +46,32 @@
     </div>
     <h4 class="text-primary mb-4 border-bottom pb-2 text-center">Tapu Kayıt Giriş Ekranı</h4>
 
+    <div class="tapu-mode-card">
+      <h5 class="mb-3">Tapu Yapısı</h5>
+      <div class="d-flex gap-4 flex-wrap">
+        <label class="fw-bold">
+          <input type="radio" name="tapuModu" value="tek" checked onchange="tapuModuDegistir('tek')">
+          Tek Tapu
+        </label>
+        <label class="fw-bold">
+          <input type="radio" name="tapuModu" value="coklu" onchange="tapuModuDegistir('coklu')">
+          Çoklu Tapu
+        </label>
+      </div>
+      <div id="cokluTapuKontrolleri" style="display:none;">
+        <div class="alert alert-warning mt-3 mb-2">
+          Her tapu ayrı kaydedilir. Hangi tapuda çalıştığınız aşağıdaki seçicide açıkça gösterilir.
+        </div>
+        <div id="tapuSekmeleri" class="tapu-tabs">
+          <button id="oncekiTapuBtn" type="button" class="btn btn-outline-primary" onclick="oncekiTapuyaGec()">← ÖNCEKİ</button>
+          <select id="tapuSecici" class="form-select" style="max-width:360px;" onchange="tapuSekmesineGec(Number(this.value))"></select>
+          <button id="sonrakiTapuBtn" type="button" class="btn btn-outline-primary" onclick="sonrakiTapuyaGec()">SONRAKİ →</button>
+          <button type="button" class="btn btn-success" onclick="yeniTapuEkle()">+ YENİ TAPU EKLE</button>
+          <span id="tapuSayac" class="fw-bold text-primary"></span>
+        </div>
+      </div>
+    </div>
+
     <div class="ai-card">
       <h5 class="text-primary">Takbis PDF / Resimlerini AI ile Oku</h5>
       <div class="alert alert-info mb-3">
@@ -53,6 +83,7 @@
 </div>
       <input id="takbisDosyalari" class="form-control" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple>
       <div id="takbisSecilenDosyalar" class="mt-3" style="display:none;"></div>
+      <div id="takbisDosyaOnizlemeleri" class="mt-3" style="display:none;"></div>
       <button id="takbisOkuBtn" class="btn btn-primary mt-3" type="button" onclick="takbisAnalizEt()">AI İLE OKU VE KONTROL ET</button>
       <button
   id="takbisDosyaSilBtn"
@@ -180,6 +211,25 @@
     <button class="btn btn-save-final" type="button" onclick="kaydet()">TAPU VERİLERİNİ VE METİNLERİ KAYDET</button>
     <button class="btn btn-outline-danger w-100 mt-3 py-2 fw-bold" type="button" onclick="tapuKayitlariniTemizle()">TAPU KAYITLARINI TEMİZLE VE YENİDEN BAŞLA</button>
     <div id="saveStatus" class="save-status">✅ Kaydedildi! Takyidat Tarih ve Sayıları Metne İşlendi.</div>
+    <div id="kaydedilenTapularKarti" class="saved-tapu-card" style="display:none;">
+      <h5 class="text-success">Kaydedilen Tapu Kayıtları</h5>
+      <div class="help-text mb-3">Kaydedilen tapuları buradan kontrol edebilir, düzenleyebilir veya silebilirsiniz.</div>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle bg-white mb-0">
+          <thead class="table-success">
+            <tr>
+              <th>Tapu</th>
+              <th>Ada / Parsel</th>
+              <th>Blok / BB No</th>
+              <th>Taşınmaz ID</th>
+              <th>Malik</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="kaydedilenTapularGövde"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
  <span class="format-label">📄 BANKA FORMATI B1</span>
@@ -415,18 +465,369 @@
     anaNitelik:'Ana Taşınmaz Niteliği', kayitDurumu:'Kayıt Durumu'
   };
 
+  let tapuModu = 'tek';
+  let cokluTapular = [];
+  let aktifTapuIndex = 0;
+  let tapuFormuYukleniyor = false;
+
+  function formdanTapuKaydiOlustur(){
+    const metinler = guncelle();
+    const takyidatData = [];
+    document.querySelectorAll('#tabloGövde .takyidat-ana').forEach(row => {
+      const ozel = row.nextElementSibling;
+      const oval = cls => ozel && ozel.querySelector(cls)
+        ? ozel.querySelector(cls).value.trim()
+        : '';
+      takyidatData.push({
+        tur: row.querySelector('.t-tur').value.trim(),
+        acik: row.querySelector('.t-acik').value,
+        kisitliMalik: row.querySelector('.t-kisitli').value.trim(),
+        malikLehtar: row.querySelector('.t-lehtar').value.trim(),
+        tesisKurumu: row.querySelector('.t-kurum').value.trim(),
+        tesisTarihi: row.querySelector('.t-tar').value.trim(),
+        tesisYevmiye: row.querySelector('.t-say').value.trim(),
+        terkinSebebi: row.querySelector('.t-terkin-sebep').value.trim(),
+        terkinTarihi: row.querySelector('.t-terkin-tarih').value.trim(),
+        terkinYevmiye: row.querySelector('.t-terkin-yev').value.trim(),
+        alacakli: oval('.o-alacakli'),
+        borcluMalik: oval('.o-borclu'),
+        hissePay: oval('.o-pay'),
+        hissePayda: oval('.o-payda'),
+        tutar: oval('.o-tutar'),
+        faiz: oval('.o-faiz'),
+        dereceSira: oval('.o-derece'),
+        sure: oval('.o-sure'),
+        dosyaNo: oval('.o-dosya'),
+        tar: row.querySelector('.t-tar').value.trim(),
+        say: row.querySelector('.t-say').value.trim(),
+        engel: row.querySelector('.t-engel').value
+      });
+    });
+
+    const malikData = [];
+    document.querySelectorAll('#malikGövde tr').forEach(row => {
+      malikData.push({
+        ad: row.querySelector('.m-ad').value.trim(),
+        hisseSistemNo: row.querySelector('.m-sistem').value.trim(),
+        elBirligiNo: row.querySelector('.m-elbirligi').value.trim(),
+        pay: row.querySelector('.m-pay').value.trim(),
+        payda: row.querySelector('.m-payda').value.trim(),
+        metrekare: row.querySelector('.m-metrekare').value.trim(),
+        toplamMetrekare: row.querySelector('.m-toplam').value.trim(),
+        edinmeSebebi: row.querySelector('.m-edinme').value.trim(),
+        edinmeTarihi: row.querySelector('.m-edinme-tarih').value,
+        edinmeYevmiye: row.querySelector('.m-yevmiye').value.trim(),
+        terkinBilgisi: row.querySelector('.m-terkin').value.trim()
+      });
+    });
+
+    const tapuAlanlari = tapuAlanlariniOku();
+    const malikVar = malikData.some(m => m.ad.length > 1);
+    const tarih = document.getElementById('tarihInput').value;
+    const saat = document.getElementById('saatInput').value;
+
+    return {
+      tapuTarih: tarih,
+      tapuSaat: saat,
+      ciltNo: tapuAlanlari.ciltNo || '',
+      sayfaNo: tapuAlanlari.sayfaNo || '',
+      tasinmazId: tapuAlanlari.tasinmazId || '',
+      tapuTarihi: tapuAlanlari.tapuTarihi || '',
+      tapuKayitBilgileri: tapuAlanlari,
+      tapuTakyidatDizi: takyidatData,
+      tapuMalikDizi: malikData,
+      tapuMetniB1: metinler.b1,
+      tapuMetniB2: metinler.b2,
+      tapu_tamamlandi: !!(tarih && saat && malikVar)
+    };
+  }
+
+  function tapuKaydiniFormaYukle(kayit){
+    tapuFormuYukleniyor = true;
+    const veri = kayit || {};
+    const alanlar = veri.tapuKayitBilgileri || {};
+
+    document.getElementById('tarihInput').value = veri.tapuTarih || '';
+    document.getElementById('saatInput').value = veri.tapuSaat || '';
+    Object.keys(TAPU_ALANLARI).forEach(k => {
+      const el = document.getElementById(k + 'Input');
+      if(el) el.value = alanlar[k] || '';
+    });
+    document.getElementById('ciltNoInput').value ||= veri.ciltNo || '';
+    document.getElementById('sayfaNoInput').value ||= veri.sayfaNo || '';
+    document.getElementById('tasinmazIdInput').value ||= veri.tasinmazId || '';
+    document.getElementById('tapuTarihiInput').value ||= veri.tapuTarihi || '';
+
+    document.getElementById('tabloGövde').innerHTML = '';
+    const takyidatlar = Array.isArray(veri.tapuTakyidatDizi)
+      ? veri.tapuTakyidatDizi
+      : [];
+    if(takyidatlar.length){
+      takyidatlar.forEach(d =>
+        takyidatEkle(d.tur, d.acik, d.tar, d.say, d.engel, d)
+      );
+    }else{
+      takyidatEkle();
+    }
+
+    document.getElementById('malikGövde').innerHTML = '';
+    const malikler = Array.isArray(veri.tapuMalikDizi)
+      ? veri.tapuMalikDizi
+      : [];
+    if(malikler.length){
+      malikler.forEach(m =>
+        malikEkle(
+          m.ad, m.pay, m.payda, m.edinmeSebebi, m.edinmeTarihi, m
+        )
+      );
+    }else{
+      malikEkle();
+    }
+
+    document.getElementById('takbisDosyalari').value = '';
+    takbisDosyaListesiniGoster();
+    takbisAiSonuc = null;
+    document.getElementById('takbisAiOnizleme').style.display = 'none';
+    document.getElementById('takbisAiOnizleme').innerHTML = '';
+    document.getElementById('takbisAiDurum').textContent = '';
+    guncelle();
+    tapuFormuYukleniyor = false;
+  }
+
+  function aktifTapuyuHafizayaAl(){
+    if(tapuFormuYukleniyor || tapuModu !== 'coklu') return;
+    cokluTapular[aktifTapuIndex] = formdanTapuKaydiOlustur();
+  }
+
+  function tapuSekmeleriniGoster(){
+    const secici = document.getElementById('tapuSecici');
+    if(!secici) return;
+    secici.innerHTML = '';
+    cokluTapular.forEach((kayit, index) => {
+      const option = document.createElement('option');
+      option.value = String(index);
+      const a = kayit?.tapuKayitBilgileri?.ada || '';
+      const p = kayit?.tapuKayitBilgileri?.parsel || '';
+      const bb = kayit?.tapuKayitBilgileri?.bbNo || '';
+      option.textContent =
+        'Tapu ' + (index + 1) +
+        (a || p ? ` (${a || '-'}/${p || '-'})` : '') +
+        (bb ? ` BB:${bb}` : '');
+      option.selected = index === aktifTapuIndex;
+      secici.appendChild(option);
+    });
+
+    document.getElementById('oncekiTapuBtn').disabled =
+      aktifTapuIndex <= 0;
+    document.getElementById('sonrakiTapuBtn').disabled =
+      aktifTapuIndex >= cokluTapular.length - 1;
+    document.getElementById('tapuSayac').textContent =
+      cokluTapular.length
+        ? `Tapu ${aktifTapuIndex + 1} / ${cokluTapular.length}`
+        : 'Henüz tapu eklenmedi';
+  }
+
+  function tapuSekmesineGec(index){
+    if(index === aktifTapuIndex || !cokluTapular[index]) return;
+    aktifTapuyuHafizayaAl();
+    aktifTapuIndex = index;
+    tapuKaydiniFormaYukle(cokluTapular[index]);
+    tapuSekmeleriniGoster();
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
+
+  function yeniTapuEkle(){
+    aktifTapuyuHafizayaAl();
+    cokluTapular.push({});
+    aktifTapuIndex = cokluTapular.length - 1;
+    tapuKaydiniFormaYukle({});
+    tapuSekmeleriniGoster();
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
+
+  function oncekiTapuyaGec(){
+    if(aktifTapuIndex > 0) tapuSekmesineGec(aktifTapuIndex - 1);
+  }
+
+  function sonrakiTapuyaGec(){
+    if(aktifTapuIndex < cokluTapular.length - 1){
+      tapuSekmesineGec(aktifTapuIndex + 1);
+    }
+  }
+
+  function tapuModuDegistir(yeniMod){
+    if(yeniMod === tapuModu) return;
+
+    if(yeniMod === 'coklu'){
+      const mevcut = formdanTapuKaydiOlustur();
+      cokluTapular = [mevcut];
+      aktifTapuIndex = 0;
+      tapuModu = 'coklu';
+      document.getElementById('cokluTapuKontrolleri').style.display = 'block';
+      tapuSekmeleriniGoster();
+    }else{
+      if(cokluTapular.length > 1 && !confirm(
+        'Çoklu tapuda birden fazla kayıt var. Tek tapuya geçilirse ekranda yalnız Tapu 1 gösterilecek; kayıtlar siz yeniden kaydedene kadar silinmeyecektir. Devam edilsin mi?'
+      )){
+        document.querySelector(
+          'input[name="tapuModu"][value="coklu"]'
+        ).checked = true;
+        return;
+      }
+      aktifTapuyuHafizayaAl();
+      tapuModu = 'tek';
+      aktifTapuIndex = 0;
+      document.getElementById('cokluTapuKontrolleri').style.display = 'none';
+      if(cokluTapular[0]) tapuKaydiniFormaYukle(cokluTapular[0]);
+    }
+    kaydedilenTapulariGoster();
+  }
+
+  function kaydedilenTapulariGoster(){
+    const kart = document.getElementById('kaydedilenTapularKarti');
+    const govde = document.getElementById('kaydedilenTapularGövde');
+    const { r } = getLatestData();
+    const tapuObj = getTapuObj(r);
+    let liste = [];
+
+    if(tapuObj?.tapuModu === 'coklu' &&
+       Array.isArray(tapuObj.cokluTapular)){
+      liste = tapuObj.cokluTapular;
+    }else if(tapuObj){
+      liste = [tapuObj];
+    }
+
+    govde.innerHTML = '';
+    if(!liste.length){
+      kart.style.display = 'none';
+      return;
+    }
+
+    liste.forEach((kayit, index) => {
+      const a = kayit.tapuKayitBilgileri || {};
+      const malikler = (kayit.tapuMalikDizi || [])
+        .map(m => m.ad).filter(Boolean);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>Tapu ${index + 1}</td>
+        <td>${escapeHtml(a.ada || '-')} / ${escapeHtml(a.parsel || '-')}</td>
+        <td>${escapeHtml(a.blokNo || '-')} / ${escapeHtml(a.bbNo || '-')}</td>
+        <td>${escapeHtml(a.tasinmazId || kayit.tasinmazId || '-')}</td>
+        <td>${escapeHtml(malikler.join(', ') || '-')}</td>
+        <td>
+          <button type="button" class="btn btn-outline-primary btn-sm me-1"
+            onclick="kayitliTapuyuDuzenle(${index})">DÜZENLE</button>
+          <button type="button" class="btn btn-outline-danger btn-sm"
+            onclick="kayitliTapuyuSil(${index})">SİL</button>
+        </td>`;
+      govde.appendChild(tr);
+    });
+    kart.style.display = 'block';
+  }
+
+  function kayitliTapuyuDuzenle(index){
+    const { r } = getLatestData();
+    const tapuObj = getTapuObj(r);
+    const liste = tapuObj?.tapuModu === 'coklu'
+      ? (tapuObj.cokluTapular || [])
+      : (tapuObj ? [tapuObj] : []);
+    if(!liste[index]) return;
+
+    if(liste.length > 1){
+      tapuModu = 'coklu';
+      cokluTapular = JSON.parse(JSON.stringify(liste));
+      aktifTapuIndex = index;
+      document.querySelector(
+        'input[name="tapuModu"][value="coklu"]'
+      ).checked = true;
+      document.getElementById('cokluTapuKontrolleri').style.display = 'block';
+      tapuSekmeleriniGoster();
+    }else{
+      tapuModu = 'tek';
+      document.querySelector(
+        'input[name="tapuModu"][value="tek"]'
+      ).checked = true;
+      document.getElementById('cokluTapuKontrolleri').style.display = 'none';
+    }
+    tapuKaydiniFormaYukle(liste[index]);
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
+
+  async function kayitliTapuyuSil(index){
+    const { arr, i, r } = getLatestData();
+    if(!r || i < 0) return;
+    const tapuObj = getTapuObj(r);
+    let liste = tapuObj?.tapuModu === 'coklu'
+      ? JSON.parse(JSON.stringify(tapuObj.cokluTapular || []))
+      : (tapuObj ? [JSON.parse(JSON.stringify(tapuObj))] : []);
+    if(!liste[index]) return;
+    if(!confirm(`Tapu ${index + 1} kaydı silinsin mi?`)) return;
+
+    liste.splice(index, 1);
+    if(!arr[i].modules) arr[i].modules = {};
+    if(liste.length === 0){
+      delete arr[i].modules.tapu;
+    }else if(liste.length === 1){
+      arr[i].modules.tapu = { ...liste[0], tapuModu:'tek' };
+    }else{
+      arr[i].modules.tapu = {
+        ...liste[0],
+        tapuModu:'coklu',
+        cokluTapular:liste,
+        tapuMetniB1:liste.map((t,n) =>
+          `TAPU ${n + 1}\n${t.tapuMetniB1 || ''}`
+        ).join('\n\n'),
+        tapuMetniB2:liste.map((t,n) =>
+          `TAPU ${n + 1}\n${t.tapuMetniB2 || ''}`
+        ).join('\n\n')
+      };
+    }
+    arr[i].updatedAt = new Date().toISOString();
+    arr[i].updatedAtMs = Date.now();
+    writeReports(arr);
+    await cloudSaveReport(arr[i]);
+
+    cokluTapular = liste;
+    aktifTapuIndex = 0;
+    if(liste.length) tapuKaydiniFormaYukle(liste[0]);
+    else tapuKaydiniFormaYukle({});
+    tapuModu = liste.length > 1 ? 'coklu' : 'tek';
+    document.querySelector(
+      `input[name="tapuModu"][value="${tapuModu}"]`
+    ).checked = true;
+    document.getElementById('cokluTapuKontrolleri').style.display =
+      tapuModu === 'coklu' ? 'block' : 'none';
+    tapuSekmeleriniGoster();
+    kaydedilenTapulariGoster();
+  }
+
+  window.tapuModuDegistir = tapuModuDegistir;
+  window.tapuSekmesineGec = tapuSekmesineGec;
+  window.yeniTapuEkle = yeniTapuEkle;
+  window.oncekiTapuyaGec = oncekiTapuyaGec;
+  window.sonrakiTapuyaGec = sonrakiTapuyaGec;
+  window.kayitliTapuyuDuzenle = kayitliTapuyuDuzenle;
+  window.kayitliTapuyuSil = kayitliTapuyuSil;
+
   const TAKBIS_AI_URL = "https://pay.raporanx.com/ai/parse-takbis";
   let takbisAiSonuc = null;
+  let takbisOnizlemeUrlListesi = [];
 
 function takbisDosyaListesiniGoster() {
   const input = document.getElementById('takbisDosyalari');
   const kutu = document.getElementById('takbisSecilenDosyalar');
+  const onizlemeKutusu =
+    document.getElementById('takbisDosyaOnizlemeleri');
   const dosyalar = Array.from(input.files || []);
 
+  takbisOnizlemeUrlListesi.forEach(url => URL.revokeObjectURL(url));
+  takbisOnizlemeUrlListesi = [];
   kutu.innerHTML = '';
+  onizlemeKutusu.innerHTML = '';
 
   if (dosyalar.length === 0) {
     kutu.style.display = 'none';
+    onizlemeKutusu.style.display = 'none';
     return;
   }
 
@@ -463,9 +864,47 @@ function takbisDosyaListesiniGoster() {
     satir.appendChild(bilgi);
     satir.appendChild(silButonu);
     kutu.appendChild(satir);
+
+    const dosyaUrl = URL.createObjectURL(dosya);
+    takbisOnizlemeUrlListesi.push(dosyaUrl);
+
+    const onizlemeKarti = document.createElement('div');
+    onizlemeKarti.className =
+      'border rounded p-2 mb-3 bg-light';
+
+    const onizlemeBasligi = document.createElement('div');
+    onizlemeBasligi.className = 'fw-bold mb-2 text-break';
+    onizlemeBasligi.textContent =
+      (index + 1) + '. dosya: ' + dosya.name;
+    onizlemeKarti.appendChild(onizlemeBasligi);
+
+    if (dosya.type === 'application/pdf') {
+      const pdf = document.createElement('iframe');
+      pdf.src = dosyaUrl;
+      pdf.title = dosya.name;
+      pdf.style.width = '100%';
+      pdf.style.height = '480px';
+      pdf.style.border = '1px solid #ced4da';
+      pdf.style.borderRadius = '6px';
+      onizlemeKarti.appendChild(pdf);
+    } else {
+      const resim = document.createElement('img');
+      resim.src = dosyaUrl;
+      resim.alt = dosya.name;
+      resim.style.display = 'block';
+      resim.style.width = '100%';
+      resim.style.maxHeight = '520px';
+      resim.style.objectFit = 'contain';
+      resim.style.borderRadius = '6px';
+      resim.style.background = '#fff';
+      onizlemeKarti.appendChild(resim);
+    }
+
+    onizlemeKutusu.appendChild(onizlemeKarti);
   });
 
   kutu.style.display = 'block';
+  onizlemeKutusu.style.display = 'block';
 }
 
 function takbisTekDosyaSil(silinecekIndex) {
@@ -556,6 +995,12 @@ window.takbisDosyalariniSil =
     const btn=document.getElementById('takbisOkuBtn'), files=Array.from(input.files || []);
     if(!files.length){ alert('Lütfen Takbis PDF veya resimlerini seçin.'); return; }
     if(files.length > 8){ alert('En fazla 8 dosya seçebilirsiniz.'); return; }
+    const kayitliTapu = getTapuObj(getLatestData().r);
+    if(kayitliTapu && !confirm(
+      tapuModu === 'coklu'
+        ? `Tapu ${aktifTapuIndex + 1} için kayıtlı bilgiler bulunmaktadır. Yeni belge bu tapunun bilgilerini güncelleyecektir. Devam edilsin mi?`
+        : 'Bu raporda kayıtlı bir tapu bulunmaktadır. Yeni belge mevcut tapu kaydının bilgilerini güncelleyecektir. Devam edilsin mi?'
+    )) return;
     btn.disabled=true; durum.textContent='Belgeler hazırlanıyor ve AI tarafından okunuyor…';
     document.getElementById('takbisAiOnizleme').style.display='none';
     try{
@@ -760,96 +1205,49 @@ window.takbisDosyalariniSil =
     const { arr, i, r } = getLatestData();
     if(!r || i < 0){ alert("Rapor bulunamadı!"); return; }
 
-    const metinler = guncelle();
-
-    let takyidatData = [];
-    let takyidatVar = false;
-    document.querySelectorAll('#tabloGövde .takyidat-ana').forEach(row => {
-      const tur = row.querySelector('.t-tur').value.trim();
-      if(tur.length > 1) takyidatVar = true;
-      const ozel = row.nextElementSibling;
-      const oval = cls => ozel && ozel.querySelector(cls) ? ozel.querySelector(cls).value.trim() : '';
-      takyidatData.push({
-        tur: tur,
-        acik: row.querySelector('.t-acik').value,
-        kisitliMalik: row.querySelector('.t-kisitli').value.trim(),
-        malikLehtar: row.querySelector('.t-lehtar').value.trim(),
-        tesisKurumu: row.querySelector('.t-kurum').value.trim(),
-        tesisTarihi: row.querySelector('.t-tar').value.trim(),
-        tesisYevmiye: row.querySelector('.t-say').value.trim(),
-        terkinSebebi: row.querySelector('.t-terkin-sebep').value.trim(),
-        terkinTarihi: row.querySelector('.t-terkin-tarih').value.trim(),
-        terkinYevmiye: row.querySelector('.t-terkin-yev').value.trim(),
-        alacakli: oval('.o-alacakli'), borcluMalik: oval('.o-borclu'), hissePay: oval('.o-pay'),
-        hissePayda: oval('.o-payda'), tutar: oval('.o-tutar'), faiz: oval('.o-faiz'),
-        dereceSira: oval('.o-derece'), sure: oval('.o-sure'), dosyaNo: oval('.o-dosya'),
-        tar: row.querySelector('.t-tar').value.trim(),
-        say: row.querySelector('.t-say').value.trim(),
-        engel: row.querySelector('.t-engel').value
-      });
-    });
-
-    let malikData = [];
-    let malikVar = false;
-    document.querySelectorAll('#malikGövde tr').forEach(row => {
-      const ad = row.querySelector('.m-ad').value.trim();
-      if(ad.length > 1) malikVar = true;
-      malikData.push({
-        ad: ad,
-        hisseSistemNo: row.querySelector('.m-sistem').value.trim(),
-        elBirligiNo: row.querySelector('.m-elbirligi').value.trim(),
-        pay: row.querySelector('.m-pay').value.trim(),
-        payda: row.querySelector('.m-payda').value.trim(),
-        metrekare: row.querySelector('.m-metrekare').value.trim(),
-        toplamMetrekare: row.querySelector('.m-toplam').value.trim(),
-        edinmeSebebi: row.querySelector('.m-edinme').value.trim(),
-        edinmeTarihi: row.querySelector('.m-edinme-tarih').value,
-        edinmeYevmiye: row.querySelector('.m-yevmiye').value.trim(),
-        terkinBilgisi: row.querySelector('.m-terkin').value.trim()
-      });
-    });
-
-    const tarih = document.getElementById('tarihInput').value;
-    const saat  = document.getElementById('saatInput').value;
-    const tapuAlanlari = tapuAlanlariniOku();
-    const { ciltNo, sayfaNo, tasinmazId, tapuTarihi } = tapuAlanlari;
-
-    // Takyidat bulunmaması eksiklik değildir; boş tablo "kayıt yok" anlamına gelir.
-    const eksik = (!tarih || !saat || !malikVar);
-    if(eksik){
+    const aktifKayit = formdanTapuKaydiOlustur();
+    if(!aktifKayit.tapu_tamamlandi){
       if(!confirm("⚠️ Bazı teknik alanlar boş! Yine de 'Eksik Kayıt' olarak mühürlensin mi?")) return;
     }
 
-    // ======== KAYIT: modules + legacy ========
     if(!arr[i].modules) arr[i].modules = {};
-    arr[i].modules.tapu = {
-      tapuTarih: tarih,
-      tapuSaat: saat,
-      ciltNo: ciltNo,
-      sayfaNo: sayfaNo,
-      tasinmazId: tasinmazId,
-      tapuTarihi: tapuTarihi,
-      tapuKayitBilgileri: tapuAlanlari,
-      tapuTakyidatDizi: takyidatData,
-      tapuMalikDizi: malikData,
-      tapuMetniB1: metinler.b1,
-      tapuMetniB2: metinler.b2,
-      tapu_tamamlandi: !eksik
-    };
+
+    if(tapuModu === 'coklu'){
+      cokluTapular[aktifTapuIndex] = aktifKayit;
+      const liste = JSON.parse(JSON.stringify(cokluTapular));
+      arr[i].modules.tapu = {
+        ...liste[0],
+        tapuModu:'coklu',
+        cokluTapular:liste,
+        tapuMetniB1:liste.map((t,n) =>
+          `TAPU ${n + 1}\n${t.tapuMetniB1 || ''}`
+        ).join('\n\n'),
+        tapuMetniB2:liste.map((t,n) =>
+          `TAPU ${n + 1}\n${t.tapuMetniB2 || ''}`
+        ).join('\n\n'),
+        tapu_tamamlandi:liste.every(t => t.tapu_tamamlandi)
+      };
+    }else{
+      arr[i].modules.tapu = { ...aktifKayit, tapuModu:'tek' };
+      cokluTapular = [aktifKayit];
+      aktifTapuIndex = 0;
+    }
+
+    const anaKayit = arr[i].modules.tapu;
 
     // legacy (geri uyumluluk)
-    arr[i].tapuTarih = tarih;
-    arr[i].tapuSaat = saat;
-    arr[i].ciltNo = ciltNo;
-    arr[i].sayfaNo = sayfaNo;
-    arr[i].tasinmazId = tasinmazId;
-    arr[i].tapuBelgeTarihi = tapuTarihi;
-    arr[i].tapuKayitBilgileri = tapuAlanlari;
-    arr[i].tapuTakyidatDizi = takyidatData;
-    arr[i].tapuMalikDizi = malikData;
-    arr[i].tapuMetniB1 = metinler.b1;
-    arr[i].tapuMetniB2 = metinler.b2;
-    arr[i].tapu_tamamlandi = !eksik;
+    arr[i].tapuTarih = anaKayit.tapuTarih || '';
+    arr[i].tapuSaat = anaKayit.tapuSaat || '';
+    arr[i].ciltNo = anaKayit.ciltNo || '';
+    arr[i].sayfaNo = anaKayit.sayfaNo || '';
+    arr[i].tasinmazId = anaKayit.tasinmazId || '';
+    arr[i].tapuBelgeTarihi = anaKayit.tapuTarihi || '';
+    arr[i].tapuKayitBilgileri = anaKayit.tapuKayitBilgileri || {};
+    arr[i].tapuTakyidatDizi = anaKayit.tapuTakyidatDizi || [];
+    arr[i].tapuMalikDizi = anaKayit.tapuMalikDizi || [];
+    arr[i].tapuMetniB1 = anaKayit.tapuMetniB1 || '';
+    arr[i].tapuMetniB2 = anaKayit.tapuMetniB2 || '';
+    arr[i].tapu_tamamlandi = !!anaKayit.tapu_tamamlandi;
 
     // timestamp
     arr[i].updatedAt = new Date().toISOString();
@@ -864,6 +1262,8 @@ window.takbisDosyalariniSil =
     const status = document.getElementById('saveStatus');
     status.style.display = 'block';
     setTimeout(()=> status.style.display='none', 3000);
+    tapuSekmeleriniGoster();
+    kaydedilenTapulariGoster();
   }
   window.kaydet = kaydet;
 
@@ -892,8 +1292,14 @@ window.takbisDosyalariniSil =
     document.getElementById('tabloGövde').innerHTML=''; document.getElementById('malikGövde').innerHTML='';
     takyidatEkle(); malikEkle(); takbisAiSonuc=null;
     document.getElementById('takbisDosyalari').value='';
+    takbisDosyaListesiniGoster();
     document.getElementById('takbisAiOnizleme').style.display='none';
     document.getElementById('takbisAiDurum').textContent='Tapu kayıtları temizlendi. Yeni belge yükleyebilirsiniz.';
+    tapuModu='tek'; cokluTapular=[]; aktifTapuIndex=0;
+    document.querySelector('input[name="tapuModu"][value="tek"]').checked=true;
+    document.getElementById('cokluTapuKontrolleri').style.display='none';
+    tapuSekmeleriniGoster();
+    kaydedilenTapulariGoster();
     guncelle(); window.scrollTo({top:0,behavior:'smooth'});
   }
   window.tapuKayitlariniTemizle=tapuKayitlariniTemizle;
@@ -953,7 +1359,24 @@ window.takbisDosyalariniSil =
     if(mList.length > 0) mList.forEach(m => malikEkle(m.ad, m.pay, m.payda, m.edinmeSebebi, m.edinmeTarihi, m));
     else malikEkle();
 
+    if(tapuObj.tapuModu === 'coklu' && Array.isArray(tapuObj.cokluTapular) && tapuObj.cokluTapular.length){
+      tapuModu = 'coklu';
+      cokluTapular = JSON.parse(JSON.stringify(tapuObj.cokluTapular));
+      aktifTapuIndex = 0;
+      document.querySelector('input[name="tapuModu"][value="coklu"]').checked = true;
+      document.getElementById('cokluTapuKontrolleri').style.display = 'block';
+      tapuKaydiniFormaYukle(cokluTapular[0]);
+      tapuSekmeleriniGoster();
+    }else{
+      tapuModu = 'tek';
+      cokluTapular = tapuObj && Object.keys(tapuObj).length ? [tapuObj] : [];
+      aktifTapuIndex = 0;
+      document.querySelector('input[name="tapuModu"][value="tek"]').checked = true;
+      document.getElementById('cokluTapuKontrolleri').style.display = 'none';
+    }
+
     guncelle();
+    kaydedilenTapulariGoster();
   });
 </script>
 <script>
