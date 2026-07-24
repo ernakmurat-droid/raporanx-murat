@@ -55,6 +55,12 @@ function getFreeLeft(w) {
     return walletMainRef(uid).collection("uses").doc(String(rid));
   }
 
+  function extraTapuUseRef(uid, rid) {
+    return walletMainRef(uid)
+      .collection("uses")
+      .doc(String(rid) + "_extra_tapu");
+  }
+
   function ordersColRef(uid) {
     return db.collection(USERS_COL).doc(uid).collection("siparisler");
   }
@@ -274,6 +280,136 @@ return { ok: false, reason: "Hak bitti. Paket satın alman gerekiyor.", wallet: 
 
     if (result?.wallet) updateWalletUI(result.wallet);
     return !!result?.ok;
+  }
+
+  /**
+   * İlk 10 tapu normal rapor hakkına dahildir.
+   * Sonraki her 10 tapu için 1 ilave hak düşürür.
+   * Aynı rapor tekrar okutulursa yalnız daha önce alınmayan fark kadar hak düşer.
+   */
+  async function consumeExtraTapuRights(uid, rid, totalTapu) {
+    if (!uid) throw new Error("consumeExtraTapuRights: uid yok");
+    if (!rid) throw new Error("consumeExtraTapuRights: rid yok");
+
+    const tapuSayisi = Math.max(0, Math.floor(n(totalTapu)));
+    const gerekliToplamHak = Math.ceil(
+      Math.max(0, tapuSayisi - 10) / 10
+    );
+
+    const mainRef = walletMainRef(uid);
+    const useRef = extraTapuUseRef(uid, rid);
+
+    const result = await db.runTransaction(async (tx) => {
+      const useSnap = await tx.get(useRef);
+      const oncekiKayit = useSnap.exists
+        ? useSnap.data() || {}
+        : {};
+      const dahaOnceDusulen = Math.max(
+        0,
+        Math.floor(n(oncekiKayit.chargedRights))
+      );
+      const dusulecekFark = Math.max(
+        0,
+        gerekliToplamHak - dahaOnceDusulen
+      );
+
+      const mainSnap = await tx.get(mainRef);
+      const w = mainSnap.exists ? mainSnap.data() || {} : {};
+
+      if (dusulecekFark === 0) {
+        tx.set(
+          useRef,
+          {
+            totalTapu: tapuSayisi,
+            requiredRights: gerekliToplamHak,
+            checkedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+        return {
+          ok: true,
+          already: true,
+          chargedNow: 0,
+          chargedRights: dahaOnceDusulen,
+          requiredExtraRights: gerekliToplamHak,
+          wallet: w,
+        };
+      }
+
+      let freeLeft = getFreeLeft(w);
+      let credits = getCredits(w);
+      const toplamMevcutHak = freeLeft + credits;
+
+      if (toplamMevcutHak < dusulecekFark) {
+        return {
+          ok: false,
+          reason:
+            `Bu işlem için ${dusulecekFark} ilave hak gerekiyor. ` +
+            `Mevcut hakkınız ${toplamMevcutHak}.`,
+          chargedNow: 0,
+          chargedRights: dahaOnceDusulen,
+          requiredExtraRights: gerekliToplamHak,
+          wallet: w,
+        };
+      }
+
+      const ucretsizdenDusulen = Math.min(
+        freeLeft,
+        dusulecekFark
+      );
+      freeLeft -= ucretsizdenDusulen;
+
+      const pakettenDusulecek =
+        dusulecekFark - ucretsizdenDusulen;
+      credits -= pakettenDusulecek;
+
+      tx.set(
+        mainRef,
+        {
+          freeReportsLeft: freeLeft,
+          "ücretsizRaporlarSol": freeLeft,
+          reportCredits: credits,
+          raporKrediler: credits,
+          updatedAt: FieldValue.serverTimestamp(),
+          guncellendi: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      tx.set(
+        useRef,
+        {
+          usedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+          kind: "extra_tapu",
+          totalTapu: tapuSayisi,
+          requiredRights: gerekliToplamHak,
+          chargedRights: dahaOnceDusulen + dusulecekFark,
+          lastChargedRights: dusulecekFark,
+          freeUsed: FieldValue.increment(ucretsizdenDusulen),
+          creditUsed: FieldValue.increment(pakettenDusulecek),
+        },
+        { merge: true }
+      );
+
+      return {
+        ok: true,
+        already: false,
+        chargedNow: dusulecekFark,
+        chargedRights: dahaOnceDusulen + dusulecekFark,
+        requiredExtraRights: gerekliToplamHak,
+        wallet: {
+          ...w,
+          freeReportsLeft: freeLeft,
+          "ücretsizRaporlarSol": freeLeft,
+          reportCredits: credits,
+          raporKrediler: credits,
+        },
+      };
+    });
+
+    if (result?.wallet) updateWalletUI(result.wallet);
+    return result;
   }
 
   function listenWallet(uid) {
@@ -555,6 +691,7 @@ window.Wallet = {
   setPaymentLink,
   markPaid,
   consumeReport,
+  consumeExtraTapuRights,
   getBillingProfile,
   saveBillingProfile,
   listenBillingProfile
