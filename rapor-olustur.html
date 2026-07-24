@@ -48,6 +48,9 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 .report-table th,.report-table td{border:1px solid #cfd8dc;padding:8px 10px;text-align:left;vertical-align:top;}
 .report-table th{background:#e8eaf6;color:#1a237e;width:18%;}
 .report-table td{width:32%;}
+.tapu-subtitle{margin:22px 0 8px;color:#283593;font-size:1.02em;}
+.tapu-note{font-size:13px;color:#546e7a;margin:6px 0 10px;}
+.report-table .changed-col{background:#fff8e1;}
 .warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
 .print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto;display:block;cursor:pointer;font-weight:900;}
 .print-btn:hover{background:#1e874e;}
@@ -151,6 +154,9 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
     <section id="tapu" class="section">
       <h2>7. Tapu Bilgileri</h2>
       <div id="tapuKayitTablosu"></div>
+      <div id="tapuCokluBilgiTablosu"></div>
+      <div id="tapuBankaTakyidatTablosu"></div>
+      <div id="tapuAnalizUyarisi"></div>
       <div class="text-block" id="tapuMetinB1"></div>
       <div class="text-block" id="tapuMetinB2"></div>
     </section>
@@ -353,6 +359,117 @@ document.addEventListener("DOMContentLoaded", () => {
     return html+"</tbody></table>";
   }
 
+  function cokluTapuVerisi(rep){
+    const mod = pick(rep,"modules.tapu") || {};
+    const tapular = Array.isArray(mod.cokluTapular)
+      ? mod.cokluTapular.filter(t => t && typeof t === "object")
+      : [];
+    const analiz = mod.takyidatAnalizi || rep.cokluTapuTakyidatAnalizi || {};
+    return { mod, tapular, analiz };
+  }
+
+  function tapuEtiketi(tapu,index){
+    const d = tapu?.tapuKayitBilgileri || {};
+    const blok = String(d.blokNo || "").trim();
+    const bb = String(d.bbNo || "").trim();
+    if(blok && bb) return `${blok} Blok ${bb} no.lu BB`;
+    if(bb) return `${bb} no.lu BB`;
+    return `Tapu ${index + 1}`;
+  }
+
+  function cokluTapuBilgiTablosu(rep){
+    const { tapular, analiz } = cokluTapuVerisi(rep);
+    if(tapular.length <= 1) return "";
+    const degisen = Array.isArray(analiz.degisenAlanlar) ? analiz.degisenAlanlar : [];
+    const degisenSet = new Set(degisen);
+    const cls = (etiket) => degisenSet.has(etiket) ? " class='changed-col'" : "";
+    let html = `
+      <h3 class="tapu-subtitle">Çoklu Tapu Bilgileri</h3>
+      <div class="tapu-note">${
+        degisen.length
+          ? `Tapular arasında değişen alanlar: ${escapeHtml(degisen.join(", "))}. Sarı sütunlar değişen bilgileri gösterir.`
+          : "Tapular arasında değişen alan bulunmamaktadır."
+      }</div>
+      <table class="report-table">
+        <thead><tr>
+          <th>Bağımsız Bölüm</th>
+          <th>Ada / Parsel</th>
+          <th${cls("Cilt No")}>Cilt / Sayfa</th>
+          <th${cls("Taşınmaz ID")}>Taşınmaz ID</th>
+          <th${cls("Tapu Tarihi")}>Tapu Tarihi</th>
+          <th${cls("Kat")}>Kat</th>
+          <th${cls("Arsa Payı") || cls("Arsa Paydası")}>Arsa Payı</th>
+          <th>Malik</th>
+        </tr></thead><tbody>`;
+    tapular.forEach((tapu,index) => {
+      const d = tapu.tapuKayitBilgileri || {};
+      const malik = (Array.isArray(tapu.tapuMalikDizi) ? tapu.tapuMalikDizi : [])
+        .map(m => m?.ad || m?.adSoyad || "").filter(Boolean).join(", ");
+      html += `<tr>
+        <td>${escapeHtml(tapuEtiketi(tapu,index))}</td>
+        <td>${escapeHtml([d.ada,d.parsel].filter(Boolean).join(" / ") || "-")}</td>
+        <td${cls("Cilt No")}>${escapeHtml([d.ciltNo,d.sayfaNo].filter(Boolean).join(" / ") || "-")}</td>
+        <td${cls("Taşınmaz ID")}>${escapeHtml(d.tasinmazId || "-")}</td>
+        <td${cls("Tapu Tarihi")}>${escapeHtml(d.tapuTarihi || "-")}</td>
+        <td${cls("Kat")}>${escapeHtml(d.katNo || "-")}</td>
+        <td${cls("Arsa Payı") || cls("Arsa Paydası")}>${escapeHtml([d.arsaPayi,d.arsaPaydasi].filter(Boolean).join(" / ") || "-")}</td>
+        <td>${escapeHtml(malik || "-")}</td>
+      </tr>`;
+    });
+    return html + "</tbody></table>";
+  }
+
+  function kayitTarihSayiMetni(kayit){
+    const tarih = String(kayit?.tesisTarihi || kayit?.tar || "Yok").trim() || "Yok";
+    const sayi = String(kayit?.tesisYevmiye || kayit?.say || "Yok").trim() || "Yok";
+    const acik = String(kayit?.acik || kayit?.tur || "Takyidat").trim();
+    return `${acik} (Tarih: ${tarih}, Sayı: ${sayi})`;
+  }
+
+  function bankaTakyidatTablosu(rep){
+    const { tapular, analiz } = cokluTapuVerisi(rep);
+    if(tapular.length <= 1) return "";
+    if(!analiz.onaylandi || !Array.isArray(analiz.gruplar)){
+      return "";
+    }
+    const satirlar = [];
+    analiz.gruplar.forEach(grup => {
+      const sayimlar = grup.tapuSayimlari || {};
+      const indeksler = (Array.isArray(grup.tapuIndexleri) ? grup.tapuIndexleri : Object.keys(sayimlar))
+        .map(Number).filter(i => tapular[i]);
+      const enCok = Math.max(1, ...indeksler.map(i => Number(sayimlar[i] || 1)));
+      const tekrar = analiz.mukerrerGosterim === "aynen" ? enCok : 1;
+      for(let sira=1; sira<=tekrar; sira++){
+        const aktif = indeksler.filter(i => Number(sayimlar[i] || 1) >= sira);
+        if(!aktif.length) continue;
+        const bilgiler = aktif.map(i => tapular[i].tapuKayitBilgileri || {});
+        let aciklama = kayitTarihSayiMetni(grup.kayit || {});
+        if(analiz.mukerrerGosterim === "tek" && enCok > 1){
+          aciklama += ` (İlgili tapuda ${enCok} kez kayıtlıdır.)`;
+        }
+        satirlar.push({
+          ada:[...new Set(bilgiler.map(d => d.ada).filter(Boolean))].join(", ") || "-",
+          parsel:[...new Set(bilgiler.map(d => d.parsel).filter(Boolean))].join(", ") || "-",
+          bb:[...new Set(bilgiler.map(d => d.bbNo).filter(Boolean))].join(", ") || aktif.map(i => `Tapu ${i+1}`).join(", "),
+          blok:[...new Set(bilgiler.map(d => d.blokNo).filter(Boolean))].join(", ") || "-",
+          kapsam:grup.kapsam || "-",
+          aciklama
+        });
+      }
+    });
+    if(!satirlar.length) return `<h3 class="tapu-subtitle">Takyidat (Diğer) — Banka Tablosu</h3><div class="tapu-note">Onaylı takyidat kaydı bulunmamaktadır.</div>`;
+    let html = `<h3 class="tapu-subtitle">Takyidat (Diğer) — Banka Tablosu</h3>
+      <table class="report-table"><thead><tr>
+        <th>Ada</th><th>Parsel</th><th>BB No</th><th>Blok No</th><th>Kapsam</th><th>Açıklama</th>
+      </tr></thead><tbody>`;
+    satirlar.forEach(s => {
+      html += `<tr><td>${escapeHtml(s.ada)}</td><td>${escapeHtml(s.parsel)}</td>
+        <td>${escapeHtml(s.bb)}</td><td>${escapeHtml(s.blok)}</td>
+        <td>${escapeHtml(s.kapsam)}</td><td>${escapeHtml(s.aciklama)}</td></tr>`;
+    });
+    return html + "</tbody></table>";
+  }
+
   function buildBBTextFromDetay(d){
     d = d || {};
     const v = (k) => (d[k] ?? "").toString().trim();
@@ -528,8 +645,19 @@ $("enerjiKimlikBilgisi").style.display =
     $("binaMetin").textContent = formatMetin(pick(r,"bina.metin","binaMetni"));
     $("bbMetin").textContent = getBagimsizBolumMetni(r);
     $("konumMetin").textContent = formatMetin(pick(r,"konumCevre.tamMetin","konumMetni"));
-    $("tapuKayitTablosu").innerHTML = tapuKayitTablosu(r);
-    $("tapuMetinB1").textContent = formatMetin(pick(r,"modules.tapu.tapuMetniB1","tapuMetniB1","tapu.b1"));
+    const coklu = cokluTapuVerisi(r);
+    const cokluMu = coklu.tapular.length > 1;
+    $("tapuKayitTablosu").innerHTML = cokluMu ? "" : tapuKayitTablosu(r);
+    $("tapuCokluBilgiTablosu").innerHTML = cokluTapuBilgiTablosu(r);
+    $("tapuBankaTakyidatTablosu").innerHTML = bankaTakyidatTablosu(r);
+    $("tapuAnalizUyarisi").innerHTML = cokluMu && !coklu.analiz.onaylandi
+      ? "<div class='warning'><b>Çoklu tapu takyidat analizi henüz onaylanmadı.</b><br>Ortak, ferdi ve mükerrer kayıt ayrımı için Tapu Kayıt bölümünde analizi kontrol edip onaylayınız.</div>"
+      : "";
+    const standartB1 = pick(r,"modules.tapu.tapuMetniB1","tapuMetniB1","tapu.b1");
+    const onayliFormat1 = coklu.analiz.onaylandi
+      ? pick(coklu.analiz,"format1Metni") || pick(r,"cokluTapuFormat1Metni")
+      : "";
+    $("tapuMetinB1").textContent = formatMetin(onayliFormat1 || standartB1);
     $("tapuMetinB2").textContent = formatMetin(pick(r,"modules.tapu.tapuMetniB2","tapuMetniB2","tapu.b2"));
     $("emsalMetin").textContent = emsalMetni(r);
   }
@@ -567,6 +695,9 @@ $("enerjiKimlikBilgisi").style.display =
   $("bbMetin").textContent = "";
   $("konumMetin").textContent = "";
   $("tapuKayitTablosu").innerHTML = "";
+  $("tapuCokluBilgiTablosu").innerHTML = "";
+  $("tapuBankaTakyidatTablosu").innerHTML = "";
+  $("tapuAnalizUyarisi").innerHTML = "";
   $("tapuMetinB1").textContent = "";
   $("tapuMetinB2").textContent = "";
   $("emsalMetin").textContent = "";
