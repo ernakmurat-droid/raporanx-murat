@@ -663,8 +663,53 @@
     if(yeniMod === tapuModu) return;
 
     if(yeniMod === 'coklu'){
+      const cevap = prompt(
+        'Bu raporda toplam kaç tapu bulunmaktadır?',
+        '2'
+      );
+      if(cevap === null){
+        document.querySelector(
+          'input[name="tapuModu"][value="tek"]'
+        ).checked = true;
+        return;
+      }
+
+      const toplamTapu = Number.parseInt(cevap, 10);
+      if(!Number.isInteger(toplamTapu) || toplamTapu < 2){
+        alert('Çoklu tapu için 2 veya daha büyük bir sayı giriniz.');
+        document.querySelector(
+          'input[name="tapuModu"][value="tek"]'
+        ).checked = true;
+        return;
+      }
+
+      const gerekliIlaveHak = Math.ceil(
+        Math.max(0, toplamTapu - 10) / 10
+      );
+      if(gerekliIlaveHak > 0){
+        const ucretOnayi = confirm(
+          `Bu raporda ${toplamTapu} tapu bulunmaktadır.\n\n` +
+          `İlk 10 tapu normal rapor hakkına dahildir. ` +
+          `Kalan tapular için ${gerekliIlaveHak} ilave rapor hakkı gerekir.\n\n` +
+          `Haklar, AI okuması başladığında kullanılacaktır. ` +
+          `Çoklu tapu işlemine devam edilsin mi?`
+        );
+        if(!ucretOnayi){
+          document.querySelector(
+            'input[name="tapuModu"][value="tek"]'
+          ).checked = true;
+          return;
+        }
+        onaylananIlaveHakSeviyesi = gerekliIlaveHak;
+      }else{
+        onaylananIlaveHakSeviyesi = 0;
+      }
+
       const mevcut = formdanTapuKaydiOlustur();
       cokluTapular = [mevcut];
+      while(cokluTapular.length < toplamTapu){
+        cokluTapular.push({});
+      }
       aktifTapuIndex = 0;
       tapuModu = 'coklu';
       document.getElementById('cokluTapuKontrolleri').style.display = 'block';
