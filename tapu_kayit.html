@@ -233,6 +233,79 @@
         </table>
       </div>
     </div>
+
+    <div id="cokluTapuAnalizKarti" class="section-box mt-4" style="display:none;">
+      <div class="section-title mb-3">
+        <h5 class="text-primary mb-0">Çoklu Tapu Ortak / Ferdi Takyidat Analizi</h5>
+        <button type="button" class="btn btn-primary" onclick="cokluTapuAnaliziOlustur()">
+          ANALİZİ YENİLE
+        </button>
+      </div>
+
+      <div class="alert alert-info">
+        Tapular Blok + Bağımsız Bölüm numarasıyla karşılaştırılır. Sonuç uzman tarafından
+        onaylanmadan Rapor Oluştur bölümüne aktarılmaz.
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-5">
+          <label class="form-label fw-bold">Aynı tapu içindeki mükerrer kayıtların gösterimi</label>
+          <select id="mukerrerGosterim" class="form-select" onchange="cokluTapuAnaliziOlustur()">
+            <option value="aynen">Tapuda geçtiği kadar aynen yaz</option>
+            <option value="tek">Tek yaz ve kaç kez bulunduğunu belirt</option>
+          </select>
+        </div>
+      </div>
+
+      <h6>Değişen Tapu Bilgileri</h6>
+      <div id="degisenAlanlarOzeti" class="alert alert-warning"></div>
+      <div class="table-responsive mb-4">
+        <table class="table table-sm table-bordered align-middle bg-white">
+          <thead class="table-warning">
+            <tr>
+              <th>Blok + BB</th>
+              <th>Cilt / Sayfa</th>
+              <th>Taşınmaz ID</th>
+              <th>Tapu Tarihi</th>
+              <th>Kat</th>
+              <th>Arsa Payı</th>
+              <th>Malik</th>
+            </tr>
+          </thead>
+          <tbody id="degisenTapuBilgileriGövde"></tbody>
+        </table>
+      </div>
+
+      <h6>Format 2 — Ayrıntılı Takyidat Karşılaştırması</h6>
+      <div class="table-responsive mb-4">
+        <table class="table table-sm table-bordered align-middle bg-white">
+          <thead class="table-primary">
+            <tr>
+              <th>Kapsam</th>
+              <th>Blok + BB</th>
+              <th>Tür</th>
+              <th>Açıklama</th>
+              <th>Tarih</th>
+              <th>Sayı</th>
+              <th>Mükerrer</th>
+            </tr>
+          </thead>
+          <tbody id="takyidatKarsilastirmaGövde"></tbody>
+        </table>
+      </div>
+
+      <h6>Format 1 — Bankaya Hazır Metin</h6>
+      <textarea id="cokluTapuFormat1Metni" class="form-control" rows="12"></textarea>
+      <div class="d-flex gap-2 flex-wrap mt-3">
+        <button type="button" class="btn btn-outline-primary" onclick="cokluTapuFormat1Kopyala()">
+          FORMAT 1 METNİNİ KOPYALA
+        </button>
+        <button type="button" class="btn btn-success" onclick="cokluTapuAnaliziniOnayla()">
+          ORTAK / FERDİ AYRIMINI ONAYLA VE KAYDET
+        </button>
+      </div>
+      <div id="cokluTapuAnalizDurumu" class="save-status"></div>
+    </div>
   </div>
 
  <span class="format-label">📄 BANKA FORMATI B1</span>
@@ -772,6 +845,10 @@
       govde.appendChild(tr);
     });
     kart.style.display = 'block';
+    const analizKarti =
+      document.getElementById('cokluTapuAnalizKarti');
+    analizKarti.style.display = liste.length > 1 ? 'block' : 'none';
+    if(liste.length > 1) cokluTapuAnaliziOlustur();
   }
 
   function kayitliTapuyuDuzenle(index){
@@ -850,6 +927,273 @@
     kaydedilenTapulariGoster();
   }
 
+  function cokluTapuListesiniGetir(){
+    const { r } = getLatestData();
+    const tapuObj = getTapuObj(r);
+    if(tapuObj?.tapuModu === 'coklu' &&
+       Array.isArray(tapuObj.cokluTapular)){
+      return tapuObj.cokluTapular;
+    }
+    return [];
+  }
+
+  function hukukiMetniNormallestir(deger){
+    return String(deger || '')
+      .toLocaleLowerCase('tr-TR')
+      .replace(/ı/g, 'i')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c')
+      .replace(/[^a-z0-9]/g, '');
+  }
+
+  function takyidatParmakIzi(kayit){
+    const tur = hukukiMetniNormallestir(kayit.tur);
+    const aciklama = hukukiMetniNormallestir(kayit.acik);
+    const tarih = hukukiMetniNormallestir(
+      kayit.tesisTarihi || kayit.tar
+    );
+    const sayi = hukukiMetniNormallestir(
+      kayit.tesisYevmiye || kayit.say
+    );
+    const ozel = [
+      kayit.malikLehtar,
+      kayit.alacakli,
+      kayit.borcluMalik,
+      kayit.tutar,
+      kayit.dereceSira,
+      kayit.dosyaNo
+    ].map(hukukiMetniNormallestir).join('|');
+    return [tur, aciklama, tarih, sayi, ozel].join('::');
+  }
+
+  function tapuBbEtiketi(kayit, index){
+    const a = kayit?.tapuKayitBilgileri || {};
+    const blok = String(a.blokNo || '').trim();
+    const bb = String(a.bbNo || '').trim();
+    if(blok && bb) return `${blok} Blok ${bb} no.lu BB`;
+    if(bb) return `${bb} no.lu BB`;
+    return `Tapu ${index + 1}`;
+  }
+
+  function turkceListe(liste){
+    const temiz = [...new Set((liste || []).filter(Boolean))];
+    if(temiz.length <= 1) return temiz[0] || '';
+    return temiz.slice(0, -1).join(', ') + ' ve ' + temiz.at(-1);
+  }
+
+  function takyidatMetni(kayit){
+    const aciklama = String(kayit.acik || '').trim() ||
+      String(kayit.tur || 'Takyidat').trim();
+    const tarih = String(kayit.tesisTarihi || kayit.tar || 'Yok').trim();
+    const sayi = String(kayit.tesisYevmiye || kayit.say || 'Yok').trim();
+    return `${aciklama} (Tarih: ${tarih || 'Yok'}, Sayı: ${sayi || 'Yok'})`;
+  }
+
+  function cokluTapuKarsilastirmasiHesapla(){
+    const tapular = cokluTapuListesiniGetir();
+    const gruplar = new Map();
+
+    tapular.forEach((tapu, tapuIndex) => {
+      const kayitlar = Array.isArray(tapu.tapuTakyidatDizi)
+        ? tapu.tapuTakyidatDizi
+        : [];
+      kayitlar.forEach(kayit => {
+        if(!String(kayit.tur || '').trim() &&
+           !String(kayit.acik || '').trim()) return;
+        const anahtar = takyidatParmakIzi(kayit);
+        if(!gruplar.has(anahtar)){
+          gruplar.set(anahtar, {
+            anahtar,
+            kayit,
+            tapuSayimlari:{}
+          });
+        }
+        const grup = gruplar.get(anahtar);
+        grup.tapuSayimlari[tapuIndex] =
+          (grup.tapuSayimlari[tapuIndex] || 0) + 1;
+      });
+    });
+
+    const sonucGruplari = [...gruplar.values()].map(grup => {
+      const tapuIndexleri = Object.keys(grup.tapuSayimlari)
+        .map(Number).sort((a,b) => a-b);
+      const kapsam = tapuIndexleri.length === tapular.length
+        ? 'Tüm tapularda ortak'
+        : tapuIndexleri.length === 1
+          ? 'Ferdi kayıt'
+          : 'Bazı tapularda ortak';
+      return {
+        ...grup,
+        tapuIndexleri,
+        kapsam,
+        etiketler:tapuIndexleri.map(i => tapuBbEtiketi(tapular[i], i))
+      };
+    });
+
+    return { tapular, gruplar:sonucGruplari };
+  }
+
+  function degisenTapuAlanlariniBul(tapular){
+    const alanlar = [
+      ['ciltNo','Cilt No'],
+      ['sayfaNo','Sayfa No'],
+      ['tasinmazId','Taşınmaz ID'],
+      ['tapuTarihi','Tapu Tarihi'],
+      ['blokNo','Blok No'],
+      ['katNo','Kat'],
+      ['bbNo','BB No'],
+      ['arsaPayi','Arsa Payı'],
+      ['arsaPaydasi','Arsa Paydası']
+    ];
+    return alanlar.filter(([anahtar]) => {
+      const degerler = tapular.map(t =>
+        String(t?.tapuKayitBilgileri?.[anahtar] || '')
+          .trim()
+      );
+      return new Set(degerler).size > 1;
+    }).map(([,etiket]) => etiket);
+  }
+
+  function cokluTapuAnaliziOlustur(){
+    const { tapular, gruplar } =
+      cokluTapuKarsilastirmasiHesapla();
+    const kart = document.getElementById('cokluTapuAnalizKarti');
+    if(!tapular.length){
+      kart.style.display = 'none';
+      return;
+    }
+    kart.style.display = 'block';
+
+    const degisenler = degisenTapuAlanlariniBul(tapular);
+    document.getElementById('degisenAlanlarOzeti').textContent =
+      degisenler.length
+        ? `Tapular arasında değişen alanlar: ${degisenler.join(', ')}.`
+        : 'Tapu bilgilerinde değişen alan tespit edilmedi.';
+
+    const degisenGovde =
+      document.getElementById('degisenTapuBilgileriGövde');
+    degisenGovde.innerHTML = '';
+    tapular.forEach((tapu,index) => {
+      const a = tapu.tapuKayitBilgileri || {};
+      const malik = (tapu.tapuMalikDizi || [])
+        .map(m => m.ad).filter(Boolean).join(', ');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(tapuBbEtiketi(tapu,index))}</td>
+        <td>${escapeHtml(a.ciltNo || tapu.ciltNo || '-')} / ${escapeHtml(a.sayfaNo || tapu.sayfaNo || '-')}</td>
+        <td>${escapeHtml(a.tasinmazId || tapu.tasinmazId || '-')}</td>
+        <td>${escapeHtml(a.tapuTarihi || tapu.tapuTarihi || '-')}</td>
+        <td>${escapeHtml(a.katNo || '-')}</td>
+        <td>${escapeHtml(a.arsaPayi || '-')} / ${escapeHtml(a.arsaPaydasi || '-')}</td>
+        <td>${escapeHtml(malik || '-')}</td>`;
+      degisenGovde.appendChild(tr);
+    });
+
+    const karsilastirmaGovde =
+      document.getElementById('takyidatKarsilastirmaGövde');
+    karsilastirmaGovde.innerHTML = '';
+    gruplar.forEach(grup => {
+      const tekrarlar = Object.entries(grup.tapuSayimlari)
+        .filter(([,adet]) => adet > 1)
+        .map(([i,adet]) =>
+          `${tapuBbEtiketi(tapular[Number(i)],Number(i))}: ${adet} kez`
+        );
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(grup.kapsam)}</td>
+        <td>${escapeHtml(turkceListe(grup.etiketler))}</td>
+        <td>${escapeHtml(grup.kayit.tur || '-')}</td>
+        <td>${escapeHtml(grup.kayit.acik || '-')}</td>
+        <td>${escapeHtml(grup.kayit.tesisTarihi || grup.kayit.tar || 'Yok')}</td>
+        <td>${escapeHtml(grup.kayit.tesisYevmiye || grup.kayit.say || 'Yok')}</td>
+        <td>${escapeHtml(tekrarlar.join(', ') || 'Yok')}</td>`;
+      karsilastirmaGovde.appendChild(tr);
+    });
+
+    const mukerrerModu =
+      document.getElementById('mukerrerGosterim').value;
+    const cumleler = [];
+    gruplar.forEach(grup => {
+      const bbListesi = turkceListe(grup.etiketler);
+      const anaMetin = takyidatMetni(grup.kayit);
+      const tekrarAdedi = Math.max(
+        ...Object.values(grup.tapuSayimlari).map(Number)
+      );
+      const tekrarMetinleri = mukerrerModu === 'aynen'
+        ? Array.from({length:tekrarAdedi}, () => anaMetin)
+        : [anaMetin];
+      const kayitMetni = tekrarMetinleri.join(', ');
+      const tekrarNotu = mukerrerModu === 'tek' && tekrarAdedi > 1
+        ? ` Bu kayıt ilgili tapu kaydında ${tekrarAdedi} kez yer almaktadır.`
+        : '';
+
+      if(grup.kapsam === 'Tüm tapularda ortak'){
+        cumleler.push(
+          `${bbListesi} tapu kayıtlarında ortak olarak ${kayitMetni} bulunmaktadır.${tekrarNotu}`
+        );
+      }else if(grup.kapsam === 'Bazı tapularda ortak'){
+        const olmayanlar = tapular.map((t,i) =>
+          grup.tapuIndexleri.includes(i) ? '' : tapuBbEtiketi(t,i)
+        ).filter(Boolean);
+        cumleler.push(
+          `${bbListesi} tapu kayıtlarında ortak olarak ${kayitMetni} bulunmaktadır. ` +
+          `Bu kayıt ${turkceListe(olmayanlar)} tapu kayıtlarında yer almamaktadır.${tekrarNotu}`
+        );
+      }else{
+        cumleler.push(
+          `${bbListesi} tapu kaydında diğer taşınmazlardan farklı olarak ${kayitMetni} bulunmaktadır.${tekrarNotu}`
+        );
+      }
+    });
+
+    document.getElementById('cokluTapuFormat1Metni').value =
+      cumleler.join(' ');
+  }
+
+  async function cokluTapuAnaliziniOnayla(){
+    const { arr, i, r } = getLatestData();
+    if(!r || i < 0 || !arr[i].modules?.tapu) return;
+    const analiz = cokluTapuKarsilastirmasiHesapla();
+    const format1 =
+      document.getElementById('cokluTapuFormat1Metni').value.trim();
+    const mukerrerGosterim =
+      document.getElementById('mukerrerGosterim').value;
+    const degisenAlanlar =
+      degisenTapuAlanlariniBul(analiz.tapular);
+
+    arr[i].modules.tapu.takyidatAnalizi = {
+      onaylandi:true,
+      onayTarihi:new Date().toISOString(),
+      mukerrerGosterim,
+      degisenAlanlar,
+      gruplar:analiz.gruplar,
+      format1Metni:format1
+    };
+    arr[i].cokluTapuFormat1Metni = format1;
+    arr[i].cokluTapuTakyidatAnalizi =
+      arr[i].modules.tapu.takyidatAnalizi;
+    arr[i].updatedAt = new Date().toISOString();
+    arr[i].updatedAtMs = Date.now();
+    writeReports(arr);
+    await cloudSaveReport(arr[i]);
+
+    const durum =
+      document.getElementById('cokluTapuAnalizDurumu');
+    durum.textContent =
+      '✅ Ortak, ferdi ve mükerrer takyidat ayrımı onaylandı ve kaydedildi.';
+    durum.style.display = 'block';
+    setTimeout(() => durum.style.display='none', 4000);
+  }
+
+  function cokluTapuFormat1Kopyala(){
+    metniKopyala(
+      document.getElementById('cokluTapuFormat1Metni').value
+    );
+  }
+
   window.tapuModuDegistir = tapuModuDegistir;
   window.tapuSekmesineGec = tapuSekmesineGec;
   window.yeniTapuEkle = yeniTapuEkle;
@@ -857,6 +1201,9 @@
   window.sonrakiTapuyaGec = sonrakiTapuyaGec;
   window.kayitliTapuyuDuzenle = kayitliTapuyuDuzenle;
   window.kayitliTapuyuSil = kayitliTapuyuSil;
+  window.cokluTapuAnaliziOlustur = cokluTapuAnaliziOlustur;
+  window.cokluTapuAnaliziniOnayla = cokluTapuAnaliziniOnayla;
+  window.cokluTapuFormat1Kopyala = cokluTapuFormat1Kopyala;
 
   const TAKBIS_AI_URL = "https://pay.raporanx.com/ai/parse-takbis";
   let takbisAiSonuc = null;
