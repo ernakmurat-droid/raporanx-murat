@@ -61,7 +61,9 @@
       </div>
       <div id="cokluTapuKontrolleri" style="display:none;">
         <div class="alert alert-warning mt-3 mb-2">
-          Her tapu ayrı kaydedilir. Hangi tapuda çalıştığınız aşağıdaki seçicide açıkça gösterilir.
+          <strong>Çoklu tapu AI kullanım bilgisi:</strong><br>
+          İlk 10 tapu normal rapor hakkına dahildir. Sonraki her 10 tapu için 1 ilave rapor hakkı kullanılır.
+          Dosya seçilmeden önce gerekli hak bilgisi gösterilir ve onayınız alınır.
         </div>
         <div id="tapuSekmeleri" class="tapu-tabs">
           <button id="oncekiTapuBtn" type="button" class="btn btn-outline-primary" onclick="oncekiTapuyaGec()">← ÖNCEKİ</button>
@@ -470,6 +472,7 @@
   let cokluTapular = [];
   let aktifTapuIndex = 0;
   let tapuFormuYukleniyor = false;
+  let onaylananIlaveHakSeviyesi = 0;
 
   function formdanTapuKaydiOlustur(){
     const metinler = guncelle();
@@ -931,6 +934,49 @@ function takbisTekDosyaSil(silinecekIndex) {
   takbisDosyaListesiniGoster();
 }
 
+function mevcutIlaveHakBilgisi(){
+  const toplamTapuSayisi = tapuModu === 'coklu'
+    ? Math.max(1, cokluTapular.length)
+    : 1;
+  const gerekliIlaveHak = Math.ceil(
+    Math.max(0, toplamTapuSayisi - 10) / 10
+  );
+  return { toplamTapuSayisi, gerekliIlaveHak };
+}
+
+function dosyaSecmedenOnceHakOnayiAl(){
+  const { toplamTapuSayisi, gerekliIlaveHak } =
+    mevcutIlaveHakBilgisi();
+
+  if(gerekliIlaveHak === 0 ||
+     onaylananIlaveHakSeviyesi >= gerekliIlaveHak){
+    return true;
+  }
+
+  const onay = confirm(
+    `Bu raporda ${toplamTapuSayisi} tapu bulunmaktadır.\n\n` +
+    `İlk 10 tapu normal rapor hakkına dahildir. ` +
+    `Bu sayı için toplam ${gerekliIlaveHak} ilave hak gerekir.\n\n` +
+    `Hak, AI okuması başlatıldığında kullanılır. ` +
+    `Daha önce bu rapor için düşülen haklar tekrar alınmaz.\n\n` +
+    `Dosya seçmeye devam edilsin mi?`
+  );
+
+  if(onay){
+    onaylananIlaveHakSeviyesi = gerekliIlaveHak;
+  }
+  return onay;
+}
+
+document.getElementById('takbisDosyalari').addEventListener(
+  'click',
+  function (event) {
+    if(!dosyaSecmedenOnceHakOnayiAl()){
+      event.preventDefault();
+    }
+  }
+);
+
 document.getElementById('takbisDosyalari').addEventListener(
   'change',
   function () {
@@ -1003,21 +1049,12 @@ window.takbisDosyalariniSil =
         : 'Bu raporda kayıtlı bir tapu bulunmaktadır. Yeni belge mevcut tapu kaydının bilgilerini güncelleyecektir. Devam edilsin mi?'
     )) return;
 
-    const toplamTapuSayisi = tapuModu === 'coklu'
-      ? Math.max(1, cokluTapular.length)
-      : 1;
-    const gerekliIlaveHak = Math.ceil(
-      Math.max(0, toplamTapuSayisi - 10) / 10
-    );
+    const { toplamTapuSayisi, gerekliIlaveHak } =
+      mevcutIlaveHakBilgisi();
 
     if(gerekliIlaveHak > 0){
-      const onay = confirm(
-        `Bu raporda ${toplamTapuSayisi} tapu bulunmaktadır.\n\n` +
-        `İlk 10 tapu normal rapor hakkına dahildir. ` +
-        `Bu sayı için toplam ${gerekliIlaveHak} ilave hak gerekir.\n\n` +
-        `Daha önce bu rapor için düşülen haklar tekrar alınmaz. Devam edilsin mi?`
-      );
-      if(!onay) return;
+      if(onaylananIlaveHakSeviyesi < gerekliIlaveHak &&
+         !dosyaSecmedenOnceHakOnayiAl()) return;
 
       if(!window.Wallet ||
          typeof window.Wallet.consumeExtraTapuRights !== 'function'){
