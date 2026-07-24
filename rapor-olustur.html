@@ -51,6 +51,9 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 .tapu-subtitle{margin:22px 0 8px;color:#283593;font-size:1.02em;}
 .tapu-note{font-size:13px;color:#546e7a;margin:6px 0 10px;}
 .report-table .changed-col{background:#fff8e1;}
+.multi-tapu-table{font-size:10px;line-height:1.2;table-layout:auto;}
+.multi-tapu-table th,.multi-tapu-table td{padding:4px 5px;white-space:normal;width:auto!important;}
+.format-heading{margin:18px 0 6px;color:#283593;font-size:1em;}
 .warning{background:#fff8e1;border-left:4px solid #ffc107;padding:10px;margin:8px 0;}
 .print-btn{background:#27ae60;color:#fff;padding:13px 26px;border:none;border-radius:50px;margin:10px auto;display:block;cursor:pointer;font-weight:900;}
 .print-btn:hover{background:#1e874e;}
@@ -72,6 +75,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   body{background:#fff;}
   .container{box-shadow:none;padding:0;width:100%;}
   .section{page-break-inside:avoid;}
+  .multi-tapu-table{font-size:9px;}
 }
 </style>
 </head>
@@ -157,7 +161,9 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
       <div id="tapuCokluBilgiTablosu"></div>
       <div id="tapuBankaTakyidatTablosu"></div>
       <div id="tapuAnalizUyarisi"></div>
+      <h3 id="tapuFormatBaslik1" class="format-heading" style="display:none;">Format 1 — Bankaya Hazır Metin</h3>
       <div class="text-block" id="tapuMetinB1"></div>
+      <h3 id="tapuFormatBaslik2" class="format-heading" style="display:none;">Format 2 — Kontrol Metni</h3>
       <div class="text-block" id="tapuMetinB2"></div>
     </section>
 
@@ -362,7 +368,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function cokluTapuVerisi(rep){
     const mod = pick(rep,"modules.tapu") || {};
     const tapular = Array.isArray(mod.cokluTapular)
-      ? mod.cokluTapular.filter(t => t && typeof t === "object")
+      ? mod.cokluTapular.filter(t =>
+          t && typeof t === "object" &&
+          (t.onayDurumu?.kaydedildi ||
+           Object.keys(t.tapuKayitBilgileri || {}).some(k =>
+             String(t.tapuKayitBilgileri[k] || "").trim()
+           ))
+        )
       : [];
     const analiz = mod.takyidatAnalizi || rep.cokluTapuTakyidatAnalizi || {};
     return { mod, tapular, analiz };
@@ -378,45 +390,65 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function cokluTapuBilgiTablosu(rep){
-    const { tapular, analiz } = cokluTapuVerisi(rep);
+    const { tapular } = cokluTapuVerisi(rep);
     if(tapular.length <= 1) return "";
-    const degisen = Array.isArray(analiz.degisenAlanlar) ? analiz.degisenAlanlar : [];
+    const alanlar = [
+      ["blokNo","Blok No"],["bbNo","BB No"],["ada","Ada"],["parsel","Parsel"],
+      ["ciltNo","Cilt No"],["sayfaNo","Sayfa No"],["tasinmazId","Taşınmaz ID"],
+      ["tapuTarihi","Tapu Tarihi"],["katNo","Kat"],["arsaPayi","Arsa Payı"],
+      ["arsaPaydasi","Arsa Paydası"]
+    ];
+    const degisen = alanlar.filter(([anahtar]) => {
+      const degerler = tapular.map(t =>
+        String(t?.tapuKayitBilgileri?.[anahtar] || "").trim()
+      );
+      return new Set(degerler).size > 1;
+    }).map(([,etiket]) => etiket);
+    const malikDegerleri = tapular.map(t =>
+      (Array.isArray(t.tapuMalikDizi) ? t.tapuMalikDizi : [])
+        .map(m => m?.ad || m?.adSoyad || "").filter(Boolean).join(", ")
+    );
+    if(new Set(malikDegerleri).size > 1) degisen.push("Malik");
     const degisenSet = new Set(degisen);
     const cls = (etiket) => degisenSet.has(etiket) ? " class='changed-col'" : "";
     let html = `
-      <h3 class="tapu-subtitle">Çoklu Tapu Bilgileri</h3>
+      <h3 class="tapu-subtitle">Çoklu Tapu Bilgileri — ${tapular.length} Tapu</h3>
       <div class="tapu-note">${
         degisen.length
           ? `Tapular arasında değişen alanlar: ${escapeHtml(degisen.join(", "))}. Sarı sütunlar değişen bilgileri gösterir.`
           : "Tapular arasında değişen alan bulunmamaktadır."
       }</div>
-      <table class="report-table">
+      <div style="overflow-x:auto;"><table class="report-table multi-tapu-table">
         <thead><tr>
-          <th>Bağımsız Bölüm</th>
-          <th>Ada / Parsel</th>
-          <th${cls("Cilt No")}>Cilt / Sayfa</th>
+          <th>Sıra</th>
+          <th${cls("Blok No")}>Blok</th>
+          <th${cls("BB No")}>BB No</th>
+          <th${cls("Ada") || cls("Parsel")}>Ada / Parsel</th>
+          <th${cls("Cilt No") || cls("Sayfa No")}>Cilt / Sayfa</th>
           <th${cls("Taşınmaz ID")}>Taşınmaz ID</th>
           <th${cls("Tapu Tarihi")}>Tapu Tarihi</th>
           <th${cls("Kat")}>Kat</th>
           <th${cls("Arsa Payı") || cls("Arsa Paydası")}>Arsa Payı</th>
-          <th>Malik</th>
+          <th${cls("Malik")}>Malik</th>
         </tr></thead><tbody>`;
     tapular.forEach((tapu,index) => {
       const d = tapu.tapuKayitBilgileri || {};
       const malik = (Array.isArray(tapu.tapuMalikDizi) ? tapu.tapuMalikDizi : [])
         .map(m => m?.ad || m?.adSoyad || "").filter(Boolean).join(", ");
       html += `<tr>
-        <td>${escapeHtml(tapuEtiketi(tapu,index))}</td>
-        <td>${escapeHtml([d.ada,d.parsel].filter(Boolean).join(" / ") || "-")}</td>
-        <td${cls("Cilt No")}>${escapeHtml([d.ciltNo,d.sayfaNo].filter(Boolean).join(" / ") || "-")}</td>
+        <td>${index + 1}</td>
+        <td${cls("Blok No")}>${escapeHtml(d.blokNo || "-")}</td>
+        <td${cls("BB No")}>${escapeHtml(d.bbNo || "-")}</td>
+        <td${cls("Ada") || cls("Parsel")}>${escapeHtml([d.ada,d.parsel].filter(Boolean).join(" / ") || "-")}</td>
+        <td${cls("Cilt No") || cls("Sayfa No")}>${escapeHtml([d.ciltNo,d.sayfaNo].filter(Boolean).join(" / ") || "-")}</td>
         <td${cls("Taşınmaz ID")}>${escapeHtml(d.tasinmazId || "-")}</td>
         <td${cls("Tapu Tarihi")}>${escapeHtml(d.tapuTarihi || "-")}</td>
         <td${cls("Kat")}>${escapeHtml(d.katNo || "-")}</td>
         <td${cls("Arsa Payı") || cls("Arsa Paydası")}>${escapeHtml([d.arsaPayi,d.arsaPaydasi].filter(Boolean).join(" / ") || "-")}</td>
-        <td>${escapeHtml(malik || "-")}</td>
+        <td${cls("Malik")}>${escapeHtml(malik || "-")}</td>
       </tr>`;
     });
-    return html + "</tbody></table>";
+    return html + "</tbody></table></div>";
   }
 
   function kayitTarihSayiMetni(kayit){
@@ -437,16 +469,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const sayimlar = grup.tapuSayimlari || {};
       const indeksler = (Array.isArray(grup.tapuIndexleri) ? grup.tapuIndexleri : Object.keys(sayimlar))
         .map(Number).filter(i => tapular[i]);
-      const enCok = Math.max(1, ...indeksler.map(i => Number(sayimlar[i] || 1)));
-      const tekrar = analiz.mukerrerGosterim === "aynen" ? enCok : 1;
-      for(let sira=1; sira<=tekrar; sira++){
-        const aktif = indeksler.filter(i => Number(sayimlar[i] || 1) >= sira);
+      for(let sira=1; sira<=1; sira++){
+        const aktif = indeksler;
         if(!aktif.length) continue;
         const bilgiler = aktif.map(i => tapular[i].tapuKayitBilgileri || {});
         let aciklama = kayitTarihSayiMetni(grup.kayit || {});
-        if(analiz.mukerrerGosterim === "tek" && enCok > 1){
-          aciklama += ` (İlgili tapuda ${enCok} kez kayıtlıdır.)`;
-        }
         satirlar.push({
           ada:[...new Set(bilgiler.map(d => d.ada).filter(Boolean))].join(", ") || "-",
           parsel:[...new Set(bilgiler.map(d => d.parsel).filter(Boolean))].join(", ") || "-",
@@ -459,7 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     if(!satirlar.length) return `<h3 class="tapu-subtitle">Takyidat (Diğer) — Banka Tablosu</h3><div class="tapu-note">Onaylı takyidat kaydı bulunmamaktadır.</div>`;
     let html = `<h3 class="tapu-subtitle">Takyidat (Diğer) — Banka Tablosu</h3>
-      <table class="report-table"><thead><tr>
+      <div style="overflow-x:auto;"><table class="report-table multi-tapu-table"><thead><tr>
         <th>Ada</th><th>Parsel</th><th>BB No</th><th>Blok No</th><th>Kapsam</th><th>Açıklama</th>
       </tr></thead><tbody>`;
     satirlar.forEach(s => {
@@ -467,7 +494,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${escapeHtml(s.bb)}</td><td>${escapeHtml(s.blok)}</td>
         <td>${escapeHtml(s.kapsam)}</td><td>${escapeHtml(s.aciklama)}</td></tr>`;
     });
-    return html + "</tbody></table>";
+    return html + "</tbody></table></div>";
   }
 
   function buildBBTextFromDetay(d){
@@ -657,8 +684,15 @@ $("enerjiKimlikBilgisi").style.display =
     const onayliFormat1 = coklu.analiz.onaylandi
       ? pick(coklu.analiz,"format1Metni") || pick(r,"cokluTapuFormat1Metni")
       : "";
+    const onayliFormat2 = coklu.analiz.onaylandi
+      ? pick(coklu.analiz,"format2Metni") || pick(r,"cokluTapuFormat2Metni")
+      : "";
+    $("tapuFormatBaslik1").style.display = cokluMu ? "block" : "none";
+    $("tapuFormatBaslik2").style.display = cokluMu ? "block" : "none";
     $("tapuMetinB1").textContent = formatMetin(onayliFormat1 || standartB1);
-    $("tapuMetinB2").textContent = formatMetin(pick(r,"modules.tapu.tapuMetniB2","tapuMetniB2","tapu.b2"));
+    $("tapuMetinB2").textContent = formatMetin(
+      onayliFormat2 || pick(r,"modules.tapu.tapuMetniB2","tapuMetniB2","tapu.b2")
+    );
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
@@ -698,6 +732,8 @@ $("enerjiKimlikBilgisi").style.display =
   $("tapuCokluBilgiTablosu").innerHTML = "";
   $("tapuBankaTakyidatTablosu").innerHTML = "";
   $("tapuAnalizUyarisi").innerHTML = "";
+  $("tapuFormatBaslik1").style.display = "none";
+  $("tapuFormatBaslik2").style.display = "none";
   $("tapuMetinB1").textContent = "";
   $("tapuMetinB2").textContent = "";
   $("emsalMetin").textContent = "";
