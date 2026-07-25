@@ -303,7 +303,7 @@
     $("btnBack").disabled = false;
     const handler = () => raporKaydet(user).catch(console.error);
     $("btnSave").addEventListener("click", handler, { passive:true });
-    $("btnSave").addEventListener("touchstart", handler, { passive:true });
+    
   }
 
   boot().catch(console.error);
