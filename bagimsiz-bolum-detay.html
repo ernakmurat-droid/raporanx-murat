@@ -184,6 +184,40 @@
   #taslakBaslik{
     display:none !important;
   }
+    .voice-input-wrap{
+    display:flex;
+    align-items:stretch;
+    gap:8px;
+    width:100%;
+  }
+
+  .voice-input-wrap input,
+  .voice-input-wrap textarea{
+    flex:1;
+    width:auto;
+    min-width:0;
+  }
+
+  .voice-btn{
+    width:48px;
+    min-width:48px;
+    border:none;
+    border-radius:8px;
+    background:#1a237e;
+    color:#fff;
+    font-size:20px;
+    cursor:pointer;
+  }
+
+  .voice-btn.listening{
+    background:#d32f2f;
+    animation:voicePulse 1s infinite;
+  }
+
+  @keyframes voicePulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:.55; }
+  }
 </style>
 </head>
 
@@ -406,7 +440,104 @@
 
   // ====== RAPOR VERİ YÖNETİMİ (FIXED) ======
   const STORAGE_KEY = 'gayrimenkul_reports';
+  let aktifSesTanima = null;
+  let aktifSesButonu = null;
 
+  function sesButonlariniEkle(){
+    FIELD_IDS.forEach(id => {
+      const alan = document.getElementById(id);
+
+      if(!alan) return;
+      if(alan.type === "number") return;
+      if(alan.parentElement.classList.contains("voice-input-wrap")) return;
+
+      const kapsayici = document.createElement("div");
+      kapsayici.className = "voice-input-wrap";
+
+      alan.parentNode.insertBefore(kapsayici, alan);
+      kapsayici.appendChild(alan);
+
+      const buton = document.createElement("button");
+      buton.type = "button";
+      buton.className = "voice-btn";
+      buton.innerHTML = "🎤";
+      buton.title = "Sesle giriş yap";
+      buton.setAttribute("aria-label", "Sesle giriş yap");
+      buton.onclick = () => sesleGirisiBaslat(alan, buton);
+
+      kapsayici.appendChild(buton);
+    });
+  }
+
+  function sesleGirisiBaslat(alan, buton){
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if(!SpeechRecognition){
+      alert("Bu tarayıcı sesli girişi desteklemiyor. Google Chrome veya Microsoft Edge kullanınız.");
+      return;
+    }
+
+    if(aktifSesTanima){
+      aktifSesTanima.stop();
+
+      if(aktifSesButonu === buton){
+        return;
+      }
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "tr-TR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    aktifSesTanima = recognition;
+    aktifSesButonu = buton;
+
+    recognition.onstart = () => {
+      buton.classList.add("listening");
+      buton.innerHTML = "⏹";
+    };
+
+    recognition.onresult = event => {
+      let yeniMetin = event.results[0][0].transcript.trim();
+
+      yeniMetin = yeniMetin
+        .replace(/\b(tire|çizgi)\b/gi, "-")
+        .replace(/\s*-\s*/g, "-");
+
+      if(alan.tagName === "TEXTAREA"){
+        const eskiMetin = alan.value.trim();
+
+        alan.value = eskiMetin
+          ? eskiMetin + " " + yeniMetin
+          : yeniMetin;
+      }else{
+        alan.value = yeniMetin;
+      }
+
+      alan.dispatchEvent(new Event("input", { bubbles:true }));
+      alan.dispatchEvent(new Event("change", { bubbles:true }));
+    };
+
+    recognition.onerror = event => {
+      if(event.error !== "no-speech" && event.error !== "aborted"){
+        alert("Sesli giriş sırasında mikrofon hatası oluştu: " + event.error);
+      }
+    };
+
+    recognition.onend = () => {
+      buton.classList.remove("listening");
+      buton.innerHTML = "🎤";
+
+      if(aktifSesTanima === recognition){
+        aktifSesTanima = null;
+        aktifSesButonu = null;
+      }
+    };
+
+    recognition.start();
+  }
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
@@ -696,7 +827,8 @@
   function init(){
     const { r, arr, i } = getLatestData();
     if (!r) { alert("Rapor bulunamadı! (rid/id eşleşmedi)"); return; }
-
+        sesButonlariniEkle();
+        
     ensureBBList(r);
     persist(arr, i, r);
 
