@@ -598,6 +598,40 @@
       font-size:24px;
     }
   }
+    .voice-input-wrap{
+    display:flex;
+    align-items:stretch;
+    gap:8px;
+    flex:1;
+    min-width:240px;
+  }
+
+  .voice-input-wrap input{
+    flex:1;
+    width:auto;
+    min-width:0;
+  }
+
+  .voice-btn{
+    width:46px;
+    min-width:46px;
+    border:none;
+    border-radius:10px;
+    background:#1a237e;
+    color:#fff;
+    font-size:19px;
+    cursor:pointer;
+  }
+
+  .voice-btn.listening{
+    background:#d32f2f;
+    animation:voicePulse 1s infinite;
+  }
+
+  @keyframes voicePulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:.55; }
+  }
 </style>
 </head>
 
@@ -666,7 +700,97 @@
   }
 
   const STORAGE_KEY = "gayrimenkul_reports";
+  let aktifSesTanima = null;
+  let aktifSesButonu = null;
 
+  function sesButonuEkle(alan){
+    if(!alan || alan.parentElement.classList.contains("voice-input-wrap")) return;
+
+    const gizliydi = alan.classList.contains("hidden");
+
+    const kapsayici = document.createElement("div");
+    kapsayici.className = "voice-input-wrap";
+
+    if(gizliydi){
+      kapsayici.classList.add("hidden");
+      alan.classList.remove("hidden");
+    }
+
+    alan.parentNode.insertBefore(kapsayici, alan);
+    kapsayici.appendChild(alan);
+
+    const buton = document.createElement("button");
+    buton.type = "button";
+    buton.className = "voice-btn";
+    buton.innerHTML = "🎤";
+    buton.title = "Sesle giriş yap";
+    buton.setAttribute("aria-label", "Sesle giriş yap");
+    buton.onclick = () => sesleGirisiBaslat(alan, buton);
+
+    kapsayici.appendChild(buton);
+  }
+
+  function sesleGirisiBaslat(alan, buton){
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if(!SpeechRecognition){
+      alert("Bu tarayıcı sesli girişi desteklemiyor. Google Chrome veya Microsoft Edge kullanınız.");
+      return;
+    }
+
+    if(aktifSesTanima){
+      aktifSesTanima.stop();
+
+      if(aktifSesButonu === buton){
+        return;
+      }
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "tr-TR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    aktifSesTanima = recognition;
+    aktifSesButonu = buton;
+
+    recognition.onstart = () => {
+      buton.classList.add("listening");
+      buton.innerHTML = "⏹";
+    };
+
+    recognition.onresult = event => {
+      let yeniMetin = event.results[0][0].transcript.trim();
+
+      yeniMetin = yeniMetin
+        .replace(/\b(tire|çizgi)\b/gi, "-")
+        .replace(/\s*-\s*/g, "-");
+
+      alan.value = yeniMetin;
+
+      alan.dispatchEvent(new Event("input", { bubbles:true }));
+      alan.dispatchEvent(new Event("change", { bubbles:true }));
+    };
+
+    recognition.onerror = event => {
+      if(event.error !== "no-speech" && event.error !== "aborted"){
+        alert("Sesli giriş sırasında mikrofon hatası oluştu: " + event.error);
+      }
+    };
+
+    recognition.onend = () => {
+      buton.classList.remove("listening");
+      buton.innerHTML = "🎤";
+
+      if(aktifSesTanima === recognition){
+        aktifSesTanima = null;
+        aktifSesButonu = null;
+      }
+    };
+
+    recognition.start();
+  }
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
@@ -941,6 +1065,7 @@
     `;
 
     container.appendChild(div);
+    sesButonuEkle(div.querySelector('.bb-other'));
     renderPreview();
   }
 
@@ -965,18 +1090,23 @@
     `;
 
     container.appendChild(div);
+    sesButonuEkle(div.querySelector('.ortak-ad'));
     renderPreview();
   }
 
-  function toggleDigerInput(selectEl) {
+    function toggleDigerInput(selectEl) {
     const row = selectEl.closest('.entry-row');
     const otherInput = row.querySelector('.bb-other');
+
     if (!otherInput) return;
 
+    const kapsayici =
+      otherInput.closest('.voice-input-wrap') || otherInput;
+
     if (selectEl.value === 'Diğer') {
-      otherInput.classList.remove('hidden');
+      kapsayici.classList.remove('hidden');
     } else {
-      otherInput.classList.add('hidden');
+      kapsayici.classList.add('hidden');
       otherInput.value = '';
     }
   }
