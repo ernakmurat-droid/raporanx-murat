@@ -43,7 +43,10 @@
     }
     #rapor-metni-output, .yesil-kutu p, .mavi-kutu table {
       -webkit-user-select:none !important; user-select:none !important;
-      pointer-events:none !important;
+      pointer-events:none !important;      
+    }
+        #rapor-metni-output{
+      white-space:pre-line;
     }
     #banka-tablo-output td { -webkit-user-select:none; user-select:none; }
 
@@ -51,6 +54,37 @@
       .container { margin:10px; padding:10px; }
       header { flex-direction:column; align-items:flex-start; }
       .header-info { text-align:left; margin-top:10px; }
+    }
+        .voice-input-wrap{
+      display:flex;
+      align-items:stretch;
+      gap:8px;
+    }
+
+    .voice-input-wrap input{
+      flex:1;
+      width:auto;
+    }
+
+    .voice-btn{
+      width:48px;
+      min-width:48px;
+      border:none;
+      border-radius:8px;
+      background:#1a237e;
+      color:#fff;
+      font-size:20px;
+      cursor:pointer;
+    }
+
+    .voice-btn.listening{
+      background:#d32f2f;
+      animation:voicePulse 1s infinite;
+    }
+
+    @keyframes voicePulse{
+      0%, 100%{ opacity:1; }
+      50%{ opacity:.55; }
     }
   </style>
 </head>
@@ -136,6 +170,10 @@
     </div>
 
     <button type="button" id="olustur-button" class="action-button">OTOMATİK METİN OLUŞTUR</button>
+        <div class="form-section">
+      <label for="imar-plani-onay-tarihi">9. İmar Planı Onay Tarihi:</label>
+      <input type="date" id="imar-plani-onay-tarihi" name="imar-plani-onay-tarihi">
+    </div>
   </form>
 
   <div id="otomatik-metin-alani">
@@ -174,7 +212,107 @@ window.addEventListener("unhandledrejection", (e) => {
   const params = new URLSearchParams(location.search);
   let rid = params.get('rid');
   const legacyId = params.get('id');
+  let aktifSesTanima = null;
+  let aktifSesButonu = null;
 
+  function sesButonlariniEkle(){
+    const alanIdleri = [
+      "kat-sayisi",
+      "taks",
+      "kaks",
+      "yola-terk"
+    ];
+
+    alanIdleri.forEach(id => {
+      const alan = document.getElementById(id);
+      if(!alan || alan.parentElement.classList.contains("voice-input-wrap")) return;
+
+      const kapsayici = document.createElement("div");
+      kapsayici.className = "voice-input-wrap";
+
+      alan.parentNode.insertBefore(kapsayici, alan);
+      kapsayici.appendChild(alan);
+
+      const buton = document.createElement("button");
+      buton.type = "button";
+      buton.className = "voice-btn";
+      buton.innerHTML = "🎤";
+      buton.title = "Sesle giriş yap";
+      buton.setAttribute("aria-label", "Sesle giriş yap");
+      buton.onclick = () => sesleGirisiBaslat(alan, buton);
+
+      kapsayici.appendChild(buton);
+    });
+  }
+
+  function sesleGirisiBaslat(alan, buton){
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if(!SpeechRecognition){
+      alert("Bu tarayıcı sesli girişi desteklemiyor. Google Chrome veya Microsoft Edge kullanınız.");
+      return;
+    }
+
+    if(aktifSesTanima){
+      aktifSesTanima.stop();
+
+      if(aktifSesButonu === buton){
+        return;
+      }
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "tr-TR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    aktifSesTanima = recognition;
+    aktifSesButonu = buton;
+
+    recognition.onstart = () => {
+      buton.classList.add("listening");
+      buton.innerHTML = "⏹";
+    };
+
+    recognition.onresult = event => {
+      let yeniMetin = event.results[0][0].transcript.trim();
+
+      yeniMetin = yeniMetin
+        .replace(/\bvirgül\b/gi, ",")
+        .replace(/\bnokta\b/gi, ".")
+        .replace(/\b(tire|çizgi)\b/gi, "-")
+        .replace(/\s*([,.-])\s*/g, "$1");
+
+      if(alan.type === "number"){
+        const sayi = yeniMetin.match(/-?\d+(?:[.,]\d+)?/);
+        alan.value = sayi ? sayi[0].replace(",", ".") : "";
+      }else{
+        alan.value = yeniMetin;
+      }
+
+      alan.dispatchEvent(new Event("input", { bubbles:true }));
+      alan.dispatchEvent(new Event("change", { bubbles:true }));
+    };
+
+    recognition.onerror = event => {
+      if(event.error !== "no-speech" && event.error !== "aborted"){
+        alert("Sesli giriş sırasında mikrofon hatası oluştu: " + event.error);
+      }
+    };
+
+    recognition.onend = () => {
+      buton.classList.remove("listening");
+      buton.innerHTML = "🎤";
+
+      if(aktifSesTanima === recognition){
+        aktifSesTanima = null;
+        aktifSesButonu = null;
+      }
+    };
+
+    recognition.start();
+  }
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
@@ -296,6 +434,7 @@ window.addEventListener("unhandledrejection", (e) => {
       tecavuzMiktar: tecavuzMiktar,
       kentsel: document.querySelector('input[name="kentsel"]:checked').value,
       riskli: document.querySelector('input[name="riskli"]:checked').value,
+            imarPlaniOnayTarihi: document.getElementById('imar-plani-onay-tarihi').value,
     };
   }
 
@@ -350,10 +489,14 @@ window.addEventListener("unhandledrejection", (e) => {
     }
 
     const belediye = (currentReport?.ilce || '...') + " Belediyesi";
+        const onayTarihi = veriler.imarPlaniOnayTarihi
+      ? veriler.imarPlaniOnayTarihi.split("-").reverse().join(".")
+      : "Belirtilmemiş";
     const raporMetni =
       `${belediye} 1/1000 ölçekli uygulama imar planı içerisinde yer almakta olup, ${veriler.nizam} nizam, ${veriler.kat} kat, ${veriler.lejant} lejant, TAKS: ${veriler.taks} - KAKS: ${veriler.kaks} yapılaşma şartlarındadır. ` +
       `${tecavuzMetni} ` +
-      `İmar Müdürlüğünden alınan bilgiye göre parselin Kentsel Dönüşüm Alanı ${veriler.kentsel.toLowerCase()==='hayır' ? 'değildir' : 'dır'} ve Riskli Yapı ilanı ${veriler.riskli.toLowerCase()==='hayır' ? 'bulunmamaktadır' : 'bulunmaktadır'}.`;
+            `İmar Müdürlüğünden alınan bilgiye göre parselin Kentsel Dönüşüm Alanı ${veriler.kentsel.toLowerCase()==='hayır' ? 'değildir' : 'dır'} ve Riskli Yapı ilanı ${veriler.riskli.toLowerCase()==='hayır' ? 'bulunmamaktadır' : 'bulunmaktadır'}.` +
+      `\n\nİmar Planı Onay Tarihi: ${onayTarihi}`;
 
     document.getElementById('rapor-metni-output').textContent = raporMetni;
   }
@@ -388,6 +531,8 @@ window.addEventListener("unhandledrejection", (e) => {
       document.getElementById('taks').value = i.taks || '0.40';
       document.getElementById('kaks').value = i.kaks || '1.60';
       yolaTerkInput.value = (i.terk ?? '0');
+            document.getElementById('imar-plani-onay-tarihi').value =
+        i.imarPlaniOnayTarihi || "";
 
       const nizamRadio = document.querySelector(`input[name="nizam"][value="${i.nizam}"]`);
       if (nizamRadio) nizamRadio.checked = true;
@@ -486,8 +631,7 @@ async function kaydet() {
     alert("Kaydetme sırasında hata: " + (e?.message || e));
   }
 }
-
-
+  sesButonlariniEkle();
   // Events
   katSayisiInput.addEventListener('input', hmaxHesapla);
   yolaTerkInput.addEventListener('input', tecavuzSorusuGoster);
