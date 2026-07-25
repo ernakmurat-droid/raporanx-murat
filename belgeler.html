@@ -35,6 +35,39 @@
     @media print { body * { visibility: hidden; } .taslak { visibility: hidden; } .taslak::after { content: "METİN KORUMALIDIR!"; visibility: visible; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 30px; color: red; } }
     .conditional { display:none; margin-top:10px; }
     .property-name { font-weight: bold; margin-top: 5px; color: #ffd700; }
+        .voice-input-wrap{
+      display:flex;
+      align-items:stretch;
+      gap:8px;
+      width:100%;
+    }
+
+    .voice-input-wrap input,
+    .voice-input-wrap textarea{
+      flex:1;
+      width:auto;
+    }
+
+    .voice-btn{
+      width:48px;
+      min-width:48px;
+      border:none;
+      border-radius:8px;
+      background:#1a237e;
+      color:#fff;
+      font-size:20px;
+      cursor:pointer;
+    }
+
+    .voice-btn.listening{
+      background:#d32f2f;
+      animation:voicePulse 1s infinite;
+    }
+
+    @keyframes voicePulse{
+      0%, 100%{ opacity:1; }
+      50%{ opacity:.55; }
+    }
   </style>
 </head>
 
@@ -1200,7 +1233,111 @@ belgeGorselleriniKapat();
   const urlParams = new URLSearchParams(window.location.search);
   let rid = urlParams.get('rid');
   const legacyId = urlParams.get('id');
+  let aktifSesTanima = null;
+  let aktifSesButonu = null;
 
+  function sesButonlariniEkle(){
+    const alanIdleri = [
+      "aiBelgeAmaci",
+      "aiKismiAciklama",
+      "uyumAciklama",
+      "yikimAciklamaInput"
+    ];
+
+    alanIdleri.forEach(id => {
+      const alan = document.getElementById(id);
+      if(!alan || alan.parentElement.classList.contains("voice-input-wrap")) return;
+
+      const alanGizli = getComputedStyle(alan).display === "none";
+
+      const kapsayici = document.createElement("div");
+      kapsayici.className = "voice-input-wrap";
+
+      if(alanGizli){
+        kapsayici.style.display = "none";
+        alan.style.display = "block";
+      }
+
+      alan.parentNode.insertBefore(kapsayici, alan);
+      kapsayici.appendChild(alan);
+
+      const buton = document.createElement("button");
+      buton.type = "button";
+      buton.className = "voice-btn";
+      buton.innerHTML = "🎤";
+      buton.title = "Sesle açıklama gir";
+      buton.setAttribute("aria-label", "Sesle açıklama gir");
+      buton.onclick = () => sesleGirisiBaslat(alan, buton);
+
+      kapsayici.appendChild(buton);
+    });
+  }
+
+  function sesleGirisiBaslat(alan, buton){
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if(!SpeechRecognition){
+      alert("Bu tarayıcı sesli girişi desteklemiyor. Google Chrome veya Microsoft Edge kullanınız.");
+      return;
+    }
+
+    if(aktifSesTanima){
+      aktifSesTanima.stop();
+
+      if(aktifSesButonu === buton){
+        return;
+      }
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "tr-TR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    aktifSesTanima = recognition;
+    aktifSesButonu = buton;
+
+    recognition.onstart = () => {
+      buton.classList.add("listening");
+      buton.innerHTML = "⏹";
+    };
+
+    recognition.onresult = event => {
+      let yeniMetin = event.results[0][0].transcript.trim();
+
+      yeniMetin = yeniMetin
+        .replace(/\b(tire|çizgi)\b/gi, "-")
+        .replace(/\s*-\s*/g, "-");
+
+      const eskiMetin = alan.value.trim();
+
+      alan.value = eskiMetin
+        ? eskiMetin + " " + yeniMetin
+        : yeniMetin;
+
+      alan.dispatchEvent(new Event("input", { bubbles:true }));
+      alan.dispatchEvent(new Event("change", { bubbles:true }));
+    };
+
+    recognition.onerror = event => {
+      if(event.error !== "no-speech" && event.error !== "aborted"){
+        alert("Sesli giriş sırasında mikrofon hatası oluştu: " + event.error);
+      }
+    };
+
+    recognition.onend = () => {
+      buton.classList.remove("listening");
+      buton.innerHTML = "🎤";
+
+      if(aktifSesTanima === recognition){
+        aktifSesTanima = null;
+        aktifSesButonu = null;
+      }
+    };
+
+    recognition.start();
+  }
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
@@ -1322,6 +1459,7 @@ belgeGorselleriniKapat();
     const box = document.getElementById('farkliParselDetay');
     if(box) box.style.display = evet ? 'flex' : 'none';
   }
+    sesButonlariniEkle();
   document.querySelectorAll('input[name="farkliParsel"]').forEach(r => r.onchange = toggleFarkliParsel);
 
   document.querySelectorAll('input[name="iskanVar"]').forEach(r => r.onchange = () => {
@@ -1344,14 +1482,22 @@ belgeGorselleriniKapat();
       (document.querySelector('input[name="denetimDevam"]:checked')?.value === 'evet') ? 'block' : 'none';
   });
 
-  document.querySelectorAll('input[name="yikim"]').forEach(r => r.onchange = () => {
-    document.getElementById('yikimAciklamaInput').style.display =
-      (document.querySelector('input[name="yikim"]:checked')?.value === 'evet') ? 'block' : 'none';
+    document.querySelectorAll('input[name="yikim"]').forEach(r => r.onchange = () => {
+    const alan = document.getElementById('yikimAciklamaInput');
+    const kapsayici = alan.closest('.voice-input-wrap') || alan;
+    const yikimVar =
+      document.querySelector('input[name="yikim"]:checked')?.value === 'evet';
+
+    kapsayici.style.display = yikimVar ? 'flex' : 'none';
   });
 
-  document.querySelectorAll('input[name="uyum"]').forEach(r => r.onchange = () => {
+    document.querySelectorAll('input[name="uyum"]').forEach(r => r.onchange = () => {
     const v = document.querySelector('input[name="uyum"]:checked')?.value;
-    document.getElementById('uyumAciklama').style.display = (v === 'hayir' || v === 'kismen') ? 'block' : 'none';
+    const alan = document.getElementById('uyumAciklama');
+    const kapsayici = alan.closest('.voice-input-wrap') || alan;
+
+    kapsayici.style.display =
+      (v === 'hayir' || v === 'kismen') ? 'flex' : 'none';
   });
 
   function makeUid(){
@@ -1644,7 +1790,11 @@ const enerjiSinifi =
     if (saved.uyum) {
       const uy = document.querySelector(`input[name="uyum"][value="${saved.uyum}"]`);
       if (uy) uy.checked = true;
-      document.getElementById('uyumAciklama').style.display = (saved.uyum === 'hayir' || saved.uyum === 'kismen') ? 'block' : 'none';
+      const uyumAlani = document.getElementById('uyumAciklama');
+const uyumKapsayici = uyumAlani.closest('.voice-input-wrap') || uyumAlani;
+
+uyumKapsayici.style.display =
+  (saved.uyum === 'hayir' || saved.uyum === 'kismen') ? 'flex' : 'none';
       document.getElementById('uyumAciklama').value = saved.uyumAciklama || "";
     }
 
@@ -1698,15 +1848,26 @@ const enerjiSinifi =
       if (t) t.checked = true;
     }
 
+        const yikimAlani = document.getElementById('yikimAciklamaInput');
+    const yikimKapsayici =
+      yikimAlani.closest('.voice-input-wrap') || yikimAlani;
+
     if (saved.yikim === 'evet') {
-      const rad = document.querySelector('input[name="yikim"][value="evet"]');
+      const rad =
+        document.querySelector('input[name="yikim"][value="evet"]');
+
       if(rad) rad.checked = true;
-      document.getElementById('yikimAciklamaInput').style.display = 'block';
-      document.getElementById('yikimAciklamaInput').value = saved.yikimAciklama || "";
+
+      yikimKapsayici.style.display = 'flex';
+      yikimAlani.value = saved.yikimAciklama || "";
+
     } else {
-      const rad = document.querySelector('input[name="yikim"][value="hayir"]');
+      const rad =
+        document.querySelector('input[name="yikim"][value="hayir"]');
+
       if(rad) rad.checked = true;
-      document.getElementById('yikimAciklamaInput').style.display = 'none';
+
+      yikimKapsayici.style.display = 'none';
     }
 
     if (saved.belgelerMetni) {
