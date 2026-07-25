@@ -678,26 +678,67 @@ Bölgenin yapılaşma karakteristiğini ağırlıklı olarak ${yapiTipi} tipi ya
   sesButonlariniEkle();
   lockPreviewCopy();
 
-  auth.onAuthStateChanged(user => {
-    if(!user){ location.href="index.html"; return; }
-
-    const { r, arr, i } = getLatestData();
-    if(!rid || !r || i < 0){
-      location.href="index.html";
+   auth.onAuthStateChanged(async user => {
+    if(!user){
+      location.href = "index.html";
       return;
     }
 
-    currentReport = r;
-    if(!currentReport.modules) currentReport.modules = {};
-    persist(arr, i, currentReport);
+    if(!rid){
+      location.href = "index.html";
+      return;
+    }
 
-    loadData();
-  });
+    try{
+      const cloudDoc = await db.collection("users").doc(user.uid)
+        .collection("reports").doc(String(rid))
+        .get();
 
-  inputIds.forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.addEventListener("input", guncelleOnizleme);
-    if(el) el.addEventListener("change", guncelleOnizleme);
+      let raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      let arr = toArrayIfObject(raw);
+      let i = arr.findIndex(x => x && String(x.rid) === String(rid));
+
+      if(cloudDoc.exists){
+        const cloudReport = cloudDoc.data();
+
+        if(i >= 0){
+          arr[i] = cloudReport;
+        }else{
+          arr.push(cloudReport);
+          i = arr.length - 1;
+        }
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+      }
+
+      const sonuc = getLatestData();
+
+      if(!sonuc.r || sonuc.i < 0){
+        location.href = "index.html";
+        return;
+      }
+
+      currentReport = sonuc.r;
+
+      if(!currentReport.modules){
+        currentReport.modules = {};
+      }
+
+      loadData();
+
+    }catch(e){
+      console.error("Bulut kayıt yükleme hatası:", e);
+
+      const { r, i } = getLatestData();
+
+      if(!r || i < 0){
+        location.href = "index.html";
+        return;
+      }
+
+      currentReport = r;
+      loadData();
+    }
   });
 </script>
 
