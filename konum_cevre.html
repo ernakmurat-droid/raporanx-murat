@@ -52,6 +52,37 @@
   margin-bottom:10px;
   display:block;
 }
+.voice-input-wrap{
+  display:flex;
+  align-items:stretch;
+  gap:8px;
+}
+
+.voice-input-wrap input,
+.voice-input-wrap textarea{
+  flex:1;
+}
+
+.voice-btn{
+  width:48px;
+  min-width:48px;
+  border:none;
+  border-radius:10px;
+  background:#1a237e;
+  color:#fff;
+  font-size:20px;
+  cursor:pointer;
+}
+
+.voice-btn.listening{
+  background:#d32f2f;
+  animation:voicePulse 1s infinite;
+}
+
+@keyframes voicePulse{
+  0%, 100%{ opacity:1; }
+  50%{ opacity:.55; }
+}
 </style>
 </head>
 
@@ -189,7 +220,110 @@
     'v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14',
     'yakinCevre','ulasimTarifi','ulasimOlanaklari','altyapiAciklama','metinFormati'
   ];
+  function sesButonlariniEkle(){
+    const alanlar = document.querySelectorAll(
+      '#mainForm input[type="text"], #mainForm textarea'
+    );
 
+    alanlar.forEach(alan => {
+      if(alan.parentElement.classList.contains("voice-input-wrap")) return;
+
+      const kapsayici = document.createElement("div");
+      kapsayici.className = "voice-input-wrap";
+
+      alan.parentNode.insertBefore(kapsayici, alan);
+      kapsayici.appendChild(alan);
+
+      const buton = document.createElement("button");
+      buton.type = "button";
+      buton.className = "voice-btn";
+      buton.innerHTML = "🎤";
+      buton.title = "Sesle giriş yap";
+      buton.setAttribute("aria-label", "Sesle giriş yap");
+      buton.onclick = () => sesleGirisiBaslat(alan, buton);
+
+      kapsayici.appendChild(buton);
+    });
+  }
+    let aktifSesTanima = null;
+  let aktifSesButonu = null;
+
+  function sesleGirisiBaslat(alan, buton){
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if(!SpeechRecognition){
+      alert("Bu tarayıcı sesli girişi desteklemiyor. Google Chrome veya Microsoft Edge kullanınız.");
+      return;
+    }
+
+    if(alan.disabled){
+      alert("Bu alan şu anda düzenlemeye kapalı.");
+      return;
+    }
+
+    if(aktifSesTanima){
+      aktifSesTanima.stop();
+
+      if(aktifSesButonu === buton){
+        return;
+      }
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "tr-TR";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    aktifSesTanima = recognition;
+    aktifSesButonu = buton;
+
+    recognition.onstart = () => {
+      buton.classList.add("listening");
+      buton.innerHTML = "⏹";
+      buton.title = "Dinlemeyi durdur";
+    };
+
+    recognition.onresult = event => {
+      let yeniMetin = "";
+
+      for(let i = event.resultIndex; i < event.results.length; i++){
+        if(event.results[i].isFinal){
+          yeniMetin += event.results[i][0].transcript;
+        }
+      }
+
+      yeniMetin = yeniMetin.trim();
+
+      if(yeniMetin){
+        const eskiMetin = alan.value.trim();
+        alan.value = eskiMetin
+          ? eskiMetin + " " + yeniMetin
+          : yeniMetin;
+
+        alan.dispatchEvent(new Event("input", { bubbles:true }));
+      }
+    };
+
+    recognition.onerror = event => {
+      if(event.error !== "no-speech" && event.error !== "aborted"){
+        alert("Sesli giriş sırasında mikrofon hatası oluştu: " + event.error);
+      }
+    };
+
+    recognition.onend = () => {
+      buton.classList.remove("listening");
+      buton.innerHTML = "🎤";
+      buton.title = "Sesle giriş yap";
+
+      if(aktifSesTanima === recognition){
+        aktifSesTanima = null;
+        aktifSesButonu = null;
+      }
+    };
+
+    recognition.start();
+  }
   function genRid(){
     try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
@@ -541,7 +675,7 @@ Bölgenin yapılaşma karakteristiğini ağırlıklı olarak ${yapiTipi} tipi ya
     location.href = "rapor-detay.html?rid=" + encodeURIComponent(rid);
   }
   window.anaMenuyeDon = anaMenuyeDon;
-
+  sesButonlariniEkle();
   lockPreviewCopy();
 
   auth.onAuthStateChanged(user => {
