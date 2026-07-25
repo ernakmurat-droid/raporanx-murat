@@ -189,7 +189,7 @@
     </div>
   </div>
 
-  <button type="button" id="kaydet-button" class="action-button">KAYDET VE GERİ DÖN</button>
+  <button type="button" id="kaydet-button" class="action-button">KAYDET</button>
 </div>
 
 <script>
@@ -625,7 +625,7 @@ async function kaydet() {
     }
 
     alert("✅ İmar Durumu Kaydedildi!");
-    location.href = `rapor-detay.html?update=imarDurumu&status=2&rid=${encodeURIComponent(rid)}`;
+    
   }catch(e){
     console.error("KAYDET ERROR:", e);
     alert("Kaydetme sırasında hata: " + (e?.message || e));
