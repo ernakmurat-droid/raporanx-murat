@@ -1282,6 +1282,15 @@
         metin += `${i+1}) ${built.anaMetin}\n\n`;
       });
     }
+        const beyanMetni =
+      String(report.emsalBeyanMetni || "").trim();
+
+    if(beyanMetni){
+      metin +=
+        `BÖLGE EMLAKÇI / MUHTAR BEYANI\n` +
+        `------------------------------------------\n` +
+        `${beyanMetni}\n\n`;
+    }
 
     metin += `EMSALLERİN YORUMU\n------------------------------------------\n`;
     metin += `Emsal Karşılaştırma Yöntemine Göre Değer Analizi\n`;
@@ -2102,6 +2111,28 @@ window.aiBeyanOnayla = function(){
   if(metinAlani){
     metinAlani.value =
       veri.hazirMetin || veri.aciklama;
+  }
+    const hazirBeyan =
+    veri.hazirMetin || veri.aciklama;
+
+  const bulunanRapor = findReport();
+  const report = bulunanRapor?.report;
+
+  if(report && hazirBeyan){
+    report.emsalBeyanMetni = hazirBeyan;
+
+    if(!report.modules){
+      report.modules = {};
+    }
+
+    if(!report.modules.emsal){
+      report.modules.emsal = {};
+    }
+
+    report.modules.emsal.beyanMetni = hazirBeyan;
+
+    saveReport(report);
+    finalHesapla();
   }
 
   const preview =
