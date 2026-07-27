@@ -173,37 +173,7 @@
       .back{ padding: 10px 12px; }
       #baslik{ padding: 0 56px; }
     }
-    .quick-report-bar{
-  position:fixed;
-  left:50%;
-  bottom:14px;
-  transform:translateX(-50%);
-  z-index:999999;
-  width:min(620px, calc(100% - 24px));
-  padding:14px 18px;
-  border:none;
-  border-radius:16px;
-  background:#ff6f00;
-  color:#fff;
-  font-size:18px;
-  font-weight:900;
-  cursor:pointer;
-  box-shadow:0 8px 28px rgba(0,0,0,.35);
-}
-
-.quick-report-bar.locked{
-  background:#1976d2;
-}
-
-body{
-  padding-bottom:95px;
-}
-
-@media print{
-  .quick-report-bar{
-    display:none !important;
-  }
-}
+    
   </style>
 </head>
 
@@ -316,14 +286,7 @@ Devam etmek istiyor musunuz?`;
   </div>
 
   <button id="btnRaporOlustur" class="footer-btn" onclick="raporOlusturUyari()">TAM RAPOR OLUŞTUR</button>
-  <button
-  type="button"
-  id="btnQuickRaporOlustur"
-  class="quick-report-bar"
-  onclick="raporOlusturUyari()">
-  🏦 RAPOR OLUŞTUR / BANKA GİRİŞİ
-</button>
-
+  
 <script>
   const auth = window.auth || firebase.auth();
   const db   = window.db   || firebase.firestore();
@@ -361,22 +324,7 @@ Devam etmek istiyor musunuz?`;
     location.href =
       "/rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&view=1";
   };
-    const quickBtn =
-    document.getElementById("btnQuickRaporOlustur");
-
-  if(quickBtn){
-    quickBtn.textContent =
-      "🔒 TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
-
-    quickBtn.classList.add("locked");
-
-    quickBtn.onclick = () => {
-      location.href =
-        "/rapor-olustur.html?rid=" +
-        encodeURIComponent(rid) +
-        "&view=1";
-    };
-  }
+ 
 }
   async function isLockedRemoteStrict(uid){
     // locks/{uid_rid}
