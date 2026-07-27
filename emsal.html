@@ -2108,12 +2108,21 @@ window.aiBeyanOnayla = function(){
     telefonAlani.value = veri.telefon;
   }
 
-  if(metinAlani){
-    metinAlani.value =
-      veri.hazirMetin || veri.aciklama;
-  }
-    const hazirBeyan =
+    const beyanGovdesi =
     veri.hazirMetin || veri.aciklama;
+
+  const kaynakBilgisi = [
+    veri.kaynak,
+    veri.telefon
+  ].filter(Boolean).join(" - ");
+
+  const hazirBeyan = kaynakBilgisi
+    ? `Beyan kaynağı: ${kaynakBilgisi}. ${beyanGovdesi}`
+    : beyanGovdesi;
+
+  if(metinAlani){
+    metinAlani.value = hazirBeyan;
+  }
 
   const bulunanRapor = findReport();
   const report = bulunanRapor?.report;
