@@ -741,6 +741,27 @@
   <!-- BEYAN -->
   <div id="aiBeyanPanel" class="ai-method-panel hidden">
     <label class="ai-panel-label">Emlakçı veya muhtar beyanını girin</label>
+    <div style="
+  margin:10px 0;
+  padding:12px;
+  background:#fff8e1;
+  border:1px solid #ffe082;
+  border-radius:10px;
+  color:#5d4037;
+  line-height:1.6;
+  font-size:14px;
+">
+  <strong>🎙️ Sesli beyan hatırlatması:</strong><br>
+  1. Beyan kaynağı ve telefon<br>
+  2. Bölge veya konum<br>
+  3. Taşınmaz cinsi<br>
+  4. Satış veya kira durumu<br>
+  5. Yaklaşık m² değeri veya değer aralığı<br>
+  <small>
+    Bilgileri parça parça anlatabilirsiniz.
+    Her yeni konuşma önceki metnin sonuna eklenir.
+  </small>
+</div>
 
     <div class="ai-beyan-grid">
       <div class="input-group">
@@ -773,11 +794,12 @@
 </button>
 
     <button
-      type="button"
-      class="btn ai-analyse-btn ai-full-btn"
-      onclick="aiBeyanHazirla()">
-      ✅ BEYANI EMSAL BİLGİSİNE DÖNÜŞTÜR
-    </button>
+  type="button"
+  class="btn ai-analyse-btn ai-full-btn"
+  id="aiBeyanHazirlaBtn"
+  onclick="aiBeyanHazirla()">
+  ✨ BEYANI KONTROL TABLOSUNA AYIR
+</button>
   </div>
 
   <div id="aiEmsalDurum" class="ai-status"></div>
@@ -1886,6 +1908,217 @@ window.aiSesliBeyanBaslat = function(){
   };
 
   recognition.start();
+};
+const AI_BEYAN_FIELDS = [
+  ["kaynak", "Beyan Kaynağı"],
+  ["telefon", "Telefon"],
+  ["konum", "Bölge / Konum"],
+  ["tasinmazCinsi", "Taşınmaz Cinsi"],
+  ["durum", "Satış / Kira Durumu"],
+  ["birimDeger", "Yaklaşık Birim Değer (TL/m²)"],
+  ["altBirimDeger", "Alt Birim Değer (TL/m²)"],
+  ["ustBirimDeger", "Üst Birim Değer (TL/m²)"],
+  ["aciklama", "Diğer Açıklamalar"],
+  ["hazirMetin", "Rapora Hazır Beyan Metni"]
+];
+
+function aiBeyanOnizlemeGoster(data){
+  const preview = document.getElementById("aiEmsalOnizleme");
+
+  if(!preview) return;
+
+  const satirlar = AI_BEYAN_FIELDS.map(([id, baslik]) => {
+    const alan =
+      id === "aciklama" || id === "hazirMetin"
+        ? `<textarea id="aib_${id}" rows="3"></textarea>`
+        : `<input id="aib_${id}" type="text">`;
+
+    return `
+      <tr>
+        <th>${baslik}</th>
+        <td>${alan}</td>
+      </tr>
+    `;
+  }).join("");
+
+  preview.innerHTML = `
+    <div style="
+      font-weight:900;
+      color:#2e7d32;
+      margin-bottom:8px;
+    ">
+      Beyan Kontrol Tablosu — gerekli alanları kontrol edip düzeltebilirsiniz.
+    </div>
+
+    <table>
+      <tbody>${satirlar}</tbody>
+    </table>
+
+    <div class="ai-emsal-actions">
+      <button
+        type="button"
+        class="btn"
+        onclick="aiBeyanOnayla()"
+        style="background:#2e7d32;color:#fff;">
+        ✅ ONAYLA VE BEYAN METNİNE AKTAR
+      </button>
+
+      <button
+        type="button"
+        class="btn"
+        onclick="aiEmsalOnizlemeKapat()"
+        style="background:#757575;color:#fff;">
+        VAZGEÇ
+      </button>
+    </div>
+  `;
+
+  AI_BEYAN_FIELDS.forEach(([id]) => {
+    const alan = document.getElementById("aib_" + id);
+
+    if(alan){
+      alan.value = data?.[id] || "";
+    }
+  });
+
+  preview.style.display = "block";
+  preview.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest"
+  });
+}
+
+window.aiBeyanHazirla = async function(){
+  const kaynak =
+    document.getElementById("aiBeyanKaynak")?.value.trim() || "";
+
+  const telefon =
+    document.getElementById("aiBeyanTelefon")?.value.trim() || "";
+
+  const beyanMetni =
+    document.getElementById("aiBeyanMetni")?.value.trim() || "";
+
+  const durum = document.getElementById("aiEmsalDurum");
+  const buton = document.getElementById("aiBeyanHazirlaBtn");
+
+  if(beyanMetni.length < 10){
+    if(durum){
+      durum.textContent =
+        "Önce emlakçı veya muhtar beyanını anlatın ya da yazın.";
+    }
+    return;
+  }
+
+  try{
+    const user = auth.currentUser;
+
+    if(!user){
+      throw new Error("Önce RaporanX’e giriş yapın.");
+    }
+
+    if(buton){
+      buton.disabled = true;
+      buton.textContent = "⏳ BEYAN AYRILIYOR…";
+    }
+
+    if(durum){
+      durum.textContent =
+        "Yapay zekâ beyan bilgilerini kontrol tablosuna ayırıyor…";
+    }
+
+    const token = await user.getIdToken();
+
+    const response = await fetch(
+      RAPORANX_AI_SERVER + "/ai/parse-beyan",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({
+          kaynak,
+          telefon,
+          text: beyanMetni
+        })
+      }
+    );
+
+    const sonuc = await response.json();
+
+    if(!response.ok){
+      throw new Error(
+        sonuc?.error || "Beyan bilgileri işlenemedi."
+      );
+    }
+
+    aiBeyanOnizlemeGoster(sonuc.beyan || {});
+
+    if(durum){
+      durum.textContent =
+        "Beyan kontrol tablosu hazır. Bilgileri kontrol edip onaylayın.";
+    }
+  }catch(error){
+    console.error("Beyan hazırlama hatası:", error);
+
+    if(durum){
+      durum.textContent =
+        error?.message || "Beyan bilgileri işlenemedi.";
+    }
+  }finally{
+    if(buton){
+      buton.disabled = false;
+      buton.textContent =
+        "✨ BEYANI KONTROL TABLOSUNA AYIR";
+    }
+  }
+};
+
+window.aiBeyanOnayla = function(){
+  const veri = {};
+
+  AI_BEYAN_FIELDS.forEach(([id]) => {
+    veri[id] =
+      document.getElementById("aib_" + id)?.value.trim() || "";
+  });
+
+  const kaynakAlani =
+    document.getElementById("aiBeyanKaynak");
+
+  const telefonAlani =
+    document.getElementById("aiBeyanTelefon");
+
+  const metinAlani =
+    document.getElementById("aiBeyanMetni");
+
+  if(kaynakAlani){
+    kaynakAlani.value = veri.kaynak;
+  }
+
+  if(telefonAlani){
+    telefonAlani.value = veri.telefon;
+  }
+
+  if(metinAlani){
+    metinAlani.value =
+      veri.hazirMetin || veri.aciklama;
+  }
+
+  const preview =
+    document.getElementById("aiEmsalOnizleme");
+
+  if(preview){
+    preview.style.display = "none";
+    preview.innerHTML = "";
+  }
+
+  const durum =
+    document.getElementById("aiEmsalDurum");
+
+  if(durum){
+    durum.textContent =
+      "Beyan kontrol edildi ve rapora hazır metne aktarıldı.";
+  }
 };
   window.aiEmsaliAyir = async function(){
     const text = val("aiEmsalMetni").trim();
