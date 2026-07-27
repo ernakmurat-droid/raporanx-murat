@@ -77,6 +77,174 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   .section{page-break-inside:avoid;}
   .multi-tapu-table{font-size:9px;}
 }
+.notes-fab{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  z-index:1200;
+  width:auto;
+  border:none;
+  border-radius:999px;
+  padding:14px 18px;
+  background:#ffb300;
+  color:#263238;
+  font-size:15px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 6px 22px rgba(0,0,0,.25);
+}
+
+.notes-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:1300;
+  background:rgba(0,0,0,.45);
+  padding:18px;
+}
+
+.notes-overlay.open{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.notes-panel{
+  width:min(760px, 100%);
+  max-height:90vh;
+  overflow:auto;
+  background:#fff;
+  border-radius:16px;
+  padding:20px;
+  box-shadow:0 15px 45px rgba(0,0,0,.30);
+}
+
+.notes-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:15px;
+}
+
+.notes-header h2{
+  margin:0;
+  color:#1a237e;
+}
+
+.notes-close{
+  width:auto;
+  border:none;
+  border-radius:8px;
+  padding:9px 12px;
+  background:#eceff1;
+  color:#263238;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.notes-form{
+  display:grid;
+  gap:10px;
+  padding:14px;
+  background:#f5f7ff;
+  border:1px solid #dfe3f3;
+  border-radius:12px;
+  margin-bottom:16px;
+}
+
+.notes-form input,
+.notes-form textarea{
+  width:100%;
+  box-sizing:border-box;
+  padding:11px;
+  border:1px solid #b0bec5;
+  border-radius:8px;
+  font:inherit;
+}
+
+.notes-form textarea{
+  min-height:120px;
+  resize:vertical;
+}
+
+.notes-save{
+  width:100%;
+  border:none;
+  border-radius:9px;
+  padding:12px;
+  background:#2e7d32;
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.notes-card{
+  border:1px solid #dfe3e8;
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:10px;
+  background:#fff;
+}
+
+.notes-card-title{
+  font-weight:900;
+  color:#1a237e;
+  margin-bottom:7px;
+}
+
+.notes-card-text{
+  white-space:pre-wrap;
+  line-height:1.5;
+  color:#37474f;
+}
+
+.notes-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:10px;
+}
+
+.notes-actions button{
+  width:auto;
+  border:none;
+  border-radius:7px;
+  padding:8px 10px;
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.notes-empty{
+  padding:15px;
+  background:#f5f5f5;
+  border-radius:9px;
+  color:#616161;
+}
+
+@media(max-width:600px){
+  .notes-fab{
+    right:12px;
+    bottom:12px;
+  }
+
+  .notes-overlay{
+    padding:8px;
+  }
+
+  .notes-panel{
+    max-height:94vh;
+    padding:14px;
+  }
+}
+
+@media print{
+  .notes-fab,
+  .notes-overlay{
+    display:none !important;
+  }
+}
 </style>
 </head>
 
@@ -173,13 +341,371 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
     </section>
   </main>
 </div>
+<button
+  type="button"
+  class="notes-fab"
+  id="btnNotlarim">
+  📝 NOTLARIM
+</button>
 
+<div
+  class="notes-overlay"
+  id="notlarOverlay">
+
+  <div class="notes-panel">
+    <div class="notes-header">
+      <h2>📝 Kişisel Notlarım</h2>
+
+      <button
+        type="button"
+        class="notes-close"
+        id="btnNotlarKapat">
+        ✕ KAPAT
+      </button>
+    </div>
+
+    <div class="notes-form">
+      <input
+        type="hidden"
+        id="notDuzenlemeId">
+
+      <label for="notBaslik">
+        Notun Adı
+      </label>
+
+      <input
+        type="text"
+        id="notBaslik"
+        maxlength="120"
+        placeholder="Örn: Yapı Kredi Standartları">
+
+      <label for="notIcerik">
+        Notun İçeriği
+      </label>
+
+      <textarea
+        id="notIcerik"
+        maxlength="10000"
+        placeholder="Kullanmak istediğiniz metni veya bilgiyi yazın.">
+      </textarea>
+
+      <button
+        type="button"
+        class="notes-save"
+        id="btnNotKaydet">
+        ✅ NOTU KAYDET
+      </button>
+    </div>
+
+    <div id="notlarDurum"></div>
+    <div id="notlarListesi"></div>
+  </div>
+</div>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const auth = window.auth || firebase.auth();
   const db   = window.db   || firebase.firestore();
   const $ = (id) => document.getElementById(id);
+  let notlarKullanicisi = null;
+  let kisiselNotlar = [];
 
+  function notGuvenliYaz(metin){
+    return String(metin || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function notlarBelgesi(){
+    if(!notlarKullanicisi){
+      throw new Error("Kullanıcı oturumu hazır değil.");
+    }
+
+    return db
+      .collection("users")
+      .doc(notlarKullanicisi.uid)
+      .collection("kisiselNotlar")
+      .doc("main");
+  }
+
+  function notFormunuTemizle(){
+    $("notDuzenlemeId").value = "";
+    $("notBaslik").value = "";
+    $("notIcerik").value = "";
+    $("btnNotKaydet").textContent = "✅ NOTU KAYDET";
+  }
+
+  function notlariListele(){
+    const alan = $("notlarListesi");
+
+    if(!kisiselNotlar.length){
+      alan.innerHTML = `
+        <div class="notes-empty">
+          Henüz kayıtlı notunuz bulunmuyor.
+        </div>
+      `;
+      return;
+    }
+
+    alan.innerHTML = kisiselNotlar.map((not, index) => `
+      <div class="notes-card">
+        <button
+          type="button"
+          onclick="kisiselNotAcKapat('${not.id}')"
+          style="
+            width:100%;
+            border:none;
+            background:#eef1ff;
+            color:#1a237e;
+            padding:11px;
+            border-radius:8px;
+            text-align:left;
+            font-weight:900;
+            cursor:pointer;
+          ">
+          ${index + 1}. ${notGuvenliYaz(not.baslik)}
+        </button>
+
+        <div
+          id="notDetay_${not.id}"
+          style="display:none;margin-top:10px;">
+
+          <div class="notes-card-text">
+            ${notGuvenliYaz(not.icerik)}
+          </div>
+
+          <div class="notes-actions">
+            <button
+              type="button"
+              onclick="kisiselNotKopyala('${not.id}')"
+              style="background:#1976d2;">
+              KOPYALA
+            </button>
+
+            <button
+              type="button"
+              onclick="kisiselNotDuzenle('${not.id}')"
+              style="background:#ef6c00;">
+              DÜZENLE
+            </button>
+
+            <button
+              type="button"
+              onclick="kisiselNotSil('${not.id}')"
+              style="background:#c62828;">
+              SİL
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  async function notlariYukle(){
+    if(!notlarKullanicisi) return;
+
+    $("notlarDurum").textContent =
+      "⏳ Notlar yükleniyor…";
+
+    try{
+      const snap = await notlarBelgesi().get();
+      const veri = snap.exists ? snap.data() : {};
+
+      kisiselNotlar = Array.isArray(veri?.items)
+        ? veri.items
+        : [];
+
+      notlariListele();
+      $("notlarDurum").textContent = "";
+    }catch(error){
+      console.error("Notlar yüklenemedi:", error);
+      $("notlarDurum").textContent =
+        "⚠️ Notlar yüklenemedi.";
+    }
+  }
+
+  async function notlariBulutaKaydet(){
+    await notlarBelgesi().set({
+      items: kisiselNotlar,
+      updatedAt:
+        firebase.firestore.FieldValue.serverTimestamp()
+    }, {
+      merge:true
+    });
+  }
+
+  async function notKaydet(){
+    const baslik = $("notBaslik").value.trim();
+    const icerik = $("notIcerik").value.trim();
+    const duzenlemeId =
+      $("notDuzenlemeId").value.trim();
+
+    if(!baslik){
+      alert("Nota bir isim verin.");
+      $("notBaslik").focus();
+      return;
+    }
+
+    if(!icerik){
+      alert("Not içeriğini yazın.");
+      $("notIcerik").focus();
+      return;
+    }
+
+    const buton = $("btnNotKaydet");
+    buton.disabled = true;
+    buton.textContent = "⏳ KAYDEDİLİYOR…";
+
+    try{
+      if(duzenlemeId){
+        const index = kisiselNotlar.findIndex(
+          not => not.id === duzenlemeId
+        );
+
+        if(index > -1){
+          kisiselNotlar[index] = {
+            ...kisiselNotlar[index],
+            baslik,
+            icerik,
+            updatedAt: new Date().toISOString()
+          };
+        }
+      }else{
+        kisiselNotlar.unshift({
+          id:
+            "not_" +
+            Date.now() +
+            "_" +
+            Math.random().toString(36).slice(2, 8),
+          baslik,
+          icerik,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+
+      await notlariBulutaKaydet();
+      notFormunuTemizle();
+      notlariListele();
+
+      $("notlarDurum").textContent =
+        "✅ Not kaydedildi.";
+    }catch(error){
+      console.error("Not kaydedilemedi:", error);
+      $("notlarDurum").textContent =
+        "⚠️ Not kaydedilemedi.";
+    }finally{
+      buton.disabled = false;
+
+      if(!$("notDuzenlemeId").value){
+        buton.textContent = "✅ NOTU KAYDET";
+      }
+    }
+  }
+
+  window.kisiselNotAcKapat = function(id){
+    const detay = $("notDetay_" + id);
+
+    if(!detay) return;
+
+    detay.style.display =
+      detay.style.display === "none"
+        ? "block"
+        : "none";
+  };
+
+  window.kisiselNotKopyala = async function(id){
+    const not = kisiselNotlar.find(
+      kayit => kayit.id === id
+    );
+
+    if(!not) return;
+
+    try{
+      await navigator.clipboard.writeText(not.icerik);
+
+      $("notlarDurum").textContent =
+        "✅ Not panoya kopyalandı.";
+    }catch(error){
+      alert(
+        "Kopyalama yapılamadı. Metni seçerek kopyalayabilirsiniz."
+      );
+    }
+  };
+
+  window.kisiselNotDuzenle = function(id){
+    const not = kisiselNotlar.find(
+      kayit => kayit.id === id
+    );
+
+    if(!not) return;
+
+    $("notDuzenlemeId").value = not.id;
+    $("notBaslik").value = not.baslik || "";
+    $("notIcerik").value = not.icerik || "";
+    $("btnNotKaydet").textContent =
+      "💾 DEĞİŞİKLİĞİ KAYDET";
+
+    $("notBaslik").scrollIntoView({
+      behavior:"smooth",
+      block:"center"
+    });
+  };
+
+  window.kisiselNotSil = async function(id){
+    const not = kisiselNotlar.find(
+      kayit => kayit.id === id
+    );
+
+    if(!not) return;
+
+    const onay = confirm(
+      `"${not.baslik}" isimli not silinsin mi?`
+    );
+
+    if(!onay) return;
+
+    try{
+      kisiselNotlar = kisiselNotlar.filter(
+        kayit => kayit.id !== id
+      );
+
+      await notlariBulutaKaydet();
+      notFormunuTemizle();
+      notlariListele();
+
+      $("notlarDurum").textContent =
+        "Not silindi.";
+    }catch(error){
+      console.error("Not silinemedi:", error);
+      $("notlarDurum").textContent =
+        "⚠️ Not silinemedi.";
+    }
+  };
+
+  $("btnNotlarim").addEventListener("click", async () => {
+    $("notlarOverlay").classList.add("open");
+    await notlariYukle();
+  });
+
+  $("btnNotlarKapat").addEventListener("click", () => {
+    $("notlarOverlay").classList.remove("open");
+    notFormunuTemizle();
+  });
+
+  $("notlarOverlay").addEventListener("click", (event) => {
+    if(event.target === $("notlarOverlay")){
+      $("notlarOverlay").classList.remove("open");
+      notFormunuTemizle();
+    }
+  });
+
+  $("btnNotKaydet").addEventListener(
+    "click",
+    notKaydet
+  );
   function setStatus(title, sub){
     const el = $("statusBar");
     el.textContent = title;
@@ -871,7 +1397,8 @@ $("enerjiKimlikBilgisi").style.display =
   async function boot(){
     const user = await new Promise((resolve)=> auth.onAuthStateChanged(u=> resolve(u)));
     if (!user){ alert("Giriş yok!"); location.href="/index.html"; return; }
-
+    
+       notlarKullanicisi = user;
     let rep = loadReportLocal() || await loadReportRemote(user.uid);
     if (!rep){ setStatus("❌ Rapor yok.", `rid: ${rid}`); return; }
 
