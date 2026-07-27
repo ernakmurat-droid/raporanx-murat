@@ -690,13 +690,7 @@
   onclick="aiSesliEmsalBaslat()">
   🎙️ SESLİ ANLAT
 </button>
-      <button
-        type="button"
-        class="btn ai-voice-btn"
-        id="aiSesBtn"
-        onclick="aiSesliEmsalBaslat()">
-        🎙️ SESLİ ANLAT
-      </button>
+      
 
       <button
         type="button"
@@ -770,6 +764,13 @@
       id="aiBeyanMetni"
       placeholder="Örnek: Bölgede 3+1 dairelerin yaklaşık 50.000 TL/m² birim değer üzerinden alıcı bulabileceği beyan edilmiştir.">
     </textarea>
+    <button
+  type="button"
+  class="btn ai-voice-btn ai-full-btn"
+  id="aiBeyanSesBtn"
+  onclick="aiSesliBeyanBaslat()">
+  🎙️ BEYANI SESLİ ANLAT
+</button>
 
     <button
       type="button"
@@ -1691,51 +1692,7 @@
 
   let aiRecognition = null;
 
-  window.aiSesliEmsalBaslat = function(){
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const status = el("aiEmsalDurum");
-    const button = el("aiSesBtn");
-    if(!Recognition){
-      if(status) status.textContent = "Bu tarayıcı sesli girişi desteklemiyor. Metni yazarak devam edebilirsiniz.";
-      return;
-    }
-
-    if(aiRecognition){
-      try{ aiRecognition.stop(); }catch(e){}
-      return;
-    }
-
-    const recognition = new Recognition();
-    aiRecognition = recognition;
-    recognition.lang = "tr-TR";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = ()=>{
-      if(status) status.textContent = "Dinliyorum… Emsali doğal şekilde anlatın.";
-      if(button) button.textContent = "⏹️ DİNLEMEYİ BİTİR";
-    };
-    recognition.onresult = (event)=>{
-      const transcript = Array.from(event.results)
-        .map(result => result[0]?.transcript || "")
-        .join(" ")
-        .trim();
-      const area = el("aiEmsalMetni");
-      if(area && transcript) area.value = [area.value.trim(), transcript].filter(Boolean).join(" ");
-      if(status) status.textContent = "Ses yazıya çevrildi. Kontrol edip TABLOYA AYIR düğmesine basın.";
-    };
-    recognition.onerror = (event)=>{
-      if(status) status.textContent = event.error === "not-allowed"
-        ? "Mikrofon izni verilmedi. Tarayıcıdan mikrofon iznini açın."
-        : "Ses alınamadı. Tekrar deneyin veya metni yazın.";
-    };
-    recognition.onend = ()=>{
-      aiRecognition = null;
-      if(button) button.textContent = "🎙️ SESLİ ANLAT";
-    };
-    recognition.start();
-  };
-
+ 
   function aiEmsalOnizlemeGoster(data){
     const preview = el("aiEmsalOnizleme");
     if(!preview) return;
@@ -1841,6 +1798,89 @@ window.aiSesliEmsalBaslat = function(){
 
     if(buton){
       buton.textContent = "🎙️ SESLİ ANLAT";
+      buton.classList.remove("listening");
+    }
+  };
+
+  recognition.start();
+};
+window.aiSesliBeyanBaslat = function(){
+  const Recognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  const durum = document.getElementById("aiEmsalDurum");
+  const buton = document.getElementById("aiBeyanSesBtn");
+  const metinAlani = document.getElementById("aiBeyanMetni");
+
+  if(!Recognition){
+    if(durum){
+      durum.textContent =
+        "Bu tarayıcı sesli girişi desteklemiyor. Chrome veya Edge kullanınız.";
+    }
+    return;
+  }
+
+  if(aiRecognition){
+    try{
+      aiRecognition.stop();
+    }catch(e){}
+
+    return;
+  }
+
+  const recognition = new Recognition();
+
+  aiRecognition = recognition;
+  recognition.lang = "tr-TR";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    if(durum){
+      durum.textContent =
+        "Dinliyorum… Emlakçı veya muhtar beyanını anlatabilirsiniz.";
+    }
+
+    if(buton){
+      buton.textContent = "⏹️ DİNLEMEYİ BİTİR";
+      buton.classList.add("listening");
+    }
+  };
+
+  recognition.onresult = event => {
+    const yeniMetin = Array.from(event.results)
+      .map(result => result[0]?.transcript || "")
+      .join(" ")
+      .trim();
+
+    if(metinAlani && yeniMetin){
+      const eskiMetin = metinAlani.value.trim();
+
+      metinAlani.value = eskiMetin
+        ? eskiMetin + " " + yeniMetin
+        : yeniMetin;
+    }
+
+    if(durum){
+      durum.textContent =
+        "Beyan yazıya çevrildi. Kontrol ederek devam edebilirsiniz.";
+    }
+  };
+
+  recognition.onerror = event => {
+    if(durum){
+      durum.textContent =
+        event.error === "not-allowed"
+          ? "Mikrofon izni verilmedi. Tarayıcıdan mikrofon iznini açınız."
+          : "Ses alınamadı. Tekrar deneyiniz.";
+    }
+  };
+
+  recognition.onend = () => {
+    aiRecognition = null;
+
+    if(buton){
+      buton.textContent = "🎙️ BEYANI SESLİ ANLAT";
       buton.classList.remove("listening");
     }
   };
