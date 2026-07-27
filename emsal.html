@@ -1282,16 +1282,27 @@
         metin += `${i+1}) ${built.anaMetin}\n\n`;
       });
     }
-        const beyanMetni =
-      String(report.emsalBeyanMetni || "").trim();
+       const beyanlar = Array.isArray(report.emsalBeyanlari)
+      ? report.emsalBeyanlari
+      : [];
 
-    if(beyanMetni){
+    if(beyanlar.length){
       metin +=
-        `BÖLGE EMLAKÇI / MUHTAR BEYANI\n` +
-        `------------------------------------------\n` +
-        `${beyanMetni}\n\n`;
-    }
+        `BÖLGE EMLAKÇI / MUHTAR BEYANLARI\n` +
+        `------------------------------------------\n`;
 
+      beyanlar.forEach((beyan, index) => {
+        const beyanMetni =
+          typeof beyan === "string"
+            ? beyan
+            : beyan?.metin || "";
+
+        if(beyanMetni){
+          metin += `${index + 1}) ${beyanMetni}\n\n`;
+        }
+      });
+    }
+    
     metin += `EMSALLERİN YORUMU\n------------------------------------------\n`;
     metin += `Emsal Karşılaştırma Yöntemine Göre Değer Analizi\n`;
     metin += `Taşınmazın değer tespitinde "Emsal Karşılaştırma Yöntemi" kullanılmıştır. `;
@@ -2127,8 +2138,34 @@ window.aiBeyanOnayla = function(){
   const bulunanRapor = findReport();
   const report = bulunanRapor?.report;
 
-  if(report && hazirBeyan){
-    report.emsalBeyanMetni = hazirBeyan;
+   if(report && hazirBeyan){
+    if(!Array.isArray(report.emsalBeyanlari)){
+      report.emsalBeyanlari = [];
+    }
+
+    const eskiBeyan =
+      String(report.emsalBeyanMetni || "").trim();
+
+    if(
+      eskiBeyan &&
+      !report.emsalBeyanlari.some(
+        beyan => (beyan?.metin || beyan) === eskiBeyan
+      )
+    ){
+      report.emsalBeyanlari.push({
+        id: "eski_beyan",
+        metin: eskiBeyan
+      });
+    }
+
+    report.emsalBeyanlari.push({
+      id: "beyan_" + Date.now(),
+      kaynak: veri.kaynak,
+      telefon: veri.telefon,
+      metin: hazirBeyan
+    });
+
+    report.emsalBeyanMetni = "";
 
     if(!report.modules){
       report.modules = {};
@@ -2138,10 +2175,23 @@ window.aiBeyanOnayla = function(){
       report.modules.emsal = {};
     }
 
-    report.modules.emsal.beyanMetni = hazirBeyan;
+    report.modules.emsal.beyanlar =
+      report.emsalBeyanlari;
 
     saveReport(report);
     finalHesapla();
+
+    if(kaynakAlani){
+      kaynakAlani.value = "";
+    }
+
+    if(telefonAlani){
+      telefonAlani.value = "";
+    }
+
+    if(metinAlani){
+      metinAlani.value = "";
+    }
   }
 
   const preview =
