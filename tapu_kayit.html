@@ -1028,25 +1028,63 @@
   }
 
   function takyidatParmakIzi(kayit){
-    const tur = hukukiMetniNormallestir(kayit.tur);
-    const aciklama = hukukiMetniNormallestir(kayit.acik);
-    const tarih = hukukiMetniNormallestir(
-      kayit.tesisTarihi || kayit.tar
-    );
-    const sayi = hukukiMetniNormallestir(
-      kayit.tesisYevmiye || kayit.say
-    );
-    const ozel = [
-      kayit.malikLehtar,
-      kayit.alacakli,
-      kayit.borcluMalik,
-      kayit.tutar,
-      kayit.dereceSira,
-      kayit.dosyaNo
-    ].map(hukukiMetniNormallestir).join('|');
-    return [tur, aciklama, tarih, sayi, ozel].join('::');
+  const tur = hukukiMetniNormallestir(kayit.tur);
+  const aciklama = hukukiMetniNormallestir(kayit.acik);
+
+  const tarihHam = String(
+    kayit.tesisTarihi || kayit.tar || ''
+  ).trim();
+
+  const tarihParcalari = tarihHam.match(/\d+/g) || [];
+  let tarih = hukukiMetniNormallestir(tarihHam);
+
+  if(tarihParcalari.length === 3){
+    let gun, ay, yil;
+
+    if(tarihParcalari[0].length === 4){
+      [yil, ay, gun] = tarihParcalari;
+    }else{
+      [gun, ay, yil] = tarihParcalari;
+    }
+
+    if(yil.length === 2) yil = `20${yil}`;
+
+    tarih =
+      yil.padStart(4, '0') +
+      ay.padStart(2, '0') +
+      gun.padStart(2, '0');
   }
 
+  const sayi = String(
+    kayit.tesisYevmiye || kayit.say || ''
+  )
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/[^0-9a-zA-Z]/g, '')
+    .toLocaleLowerCase('tr-TR');
+
+  if(tarih && sayi){
+    return `tarih-sayi::${tarih}::${sayi}`;
+  }
+
+  const ozel = [
+    kayit.malikLehtar,
+    kayit.alacakli,
+    kayit.borcluMalik,
+    kayit.tutar,
+    kayit.dereceSira,
+    kayit.dosyaNo
+  ].map(hukukiMetniNormallestir).join('|');
+
+  return [
+    'ayrintili',
+    tur,
+    aciklama,
+    tarih,
+    sayi,
+    ozel
+  ].join('::');
+}
   function tapuBbEtiketi(kayit, index){
     const a = kayit?.tapuKayitBilgileri || {};
     const blok = String(a.blokNo || '').trim();
