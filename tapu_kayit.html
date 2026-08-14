@@ -41,6 +41,11 @@
     .adim-rozet.tamam { background:#d1e7dd; color:#0f5132; }
     .adim-rozet.eksik { background:#fff3cd; color:#664d03; }
     .onay-satiri { display:flex; justify-content:flex-end; margin-top:14px; }
+    .aktif-tapu-banner { margin-top:14px; padding:16px; border:2px solid #0d6efd; border-radius:12px; background:#eef5ff; }
+    .aktif-tapu-banner.tamam { border-color:#198754; background:#eaf7ef; }
+    .aktif-tapu-banner.bekliyor { border-color:#fd7e14; background:#fff4e8; }
+    .aktif-tapu-banner .ana-baslik { font-size:1.1rem; font-weight:800; }
+    .aktif-tapu-banner .alt-bilgi { margin-top:4px; font-weight:600; color:#495057; }
     .compact-analysis-table { font-size:11px; line-height:1.25; }
     .compact-analysis-table th,.compact-analysis-table td { padding:4px 5px !important; }
     @media(max-width:768px){ .compact-analysis-table{font-size:10px;} }
@@ -81,6 +86,7 @@
           <button type="button" class="btn btn-success" onclick="yeniTapuEkle()">+ YENİ TAPU EKLE</button>
           <span id="tapuSayac" class="fw-bold text-primary"></span>
         </div>
+        <div id="aktifTapuBaslik" class="aktif-tapu-banner bekliyor"></div>
         <div id="aktifTapuAdimDurumu" class="adim-durumu"></div>
       </div>
     </div>
@@ -565,6 +571,7 @@
 
   function aktifTapuAdimlariniGoster(){
     const kutu = document.getElementById('aktifTapuAdimDurumu');
+    const baslik = document.getElementById('aktifTapuBaslik');
     if(!kutu || tapuModu !== 'coklu') return;
     const kayit = cokluTapular[aktifTapuIndex] || {};
     const d = kayit.tapuKayitBilgileri || {};
@@ -577,6 +584,12 @@
       : kayit?.onayDurumu?.kaydedildi
         ? '⚠️ Bu tapu eksik bilgilerle kaydedildi.'
         : '⬜ Bu tapu henüz kaydedilmedi.';
+    if(baslik){
+      baslik.className = `aktif-tapu-banner ${kayit.tapu_tamamlandi ? 'tamam' : 'bekliyor'}`;
+      baslik.innerHTML = `
+        <div class="ana-baslik">ŞU ANDA: TAPU ${aktifTapuIndex + 1}/${cokluTapular.length} — ${escapeHtml(etiket)}</div>
+        <div class="alt-bilgi">${kayit.tapu_tamamlandi ? '✅ Kayıtlı tapu düzenleniyor.' : '🟠 Bu ekrandaki bilgiler yalnız Tapu ' + (aktifTapuIndex + 1) + ' için kaydedilecektir.'}</div>`;
+    }
     kutu.innerHTML = `
       <strong>${escapeHtml(etiket)} — ${tamamlanan}/${cokluTapular.length} tapu tamamlandı</strong>
       <div class="mt-2 fw-bold">${durum}</div>`;
@@ -741,10 +754,10 @@
       const p = kayit?.tapuKayitBilgileri?.parsel || '';
       const bb = kayit?.tapuKayitBilgileri?.bbNo || '';
       option.textContent =
-        (kayit?.tapu_tamamlandi ? '✅ ' : kayit?.onayDurumu?.kaydedildi ? '⚠️ ' : '⬜ ') +
+        (kayit?.tapu_tamamlandi ? '✅ KAYDEDİLDİ — ' : kayit?.onayDurumu?.kaydedildi ? '⚠️ EKSİK — ' : '⬜ BEKLİYOR — ') +
         'Tapu ' + (index + 1) +
         (a || p ? ` (${a || '-'}/${p || '-'})` : '') +
-        (bb ? ` BB:${bb}` : '');
+        (bb ? ` ${kayit?.tapuKayitBilgileri?.blokNo ? kayit.tapuKayitBilgileri.blokNo + ' Blok ' : ''}${bb} BB` : '');
       option.selected = index === aktifTapuIndex;
       secici.appendChild(option);
     });
@@ -760,8 +773,8 @@
     const kaydetBtn = document.getElementById('tapuKaydetBtn');
     if(kaydetBtn && tapuModu === 'coklu'){
       kaydetBtn.textContent = aktifTapuIndex < cokluTapular.length - 1
-        ? 'BU TAPUYU KAYDET VE SONRAKİ TAPUYA GEÇ'
-        : 'SON TAPUYU KAYDET VE SON KONTROLE GEÇ';
+        ? `TAPU ${aktifTapuIndex + 1}'İ KAYDET VE TAPU ${aktifTapuIndex + 2}'YE GEÇ`
+        : `TAPU ${aktifTapuIndex + 1}'İ KAYDET VE ANALİZİ OLUŞTUR`;
     }else if(kaydetBtn){
       kaydetBtn.textContent = 'TAPU VERİLERİNİ VE METİNLERİ KAYDET';
     }
@@ -770,14 +783,14 @@
 
   function tapuSekmesineGec(index){
     if(index === aktifTapuIndex || !cokluTapular[index]) return;
-    if(aktifTapuDegisti && !confirm(
-      `Tapu ${aktifTapuIndex + 1} üzerinde kaydedilmemiş değişiklikler var.\n\n` +
-      `Kaydetmeden başka tapuya geçilsin mi?`
-    )){
+    if(aktifTapuDegisti){
+      alert(
+        `Tapu ${aktifTapuIndex + 1} üzerinde kaydedilmemiş bilgiler var.\n\n` +
+        `Kayıtların karışmaması için önce TAPU ${aktifTapuIndex + 1}'İ KAYDET düğmesine basınız.`
+      );
       tapuSekmeleriniGoster();
       return;
     }
-    aktifTapuyuHafizayaAl();
     aktifTapuIndex = index;
     tapuKaydiniFormaYukle(cokluTapular[index]);
     tapuSekmeleriniGoster();
@@ -785,10 +798,13 @@
   }
 
   function yeniTapuEkle(){
-    if(aktifTapuDegisti && !confirm(
-      'Mevcut tapuda kaydedilmemiş değişiklikler var. Kaydetmeden yeni tapu açılsın mı?'
-    )) return;
-    aktifTapuyuHafizayaAl();
+    if(aktifTapuDegisti){
+      alert(
+        `Tapu ${aktifTapuIndex + 1} üzerinde kaydedilmemiş bilgiler var.\n\n` +
+        `Önce mevcut tapuyu kaydediniz.`
+      );
+      return;
+    }
     cokluTapular.push({});
     aktifTapuIndex = cokluTapular.length - 1;
     tapuKaydiniFormaYukle({});
@@ -1564,8 +1580,21 @@ window.takbisDosyalariniSil =
     const btn=document.getElementById('takbisOkuBtn'), files=Array.from(input.files || []);
     if(!files.length){ alert('Lütfen Takbis PDF veya resimlerini seçin.'); return; }
     if(files.length > 8){ alert('En fazla 8 dosya seçebilirsiniz.'); return; }
-    const kayitliTapu = getTapuObj(getLatestData().r);
-    if(kayitliTapu && !confirm(
+    const kayitliTapu = tapuModu === 'coklu'
+      ? (cokluTapular[aktifTapuIndex] || {})
+      : getTapuObj(getLatestData().r);
+    const aktifKayitVar = !!(
+      kayitliTapu && (
+        kayitliTapu.tapu_tamamlandi ||
+        kayitliTapu.tapuTarih ||
+        kayitliTapu.tapuSaat ||
+        kayitliTapu.tasinmazId ||
+        kayitliTapu.tapuKayitBilgileri?.tasinmazId ||
+        (kayitliTapu.tapuTakyidatDizi || []).length ||
+        (kayitliTapu.tapuMalikDizi || []).length
+      )
+    );
+    if(aktifKayitVar && !confirm(
       tapuModu === 'coklu'
         ? `Tapu ${aktifTapuIndex + 1} için kayıtlı bilgiler bulunmaktadır. Yeni belge bu tapunun bilgilerini güncelleyecektir. Devam edilsin mi?`
         : 'Bu raporda kayıtlı bir tapu bulunmaktadır. Yeni belge mevcut tapu kaydının bilgilerini güncelleyecektir. Devam edilsin mi?'
@@ -1659,7 +1688,10 @@ window.takbisDosyalariniSil =
     document.getElementById('malikGövde').innerHTML='';
     (takbisAiSonuc.malikler || []).forEach(m => malikEkle(m.ad,m.pay,m.payda,m.edinmeSebebi,m.edinmeTarihi,m));
     if(!(takbisAiSonuc.malikler || []).length) malikEkle();
+    aktifOnayDurumu.kaydedildi = false;
+    aktifTapuDegisti = true;
     guncelle();
+    aktifTapuAdimlariniGoster();
     document.getElementById('takbisAiOnizleme').style.display='none';
     document.getElementById('takbisAiDurum').textContent='Bilgiler alanlara yerleştirildi. Kontrol edip TAPU VERİLERİNİ KAYDET düğmesine basın.';
     window.scrollTo({ top:document.querySelector('.section-box').offsetTop-15, behavior:'smooth' });
