@@ -936,7 +936,7 @@
   async function cloudSaveReport(reportObj){
     try{
       const user = auth.currentUser;
-      if(!user || !reportObj || !reportObj.rid) return;
+      if(!user || !reportObj || !reportObj.rid) return false;
 
       await db.collection("users").doc(user.uid)
         .collection("reports").doc(String(reportObj.rid))
@@ -948,8 +948,10 @@
           },
           { merge:true }
         );
+      return true;
     }catch(e){
       console.warn("cloudSaveReport:", e);
+      return false;
     }
   }
 
@@ -1088,7 +1090,7 @@
     return { raw, arr, i: -1, report: null };
   }
 
-  function saveReport(updatedReport){
+  async function saveReport(updatedReport){
     const found = findReport();
     const raw = found.raw;
     const arr = toArray(raw);
@@ -1101,7 +1103,18 @@
     updatedReport.updatedAtMs = Date.now();
 
     saveAllReportsArray(arr);
-    cloudSaveReport(updatedReport);
+    return await cloudSaveReport(updatedReport);
+  }
+
+  function emsalFinalMetniniRaporaYaz(report){
+    if(!report) return "";
+
+    const metin = (el("yorumMetni")?.innerText || "").trim();
+    report.emsalFinalMetni = metin;
+    if(!report.modules) report.modules = {};
+    if(!report.modules.emsal) report.modules.emsal = {};
+    report.modules.emsal.text = metin;
+    return metin;
   }
 
   function getPool(report){
@@ -1320,6 +1333,9 @@
 
     metin += `Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurulmuştur.\n\n`;
 
+    let toplamYasalDeger = 0;
+    let toplamMevcutDeger = 0;
+
     report.bbDetayList.forEach((bb, idx)=>{
       const baslik = bb.baslik || (idx+1)+". BB";
       const oz = getOzetForBB(bb) || {};
@@ -1340,11 +1356,14 @@
 
       const mevcutDurumDeger = Math.round(tamamlanmisDeger - eksikTL);
 
+      toplamYasalDeger += yasalDeger;
+      toplamMevcutDeger += insaatMod ? mevcutDurumDeger : tamamlanmisDeger;
+
       if(insaatMod){
         metin += `${baslik}: Yapılan analizler sonucunda konu mülkün tüm özellikleri ve bölge emlak komisyoncularından alınan bilgiler göz önünde bulundurularak `;
         metin += `taşınmaza %100 tamamlanması durumunda bilgi amaçlı olarak; ${formatLira(uyg)} TL/m² x ${brut} m² = ${formatLira(tamamlanmisDeger)} TL değer takdir edilmiştir. `;
         metin += `Taşınmazın %${seviyePct} inşaat seviyesindeki durumu için (~${formatLira(eksikTL)} TL) eksik imalat tutarı hesaplanmış olup `;
-        metin += `(~${formatLira(mevcutDurumDeger)} TL) yasal ve mevcut durum değeri uygun görülmüştür.\n`;
+        metin += `mevcut durum değeri (~${formatLira(mevcutDurumDeger)} TL) olarak hesaplanmıştır.\n`;
         return;
       }
 
@@ -1359,7 +1378,11 @@
       }
     });
 
-    metin += `\nSonuç olarak yasal ve mevcut değer takdir edilmiştir.\n`;
+    if(toplamYasalDeger === toplamMevcutDeger){
+      metin += `\nSonuç olarak taşınmazın yasal ve mevcut durum değeri ${formatLira0(toplamYasalDeger)} TL olarak uygun görülmüştür.\n`;
+    }else{
+      metin += `\nSonuç olarak taşınmazın yasal durum değeri ${formatLira0(toplamYasalDeger)} TL, mevcut durum değeri ise ${formatLira0(toplamMevcutDeger)} TL olarak uygun görülmüştür.\n`;
+    }
 
     metin += `\nEMSAL HESAP SATIRLARI\n------------------------------------------\n`;
     if(pool.length){
@@ -1487,9 +1510,18 @@
     report.emsaller = pool;
     report.emsalHavuzu = pool;
 
-    saveReport(report);
+    // Yeni emsali önce yerel rapora aktar ki analiz metni güncel listeyle oluşsun.
+    upsertLocalReport(report);
     window.formuKapat();
     listele();
+    finalHesapla();
+    emsalFinalMetniniRaporaYaz(report);
+    const bulutaKaydedildi = await saveReport(report);
+    alert(
+      bulutaKaydedildi
+        ? "✅ Emsal listeye işlendi, analiz metni kaydedildi ve buluta mühürlendi."
+        : "⚠️ Emsal bu cihaza kaydedildi; bulut kaydı tamamlanamadı. İnternet bağlantısını kontrol edip tekrar deneyin."
+    );
   };
 
   window.emsalSil = async function(index){
@@ -1523,13 +1555,9 @@
 
     saveActiveBBPricing();
 
-    const metin = (el("yorumMetni")?.innerText || "").trim();
-    report.emsalFinalMetni = metin;
-    if(!report.modules) report.modules = {};
-    if(!report.modules.emsal) report.modules.emsal = {};
-    report.modules.emsal.text = metin;
+    emsalFinalMetniniRaporaYaz(report);
 
-    saveReport(report);
+    await saveReport(report);
     alert("✅ Kaydedildi ve buluta mühürlendi.");
   };
 
