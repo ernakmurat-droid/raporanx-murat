@@ -1112,6 +1112,38 @@
     ozel
   ].join('::');
 }
+
+  function takyidatlarAyniMi(birinci, ikinci){
+    const ilkAnahtar = takyidatParmakIzi(birinci);
+    const ikinciAnahtar = takyidatParmakIzi(ikinci);
+    const ilkTamKimlik = ilkAnahtar.startsWith('tarih-sayi::');
+    const ikinciTamKimlik = ikinciAnahtar.startsWith('tarih-sayi::');
+
+    // İki kayıtta da tarih + yevmiye/sayı tam ise yalnız bu kimlik kullanılır.
+    if(ilkTamKimlik && ikinciTamKimlik){
+      return ilkAnahtar === ikinciAnahtar;
+    }
+
+    // Taraflardan birinde tarih veya sayı eksikse içerik karşılaştırılır.
+    const turA = hukukiMetniNormallestir(birinci.tur);
+    const turB = hukukiMetniNormallestir(ikinci.tur);
+    const acikA = hukukiMetniNormallestir(birinci.acik);
+    const acikB = hukukiMetniNormallestir(ikinci.acik);
+    if(!acikA || !acikB || turA !== turB || acikA !== acikB) return false;
+
+    // Her iki kayıtta da dolu olan ayrıntılar birbiriyle çelişmemelidir.
+    const ayrintiAlanlari = [
+      'kisitliMalik','malikLehtar','tesisKurumu','terkinSebebi',
+      'alacakli','borcluMalik','hissePay','hissePayda','tutar',
+      'faiz','dereceSira','sure','dosyaNo'
+    ];
+    return ayrintiAlanlari.every(alan => {
+      const a = hukukiMetniNormallestir(birinci[alan]);
+      const b = hukukiMetniNormallestir(ikinci[alan]);
+      return !a || !b || a === b;
+    });
+  }
+
   function tapuBbEtiketi(kayit, index){
     const a = kayit?.tapuKayitBilgileri || {};
     const blok = String(a.blokNo || '').trim();
@@ -1137,7 +1169,7 @@
 
   function cokluTapuKarsilastirmasiHesapla(){
     const tapular = cokluTapuListesiniGetir();
-    const gruplar = new Map();
+    const gruplar = [];
 
     tapular.forEach((tapu, tapuIndex) => {
       const kayitlar = Array.isArray(tapu.tapuTakyidatDizi)
@@ -1146,21 +1178,23 @@
       kayitlar.forEach(kayit => {
         if(!String(kayit.tur || '').trim() &&
            !String(kayit.acik || '').trim()) return;
-        const anahtar = takyidatParmakIzi(kayit);
-        if(!gruplar.has(anahtar)){
-          gruplar.set(anahtar, {
-            anahtar,
+        let grup = gruplar.find(aday =>
+          takyidatlarAyniMi(aday.kayit, kayit)
+        );
+        if(!grup){
+          grup = {
+            anahtar:`grup-${gruplar.length + 1}`,
             kayit,
             tapuSayimlari:{}
-          });
+          };
+          gruplar.push(grup);
         }
-        const grup = gruplar.get(anahtar);
         grup.tapuSayimlari[tapuIndex] =
           (grup.tapuSayimlari[tapuIndex] || 0) + 1;
       });
     });
 
-    const sonucGruplari = [...gruplar.values()].map(grup => {
+    const sonucGruplari = gruplar.map(grup => {
       const tapuIndexleri = Object.keys(grup.tapuSayimlari)
         .map(Number).sort((a,b) => a-b);
       const kapsam = tapuIndexleri.length === tapular.length
