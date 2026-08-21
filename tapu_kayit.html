@@ -265,8 +265,7 @@
       </div>
 
       <div class="alert alert-info">
-        Tapular Blok + Bağımsız Bölüm numarasıyla karşılaştırılır. Sonuç uzman tarafından
-        onaylanmadan Rapor Oluştur bölümüne aktarılmaz.
+        Ortak ve ferdi takyidat ayrımını kontrol ederek onaylayınız.
       </div>
 
       <h6>Değişen Tapu Bilgileri</h6>
@@ -309,8 +308,10 @@
       <textarea id="cokluTapuFormat1Metni" class="form-control" rows="12" readonly oncopy="return false" oncut="return false" oncontextmenu="return false" style="user-select:none;"></textarea>
       <h6 class="mt-3">Format 2 — Kontrol Metni</h6>
       <textarea id="cokluTapuFormat2Metni" class="form-control" rows="12" readonly oncopy="return false" oncut="return false" oncontextmenu="return false" style="user-select:none;"></textarea>
-      <div class="alert alert-success mt-3 mb-0">
-        Bu sonuç son tapu kaydedildiğinde otomatik olarak Rapor Oluştur bölümüne aktarılır.
+      <div class="onay-satiri">
+        <button type="button" class="btn btn-success btn-lg" onclick="cokluTapuAnaliziniOnayla()">
+          ONAYLA VE KAYDET
+        </button>
       </div>
       <div id="cokluTapuAnalizDurumu" class="save-status"></div>
     </div>
@@ -1083,21 +1084,31 @@
     return `tarih-sayi::${tarih}::${sayi}`;
   }
 
+  // Tarih ve yevmiye/sayı birlikte bulunmuyorsa yalnızca takyidatın
+  // hukuki içeriği karşılaştırılır. Eksik tarih veya sayı eşleştirme
+  // anahtarına katılmaz.
   const ozel = [
+    kayit.kisitliMalik,
     kayit.malikLehtar,
+    kayit.tesisKurumu,
+    kayit.terkinSebebi,
+    kayit.terkinTarihi,
+    kayit.terkinYevmiye,
     kayit.alacakli,
     kayit.borcluMalik,
+    kayit.hissePay,
+    kayit.hissePayda,
     kayit.tutar,
+    kayit.faiz,
     kayit.dereceSira,
+    kayit.sure,
     kayit.dosyaNo
   ].map(hukukiMetniNormallestir).join('|');
 
   return [
-    'ayrintili',
+    'icerik',
     tur,
     aciklama,
-    tarih,
-    sayi,
     ozel
   ].join('::');
 }
@@ -1287,6 +1298,12 @@
       format1Bolumleri.join('\n\n');
     document.getElementById('cokluTapuFormat2Metni').value =
       format2Bolumleri.join('\n\n');
+
+    const durum = document.getElementById('cokluTapuAnalizDurumu');
+    if(durum){
+      durum.textContent = 'Ortak ve ferdi takyidat ayrımını kontrol ederek onaylayınız.';
+      durum.style.display = 'block';
+    }
   }
 
   async function cokluTapuAnaliziniOnayla(sessiz=false){
@@ -1942,10 +1959,9 @@ window.takbisDosyalariniSil =
           );
         }else{
           cokluTapuAnaliziOlustur();
-          await cokluTapuAnaliziniOnayla(true);
           alert(
             `✅ ${cokluTapular.length}/${cokluTapular.length} tapu kaydedildi.\n` +
-            `Ortak ve ferdi takyidatlar otomatik hazırlanarak Rapor Oluştur bölümüne aktarıldı.`
+            `Ortak ve ferdi takyidatlar hazırlandı. Kontrol ederek ONAYLA VE KAYDET düğmesine basınız.`
           );
           bolumeGit('cokluTapuAnalizKarti');
         }
