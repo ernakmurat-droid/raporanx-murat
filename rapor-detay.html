@@ -13,7 +13,80 @@
   <script src="/wallet.js"></script>
 
   <title>Rapor Ana Menü - RaporanX</title>
+/* NASIL KULLANILIR */
+.help-btn{
+  display:block;
+  width:calc(100% - 40px);
+  max-width:1100px;
+  margin:10px auto 5px;
+  padding:14px 18px;
+  border:none;
+  border-radius:14px;
+  background:rgba(255,255,255,.18);
+  color:white;
+  font-size:17px;
+  font-weight:900;
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.25);
+}
 
+.help-btn:hover{
+  background:rgba(255,255,255,.28);
+}
+
+.help-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:99999999;
+  background:rgba(0,0,0,.65);
+  overflow:auto;
+  padding:15px;
+}
+
+.help-box{
+  max-width:700px;
+  margin:30px auto;
+  background:#ffffff;
+  color:#222;
+  border-radius:18px;
+  padding:22px;
+  box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
+
+.help-box h2{
+  margin-top:0;
+  color:#4a148c;
+}
+
+.help-box ol{
+  padding-left:25px;
+  line-height:1.7;
+}
+
+.help-warning{
+  margin-top:20px;
+  padding:15px;
+  background:#fff3e0;
+  border:2px solid #ff9800;
+  border-radius:12px;
+  color:#b71c1c;
+  font-weight:900;
+  text-align:center;
+}
+
+.help-close{
+  width:100%;
+  margin-top:18px;
+  padding:13px;
+  border:none;
+  border-radius:12px;
+  background:#4a148c;
+  color:white;
+  font-size:17px;
+  font-weight:bold;
+  cursor:pointer;
+}
   <style>
     :root{ --hdrH: 78px; }
 
@@ -274,7 +347,9 @@ Devam etmek istiyor musunuz?`;
   </div>
 
   <a href="/index.html" class="back">← Ana Sayfa</a>
-
+<button class="help-btn" onclick="openHelp()">
+  ❓ RAPORANX NASIL KULLANILIR?
+</button>
   <div class="menu">
     <button class="btn btn-main-feature modül-btn" onclick="go('/konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
     <button class="btn modül-btn" onclick="go('/tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
@@ -456,7 +531,54 @@ if (report) {
     </div>
   </div>
 </div>
+<!-- NASIL KULLANILIR PENCERESİ -->
+<div id="helpModal" class="help-modal">
+  <div class="help-box">
 
+    <h2>❓ RaporanX Nasıl Kullanılır?</h2>
+
+    <p>
+      Raporunuzu oluşturmak için aşağıdaki bölümlere girerek
+      taşınmaza ait bilgileri doldurunuz.
+    </p>
+
+    <ol>
+      <li><b>Konum ve Çevre Özellikleri</b></li>
+      <li><b>Tapu Kayıt Bilgileri</b></li>
+      <li><b>İmar Durumu</b></li>
+      <li><b>İncelenen Belgeler</b></li>
+      <li><b>Bina Bilgileri</b></li>
+      <li><b>Bağımsız Bölüm Detay</b></li>
+      <li><b>Emsal Karşılaştırma</b></li>
+    </ol>
+
+    <p>
+      Her bölümü tamamladıktan sonra ana rapor ekranına dönerek
+      diğer bölüme geçebilirsiniz.
+    </p>
+
+    <div class="help-warning">
+      ⚠️ ÖNEMLİ<br><br>
+      Tüm bölümlerdeki veri girişlerini tamamladıktan sonra
+      TAM RAPOR OLUŞTUR butonuna basınız.
+    </div>
+
+    <button class="help-close" onclick="closeHelp()">
+      ANLADIM, RAPORA DEVAM ET
+    </button>
+
+  </div>
+</div>
+
+<script>
+function openHelp(){
+  document.getElementById("helpModal").style.display = "block";
+}
+
+function closeHelp(){
+  document.getElementById("helpModal").style.display = "none";
+}
+</script>
 </body>
 </html>
 
