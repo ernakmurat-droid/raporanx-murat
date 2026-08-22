@@ -86,19 +86,108 @@
       0%, 100%{ opacity:1; }
       50%{ opacity:.55; }
     }
+    /* İMAR NASIL KULLANILIR */
+.imar-help-btn{
+  width:100%;
+  padding:14px 16px;
+  margin-bottom:18px;
+  border:none;
+  border-radius:10px;
+  background:#3498db;
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.imar-help-btn:hover{
+  background:#2980b9;
+}
+
+.imar-help-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.68);
+  overflow:auto;
+  padding:15px;
+}
+
+.imar-help-box{
+  max-width:760px;
+  margin:25px auto;
+  background:#fff;
+  color:#222;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+
+.imar-help-box h2{
+  margin-top:0;
+  color:#3498db;
+}
+
+.imar-help-step{
+  background:#f8f9fa;
+  border-left:5px solid #3498db;
+  padding:12px 14px;
+  margin:12px 0;
+  border-radius:8px;
+  line-height:1.55;
+}
+
+.imar-help-warning{
+  background:#fff3cd;
+  border:2px solid #ffc107;
+  padding:15px;
+  margin-top:16px;
+  border-radius:12px;
+  line-height:1.55;
+  font-weight:700;
+}
+
+.imar-help-final{
+  background:#eaf7ef;
+  border:2px solid #2ecc71;
+  color:#155724;
+  padding:15px;
+  margin-top:16px;
+  border-radius:12px;
+  font-weight:900;
+  text-align:center;
+}
+
+.imar-help-close{
+  width:100%;
+  margin-top:18px;
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  background:#2ecc71;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
   </style>
 </head>
 
 <body>
 <div class="container">
   <header>
-    <div class="header-info">
+    <div class="header-info">    
       <button onclick="anaMenuyeDon()" title="Ana Menüye Dön">⬅️</button>
     </div>
     <h1>İMAR DURUMU</h1>
     <div class="header-info" id="hdrAdres">Yükleniyor...</div>
   </header>
-
+<button type="button"
+        class="imar-help-btn"
+        onclick="openImarHelp()">
+  ❓ İMAR BÖLÜMÜ NASIL KULLANILIR?
+</button>
   <form id="imar-form">
     <div class="form-section">
       <label>1. Yapı Nizamı:</label>
@@ -664,7 +753,80 @@ async function kaydet() {
     verileriYukle();
   });
 </script>
+<!-- İMAR BÖLÜMÜ NASIL KULLANILIR -->
+<div id="imarHelpModal" class="imar-help-modal">
+  <div class="imar-help-box">
 
+    <h2>❓ İmar Bölümü Nasıl Kullanılır?</h2>
+
+    <div class="imar-help-step">
+      <b>1. İmar bilgilerini giriniz.</b><br>
+      Yapı nizamı, kat sayısı, lejant, TAKS ve KAKS bilgilerini
+      imar belgesi veya ilgili belediyeden alınan bilgilere göre giriniz.
+    </div>
+
+    <div class="imar-help-step">
+      <b>2. Yola terk durumunu belirtiniz.</b><br>
+      Parselin yola terki varsa terk miktarını m² olarak giriniz.
+      Yola terk girildiğinde, parsel üzerindeki yapıların yola tecavüz edip
+      etmediği ayrıca sorulur.
+    </div>
+
+    <div class="imar-help-step">
+      <b>3. Kentsel Dönüşüm ve Riskli Yapı bilgilerini seçiniz.</b><br>
+      İlgili kayıtlara göre <b>Evet / Hayır</b> seçeneklerinden uygun olanı işaretleyiniz.
+    </div>
+
+    <div class="imar-help-step">
+      <b>4. İmar Planı Onay Tarihini giriniz.</b><br>
+      İmar planı onay tarihi biliniyorsa ilgili alana giriniz.
+    </div>
+
+    <div class="imar-help-step">
+      <b>🎤 Sesle giriş kullanılabilir.</b><br>
+      Kat sayısı, TAKS, KAKS ve yola terk alanlarının yanındaki
+      mikrofon butonuna basarak değerleri sesle girebilirsiniz.
+    </div>
+
+    <div class="imar-help-warning">
+      ⚠️ <b>Hmax hakkında:</b><br><br>
+      Kat sayısı girildiğinde RaporanX ekranda otomatik bir Hmax hesabı gösterir.
+      Bu değer <b>yardımcı hesaplamadır.</b>
+      Resmi imar belgesinde veya belediye bilgisinde farklı bir yükseklik
+      değeri bulunuyorsa resmi bilgiyi esas alınız.
+    </div>
+
+    <div class="imar-help-step">
+      <b>5. Otomatik metni oluşturunuz ve kontrol ediniz.</b><br>
+      Bilgileri girdikten sonra <b>OTOMATİK METİN OLUŞTUR</b>
+      butonuna basınız. Oluşan banka özetini ve tam rapor metnini
+      kontrol ediniz.
+    </div>
+
+    <div class="imar-help-final">
+      ⚠️ SON ADIMI UNUTMAYINIZ<br><br>
+      Bilgileri ve oluşan metni kontrol ettikten sonra
+      mutlaka <b>KAYDET</b> butonuna basınız.
+    </div>
+
+    <button type="button"
+            class="imar-help-close"
+            onclick="closeImarHelp()">
+      ANLADIM, İMAR GİRİŞİNE DEVAM ET
+    </button>
+
+  </div>
+</div>
+
+<script>
+function openImarHelp(){
+  document.getElementById("imarHelpModal").style.display = "block";
+}
+
+function closeImarHelp(){
+  document.getElementById("imarHelpModal").style.display = "none";
+}
+</script>
 </body>
 </html>
 
