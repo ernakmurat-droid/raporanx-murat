@@ -68,6 +68,91 @@
       0%, 100%{ opacity:1; }
       50%{ opacity:.55; }
     }
+    /* BELGELER NASIL KULLANILIR */
+.belgeler-help-btn{
+  width:100%;
+  padding:14px 16px;
+  margin-bottom:18px;
+  border:none;
+  border-radius:12px;
+  background:#7c4dff;
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.belgeler-help-btn:hover{
+  background:#673ab7;
+}
+
+.belgeler-help-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.68);
+  overflow:auto;
+  padding:15px;
+}
+
+.belgeler-help-box{
+  max-width:820px;
+  margin:25px auto;
+  background:#fff;
+  color:#222;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+
+.belgeler-help-box h2{
+  margin-top:0;
+  color:#7c4dff;
+}
+
+.belgeler-help-step{
+  background:#f8f9fa;
+  border-left:5px solid #7c4dff;
+  padding:12px 14px;
+  margin:12px 0;
+  border-radius:8px;
+  line-height:1.55;
+}
+
+.belgeler-help-warning{
+  background:#fff3cd;
+  border:2px solid #ffc107;
+  padding:15px;
+  margin-top:16px;
+  border-radius:12px;
+  line-height:1.55;
+  font-weight:700;
+}
+
+.belgeler-help-final{
+  background:#e8f5e9;
+  border:3px solid #00c853;
+  color:#1b5e20;
+  padding:16px;
+  margin-top:16px;
+  border-radius:12px;
+  font-weight:900;
+  text-align:center;
+}
+
+.belgeler-help-close{
+  width:100%;
+  margin-top:18px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#00c853;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
   </style>
 </head>
 
@@ -79,6 +164,11 @@
   </div>
 
   <div class="container">
+    <button type="button"
+        class="belgeler-help-btn"
+        onclick="openBelgelerHelp()">
+  ❓ İNCELENEN BELGELER NASIL KULLANILIR?
+</button>
     <div class="form-group" style="border:2px solid #7c4dff; background:#f7f3ff;">
   <strong>📄 Belgeyi Yapay Zekâyla Oku</strong>
 
@@ -1886,6 +1976,104 @@ uyumKapsayici.style.display =
     fillFromSaved();
   });
 
+</script>
+<!-- İNCELENEN BELGELER NASIL KULLANILIR -->
+<div id="belgelerHelpModal" class="belgeler-help-modal">
+  <div class="belgeler-help-box">
+
+    <h2>❓ İncelenen Belgeler Nasıl Kullanılır?</h2>
+
+    <div class="belgeler-help-step">
+      <b>1. Belgeyi Yapay Zekâyla Okutabilirsiniz.</b><br>
+      Yapı Ruhsatı, Yapı Kullanma İzin Belgesi (İskân) veya
+      Enerji Kimlik Belgesinin fotoğrafını ya da PDF dosyasını seçiniz.
+      Ardından <b>BU BELGEYİ ŞİMDİ OKU</b> butonuna basınız.
+    </div>
+
+    <div class="belgeler-help-step">
+      <b>📷 Aynı belgenin birden fazla fotoğrafı varsa:</b><br>
+      Aynı belgeye ait en fazla <b>2 fotoğrafı</b> birlikte yükleyebilirsiniz.
+      Örneğin ruhsatın tamamı tek fotoğrafa sığmıyorsa iki ayrı fotoğraf
+      çekerek ikisini birlikte okutabilirsiniz.<br><br>
+
+      <b>PDF kullanıyorsanız PDF tek başına seçilmelidir.</b>
+    </div>
+
+    <div class="belgeler-help-warning">
+      ⚠️ <b>AI tarafından okunan bilgileri mutlaka kontrol ediniz.</b><br><br>
+      Belge türü, tarih, belge numarası, amacı, bağımsız bölüm sayısı,
+      kapsam ve diğer okunan bilgileri belge ile karşılaştırınız.<br><br>
+      Hatalı veya okunamayan alanları elle düzeltebilirsiniz.
+    </div>
+
+    <div class="belgeler-help-step">
+      <b>2. Belgenin kapsamını kontrol ediniz.</b><br>
+      Ruhsat veya iskân binanın tamamını kapsıyorsa
+      <b>Binanın Tamamı İçin</b> seçiniz.<br><br>
+      Belge yalnızca belirli bölüm veya bağımsız bölümleri kapsıyorsa
+      <b>Kısmi</b> seçiniz ve kapsam açıklamasını giriniz.
+    </div>
+
+    <div class="belgeler-help-step">
+      <b>3. ONAYLA VE ALANLARA AKTAR</b><br>
+      AI okumasını kontrol edip gerekli düzeltmeleri yaptıktan sonra
+      <b>ONAYLA VE ALANLARA AKTAR</b> butonuna basınız.
+      Bilgiler ilgili Ruhsat, İskân veya Enerji Kimlik Belgesi
+      alanlarına aktarılır.
+    </div>
+
+    <div class="belgeler-help-step">
+      <b>4. Başka belge varsa yeni belgeye geçiniz.</b><br>
+      Bir belgeyi tamamladıktan sonra
+      <b>BU BELGE TAMAM — YENİ BELGEYE GEÇ</b> butonunu kullanarak
+      sıradaki belgeyi yükleyebilirsiniz.<br><br>
+      Her ruhsat, iskân veya Enerji Kimlik Belgesini bu şekilde
+      sırayla okutabilirsiniz.
+    </div>
+
+    <div class="belgeler-help-step">
+      <b>🎤 Sesle giriş:</b><br>
+      Mikrofon bulunan açıklama alanlarında bilgileri konuşarak
+      girebilirsiniz. Uzun açıklamalarda mikrofonu yeniden açarak
+      sesli girişi parça parça yapabilirsiniz.
+    </div>
+
+    <div class="belgeler-help-step">
+      <b>5. Diğer bilgileri kontrol ediniz.</b><br>
+      Belediye ve lokasyon, mimari proje uyumluluğu,
+      yapı denetim bilgileri, belgelerin nasıl teyit edildiği ve
+      belediye arşiv tespitlerini kontrol ederek gerekli alanları doldurunuz.
+    </div>
+
+    <div class="belgeler-help-final">
+      ⚠️ SON ADIMI UNUTMAYINIZ<br><br>
+
+      Tüm belgeleri aktardıktan ve diğer bilgileri kontrol ettikten sonra
+      mutlaka<br><br>
+
+      <span style="font-size:20px;">🟢 KAYDET VE METİN ÜRET</span>
+      <br><br>
+
+      butonuna basınız.
+    </div>
+
+    <button type="button"
+            class="belgeler-help-close"
+            onclick="closeBelgelerHelp()">
+      ANLADIM, BELGE GİRİŞİNE DEVAM ET
+    </button>
+
+  </div>
+</div>
+
+<script>
+function openBelgelerHelp(){
+  document.getElementById("belgelerHelpModal").style.display = "block";
+}
+
+function closeBelgelerHelp(){
+  document.getElementById("belgelerHelpModal").style.display = "none";
+}
 </script>
 </body>
 </html>
