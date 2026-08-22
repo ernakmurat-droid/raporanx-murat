@@ -83,6 +83,83 @@
   0%, 100%{ opacity:1; }
   50%{ opacity:.55; }
 }
+/* KONUM YARDIM */
+.konum-help-btn{
+  width:100%;
+  padding:14px 16px;
+  border:none;
+  border-radius:12px;
+  background:#3949ab;
+  color:#fff;
+  font-weight:900;
+  font-size:16px;
+  cursor:pointer;
+  margin-bottom:5px;
+}
+
+.konum-help-btn:hover{
+  background:#303f9f;
+}
+
+.konum-help-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.65);
+  overflow:auto;
+  padding:15px;
+}
+
+.konum-help-box{
+  max-width:760px;
+  margin:30px auto;
+  background:#fff;
+  color:#222;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+
+.konum-help-box h2{
+  margin-top:0;
+  color:#1a237e;
+}
+
+.konum-help-box p{
+  line-height:1.6;
+}
+
+.konum-help-example{
+  background:#eef4ff;
+  border-left:5px solid #3f51b5;
+  padding:14px;
+  border-radius:10px;
+  margin-top:12px;
+  line-height:1.6;
+}
+
+.konum-help-warning{
+  margin-top:16px;
+  background:#fff8e1;
+  border:2px solid #ffb300;
+  padding:14px;
+  border-radius:12px;
+  font-weight:800;
+}
+
+.konum-help-close{
+  width:100%;
+  margin-top:18px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#1a237e;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
 </style>
 </head>
 
@@ -96,6 +173,11 @@
 
 <div class="main-wrapper">
   <div class="form-container">
+    <button type="button"
+        class="konum-help-btn"
+        onclick="openKonumHelp()">
+  ❓ BU BÖLÜM NASIL DOLDURULUR?
+</button>
     <div id="lockedNote" class="locked-note">🔒 RAPOR KİLİTLİ - Modüller Düzenlenemez</div>
 
     <form id="mainForm" onsubmit="return false;">
@@ -741,7 +823,85 @@ Bölgenin yapılaşma karakteristiğini ağırlıklı olarak ${yapiTipi} tipi ya
     }
   });
 </script>
+<!-- KONUM VE ÇEVRE NASIL KULLANILIR -->
+<div id="konumHelpModal" class="konum-help-modal">
+  <div class="konum-help-box">
 
+    <h2>❓ Konum ve Çevre Bölümü Nasıl Doldurulur?</h2>
+
+    <p>
+      Bu bölümde taşınmazın açık adresi, koordinat bilgileri,
+      yakın çevresi, bölgesel özellikleri ve ulaşım bilgileri girilir.
+    </p>
+
+    <p>
+      <b>🎤 Sesle giriş:</b>
+      Metin alanlarının yanında bulunan mikrofon butonuna basarak
+      bilgileri konuşarak da girebilirsiniz.
+      Konuşmanız ilgili alana yazı olarak aktarılır.
+    </p>
+
+    <p>
+      <b>📍 Adres ve konum:</b>
+      UAVT, koordinat, il, ilçe, mahalle, cadde/sokak,
+      dış kapı, kat ve daire bilgilerini mümkün olduğunca
+      resmi adres bilgileriyle uyumlu giriniz.
+    </p>
+
+    <p>
+      <b>🏙️ Bölgesel özellikler:</b>
+      Bölgenin kullanım türünü, yapılaşma düzenini,
+      hakim yapı tipini ve gelir düzeyini gözleminize göre belirtiniz.
+      Yakın çevrede okul, cami, market, hastane, park,
+      belediye veya önemli ulaşım noktaları gibi belirgin yerleri yazabilirsiniz.
+    </p>
+
+    <p>
+      <b>🚗 Ulaşım Tarifi Nasıl Yazılmalı?</b><br>
+      Ulaşım tarifinde açık adresi tekrar etmek yerine,
+      bilinen bir ana yol, kavşak veya önemli noktadan başlayarak
+      taşınmaza nasıl ulaşıldığını tarif ediniz.
+      Yön, yaklaşık mesafe ve dönüşleri mümkün olduğunca belirtiniz.
+    </p>
+
+    <div class="konum-help-example">
+      <b>Örnek ulaşım tarifi:</b><br><br>
+
+      Devrek şehir merkezinden Zonguldak istikametine doğru
+      yaklaşık 2 km ilerlenir. X Caddesi'ne sağa dönülerek
+      yaklaşık 300 m devam edildiğinde değerleme konusu taşınmaz
+      yolun sağ tarafında yer almaktadır.
+    </div>
+
+    <p>
+      <b>👀 Canlı Önizleme:</b>
+      Girdiğiniz bilgiler aşağıdaki canlı önizleme alanına
+      otomatik olarak aktarılır. Metnin oluşumunu buradan kontrol edebilirsiniz.
+    </p>
+
+    <div class="konum-help-warning">
+      ⚠️ Tüm bilgileri girdikten ve önizlemeyi kontrol ettikten sonra
+      mutlaka <b>VERİLERİ KAYDET</b> butonuna basınız.
+    </div>
+
+    <button type="button"
+            class="konum-help-close"
+            onclick="closeKonumHelp()">
+      ANLADIM, DEVAM ET
+    </button>
+
+  </div>
+</div>
+
+<script>
+function openKonumHelp(){
+  document.getElementById("konumHelpModal").style.display = "block";
+}
+
+function closeKonumHelp(){
+  document.getElementById("konumHelpModal").style.display = "none";
+}
+</script>
 </body>
 </html>
 
