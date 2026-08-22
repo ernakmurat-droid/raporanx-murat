@@ -572,6 +572,91 @@
     min-width:0;
   }
 }
+/* EMSAL NASIL KULLANILIR */
+.emsal-help-btn{
+  width:100%;
+  padding:14px 16px;
+  margin-bottom:18px;
+  border:none;
+  border-radius:12px;
+  background:#3f51b5;
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.emsal-help-btn:hover{
+  background:#303f9f;
+}
+
+.emsal-help-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.68);
+  overflow:auto;
+  padding:15px;
+}
+
+.emsal-help-box{
+  max-width:860px;
+  margin:25px auto;
+  background:#fff;
+  color:#222;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+
+.emsal-help-box h2{
+  margin-top:0;
+  color:#1a237e;
+}
+
+.emsal-help-step{
+  background:#f8f9fa;
+  border-left:5px solid #3f51b5;
+  padding:12px 14px;
+  margin:12px 0;
+  border-radius:8px;
+  line-height:1.55;
+}
+
+.emsal-help-warning{
+  background:#fff3cd;
+  border:2px solid #fbc02d;
+  padding:15px;
+  margin-top:16px;
+  border-radius:12px;
+  line-height:1.55;
+  font-weight:700;
+}
+
+.emsal-help-final{
+  background:#e8f5e9;
+  border:3px solid #2e7d32;
+  color:#1b5e20;
+  padding:16px;
+  margin-top:16px;
+  border-radius:12px;
+  font-weight:900;
+  text-align:center;
+}
+
+.emsal-help-close{
+  width:100%;
+  margin-top:18px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#2e7d32;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
   </style>
 
 </head>
@@ -588,6 +673,11 @@
 </div>
 
 <div class="container">
+  <button type="button"
+        class="emsal-help-btn"
+        onclick="openEmsalHelp()">
+  ❓ EMSAL ANALİZİ NASIL KULLANILIR?
+</button>
   <div class="bb-back-wrap">
     <button class="bb-back-btn"
       onclick="anaMenuyeDon()"
@@ -2652,6 +2742,130 @@ window.aiEmsalGorselOku = async function(){
   }
 };
 </script>
+<!-- EMSAL ANALİZİ NASIL KULLANILIR -->
+<div id="emsalHelpModal" class="emsal-help-modal">
+  <div class="emsal-help-box">
 
+    <h2>❓ Emsal Analizi Nasıl Kullanılır?</h2>
+
+    <div class="emsal-help-step">
+      <b>1. Bağımsız bölümü seçiniz.</b><br>
+      Raporda birden fazla bağımsız bölüm varsa üst taraftaki
+      BB sekmelerinden değerleme yapacağınız bağımsız bölümü seçiniz.
+      Her BB için uygulanacak birim değer ayrı ayrı kaydedilmelidir.
+    </div>
+
+    <div class="emsal-help-step">
+      <b>2. Emsali istediğiniz yöntemle girebilirsiniz.</b><br>
+      Akıllı Emsal Girişi bölümünde üç yöntem bulunmaktadır:<br><br>
+
+      🎙️ <b>Ses / Metin</b><br>
+      📷 <b>İlan Görseli</b><br>
+      🗣️ <b>Emlakçı / Muhtar Beyanı</b>
+    </div>
+
+    <div class="emsal-help-step">
+      <b>🎙️ Ses / Metin ile giriş:</b><br>
+      Emsal kaynağı, telefon, konum, bina ve bulunduğu kat,
+      oda sayısı, alan, fiyat ve diğer bilgileri doğal şekilde anlatabilirsiniz.<br><br>
+
+      Uzun anlatımları tek seferde söylemek zorunda değilsiniz.
+      <b>SESLİ ANLAT</b> butonuna tekrar basarak bilgileri
+      parça parça girebilirsiniz.
+      Her yeni konuşma önceki metnin sonuna eklenir.
+    </div>
+
+    <div class="emsal-help-step">
+      <b>📷 İlan görseli ile giriş:</b><br>
+      İlanın ekran görüntüsünü veya fotoğrafını yükleyerek
+      <b>İLANI OKU VE BİLGİLERİ HAZIRLA</b> butonuna basabilirsiniz.
+      Okunan bilgileri kaydetmeden önce mutlaka kontrol ediniz.
+    </div>
+
+    <div class="emsal-help-step">
+      <b>🗣️ Emlakçı / Muhtar Beyanı:</b><br>
+      Beyan kaynağı, telefon, bölge, taşınmaz cinsi,
+      satış/kira durumu ve yaklaşık değer bilgisini girebilirsiniz.
+      Beyanı da sesle parça parça anlatabilirsiniz.
+    </div>
+
+    <div class="emsal-help-warning">
+      ⚠️ <b>AI tarafından hazırlanan bilgiler doğrudan kaydedilmez.</b><br><br>
+      Hazırlanan kontrol tablosunu inceleyiniz.
+      Yanlış veya eksik alan varsa elle düzeltiniz.
+      Kontrol etmeden emsali kesin kayıt olarak kabul etmeyiniz.
+    </div>
+
+    <div class="emsal-help-step">
+      <b>3. Emsali ortak havuza kaydediniz.</b><br>
+      Emsal detaylarını kontrol ettikten sonra
+      <b>LİSTEYE İŞLE VE MÜHÜRLE</b> butonuna basınız.
+      Kaydedilen emsal üst taraftaki ortak emsal havuzunda görünür.
+    </div>
+
+    <div class="emsal-help-step">
+      <b>4. Değerleme ve birim analizini yapınız.</b><br>
+      Bölge alt ve üst sınırını, konu taşınmaza uygulanacak
+      birim değeri ve varsa proje dışı ilave alan değerlerini giriniz.
+      Yasal brüt alan Bağımsız Bölüm Detay bölümünden otomatik alınır.
+    </div>
+
+    <div class="emsal-help-step">
+      <b>5. İnşaat seviyeli değerleme gerekiyorsa:</b><br>
+      <b>İnşaat Seviyeli (Mevcut Durum) Değerleme Yap</b>
+      seçeneğini işaretleyiniz.
+      Mevcut inşaat seviyesini ve eksik imalat tutarını giriniz.
+    </div>
+
+    <div class="emsal-help-warning">
+      ⚠️ <b>Çoklu bağımsız bölümde özellikle dikkat:</b><br><br>
+      Her BB sekmesine ayrı ayrı geçiniz,
+      o bağımsız bölüm için uygulanacak birim değeri giriniz
+      ve analiz bilgilerini kaydediniz.<br><br>
+
+      Bir BB'nin değerini girmeniz diğer bağımsız bölümlerin
+      değerleme analizini tamamlamaz.
+    </div>
+
+    <div class="emsal-help-step">
+      <b>6. Özet Analiz Metnini kontrol ediniz.</b><br>
+      Emsaller, beyanlar, uygulanan birim değerler ve
+      hesaplanan taşınmaz değerleri aşağıdaki özet analiz metninde
+      birlikte gösterilir. Raporu kaydetmeden önce bu metni kontrol ediniz.
+    </div>
+
+    <div class="emsal-help-final">
+      ⚠️ SON ADIMI UNUTMAYINIZ<br><br>
+
+      Tüm emsalleri ve bütün bağımsız bölümlerin
+      birim değerlerini kontrol ettikten sonra mutlaka
+      <br><br>
+
+      <span style="font-size:20px;">
+        🟢 ANALİZİ KAYDET VE BULUTA YEDEKLE
+      </span>
+      <br><br>
+
+      butonuna basınız.
+    </div>
+
+    <button type="button"
+            class="emsal-help-close"
+            onclick="closeEmsalHelp()">
+      ANLADIM, EMSAL ANALİZİNE DEVAM ET
+    </button>
+
+  </div>
+</div>
+
+<script>
+function openEmsalHelp(){
+  document.getElementById("emsalHelpModal").style.display = "block";
+}
+
+function closeEmsalHelp(){
+  document.getElementById("emsalHelpModal").style.display = "none";
+}
+</script>
 </body>
 </html>
