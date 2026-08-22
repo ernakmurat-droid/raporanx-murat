@@ -36,15 +36,60 @@
 
     .login-container{
       background: #fff; color: #333;
-      padding: 38px 28px;
+      padding: 34px 30px;
       border-radius: 16px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.18);
-      max-width: 420px;
-      margin: 70px auto;
+      max-width: 620px;
+      margin: 28px auto;
       text-align: left;
     }
-    .login-container h2{ margin: 0 0 8px; font-size: 22px; }
-    .login-container p{ margin: 0 0 18px; color:#444; line-height:1.45; }
+    .login-container h2{ margin: 0 0 8px; font-size: 26px; color:#4a148c; }
+    .login-container p{ margin: 0; color:#444; line-height:1.5; }
+    .login-lead{ font-size:16px; }
+    .login-guide{
+      margin: 22px 0 18px;
+      padding: 18px;
+      border-radius: 14px;
+      background:#f7f3ff;
+      border:1px solid #e4d8ff;
+    }
+    .login-guide h3{ margin:0 0 12px; color:#4a148c; font-size:18px; }
+    .guide-step{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      margin-top:11px;
+      color:#333;
+      line-height:1.42;
+    }
+    .step-number{
+      flex:0 0 28px;
+      height:28px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#6a1b9a;
+      color:#fff;
+      font-weight:900;
+      font-size:14px;
+    }
+    .privacy-box{
+      margin:0 0 18px;
+      padding:16px;
+      border-radius:14px;
+      background:#ecfdf3;
+      border:2px solid #22a447;
+      color:#174d27;
+    }
+    .privacy-box strong{ display:block; margin-bottom:6px; font-size:17px; }
+    .privacy-box p{ color:#245c34; font-size:14px; }
+    .login-prompt{
+      margin:0 0 10px;
+      text-align:center;
+      font-weight:800;
+      color:#374151;
+    }
     .login-btn{
       padding: 14px 18px;
       font-size: 16px;
@@ -57,7 +102,7 @@
       font-weight: 800;
       box-shadow: 0 10px 22px rgba(66,133,244,0.35);
     }
-    .login-meta{ margin-top: 12px; font-weight: 800; color:#6b7280; }
+    .login-meta{ margin-top: 12px; font-weight: 800; color:#6b7280; text-align:center; }
 
     .hero{
       text-align:left;
@@ -229,7 +274,9 @@
       body{ padding: 22px 12px 60px; }
       .brand-title{ font-size: 28px; }
       .btn-new{ font-size: 18px; padding: 16px; border-radius: 16px; }
-      .login-container{ margin: 60px auto; padding: 30px 20px; }
+      .login-container{ margin: 12px auto; padding: 26px 18px; }
+      .login-container h2{ font-size:24px; }
+      .login-guide{ padding:15px; }
     }
   </style>
 </head>
@@ -238,7 +285,22 @@
   <div class="container">
     <div id="loginSection" class="login-container">
       <h2>RaporanX’e Hoş Geldin</h2>
-      <p>Değerleme sürecini hızlandıran, sahada ve ofiste senkron çalışan rapor taslağı oluşturma sistemi.</p>
+      <p class="login-lead">RaporanX; gayrimenkul değerleme çalışmalarında verilerinizi düzenli kaydetmenize ve banka formatına yakın rapor taslağınızı daha hızlı hazırlamanıza yardımcı olur.</p>
+
+      <div class="login-guide">
+        <h3>RaporanX Nasıl Kullanılır?</h3>
+        <div class="guide-step"><span class="step-number">1</span><span>Google hesabınızla giriş yapın.</span></div>
+        <div class="guide-step"><span class="step-number">2</span><span><b>Yeni Rapor Oluştur</b> düğmesine basarak taşınmaz kaydınızı açın.</span></div>
+        <div class="guide-step"><span class="step-number">3</span><span>Konum, imar, belge, bina, bağımsız bölüm, tapu ve emsal bilgilerini ilgili bölümlere girip kaydedin.</span></div>
+        <div class="guide-step"><span class="step-number">4</span><span>Kaydettiğiniz bilgilerden düzenli rapor taslağınızı oluşturun.</span></div>
+      </div>
+
+      <div class="privacy-box">
+        <strong>🔒 Verileriniz Size Özeldir</strong>
+        <p>RaporanX’e Google hesabınızla güvenli şekilde giriş yaparsınız. Oluşturduğunuz raporlar ve girdiğiniz bilgiler yalnızca kendi hesabınızda görüntülenir; diğer kullanıcılar sizin veri girişlerinizi ve raporlarınızı göremez.</p>
+      </div>
+
+      <div class="login-prompt">Başlamak için Google hesabınızla giriş yapın.</div>
       <button id="googleBtn" class="login-btn">Google ile Giriş Yap</button>
       <div id="statusInfoLogin" class="login-meta">Bağlantı kuruluyor...</div>
     </div>
