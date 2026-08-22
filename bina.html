@@ -66,6 +66,91 @@
       0%, 100%{ opacity:1; }
       50%{ opacity:.55; }
     }
+    /* BİNA NASIL KULLANILIR */
+.bina-help-btn{
+  width:100%;
+  padding:14px 16px;
+  margin-bottom:18px;
+  border:none;
+  border-radius:12px;
+  background:#7c4dff;
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.bina-help-btn:hover{
+  background:#673ab7;
+}
+
+.bina-help-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.68);
+  overflow:auto;
+  padding:15px;
+}
+
+.bina-help-box{
+  max-width:820px;
+  margin:25px auto;
+  background:#fff;
+  color:#222;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+
+.bina-help-box h2{
+  margin-top:0;
+  color:#4a148c;
+}
+
+.bina-help-step{
+  background:#f8f9fa;
+  border-left:5px solid #7c4dff;
+  padding:12px 14px;
+  margin:12px 0;
+  border-radius:8px;
+  line-height:1.55;
+}
+
+.bina-help-warning{
+  background:#fff3cd;
+  border:2px solid #ff9800;
+  padding:15px;
+  margin-top:16px;
+  border-radius:12px;
+  line-height:1.55;
+  font-weight:700;
+}
+
+.bina-help-final{
+  background:#e8f5e9;
+  border:3px solid #00c853;
+  color:#1b5e20;
+  padding:16px;
+  margin-top:16px;
+  border-radius:12px;
+  font-weight:900;
+  text-align:center;
+}
+
+.bina-help-close{
+  width:100%;
+  margin-top:18px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#00c853;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
 </style>
 
 </head>
@@ -78,6 +163,11 @@
 </div>
 
 <div class="container">
+ <button type="button"
+        class="bina-help-btn"
+        onclick="openBinaHelp()">
+  ❓ BİNA BİLGİLERİ NASIL KULLANILIR?
+</button> 
     <div class="form-group">
         <strong>Bina Tipi</strong>
         <div class="radio-group">
@@ -158,9 +248,26 @@
     </div>
 
     <button class="btn btn-taslak" onclick="taslakOlustur()">BİNA ANALİZ METNİNİ GÜNCELLE</button>
-    <div class="form-group" style="background:#fff8e1; border:1px solid #ffe082;">
-  <strong style="color:#e65100;">Bilgilendirme</strong>
-  Kat detayları, bina analiz metninin bir parçasıdır. Bina analizinin eksiksiz oluşabilmesi için kat detaylarının tamamlanması önerilir.
+    <div class="form-group" style="background:#fff8e1; border:2px solid #ff9800;">
+  <strong style="color:#e65100;">⚠️ KAT DETAYI SONRASI ÖNEMLİ</strong>
+
+  Kat detayları, bina analiz metninin bir parçasıdır.
+  Kat detaylarını tamamlayıp bu ekrana geri döndüğünüzde
+  kat detayları bina analiz metninde otomatik olarak görünür.
+
+  <div style="
+    margin-top:12px;
+    padding:12px;
+    background:#fff3cd;
+    border-radius:8px;
+    color:#b71c1c;
+    font-weight:900;
+    text-align:center;
+  ">
+    Kat detaylarından geri döndükten sonra mutlaka
+    “BİLGİLERİ KAYDET (SAYFADA KAL)” butonuna tekrar basınız.
+    Aksi halde güncellenen bina analiz metni tam rapora aktarılmayabilir.
+  </div>
 </div>
     <div class="btn-container">
         <button class="btn btn-save" onclick="kaydet()">BİLGİLERİ KAYDET (SAYFADA KAL)</button>
@@ -615,6 +722,23 @@ return finalMetin;
     toggleBlokFields();
     hafizaYukle();
     taslakOlustur();
+    const katDetayVar = !!(r.katDetayMetni && String(r.katDetayMetni).trim());
+
+if (katDetayVar) {
+  const yeniMetin = taslakOlustur();
+
+  if (!r.modules) r.modules = {};
+  if (!r.modules.bina) r.modules.bina = {};
+
+  r.modules.bina.text = yeniMetin;
+  r.modules.bina.metin = yeniMetin;
+  r.modules.bina.binaMetni = yeniMetin;
+
+  r.bina = { ...(r.bina || {}), ...(r.modules.bina || {}) };
+  r.binaMetni = yeniMetin;
+
+  persist(arr, i, r);
+}
 
     document.getElementById("yapiSinifi").addEventListener("change", function() {
       document.getElementById("yapiSinifiDiger").classList.toggle("hidden", this.value !== "diger");
@@ -631,7 +755,84 @@ return finalMetin;
     initPage();
   });
 </script>
+<!-- BİNA BİLGİLERİ NASIL KULLANILIR -->
+<div id="binaHelpModal" class="bina-help-modal">
+  <div class="bina-help-box">
 
+    <h2>❓ Bina Bilgileri Nasıl Kullanılır?</h2>
+
+    <div class="bina-help-step">
+      <b>1. Bina tipini seçiniz.</b><br>
+      Taşınmaz tek binada ise <b>Tek Bina</b>,
+      parselde birden fazla blok varsa <b>Birden Fazla Blok</b>
+      seçeneğini kullanınız.
+    </div>
+
+    <div class="bina-help-step">
+      <b>2. Bina bilgilerini giriniz.</b><br>
+      Arsa alanı, yapı nizamı, yapı sınıfı, bodrum ve normal kat sayısı,
+      giriş kotu ve cephesi, giriş kapısı, merdiven kaplaması,
+      dış cephe, asansör ve ısınma bilgilerini doldurunuz.
+    </div>
+
+    <div class="bina-help-step">
+      <b>🎤 Sesle giriş kullanılabilir.</b><br>
+      Mikrofon bulunan alanlarda bilgileri konuşarak girebilirsiniz.
+      Özellikle blok bilgileri, giriş kotu, cephe, malzeme ve ısınma
+      alanlarında sesli giriş kullanılabilir.
+    </div>
+
+    <div class="bina-help-step">
+      <b>3. Bina analiz metnini kontrol ediniz.</b><br>
+      Girdiğiniz bilgilere göre bina analiz metni otomatik olarak güncellenir.
+      Gerekirse <b>BİNA ANALİZ METNİNİ GÜNCELLE</b> butonuna basarak
+      metni yeniden oluşturabilirsiniz.
+    </div>
+
+    <div class="bina-help-warning">
+      ⚠️ <b>Kat Detayları bina analizinin bir parçasıdır.</b><br><br>
+
+      Bina analizinin eksiksiz oluşması için
+      <b>BİNA ANALİZİ İÇİN KAT DETAYLARINI TAMAMLA</b>
+      butonuna basarak Kat Detayları bölümüne geçiniz.<br><br>
+
+      Kat detaylarını kaydedip Bina Bilgileri ekranına geri döndüğünüzde,
+      kat detayları bina analiz metnine otomatik olarak eklenir ve
+      güncellenen bina metni otomatik olarak kaydedilir.
+    </div>
+
+    <div class="bina-help-step">
+      <b>4. Bilgileri kontrol ediniz.</b><br>
+      Kat detaylarından döndükten sonra oluşan bina analiz metnini
+      ekranda kontrol edebilirsiniz.
+    </div>
+
+    <div class="bina-help-final">
+      ✅ Bina bilgilerini manuel olarak değiştirdiğinizde
+      <br><br>
+      <span style="font-size:19px;">BİLGİLERİ KAYDET (SAYFADA KAL)</span>
+      <br><br>
+      butonuna basarak son değişikliklerinizi kaydediniz.
+    </div>
+
+    <button type="button"
+            class="bina-help-close"
+            onclick="closeBinaHelp()">
+      ANLADIM, BİNA GİRİŞİNE DEVAM ET
+    </button>
+
+  </div>
+</div>
+
+<script>
+function openBinaHelp(){
+  document.getElementById("binaHelpModal").style.display = "block";
+}
+
+function closeBinaHelp(){
+  document.getElementById("binaHelpModal").style.display = "none";
+}
+</script>
 
 </body>
 </html>
