@@ -218,6 +218,91 @@
     0%, 100%{ opacity:1; }
     50%{ opacity:.55; }
   }
+  /* BAĞIMSIZ BÖLÜM NASIL KULLANILIR */
+.bb-help-btn{
+  width:100%;
+  padding:14px 16px;
+  margin-bottom:18px;
+  border:none;
+  border-radius:12px;
+  background:#7c4dff;
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.bb-help-btn:hover{
+  background:#673ab7;
+}
+
+.bb-help-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.68);
+  overflow:auto;
+  padding:15px;
+}
+
+.bb-help-box{
+  max-width:820px;
+  margin:25px auto;
+  background:#fff;
+  color:#222;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+
+.bb-help-box h2{
+  margin-top:0;
+  color:#4a148c;
+}
+
+.bb-help-step{
+  background:#f8f9fa;
+  border-left:5px solid #7c4dff;
+  padding:12px 14px;
+  margin:12px 0;
+  border-radius:8px;
+  line-height:1.55;
+}
+
+.bb-help-warning{
+  background:#fff3cd;
+  border:2px solid #ff9800;
+  padding:15px;
+  margin-top:16px;
+  border-radius:12px;
+  line-height:1.55;
+  font-weight:700;
+}
+
+.bb-help-final{
+  background:#e8f5e9;
+  border:3px solid #00c853;
+  color:#1b5e20;
+  padding:16px;
+  margin-top:16px;
+  border-radius:12px;
+  font-weight:900;
+  text-align:center;
+}
+
+.bb-help-close{
+  width:100%;
+  margin-top:18px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#00c853;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
 </style>
 </head>
 
@@ -229,6 +314,11 @@
   </div>
 
   <div class="container">
+    <button type="button"
+        class="bb-help-btn"
+        onclick="openBBHelp()">
+  ❓ BAĞIMSIZ BÖLÜM DETAY NASIL KULLANILIR?
+</button>
     <div id="lockNote" class="lockedNote hidden">
       🔒 Bu rapor FINAL yapılmış. Bu modül kilitlidir (düzenleme yapılamaz).
     </div>
@@ -293,7 +383,15 @@
       </div>
 
       <div id="farkDetay" class="hidden">
-        <div class="input-item"><label>İlave Açıklaması</label><textarea id="farkAciklama" oninput="metinOlustur()"></textarea></div>
+        <div class="input-item">
+  <label>İlave Açıklaması</label>
+
+  <div style="font-size:12px; color:#3f51b5; font-weight:700; margin-bottom:6px;">
+    🎤 Uzun proje farkı açıklamalarını parça parça sesle girebilirsiniz.
+  </div>
+
+  <textarea id="farkAciklama" oninput="metinOlustur()"></textarea>
+</div>
         <div class="input-item"><label>İlave Brüt Alan (m²)</label><input type="number" id="ilaveBrut" value="0" oninput="metinOlustur()"></div>
       </div>
     </div>
@@ -885,6 +983,98 @@
     try{ window.getSelection()?.removeAllRanges(); }catch(e){}
   }, true);
 })();
+</script>
+<!-- BAĞIMSIZ BÖLÜM DETAY NASIL KULLANILIR -->
+<div id="bbHelpModal" class="bb-help-modal">
+  <div class="bb-help-box">
+
+    <h2>❓ Bağımsız Bölüm Detay Nasıl Kullanılır?</h2>
+
+    <div class="bb-help-step">
+      <b>1. Bağımsız bölüm bilgilerini giriniz.</b><br>
+      Kat, bağımsız bölüm no, kapı no, nitelik, girişe göre konum,
+      net ve brüt alan ile cephe bilgilerini doldurunuz.
+    </div>
+
+    <div class="bb-help-step">
+      <b>2. Birden fazla bağımsız bölüm varsa ayrı ayrı ekleyiniz.</b><br>
+      <b>+ Yeni BB</b> butonuyla yeni bağımsız bölüm oluşturabilirsiniz.
+      BB sekmeleri arasında geçiş yaptığınızda önceki bağımsız bölüm
+      otomatik olarak kaydedilir.
+    </div>
+
+    <div class="bb-help-step">
+      <b>3. Proje farkını belirtiniz.</b><br>
+      Projeye göre değişiklik yoksa <b>Hayır</b>,
+      varsa <b>Evet</b> seçiniz ve ilave açıklamasını giriniz.
+      İlave brüt alan varsa ayrıca belirtiniz.
+    </div>
+
+    <div class="bb-help-step">
+      <b>🎤 Proje farkı açıklamasında sesli giriş:</b><br>
+      Uzun açıklamaları tek seferde söylemek zorunda değilsiniz.
+      Mikrofonu tekrar açarak proje farkı açıklamasını
+      <b>parça parça sesle girebilirsiniz.</b>
+    </div>
+
+    <div class="bb-help-step">
+      <b>4. Hacimleri giriniz.</b><br>
+      Salon, oda, mutfak, banyo, WC, antre/hol ve balkon adetlerini
+      taşınmazın mevcut durumuna göre belirtiniz.
+    </div>
+
+    <div class="bb-help-step">
+      <b>5. İç özellikleri doldurunuz.</b><br>
+      Zemin ve duvar kaplamaları, mutfak dolabı ve tezgâhı,
+      ıslak hacimler, banyo donanımları, kapılar, pencereler
+      ve ısıtma bilgilerini giriniz.
+    </div>
+
+    <div class="bb-help-step">
+      <b>6. Tesisat durumunu belirtiniz.</b><br>
+      Elektrik, su ve haberleşme tesisatları mevcutsa <b>Evet</b>
+      seçiniz. Eksik veya farklı bir durum varsa <b>Hayır</b>
+      seçerek açıklama yazınız.
+    </div>
+
+    <div class="bb-help-warning">
+      ⚠️ <b>Çoklu bağımsız bölümde dikkat:</b><br><br>
+      Sekmeler arasında geçişte önceki BB otomatik kaydedilir;
+      ancak tüm bağımsız bölümlerin rapor metninin birlikte oluşturulması için
+      işlemin sonunda ana kayıt butonunu kullanınız.
+    </div>
+
+    <div class="bb-help-final">
+      ⚠️ SON ADIMI UNUTMAYINIZ<br><br>
+
+      Tüm bağımsız bölümleri tamamladıktan sonra mutlaka
+      <br><br>
+
+      <span style="font-size:19px;">
+        🟢 VERİLERİ KAYDET (TÜM BB METİNLERİ ÜRETİLİR)
+      </span>
+      <br><br>
+
+      butonuna basınız.
+    </div>
+
+    <button type="button"
+            class="bb-help-close"
+            onclick="closeBBHelp()">
+      ANLADIM, BAĞIMSIZ BÖLÜM GİRİŞİNE DEVAM ET
+    </button>
+
+  </div>
+</div>
+
+<script>
+function openBBHelp(){
+  document.getElementById("bbHelpModal").style.display = "block";
+}
+
+function closeBBHelp(){
+  document.getElementById("bbHelpModal").style.display = "none";
+}
 </script>
 </body>
 </html>
