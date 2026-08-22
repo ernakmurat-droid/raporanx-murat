@@ -245,6 +245,100 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
     display:none !important;
   }
 }
+/* RAPOR OLUŞTUR NASIL KULLANILIR */
+.rapor-help-btn{
+  width:100%;
+  padding:14px 16px;
+  margin:0 0 18px;
+  border:none;
+  border-radius:12px;
+  background:#3949ab;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.rapor-help-btn:hover{
+  background:#303f9f;
+}
+
+.rapor-help-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.68);
+  overflow:auto;
+  padding:15px;
+}
+
+.rapor-help-box{
+  max-width:860px;
+  margin:25px auto;
+  background:#fff;
+  color:#222;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+
+.rapor-help-box h2{
+  margin-top:0;
+  color:#1a237e;
+}
+
+.rapor-help-step{
+  background:#f8f9fa;
+  border-left:5px solid #3949ab;
+  padding:12px 14px;
+  margin:12px 0;
+  border-radius:8px;
+  line-height:1.55;
+}
+
+.rapor-help-warning{
+  background:#fff3cd;
+  border:2px solid #ffc107;
+  padding:15px;
+  margin-top:16px;
+  border-radius:12px;
+  line-height:1.55;
+  font-weight:700;
+}
+
+.rapor-help-note{
+  background:#fff8e1;
+  border:2px solid #ffb300;
+  padding:15px;
+  margin-top:16px;
+  border-radius:12px;
+  line-height:1.55;
+}
+
+.rapor-help-final{
+  background:#e8f5e9;
+  border:3px solid #2e7d32;
+  color:#1b5e20;
+  padding:16px;
+  margin-top:16px;
+  border-radius:12px;
+  font-weight:900;
+  text-align:center;
+}
+
+.rapor-help-close{
+  width:100%;
+  margin-top:18px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#2e7d32;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
 </style>
 </head>
 
@@ -280,6 +374,11 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
   </aside>
 
   <main class="container">
+   <button type="button"
+        class="rapor-help-btn"
+        onclick="openRaporHelp()">
+  ❓ RAPOR OLUŞTUR NASIL KULLANILIR?
+</button> 
     <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
 
     <button class="action-btn" id="btnFinalCreate" disabled>🧾 Final Rapor Oluştur (Hak Düş + Kilitle)</button>
@@ -1386,9 +1485,15 @@ $("enerjiKimlikBilgisi").style.display =
       loadEdits();
 
       setLockedLocal();
-      await setLockedRemote(user.uid);
+await setLockedRemote(user.uid);
 
-      setStatus("✅ Kilitlendi.", "Rapor final yapıldı. İstersen metni düzenleyip PDF alabilirsin.");
+// Final aynı ekranda tamamlandığı anda düzenleme aktif olabilsin
+$("btnFinalCreate").disabled = true;
+
+setStatus(
+  "✅ Kilitlendi.",
+  "Rapor final yapıldı. İstersen metni düzenleyip PDF alabilirsin."
+);
     } finally {
       finalizing = false;
     }
@@ -1446,6 +1551,122 @@ $("enerjiKimlikBilgisi").style.display =
   });
 });
 </script>
+<!-- RAPOR OLUŞTUR NASIL KULLANILIR -->
+<div id="raporHelpModal" class="rapor-help-modal">
+  <div class="rapor-help-box">
 
+    <h2>❓ Rapor Oluştur Nasıl Kullanılır?</h2>
+
+    <div class="rapor-help-step">
+      <b>1. Raporunuzu toplu olarak kontrol ediniz.</b><br>
+      Daha önce doldurduğunuz İmar, Belgeler, Ana Bina,
+      Bağımsız Bölüm, Konum, Tapu ve Emsal bilgileri bu ekranda
+      rapor düzeninde bir araya getirilir.<br><br>
+
+      Final oluşturmadan önce bölümleri gözden geçirerek
+      eksik veya hatalı bilgi olup olmadığını kontrol edebilirsiniz.
+    </div>
+
+    <div class="rapor-help-warning">
+      ⚠️ <b>Final Rapor Oluştur işlemi önemlidir.</b><br><br>
+
+      Bilgilerinizi kontrol ettikten sonra
+      <b>FİNAL RAPOR OLUŞTUR (HAK DÜŞ + KİLİTLE)</b>
+      butonunu kullanınız.<br><br>
+
+      Final oluşturulduğunda rapor kilitlenir ve rapor hakkınız
+      kullanım kurallarına göre düşürülür.
+    </div>
+
+    <div class="rapor-help-step">
+      <b>2. Final metninde son düzenlemelerinizi yapabilirsiniz.</b><br>
+      Final oluşturulduktan sonra
+      <b>✍️ FİNAL METNİ DÜZENLE</b> butonuna basarak
+      rapor metinleri üzerinde son düzeltmelerinizi yapabilirsiniz.<br><br>
+
+      Düzenleme tamamlandığında
+      <b>💾 DÜZENLEMEYİ KAYDET</b> butonuna basınız.
+    </div>
+
+    <div class="rapor-help-step">
+      <b>3. Rapor bilgilerini banka / ekspertiz sistemine aktarabilirsiniz.</b><br>
+      Bu ekrandaki rapor metinlerini seçip kopyalayarak
+      çalıştığınız banka veya ekspertiz sistemindeki ilgili alanlara
+      yapıştırabilirsiniz.<br><br>
+
+      Böylece RaporanX'te hazırladığınız bilgileri banka sistemine
+      aktarırken raporun bütün bölümlerini aynı ekrandan kontrol edebilirsiniz.
+    </div>
+
+    <div class="rapor-help-step">
+      <b>📄 Yazdır / PDF Kaydet</b><br>
+      Hazırladığınız raporu yazdırabilir veya tarayıcınızın
+      yazdırma ekranını kullanarak PDF olarak kaydedebilirsiniz.
+    </div>
+
+    <div class="rapor-help-note">
+      <b>📝 NOTLARIM — Kişisel Bilgi Bankanız</b><br><br>
+
+      <b>NOTLARIM</b> bölümüne kaydettiğiniz bilgiler belirli bir
+      rapora değil, kullanıcı hesabınıza aittir.
+      Bu nedenle kaydettiğiniz kişisel notlara diğer raporlarınızdan
+      da ulaşabilirsiniz.<br><br>
+
+      Sık kullandığınız bilgileri farklı başlıklar altında
+      kaydedebilirsiniz. Örneğin:<br><br>
+
+      • Banka sistemlerinde kullandığınız standart ve kalıp cümleler<br>
+      • Taşınmazların olumlu özellikleri için hazır cümleler<br>
+      • Taşınmazların olumsuz özellikleri için hazır cümleler<br>
+      • İmar planı tarihleri ve sık kullandığınız imar bilgileri<br>
+      • İl, ilçe veya bölgelere ait posta kodları<br>
+      • Bankalara veya kurumlara özel hatırlatmalar<br>
+      • Rapor hazırlarken sık ihtiyaç duyduğunuz diğer bilgiler
+    </div>
+
+    <div class="rapor-help-step">
+      <b>📋 Notları nasıl kullanabilirsiniz?</b><br>
+      Notlarınıza istediğiniz başlığı vererek kaydedebilirsiniz.
+      Daha sonra ihtiyacınız olan başlığı açıp
+      <b>KOPYALA</b> butonuyla metni kopyalayarak banka sistemindeki
+      ilgili alana yapıştırabilirsiniz.<br><br>
+
+      Böylece sık kullandığınız bilgiler için farklı kaynaklara
+      tekrar tekrar bakma ihtiyacınız azalır ve banka sistemine
+      rapor girişini daha hızlı tamamlayabilirsiniz.
+    </div>
+
+    <div class="rapor-help-final">
+      ✅ ÖNERİLEN ÇALIŞMA SIRASI<br><br>
+
+      RAPORU KONTROL ET<br>
+      ↓<br>
+      FİNAL RAPOR OLUŞTUR<br>
+      ↓<br>
+      GEREKİRSE FİNAL METNİNİ DÜZENLE<br>
+      ↓<br>
+      METİNLERİ BANKA / EKSPERTİZ SİSTEMİNE AKTAR<br>
+      ↓<br>
+      GEREKTİĞİNDE NOTLARIM'DAKİ HAZIR BİLGİLERİ KULLAN
+    </div>
+
+    <button type="button"
+            class="rapor-help-close"
+            onclick="closeRaporHelp()">
+      ANLADIM, RAPORU KONTROL ETMEYE DEVAM ET
+    </button>
+
+  </div>
+</div>
+
+<script>
+function openRaporHelp(){
+  document.getElementById("raporHelpModal").style.display = "block";
+}
+
+function closeRaporHelp(){
+  document.getElementById("raporHelpModal").style.display = "none";
+}
+</script>
 </body>
 </html>
