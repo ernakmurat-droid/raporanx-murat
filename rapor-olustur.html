@@ -1413,15 +1413,36 @@ $("enerjiKimlikBilgisi").style.display =
       .filter(Boolean);
   }
 
-  function loadEdits(){
-    try{
-      const data = JSON.parse(localStorage.getItem(EDIT_KEY) || "{}");
-      for(const [id, txt] of Object.entries(data)){
-        const el = document.getElementById(id);
-        if(el) el.textContent = String(txt ?? "");
-      }
-    }catch(e){}
+  function applyEdits(data){
+  if(!data || typeof data !== "object") return;
+
+  for(const [id, txt] of Object.entries(data)){
+    const el = document.getElementById(id);
+    if(el) el.textContent = String(txt ?? "");
   }
+}
+
+function loadEdits(rep){
+  try{
+    const cloudData = rep?.finalTextEdits;
+
+    if(cloudData && typeof cloudData === "object"){
+      applyEdits(cloudData);
+
+      // Bu tarayıcıya da yedekle
+      localStorage.setItem(EDIT_KEY, JSON.stringify(cloudData));
+      return;
+    }
+
+    const localData =
+      JSON.parse(localStorage.getItem(EDIT_KEY) || "{}");
+
+    applyEdits(localData);
+
+  }catch(e){
+    console.warn("Final metin düzenlemeleri yüklenemedi:", e);
+  }
+}
 
   function setEditMode(on){
     getEditableBlocks().forEach(el=>{
@@ -1434,13 +1455,28 @@ $("enerjiKimlikBilgisi").style.display =
     $("btnSaveText").style.display = on ? "block" : "none";
   }
 
-  function saveEdits(){
-    const data = {};
-    getEditableBlocks().forEach(el=>{
-      data[el.id] = el.textContent || "";
-    });
-    localStorage.setItem(EDIT_KEY, JSON.stringify(data));
-  }
+ async function saveEdits(uid){
+  const data = {};
+
+  getEditableBlocks().forEach(el=>{
+    data[el.id] = el.textContent || "";
+  });
+
+  // Tarayıcıya da kaydet
+  localStorage.setItem(EDIT_KEY, JSON.stringify(data));
+
+  // Buluta kaydet
+  await db
+    .collection("users")
+    .doc(uid)
+    .collection("reports")
+    .doc(rid)
+    .set({
+      finalTextEdits: data,
+      finalTextEditsUpdatedAt:
+        firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+}
 
   let finalizing = false;
 
@@ -1454,7 +1490,7 @@ $("enerjiKimlikBilgisi").style.display =
         let repLocked = loadReportLocal() || await loadReportRemote(user.uid);
         if (repLocked){
           render(repLocked);
-          loadEdits();
+          loadEdits(repLocked);
         }
         setLockedLocal();
         setStatus("🔒 Zaten kilitli.", "Final yapılmış.");
@@ -1482,7 +1518,7 @@ $("enerjiKimlikBilgisi").style.display =
       }
 
       render(rep);
-      loadEdits();
+      loadEdits(rep);
 
       setLockedLocal();
 await setLockedRemote(user.uid);
@@ -1517,24 +1553,29 @@ setStatus(
       setStatus("✍️ Düzenleme açık", "Metin alanlarına tıkla yaz. Bitince Kaydet.");
     };
 
-    $("btnSaveText").onclick = ()=>{
-      saveEdits();
-      setEditMode(false);
-      setStatus("💾 Kaydedildi", "Bu cihazda saklandı. PDF alabilirsin.");
-    };
+   $("btnSaveText").onclick = async ()=>{
+  try{
+    await saveEdits(user.uid);
+    setEditMode(false);
+    setStatus("💾 Kaydedildi", "Düzenlemeler buluta kaydedildi.");
+  }catch(e){
+    console.error("Final metin düzenlemesi kaydedilemedi:", e);
+    setStatus("⚠️ Kayıt hatası", "Düzenlemeler buluta kaydedilemedi.");
+    alert("Düzenlemeler buluta kaydedilemedi. Lütfen tekrar deneyin.");
+  }
+};
 
     const locked = isLockedLocal() || await isLockedRemote(user.uid);
 
    if (locked){
   render(rep);
-  loadEdits();
+  loadEdits(rep);
   setLockedLocal();
   setStatus("🔒 Kilitli.", "Bu rapor final yapılmış. Metni düzenleyip PDF alabilirsin.");
   $("btnFinalCreate").disabled = true;
 } else {
   render(rep);
-  loadEdits();
-
+  loadEdits(rep);
   setStatus("📝 Ön izleme", "Rapor bilgileri yüklendi. Final oluşturursan hak düşer ve rapor kilitlenir.");
 
   const btn = $("btnFinalCreate");
