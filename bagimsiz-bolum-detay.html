@@ -764,22 +764,25 @@
     const alanText = getNum("alanNet") > 0
       ? `net ${getNum("alanNet")} brüt ${getNum("alanBrut")} m²`
       : `brüt ${getNum("alanBrut")} m²`;
+      const projeBrutAlan = getNum("alanBrut");
+const mevcutBrutAlan = projeBrutAlan + getNum("ilaveBrut");
      const projeFarkiText = data.farkVar === "evet"
   ? (
-      `Taşınmaz projesinde ${alanText} kullanım alanına sahiptir. ` +
+      `Taşınmaz projesine göre ${roomCounts} hacimlerinden oluşmakta olup ${alanText} kullanım alanına sahiptir. ` +
       `Mevcut durumda ${get("farkAciklama")}. ` +
       (
         getNum("ilaveBrut") > 0
-  ? `Projeye göre ${getNum("ilaveBrut")} m² ilave alan bulunmaktadır.`
-  : getNum("ilaveBrut") < 0
-    ? `Projeye göre kullanım alanında ${Math.abs(getNum("ilaveBrut"))} m² azalma bulunmaktadır.`
-    : `Kullanım alanında değişiklik bulunmamaktadır.`
-      )
+          ? `Projeye göre ${getNum("ilaveBrut")} m² ilave alan bulunmaktadır.`
+          : getNum("ilaveBrut") < 0
+            ? `Projeye göre kullanım alanında ${Math.abs(getNum("ilaveBrut"))} m² azalma bulunmaktadır.`
+            : `Kullanım alanında değişiklik bulunmamaktadır.`
+      ) +
+      ` Taşınmaz mevcut durumda toplam brüt ${mevcutBrutAlan} m² kullanım alanına sahiptir.`
     )
   : `Projesinde ve yerinde yapılan tespit ve ölçümlere göre ${alanText} kullanım alanına sahiptir.`;
     const tesisat = get("tesisatVar") === "evet" ? "mevcuttur" : (get("tesisatAciklama") || "...");
 
-    return `Değerleme konusu taşınmaz binanın ${get("kat")} katında yer alan ${get("bbNo")} bağımsız bölüm ve ${get("kapiNo")} kapı numaralı ${get("nitelik")} nitelikli taşınmazdır. Bina girişine göre ${get("konum")} yer almaktadır. ${cepheler} cephelidir. ${projeFarkiText} Taşınmaz ${roomCounts} hacimlerinden oluşmaktadır. Taşınmazın antre ve hol zeminleri ${get("antreZemin")} duvarları ${get("antreDuvar")}. Salon zemini ${get("salonZemin")}, duvarları ${get("salonDuvar")} oda zeminleri ${get("odaZemin")} duvarları ${get("odaDuvar")}. Mutfak zemini ${get("mutfakZemin")} ve duvarları ${get("mutfakDuvar")} malzemedir. Mutfak dolabı ${get("mutfakDolap")} tezgâhı ${get("mutfakTezgah")} malzemedir. Taşınmazın ıslak hacimlerin zeminleri ve duvarları ${get("islakHacim")}. Banyoda ${get("banyoDonanim")} bulunmaktadır. Taşınmazın giriş kapısı ${get("daireKapi")} ve iç kapıları ${get("icKapi")}. Pencereleri ise ${get("pencere")} doğramadır. Elektrik, su ve haberleşme tesisatları ${tesisat} durumdaki gayrimenkulün ısıtılması ${get("isitma")} ile sağlanmaktadır.`;
+    return `Değerleme konusu taşınmaz binanın ${get("kat")} katında yer alan ${get("bbNo")} bağımsız bölüm ve ${get("kapiNo")} kapı numaralı ${get("nitelik")} nitelikli taşınmazdır. Bina girişine göre ${get("konum")} yer almaktadır. ${cepheler} cephelidir. ${projeFarkiText} ${data.farkVar === "evet" ? "" : `Taşınmaz ${roomCounts} hacimlerinden oluşmaktadır.`} Taşınmazın antre ve hol zeminleri ${get("antreZemin")} duvarları ${get("antreDuvar")}. Salon zemini ${get("salonZemin")}, duvarları ${get("salonDuvar")} oda zeminleri ${get("odaZemin")} duvarları ${get("odaDuvar")}. Mutfak zemini ${get("mutfakZemin")} ve duvarları ${get("mutfakDuvar")} malzemedir. Mutfak dolabı ${get("mutfakDolap")} tezgâhı ${get("mutfakTezgah")} malzemedir. Taşınmazın ıslak hacimlerin zeminleri ve duvarları ${get("islakHacim")}. Banyoda ${get("banyoDonanim")} bulunmaktadır. Taşınmazın giriş kapısı ${get("daireKapi")} ve iç kapıları ${get("icKapi")}. Pencereleri ise ${get("pencere")} doğramadır. Elektrik, su ve haberleşme tesisatları ${tesisat} durumdaki gayrimenkulün ısıtılması ${get("isitma")} ile sağlanmaktadır.`;
   }
 
   function metinOlustur() {
