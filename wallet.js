@@ -204,18 +204,19 @@ const credits = getCredits(w);
       }
 
       const mainSnap = await tx.get(mainRef);
-      if (!mainSnap.exists) {
-        const init = {
-          balance: 0,
-          freeReportsLeft: 5,
-          reportCredits: 0,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        };
-        tx.set(mainRef, init, { merge: true });
-      }
+     const init = {
+  balance: 0,
+  freeReportsLeft: 5,
+  reportCredits: 0,
+  createdAt: FieldValue.serverTimestamp(),
+  updatedAt: FieldValue.serverTimestamp(),
+};
 
-      const w = mainSnap.exists ? mainSnap.data() || {} : {};
+if (!mainSnap.exists) {
+  tx.set(mainRef, init, { merge: true });
+}
+
+const w = mainSnap.exists ? (mainSnap.data() || {}) : init;
      let freeLeft = getFreeLeft(w);
 let credits = getCredits(w);
       const balance = n(w.balance ?? w.denge);
