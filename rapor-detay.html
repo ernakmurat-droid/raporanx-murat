@@ -286,7 +286,7 @@
 
 try {
   const snap = await firebase.firestore()
-    .collection("users")
+    .collection("kullanicilar")
     .doc(user.uid)
     .collection("wallet")
     .doc("main")
