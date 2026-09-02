@@ -408,7 +408,9 @@ Devam etmek istiyor musunuz?`;
       const lockId = `${uid}_${rid}`;
       const s = await db.collection("locks").doc(lockId).get();
       if (s.exists && s.data()?.locked === true) return true;
-    }catch(e){}
+    }catch(e){
+  console.error("BULUT KİLİT OKUMA HATASI:", e);
+}
 
     // kullanicilar/{uid}.gayrimenkul_reports içi (final flag)
     try{
