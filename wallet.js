@@ -194,8 +194,13 @@ const credits = getCredits(w);
 
     const mainRef = walletMainRef(uid);
     const useRef = walletUseRef(uid, rid);
-   const anyUseSnap = await mainRef.collection("uses").limit(1).get();
-   const hasUsedAnyReport = !anyUseSnap.empty;
+   const freeUseSnap = await mainRef
+  .collection("uses")
+  .where("kind", "==", "free")
+  .limit(1)
+  .get();
+
+const hasUsedAnyFreeReport = !freeUseSnap.empty;
     const result = await db.runTransaction(async (tx) => {
       const useSnap = await tx.get(useRef);
       if (useSnap.exists) {
@@ -223,7 +228,7 @@ let freeLeft = getFreeLeft(w);
 
 // Daha önce sisteme girmiş ancak hiç rapor hakkı kullanmamış
 // eski kullanıcılara da 5 ücretsiz başlangıç hakkı tanımla.
-if (!hasUsedAnyReport && freeLeft <= 0) {
+if (!hasUsedAnyFreeReport && freeLeft <= 0) {
   freeLeft = 5;
 }
 let credits = getCredits(w);
