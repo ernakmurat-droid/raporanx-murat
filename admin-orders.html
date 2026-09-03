@@ -442,11 +442,12 @@ out = out.sort((a,b)=>{
     }).join("");
   }
 
-  async function ensureAdmin(user){
-    const ok = user && ADMIN_EMAILS.includes(String(user.email||"").toLowerCase());
-    if(!ok){
-      elMe.innerHTML = `⛔ Admin değilsin. (Giriş yapan: <b>${user?.email || "-"}</b>)`;
-      throw new Error("admin değil");
+   async function ensureAdmin(user){
+  const ok = user && ADMIN_EMAILS.includes(String(user.email||"").toLowerCase()); 
+     if(!ok){
+  window.location.replace("/index.html");
+  return;
+
     }
     elMe.innerHTML = `✅ Admin: <b>${esc(user.email)}</b> • UID: <span class="mono">${esc(user.uid)}</span> • <a href="/wallet.html">wallet</a>`;
   }
