@@ -405,7 +405,7 @@ Devam etmek istiyor musunuz?`;
   async function isLockedRemoteStrict(uid){
     // locks/{uid_rid}
     try{
-      const lockId = `${uid}_${rid}`;
+     const lockId = `${uid}_${rid}`; 
       const s = await db.collection("locks").doc(lockId).get();
       if (s.exists && s.data()?.locked === true) return true;
     }catch(e){
