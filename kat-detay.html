@@ -704,7 +704,7 @@
   let aktifSesButonu = null;
 
    function sesButonuEkle(alan){
-  return; // GEÇİCİ TEST
+  
     if(!alan || alan.parentElement.classList.contains("voice-input-wrap")) return;
 
     const gizliydi = alan.classList.contains("hidden");
@@ -998,7 +998,7 @@
         grupContent.appendChild(katDiv);
 
         if (savedKatVerileri[kat.id]) {
-          restoreKatVerisi(kat.id, savedKatVerileri[kat.id]);
+          // restoreKatVerisi(kat.id, savedKatVerileri[kat.id]);
         }
       }
     }
