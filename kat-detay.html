@@ -998,7 +998,7 @@
         grupContent.appendChild(katDiv);
 
         if (savedKatVerileri[kat.id]) {
-          // restoreKatVerisi(kat.id, savedKatVerileri[kat.id]);
+           restoreKatVerisi(kat.id, savedKatVerileri[kat.id]);
         }
       }
     }
@@ -1246,6 +1246,8 @@ if (document.getElementById(`header-${katId}`)) {
     const header = document.getElementById(`header-${katId}`);
     const statusEl = document.getElementById(`status-${katId}`);
     const miniEl = document.getElementById(`mini-${katId}`);
+
+    if (!header || !statusEl || !miniEl) return analysis;
 
     header.classList.remove('empty', 'partial', 'completed');
     header.classList.add(analysis.status);
