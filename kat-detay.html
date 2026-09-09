@@ -525,34 +525,41 @@
     box-shadow:0 8px 18px rgba(46,125,50,0.18);
   }
 
-  .footer{
-    position:fixed;
-    bottom:0;
-    left:50%;
-    transform:translateX(-50%);
-    width:100%;
-    max-width:940px;
-    padding:18px 20px 20px;
-    background:rgba(245,247,250,0.92);
-    backdrop-filter:blur(10px);
-    border-top:1px solid #dde3ea;
-    z-index:1001;
-  }
+ .footer{
+  position:fixed;
+  right:22px;
+  bottom:22px;
+  left:auto;
+  transform:none;
 
-  .save-btn{
-    background:linear-gradient(135deg, #2e7d32, #43a047);
-    color:white;
-    padding:18px;
-    width:100%;
-    border:none;
-    border-radius:16px;
-    font-size:17px;
-    font-weight:800;
-    cursor:pointer;
-    box-shadow:0 10px 24px rgba(46,125,50,0.22);
-    letter-spacing:0.2px;
-  }
+  width:auto;
+  max-width:none;
+  padding:0;
 
+  background:transparent;
+  backdrop-filter:none;
+  border:none;
+
+  z-index:1001;
+}
+
+.save-btn{
+  background:linear-gradient(135deg, #2e7d32, #43a047);
+  color:white;
+
+  width:auto;
+  padding:13px 20px;
+
+  border:none;
+  border-radius:14px;
+
+  font-size:14px;
+  font-weight:800;
+  cursor:pointer;
+
+  box-shadow:0 8px 20px rgba(46,125,50,0.28);
+  letter-spacing:0.2px;
+}
   @media (max-width: 640px){
     body{
       padding-bottom:165px;
@@ -671,8 +678,8 @@
   <div id="katListesi"></div>
 
   <div class="footer">
-    <button class="save-btn" onclick="tumunuKaydet()">TÜMÜNÜ SİSTEME İŞLE VE BİNA SAYFASINA DÖN</button>
-  </div>
+  <button class="save-btn" onclick="tumunuKaydet()">💾 TÜMÜNÜ KAYDET VE DÖN</button>
+</div>
 </div>
 
 <script>
