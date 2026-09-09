@@ -1045,6 +1045,7 @@
 
       <select class="type-select bb-type" onchange="toggleDigerInput(this); renderPreview()">
         <option value="">Bölüm Türü Seçiniz</option>
+        <option value="Mesken" ${tur === 'Mesken' ? 'selected' : ''}>Mesken</option>
         <option value="Daire" ${tur === 'Daire' ? 'selected' : ''}>Daire</option>
         <option value="Dükkan" ${tur === 'Dükkan' ? 'selected' : ''}>Dükkan</option>
         <option value="Ofis" ${tur === 'Ofis' ? 'selected' : ''}>Ofis</option>
@@ -1067,7 +1068,9 @@
 
     container.appendChild(div);
     sesButonuEkle(div.querySelector('.bb-other'));
-    renderPreview();
+    if (document.getElementById(`header-${katId}`)) {
+  renderPreview();
+}
   }
 
   function ortakAlanEkle(katId, data = null) {
@@ -1092,7 +1095,11 @@
 
     container.appendChild(div);
     sesButonuEkle(div.querySelector('.ortak-ad'));
-    renderPreview();
+    sesButonuEkle(div.querySelector('.ortak-ad'));
+
+if (document.getElementById(`header-${katId}`)) {
+  renderPreview();
+}
   }
 
     function toggleDigerInput(selectEl) {
@@ -1153,18 +1160,18 @@
   }
 
   function restoreKatVerisi(katId, rawData){
-    const data = normalizeSavedKatVerisi(rawData);
+  const data = normalizeSavedKatVerisi(rawData);
 
-    if (Array.isArray(data.bagimsizBolumler)) {
-      data.bagimsizBolumler.forEach(item => bagimsizBolumEkle(katId, item));
-    }
-
-    if (Array.isArray(data.ortakAlanlar)) {
-      // data.ortakAlanlar.forEach(item => ortakAlanEkle(katId, item));
-    }
-
-    updateKatStatus(katId);
+  if (Array.isArray(data.bagimsizBolumler)) {
+    data.bagimsizBolumler.forEach(item => bagimsizBolumEkle(katId, item));
   }
+
+  if (Array.isArray(data.ortakAlanlar)) {
+    data.ortakAlanlar.forEach(item => ortakAlanEkle(katId, item));
+  }
+
+  updateKatStatus(katId);
+}
 
   function getKatData(katId){
     const bbRows = document.querySelectorAll(`#bb-rows-${katId} .entry-row`);
