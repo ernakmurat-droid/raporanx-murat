@@ -747,7 +747,15 @@
   <div id="katListesi"></div>
 
   <div class="footer">
-  <button class="save-btn" onclick="tumunuKaydet()">💾 TÜMÜNÜ KAYDET VE DÖN</button>
+  <div class="bottom-actions">
+  <button class="save-btn" onclick="tumunuKaydet()">
+    💾 TÜMÜNÜ KAYDET
+  </button>
+
+  <button class="back-btn" onclick="binaSayfasinaDon()">
+    ← BİNA SAYFASINA DÖN
+  </button>
+</div>
 </div>
 </div>
 
@@ -1566,8 +1574,11 @@ if (document.getElementById(`header-${katId}`)) {
 
     persist(arr, i, r);
 
-    window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
+    alert("Kat bilgileri kaydedildi.");
   }
+  function binaSayfasinaDon() {
+  window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
+}
 </script>
 
 </body>
