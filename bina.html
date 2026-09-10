@@ -151,6 +151,26 @@
   font-weight:900;
   cursor:pointer;
 }
+/* MOBİLDE BİNA FORMU TAŞMASINI ENGELLE */
+@media (max-width:600px){
+
+  .container > div[style*="grid-template-columns: 1fr 1fr"],
+  .form-group > div[style*="grid-template-columns: 1fr 1fr"]{
+    grid-template-columns: 1fr !important;
+  }
+
+  .container,
+  .form-group{
+    min-width:0;
+  }
+
+  input,
+  select,
+  .voice-input-wrap{
+    max-width:100%;
+    min-width:0;
+  }
+}
 </style>
 
 </head>
