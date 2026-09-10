@@ -1,1574 +1,587 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kat Detayları - Ekspertiz Sistemi</title>
-
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-
-<style>
-  :root{
-    --primary:#4a148c;
-    --primary-2:#6a1b9a;
-    --accent:#7c4dff;
-    --accent-soft:#efe8ff;
-    --success:#2e7d32;
-    --success-soft:#edf7ee;
-    --warning:#ff9800;
-    --warning-soft:#fff7e8;
-    --danger:#c62828;
-    --danger-soft:#ffebee;
-    --bg:#f5f7fa;
-    --card:#ffffff;
-    --card-2:#fbfcfe;
-    --line:#e5e7eb;
-    --text:#263238;
-    --muted:#6b7280;
-    --soft-shadow:0 8px 24px rgba(31,41,55,0.06);
-    --soft-shadow-2:0 3px 10px rgba(31,41,55,0.06);
-    --radius:16px;
-  }
-
-  * { box-sizing:border-box; }
-
-  body{
-    font-family:'Segoe UI', Arial, sans-serif;
-    background:
-      radial-gradient(circle at top left, rgba(124,77,255,0.06), transparent 280px),
-      radial-gradient(circle at top right, rgba(74,20,140,0.05), transparent 260px),
-      var(--bg);
-    margin:0;
-    color:var(--text);
-    padding-bottom:155px;
-  }
-
-  .header{
-    background:linear-gradient(135deg, var(--primary), var(--accent));
-    color:white;
-    padding:20px 18px;
-    text-align:center;
-    position:sticky;
-    top:0;
-    z-index:1000;
-    box-shadow:0 8px 24px rgba(74,20,140,0.22);
-  }
-
-  .header h1{
-    margin:0;
-    font-size:28px;
-    letter-spacing:0.4px;
-  }
-
-  .back{
-    position:absolute;
-    left:15px;
-    top:20px;
-    background:rgba(255,255,255,0.18);
-    padding:9px 15px;
-    border-radius:999px;
-    color:white;
-    text-decoration:none;
-    font-weight:700;
-    font-size:14px;
-    cursor:pointer;
-    border:none;
-    backdrop-filter:blur(8px);
-  }
-
-  .container{
-    max-width:940px;
-    margin:22px auto;
-    padding:0 15px;
-  }
-
-  .top-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:12px;
-    margin-bottom:16px;
-    flex-wrap:wrap;
-  }
-
-  .page-kicker{
-    font-weight:800;
-    color:var(--primary);
-    letter-spacing:0.2px;
-  }
-
-  .reset-btn{
-    background:var(--danger-soft);
-    color:var(--danger);
-    border:1px solid #f3c5ca;
-    padding:10px 14px;
-    border-radius:12px;
-    cursor:pointer;
-    font-weight:700;
-    font-size:13px;
-  }
-
-  .summary-panel{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
-    gap:12px;
-    margin-bottom:18px;
-  }
-
-  .summary-box{
-    background:rgba(255,255,255,0.88);
-    backdrop-filter:blur(8px);
-    border:1px solid rgba(255,255,255,0.65);
-    border-radius:18px;
-    padding:16px;
-    box-shadow:var(--soft-shadow);
-    min-height:98px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-  }
-
-  .summary-label{
-    color:var(--muted);
-    font-size:13px;
-    margin-bottom:6px;
-    font-weight:600;
-  }
-
-  .summary-value{
-    font-size:28px;
-    font-weight:800;
-    color:var(--primary);
-    line-height:1;
-  }
-
-  .preview-card{
-    background:linear-gradient(180deg, #f2fbf3, #ebf8ee);
-    padding:20px;
-    border-radius:18px;
-    margin-bottom:20px;
-    border:1px solid #cae9d0;
-    box-shadow:var(--soft-shadow-2);
-  }
-
-  .preview-title{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    font-size:14px;
-    font-weight:800;
-    color:#1b5e20;
-    margin:0 0 10px;
-    letter-spacing:0.2px;
-  }
-
-  #taslakMetin{
-    font-size:15px;
-    line-height:1.75;
-    color:#1b5e20;
-    font-weight:500;
-    white-space:pre-wrap;
-  }
-
-  .onlu-grup{
-    border-radius:18px;
-    margin-bottom:16px;
-    overflow:hidden;
-    border:1px solid #e7eaf0;
-    background:#fff;
-    box-shadow:var(--soft-shadow);
-  }
-
-  .grup-header{
-    padding:14px 16px;
-    cursor:pointer;
-    font-weight:800;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    color:#fff;
-    font-size:15px;
-    letter-spacing:0.2px;
-  }
-
-  .grup-content{
-    padding:10px;
-    background:linear-gradient(180deg, #fff, #fbfcff);
-  }
-
-  .g-0 { background:linear-gradient(135deg,#5c6bc0,#7e57c2); }
-  .g-1 { background:linear-gradient(135deg,#26a69a,#42a5f5); }
-  .g-2 { background:linear-gradient(135deg,#ef5350,#ff7043); }
-  .g-3 { background:linear-gradient(135deg,#ab47bc,#7e57c2); }
-  .g-4 { background:linear-gradient(135deg,#ffa726,#fb8c00); }
-
-  .kat-grup{
-    background:var(--card);
-    margin-bottom:12px;
-    border-radius:16px;
-    border:1px solid #eceff3;
-    box-shadow:0 2px 8px rgba(15,23,42,0.05);
-    overflow:hidden;
-  }
-
-  .kat-header{
-    padding:15px 14px;
-    cursor:pointer;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:12px;
-    background:linear-gradient(180deg, #fff, #fdfdff);
-    transition:0.2s ease;
-  }
-
-  .kat-header.empty{
-    border-left:5px solid #cfd8dc;
-  }
-
-  .kat-header.partial{
-    background:linear-gradient(180deg, #fffaf0, #fff6e3);
-    border-left:5px solid var(--warning);
-  }
-
-  .kat-header.completed{
-    background:linear-gradient(180deg, #f6fbf6, #eef8ef);
-    border-left:5px solid var(--success);
-  }
-
-  .kat-left{
-    display:flex;
-    flex-direction:column;
-    gap:7px;
-    min-width:0;
-  }
-
-  .kat-adi{
-    font-weight:800;
-    color:#2f3640;
-    font-size:16px;
-  }
-
-  .kat-mini{
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-  }
-
-  .badge{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:700;
-    line-height:1;
-    white-space:nowrap;
-  }
-
-  .badge-muted{
-    background:#eef2f7;
-    color:#607080;
-  }
-
-  .badge-bb{
-    background:#f1eaff;
-    color:var(--primary);
-  }
-
-  .badge-ortak{
-    background:#e9f5ff;
-    color:#1565c0;
-  }
-
-  .badge-status{
-    background:#f3f4f6;
-    color:#4b5563;
-  }
-
-  .badge-status.ready{
-    background:var(--success-soft);
-    color:var(--success);
-  }
-
-  .badge-status.partial{
-    background:var(--warning-soft);
-    color:#a16207;
-  }
-
-  .badge-status.empty{
-    background:#eef2f7;
-    color:#64748b;
-  }
-
-  .kat-status-wrap{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-shrink:0;
-  }
-
-  .kat-arrow{
-    width:34px;
-    height:34px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#f3f4f6;
-    color:#475569;
-    font-size:14px;
-    font-weight:900;
-  }
-
-  .kat-content{
-    padding:16px;
-    background:linear-gradient(180deg, #fbfcfe, #f8fafc);
-    border-top:1px solid #edf0f4;
-  }
-
-  .hidden{
-    display:none !important;
-  }
-
-  .section-card{
-    background:linear-gradient(180deg, #ffffff, #fbfcff);
-    border:1px solid var(--line);
-    border-radius:18px;
-    padding:15px;
-    margin-bottom:14px;
-    box-shadow:0 2px 10px rgba(15,23,42,0.03);
-  }
-
-  .section-card.bb{
-    border-color:#eadfff;
-    background:linear-gradient(180deg, #ffffff, #faf7ff);
-  }
-
-  .section-card.ortak{
-    border-color:#dbeafe;
-    background:linear-gradient(180deg, #ffffff, #f8fbff);
-  }
-
-  .section-head{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:12px;
-    margin-bottom:10px;
-    flex-wrap:wrap;
-  }
-
-  .section-title{
-    font-size:15px;
-    font-weight:800;
-    color:var(--primary);
-    margin:0;
-  }
-
-  .section-card.ortak .section-title{
-    color:#1565c0;
-  }
-
-  .section-note{
-    font-size:12px;
-    color:#7b8794;
-    margin:0 0 10px;
-    line-height:1.5;
-  }
-
-  .entry-row{
-    display:flex;
-    gap:10px;
-    align-items:center;
-    background:#fff;
-    padding:10px;
-    border:1px solid #edf0f4;
-    margin-bottom:9px;
-    border-radius:14px;
-    flex-wrap:wrap;
-    box-shadow:0 1px 3px rgba(15,23,42,0.03);
-  }
-
-  .entry-row input[type="number"],
-  .entry-row input[type="text"],
-  .entry-row select{
-    padding:11px 12px;
-    border:1px solid #d7dce3;
-    border-radius:12px;
-    font-size:14px;
-    min-height:44px;
-    outline:none;
-    background:#fff;
-    color:var(--text);
-    transition:0.18s ease;
-  }
-
-  .entry-row input[type="number"]:focus,
-  .entry-row input[type="text"]:focus,
-  .entry-row select:focus{
-    border-color:#b39ddb;
-    box-shadow:0 0 0 4px rgba(124,77,255,0.10);
-  }
-
-  .qty-input{
-    width:94px;
-    font-weight:800;
-    text-align:center;
-    font-size:15px;
-  }
-
-  .type-select{
-    min-width:180px;
-    flex:1;
-    font-weight:600;
-  }
-
-  .other-input{
-    flex:1.35;
-    min-width:190px;
-  }
-
-  .common-input{
-    flex:1;
-    min-width:240px;
-  }
-
-  .btn-remove{
-    background:#fff1f2;
-    color:var(--danger);
-    border:1px solid #fecdd3;
-    padding:10px 13px;
-    border-radius:12px;
-    cursor:pointer;
-    font-weight:800;
-    min-height:44px;
-  }
-
-  .ghost-add{
-    background:#fff;
-    border:1.5px dashed #c6b8f8;
-    color:var(--primary);
-    padding:12px;
-    border-radius:14px;
-    cursor:pointer;
-    width:100%;
-    margin-top:4px;
-    font-weight:800;
-    font-size:14px;
-    transition:0.18s ease;
-  }
-
-  .ghost-add:hover{
-    background:#faf7ff;
-  }
-
-  .section-card.ortak .ghost-add{
-    border-color:#bfdbfe;
-    color:#1565c0;
-  }
-
-  .section-card.ortak .ghost-add:hover{
-    background:#f4f9ff;
-  }
-
-  .logic-box{
-    background:linear-gradient(180deg, #fff8ef, #fff3df);
-    padding:13px;
-    border-radius:16px;
-    border:1px dashed #f1b45a;
-    margin-top:12px;
-    font-size:13px;
-    color:#7a4b00;
-  }
-
-  .logic-box label{
-    font-weight:700;
-  }
-
-  .logic-box select{
-    padding:11px 12px;
-    border-radius:12px;
-    border:1px solid #d7dce3;
-    font-size:14px;
-    background:#fff;
-  }
-
-  .apply-btn{
-    background:linear-gradient(135deg, var(--primary), var(--accent));
-    color:white;
-    border:none;
-    padding:11px 12px;
-    border-radius:12px;
-    cursor:pointer;
-    width:100%;
-    margin-top:8px;
-    font-weight:800;
-    box-shadow:0 8px 18px rgba(74,20,140,0.18);
-  }
-
-  .approve-btn{
-    width:100%;
-    background:linear-gradient(135deg, #2e7d32, #43a047);
-    color:white;
-    border:none;
-    padding:13px;
-    border-radius:14px;
-    cursor:pointer;
-    margin-top:12px;
-    font-weight:800;
-    font-size:14px;
-    box-shadow:0 8px 18px rgba(46,125,50,0.18);
-  }
-
- .footer{
-  position:fixed;
-  right:22px;
-  bottom:22px;
-  left:auto;
-  transform:none;
-
-  width:auto;
-  max-width:none;
-  padding:0;
-
-  background:transparent;
-  backdrop-filter:none;
-  border:none;
-
-  z-index:1001;
-}
-
-.save-btn{
-  background:linear-gradient(135deg, #2e7d32, #43a047);
-  color:white;
-
-  width:auto;
-  padding:13px 20px;
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <!-- ✅ Tek kaynak (absolute) -->
+  <script src="/firebase-config.js"></script>
+  <script src="/wallet.js"></script>
+
+  <title>Rapor Ana Menü - RaporanX</title>
+  <style>
+/* NASIL KULLANILIR */
+.help-btn{
+  display:block;
+  width:calc(100% - 40px);
+  max-width:1100px;
+  margin:10px auto 5px;
+  padding:14px 18px;
   border:none;
   border-radius:14px;
-
-  font-size:14px;
-  font-weight:800;
+  background:rgba(255,255,255,.18);
+  color:white;
+  font-size:17px;
+  font-weight:900;
   cursor:pointer;
-
-  box-shadow:0 8px 20px rgba(46,125,50,0.28);
-  letter-spacing:0.2px;
+  border:1px solid rgba(255,255,255,.25);
 }
-  @media (max-width: 640px){
-    body{
-      padding-bottom:165px;
-    }
 
-    .back{
-      position:static;
-      display:inline-block;
-      margin-bottom:10px;
-    }
+.help-btn:hover{
+  background:rgba(255,255,255,.28);
+}
 
-    .header{
-      text-align:left;
-      padding:16px;
-    }
+.help-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:99999999;
+  background:rgba(0,0,0,.65);
+  overflow:auto;
+  padding:15px;
+}
 
-    .header h1{
-      margin:6px 0 0;
-      font-size:24px;
-      text-align:center;
-    }
+.help-box{
+  max-width:700px;
+  margin:30px auto;
+  background:#ffffff;
+  color:#222;
+  border-radius:18px;
+  padding:22px;
+  box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
 
-    .kat-header{
-      align-items:flex-start;
-    }
+.help-box h2{
+  margin-top:0;
+  color:#4a148c;
+}
 
-    .kat-status-wrap{
+.help-box ol{
+  padding-left:25px;
+  line-height:1.7;
+}
+
+.help-warning{
+  margin-top:20px;
+  padding:15px;
+  background:#fff3e0;
+  border:2px solid #ff9800;
+  border-radius:12px;
+  color:#b71c1c;
+  font-weight:900;
+  text-align:center;
+}
+
+.help-close{
+  width:100%;
+  margin-top:18px;
+  padding:13px;
+  border:none;
+  border-radius:12px;
+  background:#4a148c;
+  color:white;
+  font-size:17px;
+  font-weight:bold;
+  cursor:pointer;
+}
+  
+    :root{ --hdrH: 78px; }
+
+    body {
+      font-family: Arial;
+      background: linear-gradient(135deg,#4a148c,#7c4dff);
+      margin:0;
+      color:white;
+      min-height:100vh;
+      display:flex;
       flex-direction:column;
-      align-items:flex-end;
-      gap:6px;
+      overflow-x:hidden;
     }
 
-    .qty-input,
-    .type-select,
-    .other-input,
-    .common-input,
-    .btn-remove{
-      width:100%;
-      min-width:unset;
+    .header {
+      padding: calc(16px + env(safe-area-inset-top, 0px)) 14px 14px;
+      text-align:center;
+      font-size:26px;
+      font-weight:bold;
+      position: sticky;
+      top: 0;
+      z-index: 999999;
+      background: linear-gradient(135deg,#4a148c,#7c4dff);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
     }
 
-    .summary-value{
+    .back {
+      position: relative;
+      display: inline-block;
+      margin: 10px auto 0;
+      background:rgba(255,255,255,0.22);
+      padding:10px 14px;
+      border-radius:999px;
+      text-decoration:none;
+      color:white;
+      font-weight:900;
+      z-index: 1000000;
+      max-width: 44vw;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #baslik{ padding: 0 64px; line-height: 1.2; }
+
+    #kilitMesaji{
+      display:none;
+      max-width:1100px;
+      margin:10px auto 0;
+      width: calc(100% - 40px);
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 14px;
+      padding:10px 14px;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+
+    .topbar{
+      max-width:1100px;
+      width: calc(100% - 40px);
+      margin: 0 auto 10px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      padding: 0 20px;
+    }
+
+    .wallet-card{
+      flex: 1 1 420px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      cursor: pointer;
+      user-select:none;
+    }
+    .wallet-title{ font-weight:900; letter-spacing:.4px; display:flex; align-items:center; gap:10px; }
+    .wallet-sub{ font-size:12px; opacity:.9; margin-top:6px; line-height:1.35; }
+    .wallet-amount{
+      font-size:20px;
+      font-weight:900;
+      margin-left:auto;
+      padding:6px 10px;
+      border-radius:12px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .wallet-hidden{ filter: blur(6px); transition: filter .2s ease; }
+    .wallet-card.reveal .wallet-hidden{ filter: blur(0); }
+
+    .menu {
+      flex:1;
+      display:flex;
+      flex-wrap:wrap;
+      gap:20px;
+      padding:30px;
+      justify-content:center;
+      align-content:flex-start;
+    }
+
+    .btn {
+      flex:1 1 350px;
+      background:#6a1b9a;
+      padding:35px;
       font-size:24px;
+      font-weight:bold;
+      border:none;
+      border-radius:20px;
+      color:white;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,0.4);
+      transition: 0.3s;
+      position:relative;
     }
-  }
-    .voice-input-wrap{
-    display:flex;
-    align-items:stretch;
-    gap:8px;
-    flex:1;
-    min-width:240px;
-  }
+    .btn:hover { background:#8e24aa; transform:scale(1.05); }
+    .btn-main-feature { background: #4527a0; border: 2px solid #b39ddb; }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+    .btn:hover:disabled{ background:#6a1b9a; transform:none; }
 
-  .voice-input-wrap input{
-    flex:1;
-    width:auto;
-    min-width:0;
-  }
+    .footer-btn {
+      background:#ff5722;
+      padding:25px;
+      font-size:28px;
+      width:90%;
+      max-width:600px;
+      margin:20px auto;
+      border-radius:20px;
+      border:none;
+      color:white;
+      font-weight:bold;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+    .footer-btn.locked{ background:#2196F3; }
 
-  .voice-btn{
-    width:46px;
-    min-width:46px;
-    border:none;
-    border-radius:10px;
-    background:#1a237e;
-    color:#fff;
-    font-size:19px;
-    cursor:pointer;
-  }
-
-  .voice-btn.listening{
-    background:#d32f2f;
-    animation:voicePulse 1s infinite;
-  }
-
-  @keyframes voicePulse{
-    0%, 100%{ opacity:1; }
-    50%{ opacity:.55; }
-  }
-  /* ÜST KATLARA UYGULA - KOMPAKT SATIR */
-.logic-row{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  flex-wrap:nowrap;
-}
-
-.logic-main-check{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  white-space:nowrap;
-  font-weight:700;
-}
-
-.logic-inline-panel{
-  flex:1;
-  align-items:center;
-  gap:12px;
-}
-
-.logic-inline-panel:not(.hidden){
-  display:flex;
-}
-
-.logic-inline-panel select{
-  flex:1;
-  min-width:180px;
-  height:42px;
-  margin:0;
-}
-
-.logic-last-check{
-  display:flex;
-  align-items:center;
-  gap:5px;
-  white-space:nowrap;
-  font-weight:700;
-}
-
-.logic-inline-panel .apply-btn{
-  width:auto;
-  min-width:190px;
-  margin:0;
-  height:42px;
-  padding:0 18px;
-}
-
-/* Telefonda taşmasın */
-@media (max-width:700px){
-  .logic-row{
-    flex-wrap:wrap;
-  }
-
-  .logic-inline-panel:not(.hidden){
-    width:100%;
-    flex-wrap:wrap;
-  }
-
-  .logic-inline-panel select{
-    width:100%;
-    flex-basis:100%;
-  }
-
-  .logic-inline-panel .apply-btn{
-    flex:1;
-  }
-}
-</style>
+    @media (max-width: 600px){
+      .header{
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        font-size:20px;
+        padding: calc(14px + env(safe-area-inset-top, 0px)) 12px 12px;
+      }
+      body{ padding-top: calc(var(--hdrH) + env(safe-area-inset-top, 0px)); }
+      .menu{ padding: 20px; }
+      .btn{ flex:1 1 100%; padding: 26px; font-size: 20px; }
+      .footer-btn{ font-size: 24px; padding: 20px; }
+      .back{ padding: 10px 12px; }
+      #baslik{ padding: 0 56px; }
+    }
+    
+  </style>
 </head>
 
 <body oncontextmenu="return false;">
 
-<div class="header">
-  <button onclick="binaSayfasinaDon()" class="back">← Bina Sayfasına Dön</button>
-  <h1>BİNA KAT DETAYLARI</h1>
+<script>
+(function(){
+  const p = new URLSearchParams(location.search);
+  const rid0 = (p.get("rid") || "").toString().trim();
+  window.__RID__ = rid0;
+  window.__LOCKED__ = false;
+
+  window.go = function(page){
+    const rid = (window.__RID__ || "").toString().trim();
+    if (!rid) { location.href = "/index.html"; return; }
+    location.href = page + "?rid=" + encodeURIComponent(rid);
+  };
+
+ window.raporOlusturUyari = async function(){
+  const rid = (window.__RID__ || "").toString().trim();
+  if (!rid) { location.href="/index.html"; return; }
+
+ if (window.__LOCKED__){
+  location.href =
+    "/rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&view=1";
+  return;
+}
+
+  const user = firebase.auth().currentUser;
+  if(!user){
+    alert("Giriş bulunamadı.");
+    return;
+  }
+
+ let totalHak = 0;
+
+try {
+  const snap = await firebase.firestore()
+    .collection("kullanicilar")
+    .doc(user.uid)
+    .collection("wallet")
+    .doc("main")
+    .get();
+
+  const w = snap.exists ? (snap.data() || {}) : {};
+
+  const credits = Number(w.reportCredits ?? w.raporKrediler ?? w.RaporKredileri ?? 0);
+  const freeLeft = Number(w.freeReportsLeft ?? w["ücretsizRaporlarSol"] ?? w["ÜcretsizRaporlarSol"] ?? 0);
+
+  totalHak = credits + freeLeft;
+
+  console.log("RAPOR DETAY HAK:", { w, credits, freeLeft, totalHak });
+} catch (e) {
+  console.warn("Hak kontrol hatası:", e);
+}
+  if(totalHak <= 0){
+    alert("Aktif rapor hakkınız bulunmamaktadır. Rapor verileriniz silinmedi. Lütfen cüzdandan hak yükleyiniz.");
+
+    const modal = document.getElementById("walletModal");
+    if(modal){
+      modal.style.display = "block";
+    }else{
+      location.href = "/wallet.html";
+    }
+    return;
+  }
+
+  const msg =
+`UYARI! (ÖNEMLİ)
+Tam rapor oluşturulduğunda ücretli veya ücretsiz hakkınızdan 1 adet düşecektir.
+Bütün modüllerde veri girişlerinin tamam olduğunu kontrol ediniz.
+Devam etmek istiyor musunuz?`;
+
+  if (!confirm(msg)) return;
+
+  location.href =
+    "/rapor-olustur.html?rid=" +
+    encodeURIComponent(rid) +
+    "&confirm=1";
+};
+})();
+</script>
+
+  <div class="header">
+    <div id="baslik">Gayrimenkul Raporu</div>
+  </div>
+
+  <div id="kilitMesaji">🔒 RAPOR KİLİTLİ / FINAL — Modüllere giriş kapalı. Sadece raporu görüntüleyebilirsin.</div>
+
+  <div class="topbar">
+    <div id="walletCard" class="wallet-card">
+      <div class="wallet-title">
+        💳 Cüzdan
+        <span id="walletAmount" class="wallet-amount wallet-hidden">yükleniyor...</span>
+      </div>
+      <div id="walletSub" class="wallet-sub">Bakiye gizlidir. Görmek için karta tıkla.</div>
+    </div>
+  </div>
+
+  <a href="/index.html" class="back">← Ana Sayfa</a>
+<button class="help-btn" onclick="openHelp()">
+  ❓ RAPORANX NASIL KULLANILIR?
+</button>
+  <div class="menu">
+    <button class="btn btn-main-feature modül-btn" onclick="go('/konum_cevre.html')">KONUM VE ÇEVRE ÖZELLİKLERİ</button>
+    <button class="btn modül-btn" onclick="go('/tapu_kayit.html')">TAPU KAYIT BİLGİLERİ</button>
+    <button class="btn modül-btn" onclick="go('/imar.html')">İMAR DURUMU</button>
+    <button class="btn modül-btn" onclick="go('/belgeler.html')">İNCELENEN BELGELER</button>
+    <button class="btn modül-btn" onclick="go('/bina.html')">BİNA BİLGİLERİ</button>
+    <button class="btn modül-btn" onclick="go('/bagimsiz-bolum-detay.html')">BAĞIMSIZ BÖLÜM DETAY</button>
+    <button class="btn modül-btn" onclick="go('/emsal.html')">EMSAL KARŞILAŞTIRMA</button>
+  </div>
+
+  <button id="btnRaporOlustur" class="footer-btn" onclick="raporOlusturUyari()">TAM RAPOR OLUŞTUR</button>
+  
+<script>
+  const auth = window.auth || firebase.auth();
+  const db   = window.db   || firebase.firestore();
+
+  const params = new URLSearchParams(location.search);
+  const rid = (params.get("rid") || "").toString().trim();
+  window.__RID__ = rid;
+
+  function lockKey(){ return "report_locked_" + String(rid || "").trim(); }
+  function isLockedLS(){
+    const v = String(localStorage.getItem(lockKey()) || "").trim();
+    return (v === "1" || v === "true" || v === "locked");
+  }
+
+  function readReports(){
+    try{ return JSON.parse(localStorage.getItem("gayrimenkul_reports") || "[]"); }
+    catch(e){ return []; }
+  }
+  function findByRid(arr, rid){
+    return (arr||[]).find(r => r && String(r.rid) === String(rid)) || null;
+  }
+
+ function applyLockedUI(){
+  window.__LOCKED__ = true;
+
+  document.getElementById("kilitMesaji").style.display = "block";
+
+  document.querySelectorAll(".modül-btn").forEach(b => b.disabled = true);
+
+  const btn = document.getElementById("btnRaporOlustur");
+  btn.textContent = "TAMAMLANMIŞ RAPORU GÖRÜNTÜLE";
+  btn.classList.add("locked");
+
+  btn.onclick = () => {
+    location.href =
+      "/rapor-olustur.html?rid=" + encodeURIComponent(rid) + "&view=1";
+  };
+ 
+}
+  async function isLockedRemoteStrict(uid){
+    // locks/{uid_rid}
+    try{
+     const lockId = `${uid}_${rid}`; 
+      const s = await db.collection("locks").doc(lockId).get();
+      if (s.exists && s.data()?.locked === true) return true;
+    }catch(e){
+  console.error("BULUT KİLİT OKUMA HATASI:", e);
+}
+
+    // kullanicilar/{uid}.gayrimenkul_reports içi (final flag)
+    try{
+      const snap = await db.collection("kullanicilar").doc(uid).get();
+      if(snap.exists){
+        const d = snap.data() || {};
+        const raw = d.gayrimenkul_reports;
+        let arr = [];
+        if(Array.isArray(raw)) arr = raw;
+        else if(raw && typeof raw === "object") arr = Object.values(raw);
+        const rep = arr.find(r => r && String(r.rid) === String(rid));
+        if(rep && (rep.final===true || rep.locked===true || rep.isLocked===true)) return true;
+      }
+    }catch(e){}
+
+    return false;
+  }
+
+  // ✅ canlı sync: kullanicilar/{uid} dinle → başlık + kilit
+   let _unsubReport = null;
+function startLiveSyncRoot(user){
+  try{ if(_unsubReport) _unsubReport(); }catch(e){}
+  if(!user || !rid) return;
+
+  const ref = db.collection("users").doc(user.uid).collection("reports").doc(String(rid));
+  _unsubReport = ref.onSnapshot((snap)=>{
+    if(!snap.exists) return;
+    const cloudReport = { rid: snap.id, ...(snap.data()||{}) };
+
+    // başlık
+    const baslikEl = document.getElementById("baslik");
+    if (baslikEl) baslikEl.textContent = cloudReport.propertyName || "Rapor Detayı";
+
+    // kilit
+    if (cloudReport.final===true || cloudReport.locked===true || cloudReport.isLocked===true) {
+      applyLockedUI();
+    }
+  });
+}
+
+  // ✅ wallet modal
+  window.openWalletModal = function(){
+    const m = document.getElementById("walletModal");
+    if(m) m.style.display = "block";
+  };
+  window.closeWalletModal = function(){
+    const m = document.getElementById("walletModal");
+    if(m) m.style.display = "none";
+  };
+  document.getElementById("walletCard").addEventListener("click", openWalletModal);
+
+  auth.onAuthStateChanged(async (user)=>{
+   if (!user) { location.href="/index.html"; return; }
+
+if (!rid) {
+  alert("Rapor ID bulunamadı.");
+  return;
+} 
+
+    startLiveSyncRoot(user);
+
+      const reports = readReports();
+const report = findByRid(reports, rid);
+
+// Eskisi:
+if (report) {
+  document.getElementById("baslik").textContent =
+    report.propertyName || "Rapor Detayı";
+} else {
+  document.getElementById("baslik").textContent = "Rapor Detayı";
+}
+  
+    // ✅ cüzdan üst kartı
+    try{ await Wallet.load(user.uid); }catch(e){ console.warn("Wallet.load fail:", e); }
+
+    // ✅ TEK lockedLocal (DÜZELTİLDİ!)
+    const lockedLocal =
+  isLockedLS() ||
+  (report && (report.final === true || report.locked === true || report.isLocked === true));
+    const lockedRemote = lockedLocal ? false : await isLockedRemoteStrict(user.uid);
+
+    if (lockedLocal || lockedRemote) applyLockedUI();
+  });
+</script>
+
+<!-- ✅ WALLET MODAL (TEK KAYNAK: /wallet.html iframe) -->
+<div id="walletModal" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999999;
+  background:rgba(0,0,0,.55);
+  overflow:auto;
+  padding: 12px;
+">
+  <div style="
+    max-width:900px;
+    width: calc(100% - 24px);
+    margin: 12px auto;
+    background:#111827;
+    color:#e5e7eb;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.12);
+    padding:12px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+  ">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div style="font-weight:900; font-size:18px;">💳 Cüzdan</div>
+      <button onclick="closeWalletModal()"
+              style="border:none; background:rgba(255,255,255,.12); color:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:900;">
+        Kapat ✖
+      </button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <iframe
+        src="/wallet.html"
+        style="width:100%; height:82vh; border:0; border-radius:14px; background:#0f172a;"
+        loading="lazy"
+      ></iframe>
+    </div>
+  </div>
 </div>
+<!-- NASIL KULLANILIR PENCERESİ -->
+<div id="helpModal" class="help-modal">
+  <div class="help-box">
 
-<div class="container">
-  <div class="top-bar">
-    <span class="page-kicker">Kat Bazlı Veri Girişi</span>
-    <button class="reset-btn" onclick="verileriSifirla()">❌ Verileri Sıfırla</button>
-  </div>
+    <h2>❓ RaporanX Nasıl Kullanılır?</h2>
 
-  <div class="summary-panel">
-    <div class="summary-box">
-      <div class="summary-label">Toplam Kat</div>
-      <div class="summary-value" id="sumToplamKat">0</div>
+    <p>
+      Raporunuzu oluşturmak için aşağıdaki bölümlere girerek
+      taşınmaza ait bilgileri doldurunuz.
+    </p>
+
+    <ol>
+      <li><b>Konum ve Çevre Özellikleri</b></li>
+      <li><b>Tapu Kayıt Bilgileri</b></li>
+      <li><b>İmar Durumu</b></li>
+      <li><b>İncelenen Belgeler</b></li>
+      <li><b>Bina Bilgileri</b></li>
+      <li><b>Bağımsız Bölüm Detay</b></li>
+      <li><b>Emsal Karşılaştırma</b></li>
+    </ol>
+
+    <p>
+      Her bölümü tamamladıktan sonra ana rapor ekranına dönerek
+      diğer bölüme geçebilirsiniz.
+    </p>
+
+    <div class="help-warning">
+      ⚠️ ÖNEMLİ<br><br>
+      Tüm bölümlerdeki veri girişlerini tamamladıktan sonra
+      TAM RAPOR OLUŞTUR butonuna basınız.
     </div>
-    <div class="summary-box">
-      <div class="summary-label">Veri Girilen Kat</div>
-      <div class="summary-value" id="sumDoluKat">0</div>
-    </div>
-    <div class="summary-box">
-      <div class="summary-label">Toplam B.B.</div>
-      <div class="summary-value" id="sumToplamBB">0</div>
-    </div>
+
+    <button class="help-close" onclick="closeHelp()">
+      ANLADIM, RAPORA DEVAM ET
+    </button>
+
   </div>
-
-  <div class="preview-card">
-    <div class="preview-title">🧾 MİMARİ PROJE VE MEVCUT DURUM METNİ</div>
-    <div id="taslakMetin" oncopy="return false">Veri girişi bekleniyor...</div>
-  </div>
-
-  <div id="katListesi"></div>
-
-  <div class="footer">
-  <button class="save-btn" onclick="tumunuKaydet()">💾 TÜMÜNÜ KAYDET VE DÖN</button>
-</div>
 </div>
 
 <script>
-  const auth = firebase.auth();
-  const db   = firebase.firestore();
-
-  const params   = new URLSearchParams(window.location.search);
-  let rid        = params.get('rid');
-  const legacyId = params.get('id');
-
-  async function cloudSaveReport(reportObj){
-    try{
-      const user = auth.currentUser;
-      if(!user || !reportObj || !reportObj.rid) return;
-
-      await db.collection("users").doc(user.uid)
-        .collection("reports").doc(String(reportObj.rid))
-        .set(
-          { ...reportObj, rid:String(reportObj.rid), updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
-          { merge:true }
-        );
-    }catch(e){
-      console.warn("cloudSaveReport:", e);
-    }
-  }
-
-  const STORAGE_KEY = "gayrimenkul_reports";
-  let aktifSesTanima = null;
-  let aktifSesButonu = null;
-
-   function sesButonuEkle(alan){
-  
-    if(!alan || alan.parentElement.classList.contains("voice-input-wrap")) return;
-
-    const gizliydi = alan.classList.contains("hidden");
-
-    const kapsayici = document.createElement("div");
-    kapsayici.className = "voice-input-wrap";
-
-    if(gizliydi){
-      kapsayici.classList.add("hidden");
-      alan.classList.remove("hidden");
-    }
-
-    alan.parentNode.insertBefore(kapsayici, alan);
-    kapsayici.appendChild(alan);
-
-    const buton = document.createElement("button");
-    buton.type = "button";
-    buton.className = "voice-btn";
-    buton.innerHTML = "🎤";
-    buton.title = "Sesle giriş yap";
-    buton.setAttribute("aria-label", "Sesle giriş yap");
-    buton.onclick = () => sesleGirisiBaslat(alan, buton);
-
-    kapsayici.appendChild(buton);
-  }
-
-  function sesleGirisiBaslat(alan, buton){
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if(!SpeechRecognition){
-      alert("Bu tarayıcı sesli girişi desteklemiyor. Google Chrome veya Microsoft Edge kullanınız.");
-      return;
-    }
-
-    if(aktifSesTanima){
-      aktifSesTanima.stop();
-
-      if(aktifSesButonu === buton){
-        return;
-      }
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "tr-TR";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    aktifSesTanima = recognition;
-    aktifSesButonu = buton;
-
-    recognition.onstart = () => {
-      buton.classList.add("listening");
-      buton.innerHTML = "⏹";
-    };
-
-    recognition.onresult = event => {
-      let yeniMetin = event.results[0][0].transcript.trim();
-
-      yeniMetin = yeniMetin
-        .replace(/\b(tire|çizgi)\b/gi, "-")
-        .replace(/\s*-\s*/g, "-");
-
-      alan.value = yeniMetin;
-
-      alan.dispatchEvent(new Event("input", { bubbles:true }));
-      alan.dispatchEvent(new Event("change", { bubbles:true }));
-    };
-
-    recognition.onerror = event => {
-      if(event.error !== "no-speech" && event.error !== "aborted"){
-        alert("Sesli giriş sırasında mikrofon hatası oluştu: " + event.error);
-      }
-    };
-
-    recognition.onend = () => {
-      buton.classList.remove("listening");
-      buton.innerHTML = "🎤";
-
-      if(aktifSesTanima === recognition){
-        aktifSesTanima = null;
-        aktifSesButonu = null;
-      }
-    };
-
-    recognition.start();
-  }
-  function genRid(){
-    try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
-    return "rid_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10);
-  }
-
-  function toArrayIfObject(data){
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === "object") return Object.values(data);
-    return [];
-  }
-
-  function resolveRidAndMigrateIfNeeded(arr){
-    if (rid) {
-      const idx = arr.findIndex(x => x && x.rid === rid);
-      if (idx >= 0) return { arr, i: idx, r: arr[idx] };
-    }
-
-    if (legacyId) {
-      const idx2 = arr.findIndex(x => x && (String(x.id) === String(legacyId) || String(x.legacyId) === String(legacyId)));
-      if (idx2 >= 0) {
-        if (!arr[idx2].rid) arr[idx2].rid = genRid();
-        rid = arr[idx2].rid;
-        history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
-        return { arr, i: idx2, r: arr[idx2] };
-      }
-    }
-
-    return { arr, i: -1, r: null };
-  }
-
-  function getLatestData(){
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    const arr = toArrayIfObject(raw);
-    return resolveRidAndMigrateIfNeeded(arr);
-  }
-
-  function persist(arr, i, r){
-    if (!r) return;
-
-    if (i >= 0) {
-      arr[i] = r;
-    } else {
-      if (!r.rid) r.rid = rid || genRid();
-      rid = r.rid;
-      arr.push(r);
-      history.replaceState(null, "", `${location.pathname}?rid=${encodeURIComponent(rid)}`);
-    }
-
-    r.updatedAt   = new Date().toISOString();
-    r.updatedAtMs = Date.now();
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-    cloudSaveReport(r);
-  }
-
-  function getBinaObj(r){
-    if(r && r.modules && r.modules.bina) return r.modules.bina;
-    if(r && r.bina) return r.bina;
-    return null;
-  }
-
-  document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) {
-      e.preventDefault();
-    }
-  });
-
-  document.addEventListener('contextmenu', (e) => {
-    const isInput = e.target.closest('input, textarea, select');
-    if (isInput) return;
-    e.preventDefault();
-  });
-
-  let globalKatlar = [];
-  let savedKatVerileri = {};
-
-  auth.onAuthStateChanged((user) => {
-    if (!user) {
-      window.location.href = 'index.html';
-      return;
-    }
-
-    const { r, arr, i } = getLatestData();
-    if (!r) {
-      alert("Rapor bulunamadı! (rid/id eşleşmedi)");
-      return;
-    }
-
-    if(!r.modules) r.modules = {};
-    if(!r.modules.bina) r.modules.bina = (r.bina || {});
-    if(!r.modules.katDetay) r.modules.katDetay = (r.modules.katDetay || {});
-
-    persist(arr, i, r);
-
-    const kd = r.modules.katDetay || {};
-    savedKatVerileri = (kd.tumSatirVerileri || r.katSatirVerileri || kd.katSatirVerileri || {}) || {};
-
-    init();
-  });
-
-  function binaSayfasinaDon(){
-    window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
-  }
-
-  function init() {
-    const { r } = getLatestData();
-    const listContainer = document.getElementById('katListesi');
-    listContainer.innerHTML = '';
-    globalKatlar = [];
-
-    const bObj = getBinaObj(r) || {};
-    const bodrumCount = parseInt(bObj.bodrumKatSayisi || r?.bina?.bodrumKatSayisi || "0", 10) || 0;
-    const normalCount = parseInt(bObj.normalKatSayisi || r?.bina?.normalKatSayisi || "0", 10) || 0;
-
-    for (let i = bodrumCount; i >= 1; i--) globalKatlar.push({ id: `b${i}`, ad: `${i}. Bodrum Kat` });
-    globalKatlar.push({ id: 'zemin', ad: 'Zemin Kat' });
-    for (let i = 1; i <= normalCount; i++) globalKatlar.push({ id: `n${i}`, ad: `${i}. Normal Kat` });
-
-    for (let g = 0; g < Math.ceil(globalKatlar.length / 10); g++) {
-      const grupDiv = document.createElement('div');
-      grupDiv.className = `onlu-grup`;
-      const bas = g * 10;
-      const son = Math.min((g + 1) * 10, globalKatlar.length);
-      const renkSinifi = g > 4 ? 'g-4' : `g-${g}`;
-
-      grupDiv.innerHTML = `
-        <div class="grup-header ${renkSinifi}" onclick="toggleGrup('grup-${g}')">
-          <span>${globalKatlar[bas].ad} - ${globalKatlar[son-1].ad}</span>
-          <span id="grup-icon-${g}">${g === 0 ? '▾' : '⇅'}</span>
-        </div>
-        <div id="grup-${g}" class="grup-content ${g === 0 ? '' : 'hidden'}"></div>
-      `;
-      listContainer.appendChild(grupDiv);
-
-      const grupContent = document.getElementById(`grup-${g}`);
-
-      for (let i = bas; i < son; i++) {
-        const kat = globalKatlar[i];
-        const katDiv = document.createElement('div');
-        katDiv.className = 'kat-grup';
-
-        let targetOptions = '<option value="">Nereye kadar uygulasın?</option>';
-        for(let j = i + 1; j < globalKatlar.length; j++) {
-          targetOptions += `<option value="${j}">${globalKatlar[j].ad}</option>`;
-        }
-
-        katDiv.innerHTML = `
-          <div class="kat-header empty" id="header-${kat.id}" onclick="toggleKat('${kat.id}')">
-            <div class="kat-left">
-              <span class="kat-adi">${kat.ad}</span>
-              <div class="kat-mini" id="mini-${kat.id}">
-                <span class="badge badge-muted">Henüz veri girilmedi</span>
-              </div>
-            </div>
-            <div class="kat-status-wrap">
-              <span class="badge badge-status empty" id="status-${kat.id}">Boş</span>
-              <span class="kat-arrow" id="arrow-${kat.id}">${g === 0 && i === 0 ? '▾' : '▸'}</span>
-            </div>
-          </div>
-
-          <div class="kat-content ${g === 0 && i === 0 ? '' : 'hidden'}" id="content-${kat.id}">
-            <div class="section-card bb">
-              <div class="section-head">
-                <div class="section-title">Bağımsız Bölümler</div>
-              </div>
-              <div class="section-note">Sayıyı etkileyen bölümleri burada giriniz. Örnek: daire, dükkan, ofis, depo...</div>
-              <div id="bb-rows-${kat.id}"></div>
-              <button class="ghost-add" type="button" onclick="bagimsizBolumEkle('${kat.id}')">＋ Bağımsız Bölüm Ekle</button>
-            </div>
-
-            <div class="section-card ortak">
-              <div class="section-head">
-                <div class="section-title">Diğer Bölümler / Alanlar</div>
-              </div>
-              <div class="section-note">Toplam bağımsız bölümü etkilemeyen alanları burada giriniz. Örnek: sığınak, kapıcı dairesi, kazan dairesi...</div>
-              <div id="ortak-rows-${kat.id}"></div>
-              <button class="ghost-add" type="button" onclick="ortakAlanEkle('${kat.id}')">＋ Alan Ekle</button>
-            </div>
-
-           <div class="logic-box">
-  <div class="logic-row">
-
-    <label class="logic-main-check">
-      <input type="checkbox" onchange="toggleLogicPanel('${kat.id}', this)">
-      Üst katlara uygula
-    </label>
-
-    <div id="panel-${kat.id}" class="hidden logic-inline-panel">
-
-      <select id="target-${kat.id}">
-        ${targetOptions}
-      </select>
-
-      <label class="logic-last-check">
-        <input
-          type="checkbox"
-          id="last-${kat.id}"
-          onchange="document.getElementById('target-${kat.id}').disabled = this.checked">
-        Son kata kadar
-      </label>
-
-      <button
-        class="apply-btn"
-        type="button"
-        onclick="mantikUygula('${kat.id}', ${i})">
-        KOPYALAMAYI BAŞLAT
-      </button>
-
-    </div>
-  </div>
-</div>
-
-            <button type="button" onclick="katOnayla('${kat.id}')" class="approve-btn">
-              KATI ONAYLA
-            </button>
-          </div>
-        `;
-        grupContent.appendChild(katDiv);
-
-        if (savedKatVerileri[kat.id]) {
-           restoreKatVerisi(kat.id, savedKatVerileri[kat.id]);
-        }
-      }
-    }
-
-    renderPreview();
-  }
-
-  function toggleGrup(id) {
-    const el = document.getElementById(id);
-    el.classList.toggle('hidden');
-  }
-
-  function toggleKat(id) {
-    const content = document.getElementById(`content-${id}`);
-    const arrow = document.getElementById(`arrow-${id}`);
-    content.classList.toggle('hidden');
-    arrow.innerText = content.classList.contains('hidden') ? '▸' : '▾';
-  }
-
-  function toggleLogicPanel(id, cb) {
-    document.getElementById(`panel-${id}`).classList.toggle('hidden', !cb.checked);
-  }
-
-  function bagimsizBolumEkle(katId, data = null) {
-    const container = document.getElementById(`bb-rows-${katId}`);
-    const div = document.createElement('div');
-    div.className = 'entry-row';
-    div.dataset.type = 'bb';
-
-    const tur = data?.tur || '';
-    const qty = data?.qty ?? 1;
-    const diger = data?.diger || '';
-
-    div.innerHTML = `
-      <input
-        type="number"
-        class="qty-input bb-qty"
-        min="0"
-        step="1"
-        value="${qty}"
-        placeholder="Adet"
-        oninput="if(this.value==='') this.value=0; if(Number(this.value)<0) this.value=0; renderPreview()"
-      >
-
-      <select class="type-select bb-type" onchange="toggleDigerInput(this); renderPreview()">
-        <option value="">Bölüm Türü Seçiniz</option>
-        <option value="Mesken" ${tur === 'Mesken' ? 'selected' : ''}>Mesken</option>
-        <option value="Daire" ${tur === 'Daire' ? 'selected' : ''}>Daire</option>
-        <option value="Dükkan" ${tur === 'Dükkan' ? 'selected' : ''}>Dükkan</option>
-        <option value="Ofis" ${tur === 'Ofis' ? 'selected' : ''}>Ofis</option>
-        <option value="Büro" ${tur === 'Büro' ? 'selected' : ''}>Büro</option>
-        <option value="Depo" ${tur === 'Depo' ? 'selected' : ''}>Depo</option>
-        <option value="Garaj" ${tur === 'Garaj' ? 'selected' : ''}>Garaj</option>
-        <option value="Diğer" ${tur === 'Diğer' ? 'selected' : ''}>Diğer</option>
-      </select>
-
-      <input
-        type="text"
-        class="other-input bb-other ${tur === 'Diğer' ? '' : 'hidden'}"
-        value="${escapeHtmlAttr(diger)}"
-        placeholder="Diğer bölüm türünü yazınız"
-        oninput="renderPreview()"
-      >
-
-      <button class="btn-remove" type="button" onclick="this.parentElement.remove(); renderPreview();">Sil</button>
-    `;
-
-    container.appendChild(div);
-    sesButonuEkle(div.querySelector('.bb-other'));
-    if (document.getElementById(`header-${katId}`)) {
-  renderPreview();
-}
-  }
-
-  function ortakAlanEkle(katId, data = null) {
-    const container = document.getElementById(`ortak-rows-${katId}`);
-    const div = document.createElement('div');
-    div.className = 'entry-row';
-    div.dataset.type = 'ortak';
-
-    const ad = data?.ad || '';
-
-    div.innerHTML = `
-      <input
-        type="text"
-        class="common-input ortak-ad"
-        value="${escapeHtmlAttr(ad)}"
-        placeholder="Örnek: Sığınak, kapıcı dairesi, kömürlük, kazan dairesi..."
-        oninput="renderPreview()"
-      >
-
-      <button class="btn-remove" type="button" onclick="this.parentElement.remove(); renderPreview();">Sil</button>
-    `;
-
-    container.appendChild(div);
-    sesButonuEkle(div.querySelector('.ortak-ad'));
-    sesButonuEkle(div.querySelector('.ortak-ad'));
-
-if (document.getElementById(`header-${katId}`)) {
-  renderPreview();
-}
-  }
-
-    function toggleDigerInput(selectEl) {
-    const row = selectEl.closest('.entry-row');
-    const otherInput = row.querySelector('.bb-other');
-
-    if (!otherInput) return;
-
-    const kapsayici =
-      otherInput.closest('.voice-input-wrap') || otherInput;
-
-    if (selectEl.value === 'Diğer') {
-      kapsayici.classList.remove('hidden');
-    } else {
-      kapsayici.classList.add('hidden');
-      otherInput.value = '';
-    }
-  }
-
-  function normalizeSavedKatVerisi(data){
-    if (!data) {
-      return { bagimsizBolumler: [], ortakAlanlar: [] };
-    }
-
-    if (data.bagimsizBolumler || data.ortakAlanlar) {
-      return {
-        bagimsizBolumler: Array.isArray(data.bagimsizBolumler) ? data.bagimsizBolumler : [],
-        ortakAlanlar: Array.isArray(data.ortakAlanlar) ? data.ortakAlanlar : []
-      };
-    }
-
-    if (Array.isArray(data)) {
-      const bagimsizBolumler = [];
-      const ortakAlanlar = [];
-
-      data.forEach(item => {
-        const tip = item?.tip || '';
-        const qty = Math.max(0, parseInt(item?.qty, 10) || 0);
-        const desc = (item?.desc || '').trim();
-
-        if (!desc) return;
-
-        if (tip === 'Ortak') {
-          ortakAlanlar.push({ ad: desc });
-        } else {
-          bagimsizBolumler.push({
-            qty,
-            tur: ['Daire','Dükkan','Ofis','Büro','Depo','Garaj'].includes(desc) ? desc : 'Diğer',
-            diger: ['Daire','Dükkan','Ofis','Büro','Depo','Garaj'].includes(desc) ? '' : desc
-          });
-        }
-      });
-
-      return { bagimsizBolumler, ortakAlanlar };
-    }
-
-    return { bagimsizBolumler: [], ortakAlanlar: [] };
-  }
-
-  function restoreKatVerisi(katId, rawData){
-  const data = normalizeSavedKatVerisi(rawData);
-
-  if (Array.isArray(data.bagimsizBolumler)) {
-    data.bagimsizBolumler.forEach(item => bagimsizBolumEkle(katId, item));
-  }
-
-  if (Array.isArray(data.ortakAlanlar)) {
-    data.ortakAlanlar.forEach(item => ortakAlanEkle(katId, item));
-  }
-
-  updateKatStatus(katId);
+function openHelp(){
+  document.getElementById("helpModal").style.display = "block";
 }
 
-  function getKatData(katId){
-    const bbRows = document.querySelectorAll(`#bb-rows-${katId} .entry-row`);
-    const ortakRows = document.querySelectorAll(`#ortak-rows-${katId} .entry-row`);
-
-    const bagimsizBolumler = [];
-    const ortakAlanlar = [];
-
-    bbRows.forEach(row => {
-      const qty = Math.max(0, parseInt(row.querySelector('.bb-qty')?.value, 10) || 0);
-      const tur = row.querySelector('.bb-type')?.value || '';
-      const diger = (row.querySelector('.bb-other')?.value || '').trim();
-
-      bagimsizBolumler.push({ qty, tur, diger });
-    });
-
-    ortakRows.forEach(row => {
-      const ad = (row.querySelector('.ortak-ad')?.value || '').trim();
-      ortakAlanlar.push({ ad });
-    });
-
-    return { bagimsizBolumler, ortakAlanlar };
-  }
-
-  function analyzeKatData(katId){
-    const data = getKatData(katId);
-
-    const validBB = data.bagimsizBolumler.filter(item => {
-      if (!item) return false;
-      if (!item.tur) return false;
-      if (item.tur === 'Diğer' && !item.diger) return false;
-      return item.qty > 0;
-    });
-
-    const partialBB = data.bagimsizBolumler.filter(item => {
-      const hasAny = (item.qty > 0) || !!item.tur || !!item.diger;
-      const isValid = item.tur && ((item.tur !== 'Diğer') || !!item.diger) && item.qty > 0;
-      return hasAny && !isValid;
-    });
-
-    const validOrtak = data.ortakAlanlar.filter(item => item && item.ad);
-    const partialOrtak = data.ortakAlanlar.filter(item => {
-      const hasAny = !!item.ad;
-      const isValid = !!item.ad;
-      return hasAny && !isValid;
-    });
-
-    const toplamBB = validBB.reduce((sum, item) => sum + item.qty, 0);
-
-    let status = 'empty';
-    if (validBB.length === 0 && validOrtak.length === 0 && partialBB.length === 0 && partialOrtak.length === 0) {
-      status = 'empty';
-    } else if (partialBB.length > 0 || partialOrtak.length > 0) {
-      status = 'partial';
-    } else {
-      status = 'completed';
-    }
-
-    return {
-      data,
-      validBB,
-      partialBB,
-      validOrtak,
-      partialOrtak,
-      toplamBB,
-      status
-    };
-  }
-
-  function updateKatStatus(katId){
-    const analysis = analyzeKatData(katId);
-    const header = document.getElementById(`header-${katId}`);
-    const statusEl = document.getElementById(`status-${katId}`);
-    const miniEl = document.getElementById(`mini-${katId}`);
-
-    if (!header || !statusEl || !miniEl) return analysis;
-
-    header.classList.remove('empty', 'partial', 'completed');
-    header.classList.add(analysis.status);
-
-    statusEl.className = 'badge badge-status';
-    if (analysis.status === 'completed') statusEl.classList.add('ready');
-    if (analysis.status === 'partial') statusEl.classList.add('partial');
-    if (analysis.status === 'empty') statusEl.classList.add('empty');
-
-    let statusText = 'Boş';
-    if (analysis.status === 'partial') statusText = 'Eksik';
-    if (analysis.status === 'completed') statusText = 'Hazır';
-
-    statusEl.innerText = statusText;
-
-    const ortakCount = analysis.validOrtak.length;
-    const bbToplam = analysis.toplamBB;
-
-    if (bbToplam === 0 && ortakCount === 0) {
-      miniEl.innerHTML = `<span class="badge badge-muted">Henüz veri girilmedi</span>`;
-    } else {
-      let html = '';
-      if (bbToplam > 0) html += `<span class="badge badge-bb">${bbToplam} B.B.</span>`;
-      if (ortakCount > 0) html += `<span class="badge badge-ortak">${ortakCount} alan</span>`;
-      miniEl.innerHTML = html;
-    }
-
-    return analysis;
-  }
-
-  function mantikUygula(kaynakId, kaynakIndex) {
-    const kaynakData = getKatData(kaynakId);
-
-    const validBB = kaynakData.bagimsizBolumler.filter(item => {
-      return item.tur && ((item.tur !== 'Diğer') || item.diger) && item.qty > 0;
-    });
-
-    const validOrtak = kaynakData.ortakAlanlar.filter(item => item.ad);
-
-    if(validBB.length === 0 && validOrtak.length === 0) {
-      alert("Kopyalanacak veri bulunamadı!");
-      return;
-    }
-
-    const isLast = document.getElementById(`last-${kaynakId}`).checked;
-    const targetVal = document.getElementById(`target-${kaynakId}`).value;
-    const bitisIndex = isLast ? globalKatlar.length - 1 : parseInt(targetVal,10);
-
-    if(!isLast && targetVal === "") {
-      alert("Lütfen hedef kat seçiniz!");
-      return;
-    }
-
-    for (let i = kaynakIndex + 1; i <= bitisIndex; i++) {
-      const hKat = globalKatlar[i];
-
-      const bbContainer = document.getElementById(`bb-rows-${hKat.id}`);
-      const ortakContainer = document.getElementById(`ortak-rows-${hKat.id}`);
-
-      bbContainer.innerHTML = "";
-      ortakContainer.innerHTML = "";
-
-      validBB.forEach(d => bagimsizBolumEkle(hKat.id, d));
-      validOrtak.forEach(d => ortakAlanEkle(hKat.id, d));
-
-      updateKatStatus(hKat.id);
-    }
-
-    alert("Kopyalama işlemi başarıyla tamamlandı.");
-    renderPreview();
-  }
-
-  function katOnayla(id) {
-    updateKatStatus(id);
-    toggleKat(id);
-  }
-
-  function escapeHtmlAttr(str){
-    return String(str || '')
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
-
-  function getBBLabel(item){
-    if (!item) return '';
-    if (item.tur === 'Diğer') return (item.diger || '').trim();
-    return item.tur || '';
-  }
-
-  function joinWithVe(arr){
-    const clean = arr.filter(Boolean);
-    if (clean.length === 0) return '';
-    if (clean.length === 1) return clean[0];
-    if (clean.length === 2) return `${clean[0]} ve ${clean[1]}`;
-    return clean.slice(0, -1).join(', ') + ' ve ' + clean[clean.length - 1];
-  }
-
-  function renderPreview() {
-    let gruplanmisKatlar = [];
-    let toplamBB = 0;
-    let tumSatirVerileri = {};
-    let doluKatSayisi = 0;
-
-    globalKatlar.forEach((kat) => {
-      const analysis = updateKatStatus(kat.id);
-
-      const validBB = analysis.validBB.map(item => {
-        const label = getBBLabel(item);
-        toplamBB += item.qty;
-        return `${item.qty} ${label}`;
-      });
-
-      const validOrtak = analysis.validOrtak.map(item => item.ad);
-
-      tumSatirVerileri[kat.id] = {
-        bagimsizBolumler: analysis.validBB.map(item => ({
-          qty: item.qty,
-          tur: item.tur,
-          diger: item.diger || ''
-        })),
-        ortakAlanlar: analysis.validOrtak.map(item => ({
-          ad: item.ad
-        }))
-      };
-
-      const parcalar = [];
-      if (validBB.length > 0) parcalar.push(validBB.join(", "));
-      if (validOrtak.length > 0) parcalar.push(joinWithVe(validOrtak));
-
-      const icerik = parcalar.join(", ");
-
-      if (icerik) {
-        doluKatSayisi++;
-
-        if (
-          gruplanmisKatlar.length > 0 &&
-          gruplanmisKatlar[gruplanmisKatlar.length - 1].icerik === icerik
-        ) {
-          gruplanmisKatlar[gruplanmisKatlar.length - 1].bitis = kat.ad;
-        } else {
-          gruplanmisKatlar.push({
-            baslangic: kat.ad,
-            bitis: kat.ad,
-            icerik
-          });
-        }
-      }
-    });
-
-    let cumleParcalari = [];
-    gruplanmisKatlar.forEach((g) => {
-      let bAd = g.baslangic.replace(" Kat", "").replace(" kat", "");
-      let sAd = g.bitis.replace(" Kat", "").replace(" kat", "");
-
-      if (g.baslangic === g.bitis) {
-        cumleParcalari.push(`${bAd} katında ${g.icerik}`);
-      } else {
-        cumleParcalari.push(`${bAd} ve ${sAd} katları arasında her birinde ${g.icerik}`);
-      }
-    });
-
-    const katDetayMetni = cumleParcalari.join(", ");
-    const tamMetin = katDetayMetni
-      ? `Mimari Projesinde ve mevcut durumda ${katDetayMetni} olmak üzere binada toplam ${toplamBB} adet bağımsız bölüm tescil edilmiştir.`
-      : "Veri girişi bekleniyor...";
-
-    document.getElementById('taslakMetin').innerText = tamMetin;
-    document.getElementById('sumToplamKat').innerText = globalKatlar.length;
-    document.getElementById('sumDoluKat').innerText = doluKatSayisi;
-    document.getElementById('sumToplamBB').innerText = toplamBB;
-
-    return { katDetayMetni, toplamBB, tumSatirVerileri, tamMetin };
-  }
-
-  function verileriSifirla() {
-    if(!confirm("Tüm kat girişleri silinecektir. Emin misiniz?")) return;
-
-    const { r, arr, i } = getLatestData();
-    if (!r || i < 0) return;
-
-    if(!r.modules) r.modules = {};
-    if(!r.modules.katDetay) r.modules.katDetay = {};
-    if(!r.modules.bina) r.modules.bina = (r.bina || {});
-
-    r.modules.katDetay = { katDetayMetni:"", toplamBagimsizBolum:0, tumSatirVerileri:{} };
-    r.katSatirVerileri = {};
-    r.katDetayMetni = "";
-    if(!r.bina) r.bina = {};
-    r.bina.toplamBagimsizBolum = 0;
-    r.modules.bina.toplamBagimsizBolum = 0;
-
-    persist(arr, i, r);
-    location.reload();
-  }
-
-  async function tumunuKaydet() {
-    const data = renderPreview();
-    const { r, arr, i } = getLatestData();
-    if (!r || i < 0) {
-      alert("Rapor bulunamadı!");
-      return;
-    }
-
-    if(!r.modules) r.modules = {};
-    if(!r.modules.bina) r.modules.bina = (r.bina || {});
-    if(!r.modules.katDetay) r.modules.katDetay = {};
-
-    r.modules.katDetay = {
-      katDetayMetni: data.katDetayMetni,
-      toplamBagimsizBolum: data.toplamBB,
-      tumSatirVerileri: data.tumSatirVerileri,
-      metin: data.tamMetin
-    };
-
-    r.modules.bina.toplamBagimsizBolum = data.toplamBB;
-
-    r.katDetayMetni = data.katDetayMetni;
-    r.katSatirVerileri = data.tumSatirVerileri;
-
-    if(!r.bina) r.bina = {};
-    r.bina.toplamBagimsizBolum = data.toplamBB;
-
-    r.modules.katDetayMetni = data.katDetayMetni;
-
-    persist(arr, i, r);
-
-    window.location.href = `bina.html?rid=${encodeURIComponent(rid)}`;
-  }
+function closeHelp(){
+  document.getElementById("helpModal").style.display = "none";
+}
 </script>
-
 </body>
 </html>
+
