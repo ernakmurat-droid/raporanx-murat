@@ -1096,7 +1096,9 @@
               </div>
               <div class="section-note">Sayıyı etkileyen bölümleri burada giriniz. Örnek: daire, dükkan, ofis, depo...</div>
               <div id="bb-rows-${kat.id}"></div>
-              <button class="ghost-add" type="button" onclick="bagimsizBolumEkle('${kat.id}')">＋ Aynı Kata Farklı Bağımsız Bölüm Ekle</button>
+              <button class="ghost-add" type="button" onclick="bagimsizBolumEkle('${kat.id}', null, this)">
+               ＋ Bağımsız Bölüm Bilgisi Ekle
+              </button>
             </div>
 
             <div class="section-card ortak">
@@ -1173,7 +1175,7 @@
     document.getElementById(`panel-${id}`).classList.toggle('hidden', !cb.checked);
   }
 
-  function bagimsizBolumEkle(katId, data = null) {
+  function bagimsizBolumEkle(katId, data = null, btn = null) {
     const container = document.getElementById(`bb-rows-${katId}`);
     const div = document.createElement('div');
     div.className = 'entry-row';
@@ -1219,6 +1221,9 @@
 
     container.appendChild(div);
     sesButonuEkle(div.querySelector('.bb-other'));
+    if (btn) {
+  btn.innerHTML = '＋ Aynı Kata Farklı Bağımsız Bölüm Ekle';
+}
     if (document.getElementById(`header-${katId}`)) {
   renderPreview();
 }
