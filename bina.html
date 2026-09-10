@@ -311,6 +311,42 @@
       console.warn("cloudSaveReport:", e);
     }
   }
+  // ✅ BULUTTAN RAPORU AL VE BU CİHAZIN LOCAL KAYDINI GÜNCELLE
+async function cloudLoadReport() {
+  try {
+    const user = auth.currentUser;
+    if (!user || !rid) return;
+
+    const snap = await db.collection("users").doc(user.uid)
+      .collection("reports").doc(String(rid))
+      .get();
+
+    if (!snap.exists) return;
+
+    const cloudReport = snap.data();
+    if (!cloudReport) return;
+
+    cloudReport.rid = String(rid);
+
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    const arr = toArrayIfObject(raw);
+
+    const index = arr.findIndex(x =>
+      String(x?.rid || x?.id || "") === String(rid)
+    );
+
+    if (index >= 0) {
+      arr[index] = cloudReport;
+    } else {
+      arr.push(cloudReport);
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+
+  } catch (e) {
+    console.warn("cloudLoadReport:", e);
+  }
+}
    let aktifSesTanima = null;
   let aktifSesButonu = null;
 
@@ -684,8 +720,7 @@ return finalMetin;
         sesButonlariniEkle();
 
     // rid/url/migration varsa bir kez yaz
-    persist(arr, i, r);
-
+    // persist(arr, i, r);
     document.getElementById("propertyInfo").textContent = (r.propertyName || "Rapor Bilgisi");
     document.getElementById("il").value = r.il || "";
     document.getElementById("ilce").value = r.ilce || "";
@@ -750,10 +785,20 @@ if (katDetayVar) {
     );
   }
 
-  auth.onAuthStateChanged((user) => {
-    if (!user) { window.location.href = "index.html"; return; }
-    initPage();
-  });
+  auth.onAuthStateChanged(async (user) => {
+
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  // Önce buluttaki raporu bu cihaza al
+  await cloudLoadReport();
+
+  // Sonra sayfayı güncel veriyle aç
+  initPage();
+
+});
 </script>
 <!-- BİNA BİLGİLERİ NASIL KULLANILIR -->
 <div id="binaHelpModal" class="bina-help-modal">
