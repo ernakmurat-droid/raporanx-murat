@@ -242,11 +242,13 @@
         <input type="text" id="yapiSinifiDiger" class="hidden" style="margin-top:10px" placeholder="Sınıfı yazınız..." oninput="taslakOlustur()">
     </div>
 
-    <div class="form-group" style="background: #f0f4ff; border: 1px solid #c5cae9;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div><strong>Bodrum Kat Sayısı</strong><input type="number" id="bodrumKatSayisi" value="0" oninput="taslakOlustur()"></div>
-            <div><strong>Normal Kat Sayısı</strong><input type="number" id="normalKatSayisi" value="0" oninput="taslakOlustur()"></div>
-        </div>
+    <div class="form-group bina-kat-sayisi">
+        <label for="bodrumKatSayisi"><strong>Bodrum Kat Sayısı</strong></label>
+        <input type="number" id="bodrumKatSayisi" value="0" oninput="taslakOlustur()">
+    </div>
+    <div class="form-group bina-kat-sayisi">
+        <label for="normalKatSayisi"><strong>Normal Kat Sayısı</strong></label>
+        <input type="number" id="normalKatSayisi" value="0" oninput="taslakOlustur()">
     </div>
 
     <div class="form-group"><strong>Giriş Kotu / Cephesi</strong>

@@ -284,7 +284,7 @@
         <tbody id="tabloGövde"></tbody>
       </table>
       <button class="btn btn-dark btn-sm" type="button" onclick="takyidatEkle()">+ Takyidat Ekle</button>
-      <details class="takyidat-review">
+      <details class="takyidat-review" id="takyidatIncelemePaneli" hidden>
         <summary>Satışa engel olabilecek takyidatlar</summary>
         <div id="takyidatInceleme"></div>
       </details>
@@ -648,6 +648,9 @@
   }
 
   function aktifTapuAdimlariniGoster(){
+    const incelemePaneli = document.getElementById('takyidatIncelemePaneli');
+    incelemePaneli.hidden = !aktifOnayDurumu.kaydedildi;
+    if(incelemePaneli.hidden) incelemePaneli.open = false;
     const kutu = document.getElementById('aktifTapuAdimDurumu');
     const baslik = document.getElementById('aktifTapuBaslik');
     if(!kutu || tapuModu !== 'coklu') return;
@@ -2013,6 +2016,7 @@ window.takbisDosyalariniSil =
     // cloud (imar gibi: report doc)
     await cloudSaveReport(arr[i]);
     aktifTapuDegisti = false;
+    aktifTapuAdimlariniGoster();
 
     const status = document.getElementById('saveStatus');
     status.style.display = 'block';
@@ -2151,6 +2155,7 @@ window.takbisDosyalariniSil =
       tapuSekmeleriniGoster();
     }else{
       tapuModu = 'tek';
+      aktifOnayDurumu.kaydedildi = !!(tapuObj?.onayDurumu?.kaydedildi || tapuObj?.tapu_tamamlandi);
       cokluTapular = tapuObj && Object.keys(tapuObj).length ? [tapuObj] : [];
       aktifTapuIndex = 0;
       document.querySelector('input[name="tapuModu"][value="tek"]').checked = true;
@@ -2159,6 +2164,7 @@ window.takbisDosyalariniSil =
 
     tekTapuFormatlariniAyarla();
     guncelle();
+    aktifTapuAdimlariniGoster();
     kaydedilenTapulariGoster();
   });
 </script>
