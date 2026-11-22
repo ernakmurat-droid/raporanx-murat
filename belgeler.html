@@ -154,9 +154,10 @@
   cursor:pointer;
 }
   </style>
+  <link rel="stylesheet" href="/module-form.css">
 </head>
 
-<body>
+<body class="module-documents">
   <div class="header">
     <button onclick="anaMenuyeDon()" class="back">← Geri</button>
     <h1>İNCELENEN BELGELER</h1>
@@ -167,7 +168,7 @@
     <button type="button"
         class="belgeler-help-btn"
         onclick="openBelgelerHelp()">
-  ❓ İNCELENEN BELGELER NASIL KULLANILIR?
+  Yardım
 </button>
     <div class="form-group" style="border:2px solid #7c4dff; background:#f7f3ff;">
   <strong>📄 Belgeyi Yapay Zekâyla Oku</strong>
@@ -218,7 +219,7 @@ style="width:100%; padding:15px;"
     style="display:none; width:100%; margin-top:12px;
            padding:15px; background:#7c4dff;"
   >
-    ✨ BU BELGEYİ ŞİMDİ OKU
+    Oku ve Alanlara Yerleştir
   </button>
 
   <div
@@ -348,7 +349,7 @@ style="width:100%; padding:15px;"
     onclick="okunanBelgeyiAktar()"
     style="width:100%; padding:15px; background:#00a846;"
   >
-    ✓ ONAYLA VE ALANLARA AKTAR
+    Alanlara Yerleştir
   </button>
 
   <button
@@ -483,7 +484,7 @@ style="width:100%; padding:15px;"
       <textarea id="yikimAciklamaInput" rows="2" placeholder="Olumsuz karar ve tespit tutanağı detayları..." style="margin-top:10px; display:none;" list="h_belgeler_yikimAciklama" onfocus="showList(this)"></textarea>
     </div>
 
-    <button class="btn-kaydet" onclick="kaydetVeIsle()">KAYDET VE METİN ÜRET</button>
+    <button class="btn-kaydet module-save" onclick="kaydetVeIsle()">Kaydet</button>
     <button class="btn-geri" onclick="anaMenuyeDon()">GERİ DÖN (ÇIK)</button>
     <div id="taslak" class="taslak" style="display:none;" oncopy="return false"></div>
   </div>
@@ -927,7 +928,9 @@ async function belgeyiOku() {
   const okuButonu =
     document.getElementById('belgeOkuBtn');
 
-  if (secilenBelgeDosyalari.length === 0) { 
+  if (okuButonu.disabled) return;
+
+  if (secilenBelgeDosyalari.length === 0) {
     alert('Önce fotoğraf veya PDF seçiniz.');
     return;
   }
@@ -941,6 +944,7 @@ async function belgeyiOku() {
 
   try {
     okuButonu.disabled = true;
+    document.getElementById('belgeSecBtn').disabled = true;
     okuButonu.innerText = '⏳ BELGE OKUNUYOR...';
 
     durumKutusu.style.display = 'block';
@@ -1015,6 +1019,17 @@ document.getElementById('aiKismiAciklama').value =
   bilgi.kismiAciklama || '';
 
 aiKismiAlaniGoster();
+    const needsInput = !['ruhsat', 'iskan', 'enerji'].includes(bilgi.belgeTuru) ||
+      (['ruhsat', 'iskan'].includes(bilgi.belgeTuru) && !['tam', 'kismi'].includes(bilgi.kapsamType)) ||
+      (bilgi.kapsamType === 'kismi' && !String(bilgi.kismiAciklama ?? '').trim());
+    if (!needsInput) {
+      okunanBelgeyiAktar();
+      if (Array.isArray(bilgi.okunamayanAlanlar) && bilgi.okunamayanAlanlar.length) {
+        durumKutusu.innerText += ' Okunamayan alanlar: ' + bilgi.okunamayanAlanlar.join(', ') + '.';
+      }
+      return;
+    }
+
     const alanlar = [
       {
         id: 'aiBelgeTuru',
@@ -1066,7 +1081,7 @@ aiKismiAlaniGoster();
     durumKutusu.style.background = '#e8f5e9';
     durumKutusu.style.color = '#1b5e20';
     durumKutusu.innerText =
-      '✅ Belge okundu. Bilgileri kontrol ederek onaylayınız.';
+      'Belgenin türü veya kapsamı eksik. Eksik bilgiyi seçerek devam edin.';
 
     document.getElementById('belgeOnayKarti').style.display =
       'block';
@@ -1087,7 +1102,8 @@ aiKismiAlaniGoster();
       '❌ ' + (err.message || 'Belge okunamadı.');
   } finally {
     okuButonu.disabled = false;
-    okuButonu.innerText = '✨ BU BELGEYİ ŞİMDİ OKU';
+    document.getElementById('belgeSecBtn').disabled = secilenBelgeDosyalari.length >= 2;
+    okuButonu.innerText = 'Oku ve Alanlara Yerleştir';
   }
 }
 function aiKismiAlaniGoster() {
@@ -1278,7 +1294,7 @@ if (
   durumKutusu.style.display = 'block';
   durumKutusu.style.background = '#e8f5e9';
   durumKutusu.style.color = '#1b5e20';
-  durumKutusu.innerText = '✅ Belge bilgileri ilgili alanlara aktarıldı.';
+  durumKutusu.innerText = 'Bilgiler forma yerleştirildi. Kontrol edip Kaydet’e basın.';
   secilenBelgeDosyalari = [];
 
 document.getElementById('belgeDosyasi').value = '';
@@ -1292,9 +1308,10 @@ secButonu.innerText = '✅ BU BELGE TAMAM — YENİ BELGE YÜKLE';
 document.getElementById('belgeGoruntuleBtn').style.display =
   belgeGorselArsivi.length > 0 ? 'block' : 'none';
 
-secButonu.style.display = 'none';
+secButonu.style.display = 'block';
+secButonu.innerText = 'Yeni Belge Seç';
 
-document.getElementById('yeniBelgeyeGecBtn').style.display = 'block';
+document.getElementById('yeniBelgeyeGecBtn').style.display = 'none';
 }
 
 function belgeOkumayiIptalEt() {
@@ -1987,7 +2004,7 @@ uyumKapsayici.style.display =
       <b>1. Belgeyi Yapay Zekâyla Okutabilirsiniz.</b><br>
       Yapı Ruhsatı, Yapı Kullanma İzin Belgesi (İskân) veya
       Enerji Kimlik Belgesinin fotoğrafını ya da PDF dosyasını seçiniz.
-      Ardından <b>BU BELGEYİ ŞİMDİ OKU</b> butonuna basınız.
+      Ardından <b>Oku ve Alanlara Yerleştir</b> butonuna basınız.
     </div>
 
     <div class="belgeler-help-step">
@@ -2015,20 +2032,9 @@ uyumKapsayici.style.display =
     </div>
 
     <div class="belgeler-help-step">
-      <b>3. ONAYLA VE ALANLARA AKTAR</b><br>
-      AI okumasını kontrol edip gerekli düzeltmeleri yaptıktan sonra
-      <b>ONAYLA VE ALANLARA AKTAR</b> butonuna basınız.
-      Bilgiler ilgili Ruhsat, İskân veya Enerji Kimlik Belgesi
-      alanlarına aktarılır.
-    </div>
-
-    <div class="belgeler-help-step">
-      <b>4. Başka belge varsa yeni belgeye geçiniz.</b><br>
-      Bir belgeyi tamamladıktan sonra
-      <b>BU BELGE TAMAM — YENİ BELGEYE GEÇ</b> butonunu kullanarak
-      sıradaki belgeyi yükleyebilirsiniz.<br><br>
-      Her ruhsat, iskân veya Enerji Kimlik Belgesini bu şekilde
-      sırayla okutabilirsiniz.
+      <b>3. Formu kontrol edip Kaydet’e basınız.</b><br>
+      Okunan bilgiler doğrudan forma gelir. Belge türü veya kapsamı eksikse
+      ilgili seçimi tamamlayınız. Birden fazla belge için Yeni Belge Seç’i kullanınız.
     </div>
 
     <div class="belgeler-help-step">

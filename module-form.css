@@ -1,0 +1,124 @@
+.module-save {
+  background: #176a48;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 10px 24px;
+  border-radius: 10px;
+}
+
+@media (max-width: 600px) {
+  .module-save { max-width: 100%; }
+  .grid3 > div, .dynamic-item > div { min-width: min(100%, 180px); }
+  .grid-form > *, .input-item { min-width: 0; }
+  input[type="date"] { max-width: 100%; }
+}
+
+.module-documents .form-group {
+  margin: 12px 0;
+  padding: 14px;
+}
+
+.module-documents .grid3 > div {
+  min-width: min(100%, 155px);
+}
+
+@media (max-width: 600px) {
+  .module-documents .container { margin: 12px 8px; padding: 12px; }
+  .module-documents .form-group { padding: 10px; }
+  .module-documents .dynamic-item > div { min-width: 0; flex-basis: 100%; }
+}
+
+.module-imar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.module-imar .form-section { margin: 0; }
+.module-imar .form-section label { margin-top: 0; }
+.module-imar .form-section:has(textarea) { grid-column: 1 / -1; }
+.module-tapu { padding: 12px; margin-bottom: 12px; }
+.module-tapu .row { --bs-gutter-y: .5rem; }
+.module-konum .grid-form { gap: 10px; }
+
+@media (max-width: 600px) {
+  .module-imar, .module-konum .grid-form { grid-template-columns: minmax(0, 1fr); }
+  .module-tapu { padding: 10px; }
+}
+
+:is(.module-konum, .module-bina, .module-bb) .header {
+  padding: 12px 16px;
+}
+:is(.module-konum, .module-bina, .module-bb) .header h1 {
+  font-size: clamp(19px, 2.5vw, 26px);
+  margin: 6px 0;
+}
+:is(.module-konum, .module-documents, .module-bina, .module-bb, .module-tapu-page)
+:is(.konum-help-btn, .belgeler-help-btn, .bina-help-btn, .bb-help-btn, .tapu-help-btn) {
+  width: auto;
+  padding: 7px 12px;
+  min-height: 36px;
+  font-size: 13px;
+  margin: 0 0 10px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.module-konum .section-title { margin: 5px 0 0; padding: 7px 10px; }
+.module-konum .form-container { padding: 14px; }
+.module-tapu-page .alert-info { font-size: .875rem; padding: 8px 10px; margin-bottom: 8px; }
+.takyidat-review { margin-top: 10px; }
+.takyidat-review summary, .bina-preview summary { cursor: pointer; font-weight: 650; }
+#takyidatInceleme { white-space: pre-line; margin: 8px 0; }
+
+.module-bina .container { max-width: 1120px; margin-top: 12px; }
+.bina-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.bina-fields > div[style*="grid-template-columns"] { display: contents !important; }
+.bina-fields .form-group {
+  margin: 0;
+  padding: 8px 10px;
+  box-shadow: none;
+  min-width: 0;
+}
+.bina-fields .form-group strong { margin-bottom: 3px; font-size: .875rem; }
+.bina-fields input:not([type="radio"]), .bina-fields select { min-width: 0; min-height: 36px; padding: 6px 8px; }
+.bina-fields .radio-group { gap: 4px; }
+.bina-fields .radio-group label { padding: 4px 6px; font-size: .875rem; }
+.bina-fields .radio-group input[type="radio"] { width: auto; margin: 0; }
+.bina-fields > #blokAlanlari:not(.hidden) {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.bina-fields .form-group:has(#disCephe) { grid-column: span 2; }
+.bina-fields .form-group:has(#disCephe) input { margin-bottom: 4px !important; }
+.bina-save-note { font-size: .875rem; margin: 8px 0 0; }
+.module-bina .btn-container { margin-top: 8px; }
+.module-bina .btn-container .btn { min-height: 44px; padding: 8px; font-size: .95rem; }
+.bina-preview { margin: 10px 0; }
+
+@media (max-width: 780px) {
+  .bina-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .bina-fields, .bina-fields > #blokAlanlari:not(.hidden) { grid-template-columns: minmax(0, 1fr); }
+  .bina-fields .form-group:has(#disCephe) { grid-column: auto; }
+  :is(.module-konum, .module-bina, .module-bb) .header { padding-top: 44px; }
+}
+
+.bina-fields .bina-giris > label[for="girisCephe"] { display: block; margin-top: 6px; }
+.bina-preview .taslak { margin-top: 8px; }
+
+@media (max-width: 600px) {
+  .module-konum .grid-form > :is(.section-title, .full-width, .info-note) { grid-column: 1 / -1; }
+  .module-konum .voice-input-wrap { width: 100%; min-width: 0; }
+  .module-konum .voice-input-wrap > :is(input, textarea) { flex: 1 1 0; width: 0; min-width: 0; }
+  .module-konum .radio-group { flex-wrap: wrap; gap: 8px 16px; }
+  .module-konum .radio-item input { width: auto; margin: 0; }
+  .module-konum :is(.preview-box, .header) { overflow-wrap: anywhere; }
+}

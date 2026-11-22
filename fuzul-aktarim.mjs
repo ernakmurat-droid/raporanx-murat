@@ -1,3 +1,5 @@
+const blankFields = (...labels) => labels.map(label => [label, ""]);
+
 const fields = (record, mapping) => Object.entries(mapping).map(([key, label]) => [
   label, String(record?.[key] ?? "").trim()
 ]);
@@ -8,6 +10,7 @@ export function buildSections(report) {
   const location = modules.konumCevre ?? report.konumCevre ?? {};
   const tapu = modules.tapu ?? {};
   const imar = modules.imar ?? report.imarDurumu ?? report.imar ?? {};
+  const documents = modules.belgeler ?? report.belgeler ?? {};
   const uavt = String(location.v1 ?? "").trim();
   const titles = Array.isArray(tapu.cokluTapular)
     ? tapu.cokluTapular.map(entry => entry?.tapuKayitBilgileri)
@@ -21,14 +24,16 @@ export function buildSections(report) {
     ada: "Ada", parsel: "Parsel", anaYuzolcumu: "Arsa yüzölçümü (m²)",
     anaNitelik: "Ana taşınmaz niteliği", blokNo: "Blok", katNo: "Kat", girisNo: "Giriş",
     bbNo: "Bağımsız bölüm no", bbNitelik: "Bağımsız bölüm niteliği",
-    arsaPayi: "Arsa payı", arsaPaydasi: "Arsa paydası"
+    arsaPayi: "Arsa payı", arsaPaydasi: "Arsa paydası",
+    tasinmazId: "Taşınmaz ID", tapuTarihi: "Tapu tarihi",
+    ciltNo: "Cilt numarası", sayfaNo: "Sayfa numarası"
   };
   return [
     { id: "genel", title: "Genel Bilgiler", groups: [{ rows: fields(report, {
       propertyName: "Rapor adı", il: "İl", ilce: "İlçe", mahalle: "Mahalle"
     }) }] },
     { id: "konum", title: "Konum",
-      note: "Fuzul Ev’de cadde ve sokak ayrı alanlardır. Site veya apartman adı, semt ve posta kodu gibi ayrı kaydedilmeyen bilgileri Fuzul Ev’de tamamlayın.",
+      note: "RaporanX’teki birleşik Cadde / Sokak bilgisini Fuzul Ev’de ilgili kutuya girin.",
       groups: [{ rows: fields({
       ...location, tamMetin: edits.konumMetin ?? location.tamMetin ?? report.konumMetni,
       v4: location.v4 || report.il, v5: location.v5 || report.ilce,
@@ -37,31 +42,43 @@ export function buildSections(report) {
       v4: "İl", v5: "İlçe", v6: "Mahalle", v7: "Cadde / Sokak", v8: "Bina kapı no",
       v9: "Kat no", v10: "İç kapı no", v1: "UAVT", v2: "Koordinat X", v3: "Koordinat Y",
       tamMetin: "Konum ve çevre açıklaması"
-    }) }] },
+    }).concat(blankFields("Bulvar / Cadde", "Sokak", "Semt", "Site / Lojman / Plaza adı",
+      "Apartman adı", "Blok / Giriş (adres)", "Posta kodu", "Köy veya kırsal mahallede mi?")) }] },
     { id: "tapu", title: "Tapu",
       note: uavt ? undefined : "UAVT kodu Konum modülünde kayıtlı değil.",
       groups: (titles.length ? titles : [
       tapu.tapuKayitBilgileri ?? report.tapuKayitBilgileri
-    ]).map((entry, index) => ({ title: `Tapu ${index + 1}`, rows: fields(entry, titleFields) })).concat({
+    ]).map((entry, index) => ({ title: `Tapu ${index + 1}`, rows: fields(entry, titleFields).concat(blankFields(
+      "Taşınmaz değerleme yetkisi", "Tapunun türü", "Ana taşınmaz vasfı grubu",
+      "Terk sonrası parsel yüzölçümü (m²)", "Bucak", "Pafta", "Ruhsattaki eski ada ve parsel",
+      "Merkez Bankası kat bilgisi", "Eklentisi", "Parsel koordinat noktaları"
+    )) })).concat({
       rows: fields({
-        uavt,
+        uavt, enerjiBelgesiVar: documents.enerjiBelgesiVar,
         kayit: edits.tapuMetinB1 ?? tapu.tapuMetniB1 ?? report.tapuMetniB1,
         takyidat: edits.tapuMetinB2 ?? tapu.tapuMetniB2 ?? report.tapuMetniB2
-      }, { uavt: "UAVT kodu (Konum kaydı)", kayit: "Tapu açıklaması", takyidat: "Takyidat açıklaması" })
+      }, { uavt: "Adres No (UAVT)", enerjiBelgesiVar: "Enerji Kimlik Belgesi var mı?", kayit: "Tapu açıklaması", takyidat: "Takyidat açıklaması" })
     }) },
     { id: "imar", title: "İmar Durumu",
-      note: "Hesaplanmış KAKS için emsale esas alan ve parsel alanı gerekir. RaporanX bu değeri ayrı kaydetmiyor.",
+      note: "Hesaplanan Emsal için ilgili ruhsat veya iskândaki toplam inşaat alanını, belgenin kapsamını kontrol ederek kullanın.",
       groups: [{ rows: fields({
       ...imar,
       metin: edits.imarMetin ?? report.imarMetni ?? modules.imarMetni ?? report.imar?.metin
     }, {
       nizam: "Yapı nizamı", kat: "Kat sayısı", lejant: "Lejant", taks: "Plan TAKS",
-      kaks: "Plan KAKS (Emsal)", imarPlaniOnayTarihi: "İmar planı onay tarihi",
-      metin: "İmar durumu açıklaması"
-    }) }] },
+      kaks: "Plan KAKS (Emsal)", hesaplananEmsal: "Hesaplanan Emsal (m²)", imarPlaniOnayTarihi: "İmar planı onay tarihi",
+      terk: "Terk miktarı (m²)", metin: "İmar durumu açıklaması"
+    }).concat(blankFields("Plan ölçeği", "Tercihli kullanım alanı",
+      "Hmax", "Ön çekme mesafesi", "Arka çekme mesafesi", "Yan çekme mesafesi",
+      "Minimum cephe şartı", "Tevhid şartı", "18. madde imar uygulaması problemi")) }] },
     { id: "belgeler", title: "Belgeler", groups: [{ rows: fields({
+      ...documents,
+      iskanVar: typeof documents.iskanVar === "boolean" ? (documents.iskanVar ? "Evet" : "Hayır") : documents.iskanVar,
       metin: edits.belgelerMetin ?? report.belgelerMetni ?? modules.belgelerMetni ?? report.belgeler?.metin
-    }, { metin: "İncelenen belgeler" }) }] },
+    }, { iskanVar: "İskân var mı?", projeTarihiText: "Mimari proje tarihi",
+      belediye: "Belgelerin incelendiği belediye", metin: "İncelenen belgeler"
+    }).concat(blankFields("Ruhsat toplam inşaat alanı (m²)", "İskân toplam inşaat alanı (m²)",
+      "Mimari proje onay numarası", "İncelenen diğer belgeler ve araştırmalar")) }] },
     { id: "bina", title: "Bina", groups: [{ rows: fields({
       ...building, metin: edits.binaMetin ?? (building.metin || building.binaMetni || report.binaMetni)
     }, {
@@ -69,28 +86,43 @@ export function buildSections(report) {
       yapiSinifi: "Yapı sınıfı", hangiBlok: "Blok", bodrumKatSayisi: "Bodrum kat sayısı",
       normalKatSayisi: "Normal kat sayısı", toplamBagimsizBolum: "Bağımsız bölüm sayısı",
       disCephe: "Dış cephe", asansor: "Asansör", isinma: "Isınma", metin: "Bina açıklaması"
-    }) }] },
-    { id: "bb", title: "Bağımsız Bölüm", groups: units.map((unit, index) => {
+    }).concat(blankFields("Yapının inşa tarzı", "Deprem bölgesi", "Gözlemsel hasar durumu",
+      "Deprem dayanıklılık ve hasar durumu", "Açık otopark", "Kapalı otopark",
+      "Özel güvenlik", "Açık yüzme havuzu", "Kapalı yüzme havuzu")) }] },
+    { id: "bb", title: "Bağımsız Bölüm", groups: (units.length ? units : [{}]).map((unit, index) => {
       const detail = unit?.bbDetay ?? unit;
       return { title: unit?.baslik || `Bağımsız bölüm ${index + 1}`, rows: fields({
         ...detail, metin: unit?.taslakMetin || unit?.metin || detail?.taslakMetin
       }, {
         bbNo: "Bağımsız bölüm no", kat: "Kat", kapiNo: "Kapı no", nitelik: "Nitelik",
         alanNet: "Net alan (m²)", alanBrut: "Brüt alan (m²)", metin: "Bağımsız bölüm açıklaması"
-      }) };
+      }).concat(blankFields("İlk el / İkinci el", "Konut tipi", "Mevcut brüt inşaat alanı (m²)",
+        "Yasal brüt inşaat alanı (m²)", "Kullanım durumu", "Yapım yılı", "Yapı kalitesi",
+        "Bakım ve tadilat ihtiyacı", "Manzara durumu", "Yasal oda sayısı", "Mevcut oda sayısı")) };
     }).concat({ rows: fields({ metin: edits.bbMetin ?? modules.bagimsizBolum?.text ?? report.bagimsizBolumMetni }, {
       metin: "Bağımsız bölüm rapor metni"
     }) }) },
+    { id: "degerleme", title: "Değerleme", groups: [{ rows: blankFields(
+      "Değerleme uzmanı görüşü", "Satış kabiliyeti", "Yasal durum değeri",
+      "Mevcut durum değeri", "Acil satış (yasal değer)", "Acil satış (mevcut değer)",
+      "Sigorta değeri", "Tamamlanması hâlinde yasal değer",
+      "Tamamlanması hâlinde mevcut değer", "Aylık kira", "Aylık birim kira değeri",
+      "Tahmini inşaat bitiş süresi"
+    ) }] },
     { id: "emsal", title: "Emsaller", note: comparisons.length < 4
       ? `Fuzul Ev en az 4 emsal ister. Bu raporda ${comparisons.length} emsal kayıtlı.`
-      : `${comparisons.length} emsal kayıtlı.`, groups: comparisons.map((entry, index) => ({
-        title: `Emsal ${index + 1}`, rows: fields(entry, {
+      : `${comparisons.length} emsal kayıtlı.`, groups: (comparisons.length ? comparisons : [{}]).map((entry, index) => ({
+        title: comparisons.length ? `Emsal ${index + 1}` : "Emsal giriş alanları", rows: fields(entry, {
           f1: "Kaynak / Telefon", f3: "Konum / Yakınlık", f4: "Bina kat sayısı",
           f5: "Bulunduğu kat", f6: "Oda sayısı", f7: "Beyan alanı (m²)", f8: "Tahmini alan (m²)",
           f9: "Taşınmaz cinsi", f10: "İstenen fiyat (TL)", f11: "Durumu", f14: "Pazarlık payı (%)",
           f12: "Olumlu şerefiye (%)", f13: "Olumsuz şerefiye (%)",
           f17: "Düzeltilmiş birim değer (TL/m²)", f18: "Koordinat", anaMetin: "Emsal açıklaması"
-        })
+        }).concat(blankFields("Beyan eden kişi / kurum", "Beyan eden telefon", "İl", "İlçe",
+          "Mahalle / Köy", "Semt", "Cadde / Bulvar", "Sokak", "Site / Lojman / Plaza adı",
+          "Apartman adı", "Bina kapı no", "Kapı no", "Ada", "Parsel", "Enlem", "Boylam",
+          "Bina yapım yılı", "Pazarlıklı fiyat", "Konum ve şerefiye düzeltmesi",
+          "İnşaat kalitesi düzeltmesi"))
       })).concat({ rows: fields({ metin: edits.emsalMetin ?? modules.emsal?.text ?? report.emsalFinalMetni }, {
         metin: "Değerleme ve emsal rapor metni"
       }) }) }
@@ -138,39 +170,93 @@ function setup() {
     });
   }
 
+  function showSection() {
+    const sections = Array.from(get("data").children);
+    const selected = sections.find(section => "#" + section.id === location.hash) ?? sections[0];
+    for (const section of sections) section.hidden = section !== selected;
+    for (const link of get("sections").children) {
+      link.setAttribute("aria-current", String(link.hash === "#" + selected?.id));
+    }
+    return selected;
+  }
+
+  window.addEventListener("hashchange", () => {
+    showSection()?.scrollIntoView({ block: "start" });
+  });
+
   function render(report) {
     get("report").textContent = report.propertyName || report.mulkAdi || "Gayrimenkul raporu";
     const allText = [];
     for (const { id, title, note, groups } of buildSections(report)) {
-      append(get("sections"), "a", title).href = "#" + id;
+      const link = append(get("sections"), "a", title);
+      link.href = "#" + id;
       const section = append(get("data"), "section");
       section.id = id;
       const header = append(section, "header");
       append(header, "h2", title);
-      const blocks = groups.map(group => ({
-        ...group, rows: group.rows.filter(([, value]) => value !== "")
-      })).filter(group => group.rows.length);
-      if (blocks.length) {
-        const text = blocks.map(({ title: groupTitle, rows }) =>
-          [groupTitle, ...rows.map(([label, value]) => label + ": " + value)].filter(Boolean).join("\n")
-        ).join("\n\n");
-        allText.push(title + "\n" + text);
-        copyButton(header, "Bölümü kopyala", text, title + " bölümü");
+      const groupTexts = groups.map(({ title: groupTitle, rows }) => {
+        const values = rows.filter(([, value]) => value).map(([label, value]) => label + ": " + value);
+        return values.length ? [groupTitle, ...values].filter(Boolean).join("\n") : "";
+      });
+      const sectionText = groupTexts.filter(Boolean).join("\n\n");
+      if (sectionText) {
+        allText.push(title + "\n" + sectionText);
+        copyButton(header, "Bölümü kopyala", sectionText, title + " bölümü");
       }
       if (note) append(section, "p", note);
-      if (!blocks.length) append(section, "p", "Kayıtlı bilgi bulunamadı.");
-      for (const block of blocks) {
-        if (block.title) append(section, "h3", block.title);
+
+      // The last Emsaller group contains report-wide notes, not an individual comparable.
+      const emsalCount = id === "emsal" && groups.length > 2 ? groups.length - 1 : 0;
+      const switcher = emsalCount ? append(section, "div") : null;
+      if (switcher) {
+        switcher.className = "emsal-switcher";
+        switcher.setAttribute("role", "group");
+        switcher.setAttribute("aria-label", "Emsal seç");
+      }
+      const choices = [];
+      for (const [index, block] of groups.entries()) {
+        const group = append(section, "div");
+        group.className = "group";
+        if (block.title) {
+          const groupHeader = append(group, "header");
+          append(groupHeader, "h3", block.title);
+          if (id === "emsal" && groupTexts[index]) {
+            copyButton(groupHeader, "Bu emsali kopyala", groupTexts[index], block.title);
+          }
+        }
+        if (index < emsalCount) {
+          const button = append(switcher, "button", block.title);
+          button.type = "button";
+          group.id = "emsal-panel-" + index;
+          button.setAttribute("aria-controls", group.id);
+          button.setAttribute("aria-pressed", String(index === 0));
+          group.hidden = index !== 0;
+          choices.push({ button, group });
+          button.addEventListener("click", () => {
+            for (const choice of choices) {
+              const selected = choice.button === button;
+              choice.button.setAttribute("aria-pressed", String(selected));
+              choice.group.hidden = !selected;
+            }
+          });
+        }
+        const grid = append(group, "div");
+        grid.className = "fields";
         for (const [label, value] of block.rows) {
-          const row = append(section, "div");
-          row.className = "field";
+          const row = append(grid, "div");
+          row.className = value.length > 90 || value.includes("\n") ? "field field-wide" : "field";
           const content = append(row, "div");
           append(content, "strong", label);
-          append(content, "span", value);
-          copyButton(row, "Kopyala", value, label);
+          const display = append(content, "span", value);
+          if (value) copyButton(row, "Kopyala", value, label);
+          else {
+            display.className = "empty-value";
+            display.setAttribute("aria-label", "Boş");
+          }
         }
       }
     }
+    showSection();
     if (allText.length) copyButton(get("copy-all"), "Tüm bilgileri kopyala", allText.join("\n\n"), "Tüm bilgiler");
     status.textContent = "";
   }

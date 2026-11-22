@@ -172,6 +172,7 @@
   cursor:pointer;
 }
   </style>
+  <link rel="stylesheet" href="/module-form.css">
 </head>
 
 <body>
@@ -188,7 +189,7 @@
         onclick="openImarHelp()">
   ❓ İMAR BÖLÜMÜ NASIL KULLANILIR?
 </button>
-  <form id="imar-form">
+  <form id="imar-form" class="module-imar">
     <div class="form-section">
       <label>1. Yapı Nizamı:</label>
       <div class="radio-group" id="yapi-nizam-group">
@@ -226,6 +227,13 @@
     <div class="form-section">
       <label for="kaks">5. KAKS (Örn: 1.60):</label>
       <input type="text" id="kaks" name="kaks" value="1.60" required>
+    </div>
+
+    <div class="form-section">
+      <label for="hesaplanan-emsal">Hesaplanan Emsal (m²)</label>
+      <input type="text" inputmode="decimal" id="hesaplanan-emsal"
+             aria-describedby="hesaplanan-emsal-yardim">
+      <small id="hesaplanan-emsal-yardim">Fuzul Ev için ilgili ruhsat veya iskândaki toplam inşaat alanı.</small>
     </div>
 
     <div class="form-section">
@@ -278,7 +286,7 @@
     </div>
   </div>
 
-  <button type="button" id="kaydet-button" class="action-button">KAYDET</button>
+  <button type="button" id="kaydet-button" class="action-button module-save">Kaydet</button>
 </div>
 
 <script>
@@ -518,6 +526,7 @@ window.addEventListener("unhandledrejection", (e) => {
       lejant: lejantValue === 'Diğer' ? digerLejantKutusu.value.trim() : lejantValue,
       taks: document.getElementById('taks').value,
       kaks: document.getElementById('kaks').value,
+      hesaplananEmsal: document.getElementById('hesaplanan-emsal').value.trim(),
       terk: terkMiktar,
       tecavuz: tecavuz,
       tecavuzMiktar: tecavuzMiktar,
@@ -619,6 +628,7 @@ window.addEventListener("unhandledrejection", (e) => {
       katSayisiInput.value = i.kat || '5';
       document.getElementById('taks').value = i.taks || '0.40';
       document.getElementById('kaks').value = i.kaks || '1.60';
+      document.getElementById('hesaplanan-emsal').value = i.hesaplananEmsal ?? '';
       yolaTerkInput.value = (i.terk ?? '0');
             document.getElementById('imar-plani-onay-tarihi').value =
         i.imarPlaniOnayTarihi || "";
