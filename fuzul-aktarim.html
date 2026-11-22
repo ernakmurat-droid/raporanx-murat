@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fuzul Ev Aktarımı · RaporanX</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f5f2fa; color: #261b34; font: 16px system-ui, sans-serif; }
+    main { max-width: 980px; margin: auto; padding: 24px 16px; }
+    h1 { margin-bottom: 6px; }
+    a { color: #542382; }
+    nav { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 20px 0; }
+    section { background: white; border: 1px solid #ded4e8; border-radius: 14px; padding: 16px; margin: 14px 0; }
+    header, .field { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+    header h2 { margin: 4px 0; font-size: 20px; }
+    .field { padding: 10px 0; border-bottom: 1px solid #eee8f3; }
+    .field:last-child { border: 0; }
+    .field strong, .field span { display: block; }
+    .field span { white-space: pre-wrap; overflow-wrap: anywhere; }
+    button { flex-shrink: 0; border: 1px solid #d6c3e8; border-radius: 8px; background: #f5edff; color: #4b216e; padding: 9px; font: inherit; cursor: pointer; }
+    #status { position: sticky; bottom: 0; background: #f5f2fa; padding: 8px 0; }
+    #manual { position: sticky; bottom: 46px; background: white; padding: 12px; border: 1px solid #d6c3e8; }
+    textarea { display: block; width: 100%; min-height: 90px; }
+  </style>
+  <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script defer src="/firebase-config.js"></script>
+  <script type="module" src="/fuzul-aktarim.mjs"></script>
+</head>
+<body>
+  <main>
+    <a id="back" href="/index.html">← Rapora dön</a>
+    <h1>Fuzul Ev Aktarımı</h1>
+    <p id="report"></p>
+    <p>Kayıtlı bilgileri kopyalayıp Fuzul Ev’de ilgili alanlara yapıştırın.</p>
+    <div id="copy-all"></div>
+    <nav id="sections" aria-label="Aktarım bölümleri"></nav>
+    <div id="data"></div>
+    <div id="manual" hidden>
+      <label for="manual-text">Seçili metni elle kopyalayın</label>
+      <textarea id="manual-text" readonly></textarea>
+    </div>
+    <p id="status" role="status">Rapor yükleniyor…</p>
+  </main>
+</body>
+</html>
