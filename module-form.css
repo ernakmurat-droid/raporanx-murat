@@ -110,3 +110,15 @@
   .bina-fields .form-group:has(#disCephe) { grid-column: auto; }
   :is(.module-konum, .module-bina, .module-bb) .header { padding-top: 44px; }
 }
+
+.bina-fields .bina-giris > label[for="girisCephe"] { display: block; margin-top: 6px; }
+.bina-preview .taslak { margin-top: 8px; }
+
+@media (max-width: 600px) {
+  .module-konum .grid-form > :is(.section-title, .full-width, .info-note) { grid-column: 1 / -1; }
+  .module-konum .voice-input-wrap { width: 100%; min-width: 0; }
+  .module-konum .voice-input-wrap > :is(input, textarea) { flex: 1 1 0; width: 0; min-width: 0; }
+  .module-konum .radio-group { flex-wrap: wrap; gap: 8px 16px; }
+  .module-konum .radio-item input { width: auto; margin: 0; }
+  .module-konum :is(.preview-box, .header) { overflow-wrap: anywhere; }
+}
