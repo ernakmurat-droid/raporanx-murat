@@ -10,7 +10,12 @@
     main { max-width: 980px; margin: auto; padding: 24px 16px; }
     h1 { margin-bottom: 6px; }
     a { color: #542382; }
-    nav { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 20px 0; }
+    nav { position: sticky; top: 0; z-index: 2; display: flex; gap: 6px; overflow-x: auto;
+      margin: 16px 0; padding: 8px 0; background: #f5f2fa; }
+    nav a { flex: 0 0 auto; padding: 8px 10px; border-radius: 8px; background: white;
+      border: 1px solid #ded4e8; text-decoration: none; }
+    nav a:focus-visible { outline: 2px solid #542382; outline-offset: -3px; }
+    section[id] { scroll-margin-top: 72px; }
     section { background: white; border: 1px solid #ded4e8; border-radius: 14px; padding: 16px; margin: 14px 0; }
     header, .field { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
     header h2 { margin: 4px 0; font-size: 20px; }
