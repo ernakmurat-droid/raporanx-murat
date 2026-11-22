@@ -138,7 +138,7 @@
   <link rel="stylesheet" href="/module-form.css">
 </head>
 
-<body>
+<body class="module-tapu-page">
 
 <div class="container-fluid">
   <div class="card p-4">
@@ -149,7 +149,7 @@
     <button type="button"
         class="tapu-help-btn"
         onclick="openTapuHelp()">
-  ❓ TAPU BÖLÜMÜ NASIL KULLANILIR?
+  Yardım
 </button>
     <div class="tapu-mode-card">
       <h5 class="mb-3">Tapu Yapısı</h5>
@@ -184,11 +184,7 @@
     <div class="ai-card">
       <h5 class="text-primary">Takbis PDF / Resimlerini AI ile Oku</h5>
       <div class="alert alert-info mb-3">
-  <strong>Önerilen yükleme şekli: TAKBİS PDF</strong><br>
-  Çok sayfalı TAKBİS belgesini mümkünse PDF olarak yükleyiniz.
-  Belgenin tüm sayfaları tek PDF üzerinden birlikte okunur.
-  Fotoğraf seçeneğini yalnızca PDF dosyasına ulaşılamadığında kullanınız.
-  Sonuçlar siz onaylamadan kaydedilmez.
+  Çok sayfalı belgeleri tek PDF olarak seçin. Okunan bilgileri formda kontrol edip kaydedin.
 </div>
       <input id="takbisDosyalari" class="form-control" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple>
       <div id="takbisSecilenDosyalar" class="mt-3" style="display:none;"></div>
@@ -282,13 +278,16 @@
             <th>Terkin Sebebi</th>
             <th>Terkin Tarihi</th>
             <th>Terkin Yevmiye</th>
-            <th>Engel mi?</th>
             <th>İşlem</th>
           </tr>
         </thead>
         <tbody id="tabloGövde"></tbody>
       </table>
-      <button class="btn btn-dark btn-sm" type="button" onclick="takyidatEkle()">+ Yeni Takyidat Ekle</button>
+      <button class="btn btn-dark btn-sm" type="button" onclick="takyidatEkle()">+ Takyidat Ekle</button>
+      <details class="takyidat-review">
+        <summary>Satışa engel olabilecek takyidatlar</summary>
+        <div id="takyidatInceleme"></div>
+      </details>
     </div>
     </div>
 
@@ -533,12 +532,6 @@
 
   // =========================
   // UI funcs
-  function renkGuncelle(s){
-    if(!s) return;
-    s.closest('tr').classList.toggle('engel-evet', s.value === 'evet');
-  }
-  window.renkGuncelle = renkGuncelle;
-
   function takyidatEkle(v1='', v2='', v3='', v4='', v5='hayir', ek={}){
     const tr = document.createElement('tr');
     tr.className = 'takyidat-ana';
@@ -556,19 +549,14 @@
       <td><input type="text" class="form-control t-terkin-sebep" value="${escapeHtml(ek.terkinSebebi || '')}" oninput="guncelle()"></td>
       <td><input type="text" class="form-control t-terkin-tarih" value="${escapeHtml(ek.terkinTarihi || '')}" placeholder="GG.AA.YYYY" oninput="guncelle()"></td>
       <td><input type="text" class="form-control t-terkin-yev" value="${escapeHtml(ek.terkinYevmiye || '')}" oninput="guncelle()"></td>
-      <td>
-        <select class="form-select t-engel" onchange="renkGuncelle(this); guncelle();">
-          <option value="hayir" ${v5==='hayir'?'selected':''}>Hayır</option>
-          <option value="evet"  ${v5==='evet'?'selected':''}>Evet</option>
-        </select>
-      </td>
-      <td><button class="btn btn-outline-danger btn-sm" type="button"
+      <td><input type="hidden" class="t-engel" value="${v5 === 'evet' ? 'evet' : 'hayir'}">
+        <button class="btn btn-outline-danger btn-sm" type="button"
           onclick="takyidatSatirSil(this)">X</button></td>
     `;
     const detay = document.createElement('tr');
     detay.className = 'takyidat-ozel';
     detay.style.display = 'none';
-    detay.innerHTML = `<td colspan="12"><div class="section-box mb-0">
+    detay.innerHTML = `<td colspan="11"><div class="section-box mb-0">
       <strong class="ozel-baslik">Özel kayıt ayrıntıları</strong>
       <div class="row g-2 mt-1">
         <div class="col-md-3"><label>Alacaklı</label><input class="form-control o-alacakli" value="${escapeHtml(ek.alacakli || '')}" oninput="guncelle()"></div>
@@ -583,7 +571,6 @@
       </div></div></td>`;
     const govde = document.getElementById('tabloGövde');
     govde.appendChild(tr); govde.appendChild(detay);
-    renkGuncelle(tr.querySelector('.t-engel'));
     ozelAlanGuncelle(tr.querySelector('.t-tur'));
   }
   window.takyidatEkle = takyidatEkle;
@@ -1857,8 +1844,8 @@ window.takbisDosyalariniSil =
     const tarihTakbis = tVal ? tVal.split('-').reverse().join('.') : "....";
     const saatTakbis  = document.getElementById('saatInput').value || "....";
 
-    let hayirlar = [];
-    let evetler = [];
+    const kayitlar = [];
+    const inceleme = [];
 
     document.querySelectorAll('#tabloGövde .takyidat-ana').forEach(row => {
       const tur = row.querySelector('.t-tur').value.trim();
@@ -1896,7 +1883,8 @@ window.takbisDosyalariniSil =
           if(lehtar) metin += ` Malik/Lehtar: ${lehtar}`;
         }
         metin += ` (Tarih ${tar || 'Yok'} Sayı ${say || 'Yok'})`;
-        (engelMi === 'evet' ? evetler : hayirlar).push(metin);
+        kayitlar.push(metin);
+        if (engelMi === 'evet' && !row.querySelector('.t-terkin-tarih').value.trim()) inceleme.push(metin);
       }
     });
 
@@ -1933,19 +1921,19 @@ window.takbisDosyalariniSil =
     ].filter(Boolean).join(' / ');
 
     let b1 = `YASAL KISITLAMALAR (Şerh, Rehin, Beyan, İpotek, Haciz ve Diğer Haklar)\n\nTKGM Portal Takbis Sisteminden Takbis Tarihi: ${tarihTakbis} tarihinde İnceleme Saati: ${saatTakbis} itibariyle yapılan incelemede konu taşınmazın tapu kaydı üzerinde aşağıdaki bilgilere ulaşılmıştır:\n\n`;
-    b1 += (hayirlar.length > 0 ? hayirlar.join(", ") : "Herhangi bir takyidat bulunmamaktadır.") + ".\n\nTaşınmaz üzerinde yer alan kayıtların taşınmazın satışına engel teşkil etmediği bilgisi alınmıştır.";
-    if(evetler.length > 0) b1 += `\n\nSATIŞA ENGEL TEŞKİL EDEN DURUMLAR: ${evetler.join(", ")}`;
+    b1 += kayitlar.length ? kayitlar.join("\n") : "Herhangi bir takyidat kaydı girilmemiştir.";
     b1 += `\n\nMALİK BİLGİLERİ:\n${malikMetni || "Girilmedi."}`;
     if(belgeBilgisi) b1 += `\n\nTAPU BELGE BİLGİLERİ:\n${belgeBilgisi}`;
     document.getElementById('b1_sonuc').innerText = b1;
 
     let b2 = `TAPU KAYIT VE TAKYİDAT ANALİZİ\n\nTakbis Tarihi: ${tarihTakbis} / İnceleme Saati: ${saatTakbis}\n\n`;
-    b2 += `MEVCUT TAKYİDATLAR:\n${hayirlar.map(h => "• " + h).join("\n") || "- Kayıt Yok"}\n\n`;
-    if(evetler.length > 0) b2 += `ENGEL TEŞKİL EDEN KAYITLAR:\n${evetler.map(e => "• " + e).join("\n")}\n\n`;
+    b2 += `MEVCUT TAKYİDATLAR:\n${kayitlar.map(kayit => "• " + kayit).join("\n") || "- Kayıt Yok"}\n\n`;
     b2 += `MÜLKİYET YAPISI:\n${malikMetni || "- Bilgi Yok"}`;
     if(belgeBilgisi) b2 += `\nTAPU BELGE BİLGİLERİ:\n${belgeBilgisi}`;
     document.getElementById('b2_sonuc').innerText = b2;
 
+    const incelemeKutusu = document.getElementById('takyidatInceleme');
+    incelemeKutusu.textContent = inceleme.join('\n') || 'Bu tapuda inceleme için işaretlenmiş kayıt yok.';
     return { b1, b2 };
   }
   window.guncelle = guncelle;

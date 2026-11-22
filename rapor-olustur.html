@@ -71,7 +71,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 #statusBar small{display:block;font-weight:700;opacity:.88;margin-top:4px}
 @media(max-width:992px){.main-wrapper{grid-template-columns:1fr;}.toc-container{position:relative;margin-bottom:15px;}}
 @media print{
-  .header,.toc-container,.print-btn,.action-btn,#statusBar{display:none!important;}
+  .header,.toc-container,.print-btn,.action-btn,#statusBar,.no-print{display:none!important;}
   body{background:#fff;}
   .container{box-shadow:none;padding:0;width:100%;}
   .section{page-break-inside:avoid;}
@@ -430,6 +430,10 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
       <div id="tapuCokluBilgiTablosu"></div>
       <div id="tapuBankaTakyidatTablosu"></div>
       <div id="tapuAnalizUyarisi"></div>
+      <label id="takyidatRaporSecimi" class="no-print" hidden>
+        <input type="checkbox" id="takyidatRaporOnay"> Satışa engel olabilecek takyidatları raporda göster
+      </label>
+      <div id="takyidatRaporInceleme" hidden></div>
       <h3 id="tapuFormatBaslik1" class="format-heading" style="display:none;">Format 1 — Bankaya Hazır Metin</h3>
       <div class="text-block" id="tapuMetinB1"></div>
       <h3 id="tapuFormatBaslik2" class="format-heading" style="display:none;">Format 2 — Kontrol Metni</h3>
@@ -1085,6 +1089,33 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${acik} (Tarih: ${tarih}, Sayı: ${sayi})`;
   }
 
+  function olasiTakyidatlariGoster(rep){
+    const { mod, tapular } = cokluTapuVerisi(rep);
+    const records = tapular.length ? tapular : [{ tapuTakyidatDizi: mod.tapuTakyidatDizi ?? rep.tapuTakyidatDizi }];
+    const list = records.flatMap((record, index) =>
+      (Array.isArray(record.tapuTakyidatDizi) ? record.tapuTakyidatDizi : [])
+        .filter(item => item?.engel === "evet" && !String(item.terkinTarihi ?? "").trim())
+        .map(item => {
+          const text = kayitTarihSayiMetni(item);
+          return records.length > 1 ? `Tapu ${index + 1} · ${text}` : text;
+        })
+    );
+    const checkbox = $("takyidatRaporOnay");
+    const panel = $("takyidatRaporInceleme");
+    $("takyidatRaporSecimi").hidden = !list.length;
+    panel.innerHTML = list.length ? '<h3 class="tapu-subtitle">Satışa engel olabilecek takyidatlar</h3><ul>' +
+      list.map(item => "<li>" + escapeHtml(item) + "</li>").join("") + "</ul>" : "";
+    const update = () => { panel.hidden = !checkbox.checked || !list.length; };
+    checkbox.onchange = update;
+    update();
+  }
+
+  function tapuMetniniSadelestir(text){
+    return String(text ?? "")
+      .replace(/(?:SATIŞA ENGEL TEŞKİL EDEN DURUMLAR|ENGEL TEŞKİL EDEN KAYITLAR):[ 	]*/gi, "")
+      .replace(/Taşınmaz üzerinde yer alan kayıtların taşınmazın satışına engel teşkil etmediği bilgisi alınmıştır\./gi, "");
+  }
+
   function bankaTakyidatTablosu(rep){
     const { tapular, analiz } = cokluTapuVerisi(rep);
     if(tapular.length <= 1) return "";
@@ -1111,8 +1142,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     });
-    if(!satirlar.length) return `<h3 class="tapu-subtitle">Takyidat (Diğer) — Banka Tablosu</h3><div class="tapu-note">Onaylı takyidat kaydı bulunmamaktadır.</div>`;
-    let html = `<h3 class="tapu-subtitle">Takyidat (Diğer) — Banka Tablosu</h3>
+    if(!satirlar.length) return `<h3 class="tapu-subtitle">Takyidat — Banka Tablosu</h3><div class="tapu-note">Onaylı takyidat kaydı bulunmamaktadır.</div>`;
+    let html = `<h3 class="tapu-subtitle">Takyidat — Banka Tablosu</h3>
       <div style="overflow-x:auto;"><table class="report-table multi-tapu-table"><thead><tr>
         <th>Ada</th><th>Parsel</th><th>BB No</th><th>Blok No</th><th>Kapsam</th><th>Açıklama</th>
       </tr></thead><tbody>`;
@@ -1304,6 +1335,7 @@ $("enerjiKimlikBilgisi").style.display =
     $("tapuKayitTablosu").innerHTML = cokluMu ? "" : tapuKayitTablosu(r);
     $("tapuCokluBilgiTablosu").innerHTML = cokluTapuBilgiTablosu(r);
     $("tapuBankaTakyidatTablosu").innerHTML = bankaTakyidatTablosu(r);
+    olasiTakyidatlariGoster(r);
     $("tapuAnalizUyarisi").innerHTML = cokluMu && !coklu.analiz.onaylandi
       ? "<div class='warning'><b>Çoklu tapu takyidat analizi henüz onaylanmadı.</b><br>Ortak, ferdi ve mükerrer kayıt ayrımı için Tapu Kayıt bölümünde analizi kontrol edip onaylayınız.</div>"
       : "";
@@ -1320,6 +1352,9 @@ $("enerjiKimlikBilgisi").style.display =
     $("tapuMetinB2").textContent = formatMetin(
       onayliFormat2 || pick(r,"modules.tapu.tapuMetniB2","tapuMetniB2","tapu.b2")
     );
+    for (const id of ["tapuMetinB1", "tapuMetinB2"]) {
+      $(id).textContent = tapuMetniniSadelestir($(id).textContent);
+    }
     $("emsalMetin").textContent = emsalMetni(r);
   }
 
@@ -1420,7 +1455,7 @@ $("enerjiKimlikBilgisi").style.display =
 
   for(const [id, txt] of Object.entries(data)){
     const el = document.getElementById(id);
-    if(el) el.textContent = String(txt ?? "");
+    if(el) el.textContent = ["tapuMetinB1", "tapuMetinB2"].includes(id) ? tapuMetniniSadelestir(txt) : String(txt ?? "");
   }
 }
 
