@@ -7,6 +7,8 @@ export function buildSections(report) {
   const edits = report.finalTextEdits ?? {};
   const location = modules.konumCevre ?? report.konumCevre ?? {};
   const tapu = modules.tapu ?? {};
+  const imar = modules.imar ?? report.imarDurumu ?? report.imar ?? {};
+  const uavt = String(location.v1 ?? "").trim();
   const titles = Array.isArray(tapu.cokluTapular)
     ? tapu.cokluTapular.map(entry => entry?.tapuKayitBilgileri)
       .filter(entry => entry && Object.values(entry).some(value => String(value ?? "").trim()))
@@ -36,17 +38,27 @@ export function buildSections(report) {
       v9: "Kat no", v10: "İç kapı no", v1: "UAVT", v2: "Koordinat X", v3: "Koordinat Y",
       tamMetin: "Konum ve çevre açıklaması"
     }) }] },
-    { id: "tapu", title: "Tapu", groups: (titles.length ? titles : [
+    { id: "tapu", title: "Tapu",
+      note: uavt ? undefined : "UAVT kodu Konum modülünde kayıtlı değil.",
+      groups: (titles.length ? titles : [
       tapu.tapuKayitBilgileri ?? report.tapuKayitBilgileri
     ]).map((entry, index) => ({ title: `Tapu ${index + 1}`, rows: fields(entry, titleFields) })).concat({
       rows: fields({
+        uavt,
         kayit: edits.tapuMetinB1 ?? tapu.tapuMetniB1 ?? report.tapuMetniB1,
         takyidat: edits.tapuMetinB2 ?? tapu.tapuMetniB2 ?? report.tapuMetniB2
-      }, { kayit: "Tapu açıklaması", takyidat: "Takyidat açıklaması" })
+      }, { uavt: "UAVT kodu (Konum kaydı)", kayit: "Tapu açıklaması", takyidat: "Takyidat açıklaması" })
     }) },
-    { id: "imar", title: "İmar Durumu", groups: [{ rows: fields({
+    { id: "imar", title: "İmar Durumu",
+      note: "Hesaplanmış KAKS için emsale esas alan ve parsel alanı gerekir. RaporanX bu değeri ayrı kaydetmiyor.",
+      groups: [{ rows: fields({
+      ...imar,
       metin: edits.imarMetin ?? report.imarMetni ?? modules.imarMetni ?? report.imar?.metin
-    }, { metin: "İmar durumu açıklaması" }) }] },
+    }, {
+      nizam: "Yapı nizamı", kat: "Kat sayısı", lejant: "Lejant", taks: "Plan TAKS",
+      kaks: "Plan KAKS (Emsal)", imarPlaniOnayTarihi: "İmar planı onay tarihi",
+      metin: "İmar durumu açıklaması"
+    }) }] },
     { id: "belgeler", title: "Belgeler", groups: [{ rows: fields({
       metin: edits.belgelerMetin ?? report.belgelerMetni ?? modules.belgelerMetni ?? report.belgeler?.metin
     }, { metin: "İncelenen belgeler" }) }] },
