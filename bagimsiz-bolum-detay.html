@@ -304,6 +304,7 @@
   cursor:pointer;
 }
 </style>
+  <link rel="stylesheet" href="/module-form.css">
 </head>
 
 <body>
@@ -454,7 +455,7 @@
       </div>
     </div>
 
-    <button id="btnSave" class="btn btn-save" onclick="kaydet()">VERİLERİ KAYDET (TÜM BB METİNLERİ ÜRETİLİR)</button>
+    <button id="btnSave" class="btn btn-save module-save" onclick="kaydet()">Kaydet</button>
 
     <div id="taslakBaslik" class="section-title">Seçili BB Taslak Metin</div>
     <div id="taslak" class="taslak"></div>
@@ -964,7 +965,7 @@ const mevcutBrutAlan = projeBrutAlan + getNum("ilaveBrut");
 </script>
 
 <div class="mobile-action-bar">
-  <button type="button" class="m-save" onclick="kaydet()">💾 KAYDET</button>
+  <button type="button" class="m-save" onclick="kaydet()">Kaydet</button>
   <button type="button" class="m-back" onclick="anaMenuyeDon()">← ANA MENÜ</button>
 </div>
 <script>

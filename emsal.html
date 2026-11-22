@@ -659,6 +659,7 @@
 }
   </style>
 
+  <link rel="stylesheet" href="/module-form.css">
 </head>
 
 <body>
@@ -954,7 +955,7 @@
     </div>
 
     <div style="display:flex; gap:10px; margin-top:20px;">
-      <button class="btn btn-save-final" onclick="emsalKaydet()" style="flex:2; margin:0;">LİSTEYE İŞLE VE MÜHÜRLE</button>
+      <button class="btn btn-save-final" onclick="emsalKaydet()" style="flex:2; margin:0;">Emsali Kaydet</button>
       <button class="btn" onclick="formuKapat()" style="flex:1; background:#9e9e9e; color:white;">İPTAL</button>
     </div>
   </div>
@@ -1008,8 +1009,8 @@
   <div class="section-title">3. Özet Analiz Metni (TÜM BÖLÜMLER)</div>
   <div id="yorumMetni" class="final-box"></div>
 
-  <button class="btn btn-save-final" onclick="tumRaporuKaydet()">
-    ANALİZİ KAYDET VE BULUTA YEDEKLE
+  <button class="btn btn-save-final module-save" onclick="tumRaporuKaydet()">
+    Kaydet
   </button>
 </div>
 
@@ -1647,8 +1648,8 @@
 
     emsalFinalMetniniRaporaYaz(report);
 
-    await saveReport(report);
-    alert("✅ Kaydedildi ve buluta mühürlendi.");
+    const savedOnline = await saveReport(report);
+    alert(savedOnline ? "Kaydedildi." : "Bu cihaza kaydedildi. Bulut kaydı tamamlanamadı.");
   };
 
   window.anaMenuyeDon = function(){
@@ -1858,34 +1859,6 @@
   let aiRecognition = null;
 
  
-  function aiEmsalOnizlemeGoster(data){
-    const preview = el("aiEmsalOnizleme");
-    if(!preview) return;
-
-    const rows = AI_EMSAL_FIELDS.map(([id, label]) => {
-      const control = id === "f11"
-        ? `<select id="aip_${id}"><option value="satılıktır">Satılıktır</option><option value="kiralıktır">Kiralıktır</option></select>`
-        : `<input id="aip_${id}" type="text">`;
-      return `<tr><th>${label}</th><td>${control}</td></tr>`;
-    }).join("");
-
-    preview.innerHTML = `
-      <div style="font-weight:900;color:#2e7d32;margin-bottom:8px;">Kontrol Tablosu — değiştirmek istediğiniz alanı düzeltin.</div>
-      <table><tbody>${rows}</tbody></table>
-      <div class="ai-emsal-actions">
-        <button type="button" class="btn" onclick="aiEmsaliFormaAktar()" style="background:#2e7d32;color:#fff;">✅ ONAYLA VE FORMA AKTAR</button>
-        <button type="button" class="btn" onclick="aiEmsalOnizlemeKapat()" style="background:#757575;color:#fff;">VAZGEÇ</button>
-      </div>`;
-
-    AI_EMSAL_FIELDS.forEach(([id]) => {
-      const node = el("aip_" + id);
-      if(node) node.value = data?.[id] ?? (id === "f14" ? "5" : (id === "f12" || id === "f13" ? "0" : ""));
-    });
-    preview.style.display = "block";
-    preview.scrollIntoView({ behavior:"smooth", block:"nearest" });
-  }
-  
-
 window.aiSesliEmsalBaslat = function(){
   const Recognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2493,32 +2466,31 @@ window.aiBeyanOnayla = function(){
       const result = await response.json().catch(()=>({}));
       if(!response.ok) throw new Error(result.error || "Yapay zekâ cevabı alınamadı.");
 
-      aiEmsalOnizlemeGoster(result.emsal || {});
-      if(status) status.textContent = "Bilgiler hazır. Kontrol edin; siz onaylamadan emsale kaydedilmez.";
+      aiEmsaliFormaAktar(result.emsal || {});
+      if(status) status.textContent = "Bilgiler forma yerleştirildi. Kontrol edip Emsali Kaydet’e basın.";
     }catch(error){
       console.error("aiEmsaliAyir:", error);
       if(status) status.textContent = error.message || "Yapay zekâ işlemi başarısız oldu.";
     }finally{
-      if(button){ button.disabled = false; button.textContent = "✨ TABLOYA AYIR"; }
+      if(button){ button.disabled = false; button.textContent = "Alanlara Yerleştir"; }
     }
   };
 
- window.aiEmsaliFormaAktar = function(){
+ function aiEmsaliFormaAktar(data){
   window.formuAc(-1);
 
   AI_EMSAL_FIELDS.forEach(([id]) => {
-    const source = el("aip_" + id);
-    if(!source) return;
+    const value = data[id] ?? (id === "f14" ? "5" : (id === "f12" || id === "f13" ? "0" : ""));
 
     if(id === "f10"){
-      const digits = String(source.value || "").replace(/\D/g, "");
+      const digits = String(value || "").replace(/\D/g, "");
       setVal(digits, "f10");
       setVal(
         digits ? new Intl.NumberFormat("tr-TR").format(digits) : "",
         "f10mask"
       );
     }else{
-      setVal(source.value, id);
+      setVal(value, id);
     }
   });
 
@@ -2540,7 +2512,7 @@ window.aiBeyanOnayla = function(){
   const status = el("aiEmsalDurum");
   if(status){
     status.textContent =
-      "Forma aktarıldı. Son kontrolü yapıp LİSTEYE İŞLE VE MÜHÜRLE düğmesine basın.";
+      "Forma aktarıldı. Son kontrolü yapıp Emsali Kaydet düğmesine basın.";
   }
 
   el("emsalFormContainer")?.scrollIntoView({
@@ -2719,11 +2691,11 @@ window.aiEmsalGorselOku = async function(){
       );
     }
 
-    aiEmsalOnizlemeGoster(result.emsal || {});
+    aiEmsaliFormaAktar(result.emsal || {});
 
     if(status){
       status.textContent =
-        "İlan bilgileri hazır. Kontrol edin; siz onaylamadan emsale kaydedilmez.";
+        "İlan bilgileri forma yerleştirildi. Kontrol edip Emsali Kaydet’e basın.";
     }
 
   }catch(error){
@@ -2799,7 +2771,7 @@ window.aiEmsalGorselOku = async function(){
     <div class="emsal-help-step">
       <b>3. Emsali ortak havuza kaydediniz.</b><br>
       Emsal detaylarını kontrol ettikten sonra
-      <b>LİSTEYE İŞLE VE MÜHÜRLE</b> butonuna basınız.
+      <b>Emsali Kaydet</b> butonuna basınız.
       Kaydedilen emsal üst taraftaki ortak emsal havuzunda görünür.
     </div>
 

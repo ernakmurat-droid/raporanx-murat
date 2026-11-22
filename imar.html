@@ -172,6 +172,7 @@
   cursor:pointer;
 }
   </style>
+  <link rel="stylesheet" href="/module-form.css">
 </head>
 
 <body>
@@ -229,6 +230,13 @@
     </div>
 
     <div class="form-section">
+      <label for="hesaplanan-emsal">Hesaplanan Emsal (m²)</label>
+      <input type="text" inputmode="decimal" id="hesaplanan-emsal"
+             aria-describedby="hesaplanan-emsal-yardim">
+      <small id="hesaplanan-emsal-yardim">Fuzul Ev için ilgili ruhsat veya iskândaki toplam inşaat alanı.</small>
+    </div>
+
+    <div class="form-section">
       <label for="yola-terk">6. Yola Terk (m²):</label>
       <input type="number" id="yola-terk" name="yola-terk" min="0" value="0" required>
 
@@ -278,7 +286,7 @@
     </div>
   </div>
 
-  <button type="button" id="kaydet-button" class="action-button">KAYDET</button>
+  <button type="button" id="kaydet-button" class="action-button module-save">Kaydet</button>
 </div>
 
 <script>
@@ -518,6 +526,7 @@ window.addEventListener("unhandledrejection", (e) => {
       lejant: lejantValue === 'Diğer' ? digerLejantKutusu.value.trim() : lejantValue,
       taks: document.getElementById('taks').value,
       kaks: document.getElementById('kaks').value,
+      hesaplananEmsal: document.getElementById('hesaplanan-emsal').value.trim(),
       terk: terkMiktar,
       tecavuz: tecavuz,
       tecavuzMiktar: tecavuzMiktar,
@@ -619,6 +628,7 @@ window.addEventListener("unhandledrejection", (e) => {
       katSayisiInput.value = i.kat || '5';
       document.getElementById('taks').value = i.taks || '0.40';
       document.getElementById('kaks').value = i.kaks || '1.60';
+      document.getElementById('hesaplanan-emsal').value = i.hesaplananEmsal ?? '';
       yolaTerkInput.value = (i.terk ?? '0');
             document.getElementById('imar-plani-onay-tarihi').value =
         i.imarPlaniOnayTarihi || "";
