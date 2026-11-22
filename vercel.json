@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/api/raporanx-ai/parse-takbis", "destination": "https://pay.raporanx.com/ai/parse-takbis" },
+    { "source": "/api/raporanx-ai/parse-emsal", "destination": "https://pay.raporanx.com/ai/parse-emsal" },
+    { "source": "/api/raporanx-ai/parse-emsal-image", "destination": "https://pay.raporanx.com/ai/parse-emsal-image" },
+    { "source": "/api/raporanx-ai/parse-beyan", "destination": "https://pay.raporanx.com/ai/parse-beyan" }
+  ]
+}

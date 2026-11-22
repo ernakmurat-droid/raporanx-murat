@@ -29,3 +29,20 @@
   .module-documents .form-group { padding: 10px; }
   .module-documents .dynamic-item > div { min-width: 0; flex-basis: 100%; }
 }
+
+.module-imar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.module-imar .form-section { margin: 0; }
+.module-imar .form-section label { margin-top: 0; }
+.module-imar .form-section:has(textarea) { grid-column: 1 / -1; }
+.module-tapu { padding: 12px; margin-bottom: 12px; }
+.module-tapu .row { --bs-gutter-y: .5rem; }
+.module-konum .grid-form { gap: 10px; }
+
+@media (max-width: 600px) {
+  .module-imar, .module-konum .grid-form { grid-template-columns: minmax(0, 1fr); }
+  .module-tapu { padding: 10px; }
+}

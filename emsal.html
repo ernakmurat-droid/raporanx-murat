@@ -1839,7 +1839,10 @@
     }
   })();
 
-  const RAPORANX_AI_SERVER = window.RAPORANX_AI_SERVER || "https://pay.raporanx.com";
+  const RAPORANX_AI_SERVER = window.RAPORANX_AI_SERVER ||
+    (location.hostname.endsWith(".vercel.app") ? "/api/raporanx-ai" : "https://pay.raporanx.com");
+  const emsalAiUrl = route => RAPORANX_AI_SERVER.startsWith("/")
+    ? RAPORANX_AI_SERVER + "/" + route : RAPORANX_AI_SERVER + "/ai/" + route;
   const AI_EMSAL_FIELDS = [
     ["f1", "Emsal Kaynağı / Telefon"],
     ["f3", "Konum / Yakınlık"],
@@ -2278,7 +2281,7 @@ window.aiBeyanHazirla = async function(){
     const token = await user.getIdToken();
 
     const response = await fetch(
-      RAPORANX_AI_SERVER + "/ai/parse-beyan",
+      emsalAiUrl("parse-beyan"),
       {
         method: "POST",
         headers: {
@@ -2455,7 +2458,7 @@ window.aiBeyanOnayla = function(){
       if(status) status.textContent = "Yapay zekâ emsal bilgilerini tabloya ayırıyor…";
 
       const token = await user.getIdToken();
-      const response = await fetch(`${RAPORANX_AI_SERVER}/ai/parse-emsal`, {
+      const response = await fetch(`${emsalAiUrl("parse-emsal")}`, {
         method:"POST",
         headers:{
           "Content-Type":"application/json",
@@ -2477,6 +2480,9 @@ window.aiBeyanOnayla = function(){
   };
 
  function aiEmsaliFormaAktar(data){
+  if (!data || !AI_EMSAL_FIELDS.some(([id]) =>
+    !["f12", "f13", "f14"].includes(id) && String(data[id] ?? "").trim()
+  )) throw new Error("Emsalin forma aktarılabilecek bilgileri okunamadı.");
   window.formuAc(-1);
 
   AI_EMSAL_FIELDS.forEach(([id]) => {
@@ -2672,7 +2678,7 @@ window.aiEmsalGorselOku = async function(){
     const token = await user.getIdToken();
 
     const response = await fetch(
-      `${RAPORANX_AI_SERVER}/ai/parse-emsal-image`,
+      `${emsalAiUrl("parse-emsal-image")}`,
       {
         method:"POST",
         headers:{

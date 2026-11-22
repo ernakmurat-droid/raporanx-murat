@@ -206,7 +206,7 @@
       <div id="takbisAiOnizleme" class="ai-preview"></div>
     </div>
 
-    <div class="section-box" id="tapuBilgiBolumu">
+    <div class="section-box module-tapu" id="tapuBilgiBolumu">
       <div class="section-title mb-3">
         <h5 class="text-primary mb-0">Tapu Kayıt Bilgileri</h5>
         <button class="copy-btn" type="button" onclick="bolumKopyala('tapu')">TÜM TAPU BİLGİLERİNİ KOPYALA</button>
@@ -1458,7 +1458,8 @@
   window.cokluTapuFormat1Kopyala = cokluTapuFormat1Kopyala;
   window.cokluTapuFormat2Kopyala = cokluTapuFormat2Kopyala;
 
-  const TAKBIS_AI_URL = "https://pay.raporanx.com/ai/parse-takbis";
+  const TAKBIS_AI_URL = location.hostname.endsWith(".vercel.app")
+    ? "/api/raporanx-ai/parse-takbis" : "https://pay.raporanx.com/ai/parse-takbis";
   let takbisAiSonuc = null;
   let takbisOnizlemeUrlListesi = [];
 
@@ -1800,7 +1801,7 @@ window.takbisDosyalariniSil =
     aktifTapuAdimlariniGoster();
     document.getElementById('takbisAiOnizleme').style.display='none';
     document.getElementById('takbisAiDurum').textContent='Bilgiler forma yerleştirildi. Kontrol edip Kaydet’e basın.';
-    window.scrollTo({ top:document.querySelector('.section-box').offsetTop-15, behavior:'smooth' });
+    document.getElementById('tapuBilgiBolumu')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   window.takbisAlanlaraYerlestir=takbisAlanlaraYerlestir;
 
