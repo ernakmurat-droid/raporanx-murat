@@ -408,6 +408,28 @@
       catch(e){ return []; }
     }
 
+    function reportTimestampMs(value){
+      if (typeof value?.toMillis === "function") return value.toMillis();
+      if (Number.isFinite(value?.seconds)) {
+        return value.seconds * 1000 + (value.nanoseconds || 0) / 1000000;
+      }
+      if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+      if (typeof value !== "string") return 0;
+
+      const legacy = value.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:[ ,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+      if (legacy) {
+        const [, day, month, year, hour = "0", minute = "0", second = "0"] = legacy;
+        return Date.parse(`${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hour.padStart(2, "0")}:${minute}:${second}+03:00`) || 0;
+      }
+      return Date.parse(value) || 0;
+    }
+
+    function reportLastSavedMs(report){
+      return reportTimestampMs(report.updatedAt) ||
+        reportTimestampMs(report.updatedAtMs) ||
+        reportTimestampMs(report.createdAt);
+    }
+
     // UI render
     function loadReports(){
       const list = document.getElementById("reportsList");
@@ -418,7 +440,8 @@
         return;
       }
 
-      reports.forEach((report)=>{
+      const sortedReports = [...reports].sort((a, b) => reportLastSavedMs(b) - reportLastSavedMs(a));
+      sortedReports.forEach((report)=>{
         const rid = String(report.rid || "");
         const locked = isReportLocked(rid, report);
 
