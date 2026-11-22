@@ -184,6 +184,8 @@
       text-align:left;
     }
 
+    .report-month { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:14px; }
+    .report-month select { padding:7px; max-width:100%; }
     #reportsList{ margin-top: 14px; text-align:left; }
 
     .report-card{
@@ -325,6 +327,11 @@
       <a href="yeni_kayit.html" class="btn-new">➕ YENİ RAPOR OLUŞTUR</a>
 
       <div class="section-title">📁 Rapor Kayıtların</div>
+      <div class="report-month">
+        <label for="reportMonth">Rapor ayı</label>
+        <select id="reportMonth"></select>
+        <span id="reportMonthCount" role="status"></span>
+      </div>
       <div id="reportsList">
         <div style="opacity: 0.85; margin-top: 18px;">Kayıtlar yükleniyor...</div>
       </div>
@@ -418,7 +425,7 @@
 
       const legacy = value.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:[ ,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
       if (legacy) {
-        const [, day, month, year, hour = "0", minute = "0", second = "0"] = legacy;
+        const [, day, month, year, hour = "0", minute = "00", second = "00"] = legacy;
         return Date.parse(`${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hour.padStart(2, "0")}:${minute}:${second}+03:00`) || 0;
       }
       return Date.parse(value) || 0;
@@ -430,17 +437,47 @@
         reportTimestampMs(report.createdAt);
     }
 
+    const reportMonth = document.getElementById("reportMonth");
+    const monthKeyFormatter = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Europe/Istanbul", year: "numeric", month: "2-digit"
+    });
+    const monthLabelFormatter = new Intl.DateTimeFormat("tr-TR", {
+      timeZone: "UTC", year: "numeric", month: "long"
+    });
+
+    function reportMonthKey(report){
+      const created = reportTimestampMs(report.createdAt);
+      return created ? monthKeyFormatter.format(created) : "";
+    }
+
+    function filterReportsByMonth(allReports){
+      const currentMonth = monthKeyFormatter.format(Date.now());
+      const previous = reportMonth.value || currentMonth;
+      const months = [...new Set([currentMonth, ...allReports.map(reportMonthKey).filter(Boolean)])].sort().reverse();
+      reportMonth.replaceChildren(new Option("Tüm aylar", "all"));
+      for (const month of months) {
+        reportMonth.add(new Option(monthLabelFormatter.format(new Date(month + "-01T00:00:00Z")), month));
+      }
+      reportMonth.value = previous === "all" || months.includes(previous) ? previous : currentMonth;
+      return reportMonth.value === "all" ? allReports : allReports.filter(report => reportMonthKey(report) === reportMonth.value);
+    }
+
+    reportMonth.addEventListener("change", loadReports);
+
     // UI render
     function loadReports(){
       const list = document.getElementById("reportsList");
       list.innerHTML = "";
 
-      if(!reports || reports.length === 0){
-        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Henüz rapor yok.</div>';
+      const visibleReports = filterReportsByMonth(reports || []);
+      document.getElementById("reportMonthCount").textContent = visibleReports.length + " rapor";
+
+      if(visibleReports.length === 0){
+        list.innerHTML = '<div style="margin-top:14px; opacity:.9;">Bu seçimde rapor yok.</div>';
         return;
       }
 
-      const sortedReports = [...reports].sort((a, b) => reportLastSavedMs(b) - reportLastSavedMs(a));
+      const sortedReports = [...visibleReports].sort((a, b) => reportLastSavedMs(b) - reportLastSavedMs(a));
       sortedReports.forEach((report)=>{
         const rid = String(report.rid || "");
         const locked = isReportLocked(rid, report);
