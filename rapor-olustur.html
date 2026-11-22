@@ -381,6 +381,8 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;color:#2c3e
 </button> 
     <button class="print-btn" onclick="window.print()">📄 Yazdır / PDF Kaydet</button>
 
+    <button type="button" class="action-btn" id="btnFuzulTransfer" disabled>Fuzul Ev Aktarımını Hazırla</button>
+
     <button class="action-btn" id="btnFinalCreate" disabled>🧾 Final Rapor Oluştur (Hak Düş + Kilitle)</button>
 
     <button class="action-btn" id="btnEditText" style="background:#1976d2;">✍️ Final Metni Düzenle</button>
@@ -1542,6 +1544,12 @@ setStatus(
        notlarKullanicisi = user;
     let rep = loadReportLocal() || await loadReportRemote(user.uid);
     if (!rep){ setStatus("❌ Rapor yok.", `rid: ${rid}`); return; }
+
+    const transferButton = $("btnFuzulTransfer");
+    transferButton.disabled = false;
+    transferButton.onclick = () => {
+      location.href = "/fuzul-aktarim.html?rid=" + encodeURIComponent(rid) + "&from=final";
+    };
 
     $("btnEditText").onclick = ()=>{
       const lockedNow = $("btnFinalCreate").disabled === true;
